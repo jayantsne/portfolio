@@ -1,0 +1,26 @@
+#about {
+  width: 100%;
+  height: auto;
+  display: block;
+  background: #f4f6f8 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  transition: transform .25s ease;
+
+  margin-top: 0;                      /* hug the wave */
+  padding-top: clamp(16px, 3vw, 32px); /* small breathing room below wave */
+}
+
+:host {
+  display: block;
+  background: #f4f6f8;
+  position: relative;
+  z-index: 1;
+  /* removed the old padding-top: 4rem; */
+}
+
+/* Optional: remove any stray bottom gap from wave overlap */
+#about:first-child {
+  margin-top: 0 !important;
+}

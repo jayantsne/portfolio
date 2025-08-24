@@ -1,50 +1,58 @@
-<header>
-    <div class="cover bg-light">
-      <div class="container px-3">
-        <div class="row">
-          <div class="col-lg-6 p-2"><img class="img-fluid" src="../../assets/images/illustrations/jdev.gif"
-              alt="hello" /></div>
-          <div class="col-lg-6">
-            <div class="mt-5">
-              <!-- <h1>
-                <p class="lead text-uppercase mb-1">Hello!  <b>{{ greetingMessage }}</b>  </p>
-              </h1> -->
-              <div class="bd-slider-five z-index">
-                <div class="bd-slider-five-hello mb-30 wow fadeInUp" data-wow-delay=".2s" style="visibility: visible; animation-delay: 0.2s; animation-name: fadeInUp;">
-                  <span class="bd-slider-five-hello-text"><h2>Hey <img src="../../assets/images/4.png" style="height: 50px;" alt="Icon" /> I'm</h2></span>
-                 
-              </div>
-              <h1 class="bd-slider-five-title wow fadeInUp intro-title marker" data-wow-delay=".4s" style="font-size: 68px; visibility: visible; animation-delay: 0.4s; animation-name: fadeInUp;text-decoration: underline #EF0454 5%;text-underline-offset:10px;">Jayant Bhardwaj</h1>
-
-              </div>
-             
-              <!-- <h1 class="intro-title marker" data-aos="fade-left" data-aos-delay="50">Jayant Bhardwaj  </h1> -->
-              <p style="font-size: 25px;" class="lead fw-normal mt-3" data-aos="fade-up" data-aos-delay="100"><b>Senior Developer 1</b>
-            <br/> <b>Ticket Master, India</b></p>
-              <div class="social-nav" data-aos="fade-up" data-aos-delay="200">
-                <nav role="navigation">
-                  <ul class="nav justify-content-left">
-                    <!-- <li class="nav-item"><a class="nav-link" href="https://twitter.com/templateflip" title="Twitter"><i class="fab fa-twitter"></i><span class="menu-title sr-only">Twitter</span></a></li> -->
-                    <li class="nav-item"><a target="_blank" class="nav-link"
-                        href="https://www.facebook.com/jayant.bhardwaj.75" title="Facebook"><i
-                          class="fab fa-facebook"></i><span class="menu-title sr-only">Facebook</span></a></li>
-                    <li class="nav-item"><a target="_blank" class="nav-link"
-                        href="https://www.instagram.com/jayant.bhardwaj.75/" title="Instagram"><i
-                          class="fab fa-instagram"></i><span class="menu-title sr-only">Instagram</span></a></li>
-                    <li class="nav-item"><a target="_blank" class="nav-link"
-                        href="https://www.linkedin.com/in/jayant-bhardwaj-8bb510145" title="LinkedIn"><i
-                          class="fab fa-linkedin"></i><span class="menu-title sr-only">LinkedIn</span></a></li>
-                    <!-- <li class="nav-item"><a class="nav-link" href="https://www.behance.net/templateflip" title="Behance"><i class="fab fa-behance"></i><span class="menu-title sr-only">Behance</span></a></li> -->
-                  </ul>
-                </nav>
-              </div>
-              <div class="mt-3" data-aos="fade-up" data-aos-delay="200"><a
-                  class="btn btn-primary shadow-sm mt-1 hover-effect" style="background-color: #EF0454; color: white; border-color: white;" href="#contact">Get In Touch <i
-                    class="fas fa-arrow-right"></i></a></div>
-            </div>
-          </div>
-        </div>
+<header class="hero">
+  <div class="container hero-wrap row align-items-center gy-4 gx-lg-5">
+    <!-- GIF / Illustration -->
+    <div class="col-lg-6">
+      <div class="media fade-in-left">
+        <img
+          class="hero-img"
+          src="/assets/images/illustrations/jdev.gif"
+          alt="Developer animation" />
       </div>
     </div>
-    <div class="wave-bg"></div>
-  </header>
+
+    <!-- Intro -->
+    <div class="col-lg-6 fade-in-stagger">
+      <div class="bd-slider-five-hello mb-2">
+        <h2 class="hello">Hey <span class="wave">👋</span> I’m</h2>
+      </div>
+
+      <h1 class="bd-slider-five-title intro-title marker no-wrap">
+  Jayant&nbsp;Bhardwaj
+</h1>
+      <p class="lead fw-normal subtitle mt-2">
+        <b>Senior Developer 1</b><br />
+        <b>Ticket Master, India</b>
+      </p>
+
+      <div class="social-nav mt-2">
+        <ul class="nav gap-2">
+          <li class="nav-item"><a target="_blank" class="soc" href="https://www.facebook.com/jayant.bhardwaj.75" aria-label="Facebook">f</a></li>
+          <li class="nav-item"><a target="_blank" class="soc" href="https://www.instagram.com/jayant.bhardwaj.75/" aria-label="Instagram">ig</a></li>
+          <li class="nav-item"><a target="_blank" class="soc" href="https://www.linkedin.com/in/jayant-bhardwaj-8bb510145" aria-label="LinkedIn">in</a></li>
+        </ul>
+      </div>
+
+      <a class="btn btn-primary shadow-sm mt-3 hover-effect cta"
+         style="background-color:#EF0454;color:white;border-color:white"
+         href="#contact">
+        Get In Touch <i class="fas fa-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+
+  <!-- Modern gradient wave footer (optional) -->
+  <div class="wavev2" aria-hidden="true">
+    <svg class="wavev2-svg" viewBox="0 0 1440 220" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="waveGrad" x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0%"  stop-color="#EF0454"/>
+          <stop offset="50%" stop-color="#ff6ec7"/>
+          <stop offset="100%" stop-color="#3bb2b8"/>
+        </linearGradient>
+      </defs>
+      <path class="wavev2-back"  d="M0,120 C220,180 420,60 720,120 C1000,170 1200,80 1440,120 L1440,220 L0,220 Z"  fill="url(#waveGrad)" fill-opacity="0.20"/>
+      <path class="wavev2-front" d="M0,140 C240,210 420,80 720,130 C1000,170 1200,110 1440,140 L1440,220 L0,220 Z" fill="url(#waveGrad)" fill-opacity="0.40"/>
+    </svg>
+  </div>
+  
+</header>

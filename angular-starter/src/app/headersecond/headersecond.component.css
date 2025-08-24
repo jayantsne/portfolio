@@ -1,57 +1,127 @@
-/* .bd-slider-five-hello span {
-    font-size: 24px;
-    display: inline-block;
-    font-weight: 500;
-}
-.bd-slider-five-hello-text {
-    height: 40px;
-    padding: 0px 15px;
-    line-height: 40px;
-    
-    color: var(--clr-common-white) !important;
-    border-radius: 5px;
-    background: #FFBB01;
-    position: relative;
-    z-index: 2;
-    margin-right: 22px;
-}
-.z-index {
-    z-index: 3;
-    position: relative;
-}
-.swiper-container {
-    margin-left: auto;
-    margin-right: auto;
-    position: relative;
-    overflow: hidden;
-    list-style: none;
-    padding: 0;
-    z-index: 1;
-}
-.bd-slider-five-hello span {
-    font-size: 24px;
-    color: var(--clr-body-heading);
-    display: inline-block;
-    font-weight: 500;
-}
-@media only screen and (min-width: 992px) and (max-width: 1199px)
-{
-    .bd-slider-five .bd-slider-five-title {
-        font-size: 90px;
-    }
+:host { display:block; }
+
+:root{
+  --nav-h: 0px;
+  --wave-h: 160px;
+  --intro-top: 100px;
+  --page-pad: 16px;     /* must match header.hero’s left/right padding */
 }
 
-
-.bd-slider-five .bd-slider-five-title {
-    font-size: 120px;
-    font-weight: 700;
-    color: var(--clr-body-heading);
-    line-height: 0.9;
+/* HERO fills the rest of the viewport above the wave */
+header.hero{
+  background:#f4f6f8;
+  min-height: calc(100dvh - var(--nav-h) - var(--wave-h));
+  display:flow;
+  align-items:center;
+  padding: clamp(28px,5vw,60px) 16px 0;  /* keep horizontal padding for content */
+  overflow-x: clip;   /* prevent horizontal scroll from the wave breakout */
+  overflow-y: hidden;
 }
-.mb-30 {
-    margin-bottom: 30px;
-} */
+@supports not (overflow-x: clip) { header.hero { overflow-x: hidden; } }
 
-.wave-bg{
- height: 90px !important;
+.hero-wrap{
+  max-width:1200px; margin:0 auto;
+  row-gap: clamp(16px, 4vw, 28px);
+}
+.intro-wrap{ padding-top: var(--intro-top); }
+
+/* 🌊 Wave full-bleed AFTER hero (no left/bottom gaps) */
+.hero .wavev2{
+  position: relative;
+  width: 100vw;               /* ignore hero padding, fill viewport */
+  left: 50%;
+  transform: translateX(-50%);
+  height: var(--wave-h);
+
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  overflow: hidden;
+
+  margin-bottom: -3px;        /* hide any faint line under the SVG */
+}
+.hero .wavev2-svg{
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  top: 1px;                   /* nudge down to cover sub-pixel gap */
+  vertical-align: bottom;
+  shape-rendering: crispEdges;
+}
+
+.wavev2-back { animation: waveDriftBack 16s ease-in-out infinite alternate; filter: blur(.2px); }
+.wavev2-front{ animation: waveDriftFront 10s ease-in-out infinite alternate; }
+@keyframes waveDriftBack{ 0%{transform:translateX(0)} 100%{transform:translateX(-20px)} }
+@keyframes waveDriftFront{ 0%{transform:translateX(0)} 100%{transform:translateX(28px)} }
+
+/* Media / image */
+.hero-img{
+  width:100%; height:auto; display:block;
+  background:#f4f6f8 !important;
+  border:none !important; border-radius:0 !important; box-shadow:none !important;
+  transition:transform .25s ease;
+}
+.media:hover .hero-img{ transform: translateY(-2px); }
+
+/* Headings + subtitle */
+@keyframes gradientTextPan{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.hello{margin:0 0 6px;color:#14b8a6;font-weight:800;font-size:clamp(18px,2.2vw,26px)}
+.wave{display:inline-block;transform-origin:75% 75%;animation:wave 1.7s ease-in-out infinite}
+.bd-slider-five-title{
+  margin:0; line-height:1.05; font-weight:800; font-size:clamp(42px,6vw,72px);
+  background:linear-gradient(90deg,#EF0454,#ff6ec7,#ffd86f,#42e695,#3bb2b8); background-size:500% 500%;
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  text-decoration:underline #EF0454 5%; text-underline-offset:10px;
+  animation:gradientTextPan 14s linear infinite;
+}
+.subtitle{
+  margin-top:clamp(10px,1.6vw,14px); font-size:clamp(16px,2.1vw,22px);
+  background:linear-gradient(90deg,#EF0454,#3bb2b8); background-size:300% 300%;
+  -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  animation:gradientTextPan 10s ease infinite;
+}
+
+/* Social + CTA */
+.soc{display:grid;place-items:center;width:42px;height:42px;border-radius:12px;background:#fff;color:#0f172a;font-weight:800;text-decoration:none;box-shadow:0 10px 18px rgba(0,0,0,.08);transition:transform .18s, box-shadow .18s}
+.soc:hover{transform:translateY(-3px);box-shadow:0 14px 24px rgba(0,0,0,.12)}
+.cta{border-radius:14px;box-shadow:0 16px 28px rgba(239,4,84,.30)!important}
+
+/* Entrance animations */
+.fade-in-left{opacity:0;transform:translateX(-24px);animation:inLeft .7s .1s both cubic-bezier(.2,.65,.3,1)}
+@keyframes inLeft{to{opacity:1;transform:translateX(0)}}
+.fade-in-stagger>*{opacity:0;transform:translateY(14px);animation:inUp .6s ease forwards}
+.fade-in-stagger>*:nth-child(1){animation-delay:.10s}
+.fade-in-stagger>*:nth-child(2){animation-delay:.20s}
+.fade-in-stagger>*:nth-child(3){animation-delay:.30s}
+.fade-in-stagger>*:nth-child(4){animation-delay:.40s}
+@keyframes inUp{to{opacity:1;transform:translateY(0)}}
+@keyframes wave{0%{transform:rotate(0)}25%{transform:rotate(16deg)}50%{transform:rotate(-6deg)}75%{transform:rotate(12deg)}100%{transform:rotate(0)}}
+
+/* Global background */
+html, body, app-root, section { background-color:#f4f6f8 !important; }
+
+/* Push only intro content down a bit */
+.hero .fade-in-stagger .intro-title,
+.hero .fade-in-stagger .hello,
+.hero .fade-in-stagger .subtitle,
+.hero .fade-in-stagger .social-nav,
+.hero .fade-in-stagger .cta {
+  position: relative;
+  top: 20px;
+}
+
+/* Responsive */
+@media (max-width:1200px){ :root{ --wave-h:140px; --intro-top:90px; } }
+@media (max-width: 992px){
+  :root{ --wave-h:120px; --intro-top:70px; }
+  .intro-wrap{ text-align:center; }
+  .social-nav .nav{ justify-content:center; }
+  .cta{ display:inline-block; }
+}
+@media (max-width:576px){
+  :root{ --wave-h:100px; --intro-top:48px; }
+  .bd-slider-five-title{ font-size:38px; }
+  .hello{ font-size:24px; }
+  .subtitle{ font-size:16px; }
 }
