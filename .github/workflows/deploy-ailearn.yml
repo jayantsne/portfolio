@@ -1,0 +1,116 @@
+name: Deploy AI Learn App to VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'angular-starter/**'
+      - 'enterprise-dotnet-api/**'
+      - '.github/workflows/deploy-ailearn.yml'
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  build-and-deploy:
+    name: Build and Deploy to VPS
+    runs-on: ubuntu-latest
+    
+    steps:
+      # ===== CHECKOUT CODE =====
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      # ===== BUILD FRONTEND =====
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: angular-starter/package-lock.json
+      
+      - name: 📦 Install frontend dependencies
+        working-directory: ./angular-starter
+        run: npm ci
+      
+      - name: 🏗️ Build Angular frontend
+        working-directory: ./angular-starter
+        run: npm run build -- --configuration production
+      
+      # ===== BUILD BACKEND =====
+      - name: 🔷 Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      
+      - name: 📦 Restore .NET dependencies
+        working-directory: ./enterprise-dotnet-api
+        run: dotnet restore AILearnAPI.sln
+      
+      - name: 🏗️ Build .NET API
+        working-directory: ./enterprise-dotnet-api
+        run: dotnet build AILearnAPI.sln --configuration Release --no-restore
+      
+      - name: 📦 Publish .NET API
+        working-directory: ./enterprise-dotnet-api
+        run: dotnet publish src/AILearnAPI.Api/AILearnAPI.Api.csproj -c Release -o ./publish
+      
+      # ===== DEPLOY TO VPS =====
+      - name: 🔑 Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+      
+      - name: 🚀 Deploy Frontend to VPS
+        run: |
+          echo "📤 Uploading frontend files..."
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./angular-starter/dist/angular-starter/ \
+            ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}:/var/www/learnwithai.tech/frontend/
+          echo "✅ Frontend deployed!"
+      
+      - name: 🚀 Deploy Backend to VPS
+        run: |
+          echo "📤 Uploading backend files..."
+          rsync -avz --delete \
+            -e "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no" \
+            ./enterprise-dotnet-api/publish/ \
+            ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}:/var/www/learnwithai.tech/backend/
+          echo "✅ Backend deployed!"
+      
+      - name: 🔄 Restart services on VPS
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no \
+            ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} << 'EOF'
+            echo "🔄 Restarting AI Learn API service..."
+            sudo systemctl restart ailearnapi
+            
+            echo "🔄 Reloading Nginx..."
+            sudo systemctl reload nginx
+            
+            echo ""
+            echo "✅ Deployment complete!"
+            echo ""
+            echo "🔍 Service status:"
+            sudo systemctl status ailearnapi --no-pager -l | head -15
+            
+            echo ""
+            echo "🌐 Site: https://learnwithai.tech"
+            echo "🔌 API: https://learnwithai.tech/api/health"
+          EOF
+      
+      - name: 🧹 Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
+      
+      - name: 📊 Deployment Summary
+        if: success()
+        run: |
+          echo "### 🎉 Deployment Successful!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Frontend:** https://learnwithai.tech" >> $GITHUB_STEP_SUMMARY
+          echo "**Backend API:** https://learnwithai.tech/api" >> $GITHUB_STEP_SUMMARY
+          echo "**Swagger:** https://learnwithai.tech/swagger" >> $GITHUB_STEP_SUMMARY
+          echo "**Health Check:** https://learnwithai.tech/api/health" >> $GITHUB_STEP_SUMMARY

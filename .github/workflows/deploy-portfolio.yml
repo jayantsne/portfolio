@@ -1,0 +1,54 @@
+name: Deploy Portfolio to Firebase
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'angular-starter/**'
+      - '.github/workflows/deploy-portfolio.yml'
+  workflow_dispatch:  # Allow manual triggers
+
+jobs:
+  deploy:
+    name: Deploy to Firebase Hosting
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+      
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+          cache-dependency-path: angular-starter/package-lock.json
+      
+      - name: 📦 Install dependencies
+        working-directory: ./angular-starter
+        run: npm ci
+      
+      - name: 🏗️ Build Angular app
+        working-directory: ./angular-starter
+        run: npm run build -- --configuration production
+      
+      - name: 🚀 Deploy to Firebase Hosting
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: '${{ secrets.GITHUB_TOKEN }}'
+          firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}'
+          channelId: live
+          projectId: myportfolioadmin
+          entryPoint: ./angular-starter
+      
+      - name: 📊 Deployment Summary
+        if: success()
+        run: |
+          echo "### 🎉 Portfolio Deployed Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Platform:** Firebase Hosting" >> $GITHUB_STEP_SUMMARY
+          echo "**Project:** myportfolioadmin" >> $GITHUB_STEP_SUMMARY
+          echo "**Site:** https://myportfolioadmin-d45bd.web.app" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Visit your site to verify the deployment." >> $GITHUB_STEP_SUMMARY

@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="980" height="740" viewBox="0 0 980 740" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Royal developer illustration">
+  <defs>
+    <linearGradient id="gAccent" x1="120" y1="40" x2="860" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#7C3AED" stop-opacity="0.95"/>
+      <stop offset="0.48" stop-color="#FBBF24" stop-opacity="0.75"/>
+      <stop offset="1" stop-color="#06B6D4" stop-opacity="0.90"/>
+    </linearGradient>
+
+    <linearGradient id="gGlass" x1="110" y1="120" x2="880" y2="680" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B1027" stop-opacity="0.78"/>
+      <stop offset="1" stop-color="#050712" stop-opacity="0.92"/>
+    </linearGradient>
+
+    <radialGradient id="glowA" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(260 220) rotate(38) scale(320 240)">
+      <stop stop-color="#7C3AED" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#7C3AED" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="glowB" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(730 250) rotate(-24) scale(340 260)">
+      <stop stop-color="#06B6D4" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#06B6D4" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="blur18" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="24" stdDeviation="24" flood-color="#000000" flood-opacity="0.35"/>
+    </filter>
+
+    <filter id="soft" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="2"/>
+    </filter>
+
+    <mask id="ringMask">
+      <rect width="980" height="740" fill="black"/>
+      <circle cx="490" cy="370" r="285" fill="white"/>
+      <circle cx="490" cy="370" r="255" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- soft floating group -->
+  <g filter="url(#shadow)">
+    <g>
+      <animateTransform attributeName="transform" type="translate" values="0 6; 0 -6; 0 6" dur="5.5s" repeatCount="indefinite"/>
+
+      <!-- ambient glows -->
+      <ellipse cx="280" cy="240" rx="320" ry="240" fill="url(#glowA)" filter="url(#blur18)"/>
+      <ellipse cx="720" cy="260" rx="340" ry="260" fill="url(#glowB)" filter="url(#blur18)"/>
+
+      <!-- outer ring -->
+      <g mask="url(#ringMask)">
+        <circle cx="490" cy="370" r="285" stroke="url(#gAccent)" stroke-opacity="0.25" stroke-width="22"/>
+      </g>
+
+      <!-- main glass terminal card -->
+      <rect x="140" y="165" width="700" height="410" rx="34" fill="url(#gGlass)" stroke="rgba(255,255,255,0.14)" stroke-width="1"/>
+
+      <!-- top bar -->
+      <rect x="140" y="165" width="700" height="62" rx="34" fill="rgba(255,255,255,0.05)"/>
+      <rect x="140" y="205" width="700" height="1" fill="rgba(255,255,255,0.10)"/>
+
+      <!-- dots -->
+      <circle cx="178" cy="196" r="6" fill="#7C3AED" fill-opacity="0.70"/>
+      <circle cx="200" cy="196" r="6" fill="#FBBF24" fill-opacity="0.78"/>
+      <circle cx="222" cy="196" r="6" fill="#06B6D4" fill-opacity="0.72"/>
+
+      <!-- title -->
+      <text x="490" y="202" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="18" font-weight="700" fill="rgba(241,245,249,0.80)">~/portfolio</text>
+
+      <!-- code highlight blocks -->
+      <g font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace" font-size="16" fill="rgba(241,245,249,0.88)">
+        <g>
+          <rect x="175" y="260" width="420" height="26" rx="8" fill="rgba(148,163,184,0.12)" stroke="rgba(255,255,255,0.06)"/>
+          <text x="188" y="279" fill="rgba(241,245,249,0.86)"><tspan fill="#06B6D4" fill-opacity="0.92">const</tspan> <tspan fill="#FBBF24" fill-opacity="0.92">profile</tspan> = {</text>
+        </g>
+
+        <g>
+          <rect x="175" y="295" width="520" height="26" rx="8" fill="rgba(148,163,184,0.12)" stroke="rgba(255,255,255,0.06)"/>
+          <text x="188" y="314">  name: <tspan fill="#7C3AED" fill-opacity="0.92">"Jayant Bhardwaj"</tspan>,</text>
+        </g>
+
+        <g>
+          <rect x="175" y="330" width="600" height="26" rx="8" fill="rgba(148,163,184,0.12)" stroke="rgba(255,255,255,0.06)"/>
+          <text x="188" y="349">  role: <tspan fill="#7C3AED" fill-opacity="0.92">"Software Engineering Manager"</tspan>,</text>
+        </g>
+
+        <g>
+          <rect x="175" y="365" width="470" height="26" rx="8" fill="rgba(148,163,184,0.12)" stroke="rgba(255,255,255,0.06)"/>
+          <text x="188" y="384">  company: <tspan fill="#7C3AED" fill-opacity="0.92">"PwC, India"</tspan>,</text>
+        </g>
+
+        <g>
+          <rect x="175" y="400" width="560" height="26" rx="8" fill="rgba(148,163,184,0.12)" stroke="rgba(255,255,255,0.06)"/>
+          <text x="188" y="419">  stack: [<tspan fill="#7C3AED" fill-opacity="0.92">"Angular"</tspan>, <tspan fill="#7C3AED" fill-opacity="0.92">"Node"</tspan>, <tspan fill="#7C3AED" fill-opacity="0.92">"Cloud"</tspan>]</text>
+        </g>
+
+        <g>
+          <rect x="175" y="435" width="110" height="26" rx="8" fill="rgba(148,163,184,0.12)" stroke="rgba(255,255,255,0.06)"/>
+          <text x="188" y="454">};</text>
+        </g>
+
+        <!-- blinking cursor block -->
+        <rect x="290" y="441" width="10" height="18" rx="3" fill="#FBBF24" fill-opacity="0.80">
+          <animate attributeName="opacity" values="1;1;0;0;1" dur="1.0s" repeatCount="indefinite"/>
+        </rect>
+      </g>
+
+      <!-- crown (royal dev) -->
+      <g transform="translate(690 132)" filter="url(#soft)">
+        <path d="M22 70H130C138 70 144 76 144 84C144 92 138 98 130 98H22C14 98 8 92 8 84C8 76 14 70 22 70Z" fill="rgba(251,191,36,0.22)"/>
+        <path d="M20 76L44 44L66 66L86 34L106 66L130 44L152 76" stroke="url(#gAccent)" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M24 78H148" stroke="rgba(255,255,255,0.18)" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="44" cy="44" r="8" fill="#FBBF24" fill-opacity="0.88"/>
+        <circle cx="86" cy="34" r="9" fill="#FBBF24" fill-opacity="0.92"/>
+        <circle cx="130" cy="44" r="8" fill="#FBBF24" fill-opacity="0.88"/>
+      </g>
+
+      <!-- subtle sheen sweep over the card -->
+      <g>
+        <clipPath id="cardClip">
+          <rect x="140" y="165" width="700" height="410" rx="34"/>
+        </clipPath>
+        <g clip-path="url(#cardClip)">
+          <rect x="-240" y="165" width="260" height="410" fill="rgba(255,255,255,0.10)" opacity="0.0"/>
+          <rect x="-240" y="165" width="260" height="410" fill="rgba(255,255,255,0.10)" opacity="0.18" transform="skewX(-18)">
+            <animate attributeName="x" values="-240; 1040" dur="3.0s" repeatCount="indefinite"/>
+          </rect>
+        </g>
+      </g>
+
+    </g>
+  </g>
+</svg>

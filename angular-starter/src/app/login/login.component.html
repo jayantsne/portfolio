@@ -1,0 +1,512 @@
+<div class="login-container">
+  
+  <!-- 3D Animated AI Background -->
+  <canvas id="ai-canvas" class="ai-background"></canvas>
+  
+  <!-- Animated Grid Background -->
+  <div class="grid-background"></div>
+  
+  <!-- Large Floating Orbs -->
+  <div class="floating-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+  
+  <!-- Enhanced AI Particles -->
+  <div class="ai-particles">
+    <div class="particle" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20]"></div>
+  </div>
+  
+  <!-- Neural Network Background -->
+  <div class="neural-network">
+    <div class="node" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10,11,12]" 
+         [style.top.%]="i * 8" 
+         [style.left.%]="i * 7.5"></div>
+  </div>
+
+  <!-- AI Scanner Overlay -->
+  <div class="ai-scanner-overlay" *ngIf="false && showAiScanner">
+    <div class="scanner-content">
+      <div class="scanner-hexagon">
+        <div class="hex-ring hex-ring-1"></div>
+        <div class="hex-ring hex-ring-2"></div>
+        <div class="hex-ring hex-ring-3"></div>
+        <div class="scanner-core">
+          <svg viewBox="0 0 100 100" class="scanner-icon">
+            <circle cx="50" cy="50" r="35" class="scan-circle" 
+                    [attr.stroke-dasharray]="scanProgress * 2.2 + ' 220'" />
+            <path d="M50 20 L50 35 M50 65 L50 80 M20 50 L35 50 M65 50 L80 50" 
+                  class="scan-crosshair" />
+          </svg>
+          <div class="scan-progress-text">{{ scanProgress }}%</div>
+        </div>
+      </div>
+      <div class="scanner-info">
+        <div class="scan-stage">{{ scanStage }}</div>
+        <div class="scan-indicators">
+          <div class="indicator" [class.active]="scanProgress >= 20">
+            <span class="indicator-dot"></span>
+            <span class="indicator-label">Initialize</span>
+          </div>
+          <div class="indicator" [class.active]="scanProgress >= 40">
+            <span class="indicator-dot"></span>
+            <span class="indicator-label">Biometric</span>
+          </div>
+          <div class="indicator" [class.active]="scanProgress >= 60">
+            <span class="indicator-dot"></span>
+            <span class="indicator-label">Neural</span>
+          </div>
+          <div class="indicator" [class.active]="scanProgress >= 80">
+            <span class="indicator-dot"></span>
+            <span class="indicator-label">Verify</span>
+          </div>
+        </div>
+      </div>
+      <div class="scan-lines">
+        <div class="scan-line-h" *ngFor="let i of [1,2,3,4,5]"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Voice Assistant Button -->
+  <button class="voice-assistant-btn" (click)="toggleVoiceAssistant()" title="AI Voice Assistant" style="display: none;">
+    <div class="voice-wave-container">
+      <div class="voice-wave voice-wave-1"></div>
+      <div class="voice-wave voice-wave-2"></div>
+      <div class="voice-wave voice-wave-3"></div>
+    </div>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+      <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+      <line x1="12" y1="19" x2="12" y2="23"></line>
+      <line x1="8" y1="23" x2="16" y2="23"></line>
+    </svg>
+  </button>
+
+  <!-- Voice Assistant Panel -->
+  <div class="voice-assistant-panel" *ngIf="false && showVoiceAssistant">
+    <div class="assistant-header">
+      <div class="assistant-avatar">
+        <div class="avatar-pulse"></div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+        </svg>
+      </div>
+      <div class="assistant-info">
+        <div class="assistant-name">AI Assistant</div>
+        <div class="assistant-status">Ready to help</div>
+      </div>
+      <button class="assistant-close" (click)="toggleVoiceAssistant()">×</button>
+    </div>
+    <div class="assistant-body">
+      <div class="assistant-message">
+        <div class="message-icon">🤖</div>
+        <div class="message-text">
+          Hello! I'm your AI assistant. I can help with voice authentication or answer questions about the system.
+        </div>
+      </div>
+      <div class="assistant-features">
+        <div class="feature-card" (click)="errorMessage = 'Voice login coming soon!'">
+          <div class="feature-icon">🎤</div>
+          <div class="feature-label">Voice Login</div>
+        </div>
+        <div class="feature-card" (click)="startFaceLogin()">
+          <div class="feature-icon">👤</div>
+          <div class="feature-label">Face ID</div>
+        </div>
+        <div class="feature-card" (click)="start2FA()">
+          <div class="feature-icon">🔒</div>
+          <div class="feature-label">2FA Setup</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Face Login Interface -->
+  <div class="face-login-overlay" *ngIf="showFaceLogin">
+    <div class="face-login-content">
+      <div class="face-login-header">
+        <h2>{{ faceEnrollmentMode ? 'Enroll Your Face' : 'Face Recognition' }}</h2>
+        <button class="face-close-btn" (click)="cancelFaceLogin()">×</button>
+      </div>
+      
+      <!-- Enrollment Instructions -->
+      <div class="enrollment-notice" *ngIf="faceEnrollmentMode">
+        <div class="notice-icon">👤</div>
+        <div class="notice-text">
+          <strong>First Time Setup</strong>
+          <p>Position your face in the frame to enroll. This will be used to recognize you in future logins.</p>
+        </div>
+      </div>
+      
+      <div class="face-video-container">
+        <video id="face-video" autoplay playsinline></video>
+        
+        <!-- Face Detection Frame -->
+        <div class="face-frame" [class.detected]="faceDetected">
+          <div class="frame-corner frame-corner-tl"></div>
+          <div class="frame-corner frame-corner-tr"></div>
+          <div class="frame-corner frame-corner-bl"></div>
+          <div class="frame-corner frame-corner-br"></div>
+          
+          <!-- Face Scan Lines -->
+          <div class="face-scan-line" *ngIf="faceDetected && faceMatching"></div>
+        </div>
+        
+        <!-- Face Detection Status -->
+        <div class="face-status">
+          <div class="status-indicator" [class.active]="faceDetected">
+            <span class="status-dot"></span>
+            <span class="status-text">{{ faceDetected ? 'Face Detected' : 'Looking for face...' }}</span>
+          </div>
+        </div>
+        
+        <!-- Face Match Progress -->
+        <div class="face-match-progress" *ngIf="faceMatching">
+          <div class="progress-bar-container">
+            <div class="progress-bar-fill" [style.width.%]="faceMatchProgress"></div>
+          </div>
+          <div class="progress-text">
+            <span>Verifying Identity</span>
+            <span>{{ faceMatchProgress }}%</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="face-login-footer">
+        <div class="face-instructions">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+          <span>{{ faceEnrollmentMode ? 'Position your face to enroll' : 'Position your face to login' }}</span>
+        </div>
+        <button class="reset-face-btn" *ngIf="!faceEnrollmentMode" (click)="resetFaceEnrollment()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="23 4 23 10 17 10"></polyline>
+            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+          </svg>
+          Reset Enrolled Face
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2FA Interface -->
+  <div class="twofa-overlay" *ngIf="show2FA">
+    <div class="twofa-content">
+      <div class="twofa-header">
+        <div class="twofa-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            <path d="M9 12l2 2 4-4"></path>
+          </svg>
+        </div>
+        <h2>{{ twoFASetupMode ? 'Setup 2FA Authentication' : 'Enter Authentication Code' }}</h2>
+        <p class="twofa-subtitle">
+          {{ twoFASetupMode ? 'Scan QR code and enter the 6-digit code' : 'Enter the 6-digit code from your authenticator app' }}
+        </p>
+        <button class="twofa-close-btn" (click)="cancel2FA()">×</button>
+      </div>
+
+      <!-- QR Code Section (Setup Mode Only) -->
+      <div class="twofa-qr-section" *ngIf="twoFASetupMode">
+        <div class="qr-container">
+          <img [src]="get2FAQRCode()" alt="QR Code" class="qr-code">
+          <div class="qr-overlay" *ngIf="twoFAVerifying">
+            <div class="qr-checkmark">✓</div>
+          </div>
+        </div>
+        <div class="qr-instructions">
+          <div class="instruction-step">
+            <span class="step-number">1</span>
+            <span class="step-text">Open Google Authenticator or similar app</span>
+          </div>
+          <div class="instruction-step">
+            <span class="step-number">2</span>
+            <span class="step-text">Scan the QR code above</span>
+          </div>
+          <div class="instruction-step">
+            <span class="step-number">3</span>
+            <span class="step-text">Enter the 6-digit code below</span>
+          </div>
+        </div>
+        <div class="secret-key">
+          <span class="secret-label">Manual Entry Key:</span>
+          <span class="secret-value">{{ twoFASecret }}</span>
+        </div>
+      </div>
+
+      <!-- Code Input Section -->
+      <div class="twofa-body">
+        <div class="code-input-container">
+          <input
+            *ngFor="let digit of twoFACode; let i = index"
+            type="text"
+            maxlength="1"
+            class="code-input"
+            [value]="digit"
+            (input)="onCodeInput(i, $event)"
+            (keydown)="onCodeKeyDown(i, $event)"
+            (paste)="i === 0 ? onCodePaste($event) : null"
+            [disabled]="twoFAVerifying"
+            pattern="[0-9]"
+            inputmode="numeric"
+          />
+        </div>
+
+        <!-- Verification Status -->
+        <div class="verification-status" *ngIf="twoFAVerifying">
+          <div class="verification-spinner">
+            <div class="spinner-ring"></div>
+            <div class="spinner-ring"></div>
+          </div>
+          <span class="verification-text">Verifying code...</span>
+        </div>
+
+        <!-- Error Message -->
+        <div class="twofa-error" *ngIf="twoFAError">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+          <span>{{ twoFAError }}</span>
+        </div>
+
+        <!-- Helper Text -->
+        <div class="twofa-helper">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span>Enter the 6-digit code from your authenticator app. For demo, use: <strong>123456</strong></span>
+        </div>
+      </div>
+
+      <!-- Backup Codes (Setup Mode) -->
+      <div class="backup-codes" *ngIf="twoFASetupMode && !twoFAVerifying">
+        <div class="backup-header">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="12" y1="18" x2="12" y2="12"></line>
+            <line x1="9" y1="15" x2="15" y2="15"></line>
+          </svg>
+          <span>Backup Recovery Codes</span>
+        </div>
+        <div class="backup-codes-grid">
+          <div class="backup-code">1A2B-3C4D</div>
+          <div class="backup-code">5E6F-7G8H</div>
+          <div class="backup-code">9I0J-1K2L</div>
+          <div class="backup-code">3M4N-5O6P</div>
+        </div>
+        <p class="backup-warning">⚠️ Save these codes securely. Each can only be used once.</p>
+      </div>
+    </div>
+  </div>
+  
+  <div class="login-backdrop" (click)="navigateHome()"></div>
+  
+  <div class="login-slide-panel">
+    <!-- Animated Header with Holographic Effect -->
+    <div class="login-header">
+      <button class="close-btn" (click)="navigateHome()" title="Close">
+        <span class="close-icon"></span>
+      </button>
+      
+      <div class="logo-section">
+        <div class="holographic-circle">
+          <div class="circle-inner"></div>
+          <div class="circle-glow"></div>
+        </div>
+        
+        <div class="ai-icon-container">
+          <svg class="ai-brain" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+            <path class="brain-path" d="M50,20 Q70,20 75,40 Q80,60 70,70 Q60,80 50,80 Q40,80 30,70 Q20,60 25,40 Q30,20 50,20" />
+            <circle class="neuron" cx="50" cy="35" r="3" />
+            <circle class="neuron" cx="40" cy="50" r="3" />
+            <circle class="neuron" cx="60" cy="50" r="3" />
+            <circle class="neuron" cx="50" cy="65" r="3" />
+          </svg>
+        </div>
+        
+        <h1 class="glitch-text" data-text="AI Admin Portal">AI Admin Portal</h1>
+        <p class="subtitle">
+          <span class="typing-text">Secure Neural Access</span>
+          <span class="cursor-blink">|</span>
+        </p>
+        
+        <div class="scan-line"></div>
+      </div>
+    </div>
+
+    <div class="login-body">
+      <form (submit)="login(); $event.preventDefault()" class="login-form">
+        <!-- Username Field with Floating Label -->
+        <div class="form-group floating-label">
+          <div class="input-container">
+            <div class="input-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+            </div>
+            <input
+              id="username"
+              type="text"
+              [(ngModel)]="username"
+              name="username"
+              placeholder=" "
+              autocomplete="username"
+              [disabled]="isLoading"
+              required
+              class="futuristic-input"
+            />
+            <label for="username" class="floating-label-text">Username</label>
+            <div class="input-border"></div>
+          </div>
+        </div>
+
+        <!-- Password Field with Floating Label -->
+        <div class="form-group floating-label">
+          <div class="input-container">
+            <div class="input-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <input
+              id="password"
+              [type]="showPassword ? 'text' : 'password'"
+              [(ngModel)]="password"
+              name="password"
+              placeholder=" "
+              autocomplete="current-password"
+              [disabled]="isLoading"
+              required
+              class="futuristic-input"
+            />
+            <label for="password" class="floating-label-text">Password</label>
+            <button
+              type="button"
+              class="toggle-password-btn"
+              (click)="togglePasswordVisibility()"
+              [disabled]="isLoading"
+              title="Toggle password visibility"
+            >
+              <svg *ngIf="!showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+              </svg>
+              <svg *ngIf="showPassword" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                <line x1="1" y1="1" x2="23" y2="23"></line>
+              </svg>
+            </button>
+            <div class="input-border"></div>
+          </div>
+        </div>
+
+        <!-- Error Message with Animation -->
+        <div class="error-message" *ngIf="errorMessage">
+          <div class="error-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+          <span>{{ errorMessage }}</span>
+        </div>
+
+
+        <!-- Alternative Authentication Methods - Simplified -->
+        <div class="auth-options-container" *ngIf="(authSettings?.faceIdEnabled !== false) || (authSettings?.twoFactorEnabled !== false) || (authSettings?.biometricEnabled !== false) || (authSettings?.emailAuthEnabled !== false)">
+          <div class="auth-divider-line"></div>
+          <span class="auth-divider-text">Quick Access</span>
+          <div class="auth-divider-line"></div>
+        </div>
+
+        <div class="quick-auth-grid icons-only">
+          <!-- Quick auth icon-only buttons (Face ID, 2FA, Biometric) driven by DB `authSettings` -->
+          <button 
+            type="button" 
+            class="quick-auth-btn" 
+            (click)="startFaceLogin()"
+            *ngIf="authSettings?.faceIdEnabled"
+            title="Face ID">
+            <div class="quick-auth-icon">👤</div>
+            <span class="sr-only">FACE ID</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="quick-auth-btn" 
+            (click)="start2FA()"
+            *ngIf="authSettings?.twoFactorEnabled"
+            title="Two-Factor">
+            <div class="quick-auth-icon">🔑</div>
+            <span class="sr-only">2FA</span>
+          </button>
+
+          <button 
+            type="button" 
+            class="quick-auth-btn" 
+            (click)="startBiometricAuth()"
+            *ngIf="authSettings?.biometricEnabled"
+            title="Fingerprint">
+            <div class="quick-auth-icon">🔐</div>
+            <span class="sr-only">Fingerprint</span>
+          </button>
+        </div>
+
+        <!-- Futuristic Login Button -->
+        <button
+          type="submit"
+          class="login-btn"
+          [disabled]="isLoading || !username || !password"
+        >
+          <span class="btn-bg"></span>
+          <span class="btn-content" *ngIf="!isLoading">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path>
+              <polyline points="10 17 15 12 10 7"></polyline>
+              <line x1="15" y1="12" x2="3" y2="12"></line>
+            </svg>
+            <span class="btn-text">Access System</span>
+          </span>
+          <span class="btn-content loading" *ngIf="isLoading">
+            <div class="quantum-spinner">
+              <div class="spinner-ring"></div>
+              <div class="spinner-ring"></div>
+              <div class="spinner-ring"></div>
+            </div>
+            <span class="btn-text">Authenticating...</span>
+          </span>
+          <div class="btn-glow"></div>
+        </button>
+
+        
+      </form>
+
+      <!-- Footer with Security Badge -->
+      <div class="login-footer">
+        <div class="security-badge">
+          <div class="badge-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+          </div>
+          <div class="badge-content">
+            <span class="badge-title">Secured by AI</span>
+            <span class="badge-subtitle">256-bit Encryption</span>
+          </div>
+          <div class="pulse-dot"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

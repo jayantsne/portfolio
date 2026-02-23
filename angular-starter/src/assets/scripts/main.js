@@ -31,16 +31,19 @@
    */
  
   window.onscroll = () => {
-    if (window.scrollY > 0) {
-      navbar.classList.add('fixed-top', 'shadow-sm')
-      body.style.paddingTop = navbar.offsetHeight + "px"
-      scrollTop.style.visibility = "visible";
-      scrollTop.style.opacity = 1;
-    } else {
-      navbar.classList.remove('fixed-top', 'shadow-sm')
-      body.style.paddingTop = "0px"
-      scrollTop.style.visibility = "hidden";
-      scrollTop.style.opacity = 0;
+    // This project uses an Angular fixed header; avoid toggling Bootstrap's fixed-top
+    // on #header-nav (it can cause flicker/disappear with smooth-scroll containers).
+    const scrollRoot = document.getElementById('my-scrollbar');
+    const y = scrollRoot ? (scrollRoot.scrollTop || 0) : (window.scrollY || 0);
+
+    if (scrollTop) {
+      if (y > 0) {
+        scrollTop.style.visibility = "visible";
+        scrollTop.style.opacity = 1;
+      } else {
+        scrollTop.style.visibility = "hidden";
+        scrollTop.style.opacity = 0;
+      }
     }
   };
 

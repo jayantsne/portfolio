@@ -1,0 +1,40 @@
+/* Services (coder vibe) */
+#services .row.py-3 > div {
+	position: relative;
+	border-radius: 20px;
+	padding: 22px 14px;
+	background: var(--glass);
+	border: 1px solid rgba(15, 23, 42, 0.06);
+	backdrop-filter: blur(var(--glass-blur));
+	-webkit-backdrop-filter: blur(var(--glass-blur));
+	box-shadow: 0 24px 60px rgba(0,0,0,.10);
+	overflow: hidden;
+	transition: transform 220ms var(--ease-out), box-shadow 220ms var(--ease-out);
+}
+
+#services .row.py-3 > div::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background: linear-gradient(180deg, rgba(255,255,255,0), rgba(255,255,255,.35), rgba(255,255,255,0));
+	transform: translateY(-120%);
+	opacity: .35;
+	transition: transform 500ms var(--ease-out);
+}
+
+@media (hover: hover) {
+	#services .row.py-3 > div:hover {
+		transform: translateY(-6px);
+		box-shadow: 0 34px 80px rgba(0,0,0,.14);
+	}
+
+	#services .row.py-3 > div:hover::after {
+		transform: translateY(120%);
+	}
+}
+
+#services .h5 {
+	font-weight: 900;
+}
+

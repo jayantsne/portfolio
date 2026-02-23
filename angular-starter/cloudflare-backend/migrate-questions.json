@@ -1,0 +1,10 @@
+[
+  {
+    "key": "question:1",
+    "value": "{\"id\":1,\"question\":\"What is Angular?\",\"answer\":\"Angular is a TypeScript-based open-source web application framework led by the Angular Team at Google. It provides a comprehensive solution for building modern web applications with features like dependency injection, two-way data binding, routing, and more.\",\"category\":\"Angular\",\"tags\":[\"framework\",\"basics\"],\"difficulty\":\"beginner\"}"
+  },
+  {
+    "key": "question:2",
+    "value": "{\"id\":2,\"question\":\"What is the difference between .NET Framework and .NET Core?\",\"answer\":\".NET Framework is Windows-only and has been around since 2002. .NET Core (now just .NET 5+) is cross-platform (Windows, Linux, macOS), open-source, and optimized for modern cloud-based applications. .NET Core has better performance, supports side-by-side versioning, and is the future of the .NET platform.\",\"category\":\".NET Core\",\"tags\":[\"dotnet\",\"framework\",\"cross-platform\"],\"difficulty\":\"intermediate\"}"
+  }
+]

@@ -1,82 +1,218 @@
-<div class="section px-2 px-lg-4 pt-5" id="portfolio">
+<div class="section coder-section px-2 px-lg-4 pt-5" id="portfolio" appRevealOnScroll>
     <div class="container">
       <div class="text-center mb-5">
-        <h2 class="marker marker-center">Portfolio </h2>
+        <span class="coder-kicker d-block">Projects</span>
+        <h2 class="coder-title marker marker-center">Portfolio</h2>
+        
+        <!-- AI Action Buttons -->
+        <div class="ai-action-buttons">
+          <button class="ai-toggle-btn" (click)="toggleAIPanel()">
+            <span class="btn-icon">🤖</span>
+            <span>AI Portfolio Insights</span>
+          </button>
+          <button class="ai-chat-btn" (click)="toggleAIChat()">
+            <span class="btn-icon">💬</span>
+            <span>Ask AI Assistant</span>
+          </button>
+        </div>
       </div>
-      <div class="grid bp-gallery pb-3" >
+
+      <!-- AI Panel -->
+      <div class="ai-portfolio-panel" *ngIf="showAIPanel">
+        <div class="ai-panel-header">
+          <div class="header-content">
+            <span class="header-icon">🎯</span>
+            <h3>AI Portfolio Intelligence</h3>
+          </div>
+          <button class="close-btn" (click)="toggleAIPanel()">✕</button>
+        </div>
+
+        <div class="ai-panel-content">
+          <!-- AI Recommendations -->
+          <div class="ai-card recommendations-card" *ngIf="aiRecommendations.length > 0">
+            <h4><span class="card-icon">✨</span> Personalized Recommendations</h4>
+            <div class="recommendations-grid">
+              <div class="recommendation-item" *ngFor="let rec of aiRecommendations" [class]="'priority-' + rec.priority">
+                <div class="rec-header">
+                  <span class="rec-icon">{{ rec.icon }}</span>
+                  <span class="rec-type">{{ rec.type }}</span>
+                </div>
+                <h5>{{ rec.title }}</h5>
+                <p>{{ rec.description }}</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Role-Based Recommendations -->
+          <div class="ai-card">
+            <h4><span class="card-icon">👔</span> Smart Project Filter by Role</h4>
+            <p class="ai-subtitle">Filter projects by career path to see relevant work</p>
+            <div class="role-selector">
+              <button 
+                *ngFor="let role of ['all', 'frontend', 'backend', 'fullstack', 'designer', 'mobile']"
+                [class.active]="selectedRole === role"
+                (click)="setRole(role)"
+                class="role-btn">
+                <span class="role-text">{{ role }}</span>
+              </button>
+            </div>
+            <div class="recommendation-result" *ngIf="selectedRole !== 'all'">
+              <div class="result-badge">
+                <strong>{{ getRecommendedProjects().length }}</strong> projects
+              </div>
+              <span class="result-text">recommended for <strong>{{ selectedRole }}</strong> role</span>
+            </div>
+          </div>
+
+          <!-- Tech Stack Analysis -->
+          <div class="ai-card">
+            <h4><span class="card-icon">💻</span> Technology Stack Analysis</h4>
+            <p class="ai-subtitle">Market demand and usage across your portfolio</p>
+            <div class="tech-analysis">
+              <div class="tech-item" *ngFor="let tech of getTechStackAnalysis()">
+                <div class="tech-header">
+                  <span class="tech-name">{{ tech.tech }}</span>
+                  <span class="tech-trend">{{ tech.trend }}</span>
+                </div>
+                <div class="tech-meta">
+                  <span class="tech-count">{{ tech.count }} project{{ tech.count > 1 ? 's' : '' }}</span>
+                  <div class="tech-bar">
+                    <div class="tech-bar-fill" [style.width.%]="(tech.count / projects.length) * 100"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Portfolio Optimization -->
+          <div class="ai-card optimization-card">
+            <h4><span class="card-icon">💡</span> AI-Powered Optimization Tips</h4>
+            <ul class="suggestions-list">
+              <li *ngFor="let suggestion of getOptimizationSuggestions()">
+                <span class="suggestion-icon">•</span>
+                <span>{{ suggestion }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- AI Analysis Toggle -->
+          <div class="ai-card toggle-card">
+            <div class="analysis-toggle">
+              <input type="checkbox" id="aiToggle" [(ngModel)]="aiAnalysisActive" (change)="toggleAIAnalysis()">
+              <label for="aiToggle">
+                <span class="toggle-icon">{{ aiAnalysisActive ? '✅' : '⚪' }}</span>
+                <span class="toggle-text">Show AI insights on project cards (complexity, demand, predictions)</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Chat Assistant -->
+      <div class="ai-chat-container" *ngIf="showAIChat">
+        <div class="ai-chat-header">
+          <div class="chat-header-content">
+            <span class="chat-avatar">🤖</span>
+            <div>
+              <h4>AI Portfolio Assistant</h4>
+              <span class="chat-status">● Online</span>
+            </div>
+          </div>
+          <button class="close-btn" (click)="toggleAIChat()">✕</button>
+        </div>
+        <div class="ai-chat-messages">
+          <div class="chat-message" *ngFor="let msg of aiChatMessages" [class]="'message-' + msg.role">
+            <div class="message-avatar">{{ msg.role === 'ai' ? '🤖' : '👤' }}</div>
+            <div class="message-content">
+              <div class="message-text">{{ msg.message }}</div>
+            </div>
+          </div>
+        </div>
+        <div class="ai-chat-input">
+          <input 
+            type="text" 
+            [(ngModel)]="userMessage" 
+            (keyup.enter)="sendChatMessage()"
+            placeholder="Ask about technologies, career advice, improvements..."
+            class="chat-input-field">
+          <button class="chat-send-btn" (click)="sendChatMessage()" [disabled]="!userMessage.trim()">
+            <span>Send</span>
+            <span class="send-icon">📤</span>
+          </button>
+        </div>
+        <div class="ai-chat-suggestions">
+          <span class="suggestion-label">Quick questions:</span>
+          <button class="quick-question" (click)="userMessage = 'What technologies should I learn?'; sendChatMessage()">Tech recommendations</button>
+          <button class="quick-question" (click)="userMessage = 'Which career path suits me?'; sendChatMessage()">Career guidance</button>
+          <button class="quick-question" (click)="userMessage = 'How to improve my portfolio?'; sendChatMessage()">Portfolio tips</button>
+        </div>
+      </div>
+
+      <div class="grid bp-gallery pb-3">
         <div class="grid-sizer"></div>
-        <div class="grid-item"><a href="https://dribbble.com">
-            <figure class="portfolio-item"><img src="../../assets/images/portfolio/1-small.png"
-                data-bp="../../assets/images/portfolio/1.jpg" />
+        <div class="grid-item" *ngFor="let project of getFilteredProjects()">
+          <a [href]="project.link">
+            <figure class="portfolio-item">
+              <img [src]="project.imageSmall" [attr.data-bp]="project.imageLarge" />
+              
+              <!-- AI Badges -->
+              <div class="ai-badges" *ngIf="aiAnalysisActive">
+                <!-- Impact Score -->
+                <div class="badge impact-badge" *ngIf="project.impactScore">
+                  <span class="badge-value">{{ project.impactScore }}</span>
+                  <span class="badge-label">Impact</span>
+                </div>
+                
+                <!-- Market Demand -->
+                <div class="badge demand-badge" *ngIf="project.marketDemand">
+                  <span class="badge-value">{{ project.marketDemand }}%</span>
+                  <span class="badge-label">Demand</span>
+                </div>
+                
+                <!-- Complexity Level -->
+                <div class="badge complexity-badge" *ngIf="project.complexity">
+                  <span class="badge-label">{{ project.complexity }}</span>
+                </div>
+              </div>
+
               <figcaption>
-                <h4 class="h5 mb-0">Web Design</h4>
-                <div>Dribbble.com</div>
+                <h4 class="h5 mb-0">{{ project.title }}</h4>
+                <div class="project-description">{{ project.description }}</div>
+                
+                <!-- Technologies -->
+                <div class="tech-tags" *ngIf="aiAnalysisActive">
+                  <span class="tech-tag" *ngFor="let tech of project.technologies">{{ tech }}</span>
+                </div>
+
+                <!-- Experience Level -->
+                <div class="experience-level" *ngIf="aiAnalysisActive && project.yearLevel">
+                  <span class="level-icon">🎓</span>
+                  <span class="level-text">{{ project.yearLevel }}</span>
+                </div>
+
+                <!-- AI Insights -->
+                <div class="ai-insights" *ngIf="aiAnalysisActive && project.aiInsights && project.aiInsights.length > 0">
+                  <div class="insights-header">AI Insights:</div>
+                  <div class="insight" *ngFor="let insight of project.aiInsights">{{ insight }}</div>
+                </div>
+
+                <!-- Similar Projects -->
+                <div class="similar-projects" *ngIf="aiAnalysisActive && project.similarProjects && project.similarProjects.length > 0">
+                  <span class="similar-label">🔗 Related:</span>
+                  <span class="similar-count">{{ project.similarProjects.length }} similar project(s)</span>
+                </div>
+
+                <!-- Engagement Prediction -->
+                <div class="engagement-prediction" *ngIf="aiAnalysisActive">
+                  <span class="engagement-label">Predicted Interest:</span>
+                  <span class="engagement-value" [class]="'engagement-' + getPredictedEngagement(project).label.toLowerCase()">
+                    {{ getPredictedEngagement(project).label }}
+                  </span>
+                </div>
               </figcaption>
             </figure>
-          </a></div>
-        <div class="grid-item"><a href="https://github.com">
-            <figure class="portfolio-item"><img src="../../assets/images/portfolio/2-small.png"
-                data-bp="../../assets/images/portfolio/2.jpg" data-caption="Example of an optional caption." />
-              <figcaption>
-                <h4 class="h5 mb-0">Web Development</h4>
-                <div>GitHub.com</div>
-              </figcaption>
-            </figure>
-          </a></div>
-        <div class="grid-item"><a href="https://soundcloud.com/">
-            <figure class="portfolio-item"><img src="../../assets/images/portfolio/3-small.png"
-                data-bp="../../assets/images/portfolio/3.jpg" data-caption="Example of an optional caption." />
-              <figcaption>
-                <h4 class="h5 mb-0">Audio Mixing</h4>
-                <div>Soundcloud.com</div>
-              </figcaption>
-            </figure>
-          </a></div>
-        <div class="grid-item"><a href="https://www.adobe.com/">
-            <figure class="portfolio-item"><img src="../../assets/images/portfolio/4-small.png"
-                data-bp="../../assets/images/portfolio/4.jpg" />
-              <figcaption>
-                <h4 class="h5 mb-0">Video Editing</h4>
-                <div>Adobe After Effects</div>
-              </figcaption>
-            </figure>
-          </a></div>
-        <div class="grid-item"><a href="https://www.adobe.com/">
-            <figure class="portfolio-item"><img src="../../assets/images/portfolio/5-small.png"
-                data-bp="../../assets/images/portfolio/5.jpg" />
-              <figcaption>
-                <h4 class="h5 mb-0">Photography</h4>
-                <div>Adobe Photoshop</div>
-              </figcaption>
-            </figure>
-          </a></div>
-        <div class="grid-item"><a href="https://www.android.com/">
-            <figure class="portfolio-item"><img src="../../assets/images/portfolio/6-small.png"
-                data-bp="../../assets/images/portfolio/6.jpg" />
-              <figcaption>
-                <h4 class="h5 mb-0">App Development</h4>
-                <div>Android</div>
-              </figcaption>
-            </figure>
-          </a></div>
-        <div class="grid-item"><a href="https://flutter.dev/">
-            <figure class="portfolio-item"><img src="../../assets/images/portfolio/7-small.png"
-                data-bp="../../assets/images/portfolio/7.jpg" />
-              <figcaption>
-                <h4 class="h5 mb-0">App Design</h4>
-                <div>Flutter</div>
-              </figcaption>
-            </figure>
-          </a></div>
-        <div class="grid-item"><a href="https://flutter.dev/">
-            <figure class="portfolio-item"><img src="../../assets/images/portfolio/8-small.png"
-                data-bp="../../assets/images/portfolio/8.jpg" />
-              <figcaption>
-                <h4 class="h5 mb-0">App Development</h4>
-                <div>Flutter</div>
-              </figcaption>
-            </figure>
-          </a></div>
+          </a>
+        </div>
       </div>
     </div>
   </div>

@@ -1,84 +1,101 @@
-<div class="section px-3 px-lg-4 pt-5" id="experience">
-    <div class="container-narrow">
-      <div class="text-center mb-5">
-        <h2 class="marker marker-center">Experience</h2>
+<section class="experience-section coder-section" id="experience" appRevealOnScroll>
+  <div class="binary-stream" aria-hidden="true">
+    <span class="bit-col" style="--x: 8%;  --dur: 11s; --delay: -2.2s;">01010100101101001011010100101010</span>
+    <span class="bit-col" style="--x: 18%; --dur: 9s;  --delay: -6.1s;">10100101101001011010100101101001</span>
+    <span class="bit-col" style="--x: 32%; --dur: 13s; --delay: -3.4s;">01011010010110100101101001011010</span>
+    <span class="bit-col" style="--x: 46%; --dur: 10s; --delay: -8.0s;">10101001011010010110100101101001</span>
+    <span class="bit-col" style="--x: 58%; --dur: 12s; --delay: -1.7s;">01010110100101101001011010010110</span>
+    <span class="bit-col" style="--x: 70%; --dur: 9.5s;--delay: -5.2s;">10100101101001011010100101101010</span>
+    <span class="bit-col" style="--x: 82%; --dur: 14s; --delay: -9.3s;">01011010010110100101101001011010</span>
+    <span class="bit-col" style="--x: 92%; --dur: 11.5s;--delay: -4.6s;">10101001011010010110100101101001</span>
+    <span class="bit-col" style="--x: 12%; --dur: 15s; --delay: -10.1s;">01011010010110100101101001011010</span>
+    <span class="bit-col" style="--x: 26%; --dur: 12.5s;--delay: -7.8s;">10101001011010010110100101101001</span>
+    <span class="bit-col" style="--x: 64%; --dur: 16s; --delay: -11.4s;">01010110100101101001011010010110</span>
+    <span class="bit-col" style="--x: 88%; --dur: 13.5s;--delay: -6.7s;">10100101101001011010100101101010</span>
+  </div>
+  <div class="container">
+
+    <!-- HEADER -->
+    <div class="experience-header">
+      <span class="coder-kicker">Timeline</span>
+      <h2 class="experience-title coder-title marker">Experience</h2>
+      <p class="experience-subtitle">
+        Professional roles and responsibilities I’ve worked on.
+      </p>
+    </div>
+
+    <!-- TIMELINE -->
+    <div class="experience-list">
+
+      <!-- Progress line -->
+      <div class="timeline-line"></div>
+      <div class="timeline-progress" #progressLine></div>
+
+      <!-- EXPERIENCE CARD -->
+      <div
+        class="experience-card"
+        *ngFor="let exp of experiences; let i = index"
+        #cards
+        [class.active]="activeIndex === i"
+        [class.left]="i % 2 === 0"
+        [class.right]="i % 2 !== 0"
+        [style.animationDelay]="i * 120 + 'ms'"
+      >
+        <div class="section-icon" aria-hidden="true">&lt;/&gt;</div>
+
+        <!-- DOT -->
+        <div class="experience-dot"></div>
+
+        <!-- CARD -->
+        <div class="experience-content">
+
+          <!-- STICKY YEAR -->
+          <div class="year-label">
+            {{ exp.duration }}
+          </div>
+
+          <!-- COMPANY -->
+          <div class="company-row">
+            <div class="logo-wrap">
+              <img
+                class="company-logo"
+                [src]="'assets/images/companies/' + exp.logo"
+                [alt]="exp.company"
+              />
+            </div>
+
+            <div>
+              <h3 class="role">{{ exp.role }}</h3>
+              <span class="company">
+                {{ exp.company }} • {{ exp.location }}
+              </span>
+            </div>
+          </div>
+
+          <!-- DESCRIPTION -->
+          <p class="description">{{ exp.description }}</p>
+
+          <!-- TECH -->
+          <ul class="tech-list">
+            <li *ngFor="let tech of exp.tech">{{ tech }}</li>
+          </ul>
+
+          <!-- EXPAND -->
+          <button
+            class="expand-btn"
+            (click)="exp.expanded = !exp.expanded"
+            [attr.aria-expanded]="exp.expanded"
+          >
+            {{ exp.expanded ? 'Hide responsibilities' : 'View responsibilities' }}
+          </button>
+
+          <ul class="responsibility-list" *ngIf="exp.expanded">
+            <li *ngFor="let r of exp.responsibilities">{{ r }}</li>
+          </ul>
+
+        </div>
       </div>
-      <div class="row">
-        <div class="col-md-6">
-          <div class="card mb-3" data-aos="fade-right" data-aos-delay="100">
-            <div class="card-header px-3 py-2">
-              <div class="d-flex justify-content-between">
-                <div>
-                  <h3 class="h5 mb-1">Application Development - Senior Analyst</h3>
-                  <div class="text-muted text-small">Accenture India. <small>(2021-present)</small></div>
-                </div><img src="../../assets/images/Accenture.svg" width="22%" height="70" alt="ui-ux" />
-              </div>
-            </div>
-            <div class="card-body px-3 py-2">
-              <p>Leverage agile frameworks to provide a robust synopsis for high level overviews. Iterative approaches
-                to corporate strategy foster collaborative thinking to further the overall value proposition.</p>
-              <p>Organically grow the holistic world view of disruptive innovation via workplace diversity and
-                empowerment.</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card mb-3" data-aos="fade-left" data-aos-delay="300">
-            <div class="card-header px-3 py-2">
-              <div class="d-flex justify-content-between">
-                <div>
-                  <h3 class="h5 mb-1">Sr. Software Developer</h3>
-                  <div class="text-muted text-small">Q3 Technologies. <small>(2019-2021)</small></div>
-                </div><img src="../../assets/images/Q3Logo.png" width="41%" height="1%"
-                  alt="app development" />
-              </div>
-            </div>
-            <div class="card-body px-3 py-2">
-              <p>Leverage agile frameworks to provide a robust synopsis for high level overviews. Iterative approaches
-                to corporate strategy foster collaborative thinking to further the overall value proposition.</p>
-              <p>Organically grow the holistic world view of disruptive innovation via workplace diversity and
-                empowerment.</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card mb-3" data-aos="fade-right" data-aos-delay="200">
-            <div class="card-header px-3 py-2">
-              <div class="d-flex justify-content-between">
-                <div>
-                  <h3 class="h5 mb-1">Software Developer</h3>
-                  <div class="text-muted text-small">DotSquares technologies. <small>(2017-2019)</small></div>
-                </div><img src="../../assets/images/Dots.png" width="35%" height="1%"
-                  alt="web design" />
-              </div>
-            </div>
-            <div class="card-body px-3 py-2">
-              <p>Leverage agile frameworks to provide a robust synopsis for high level overviews. Iterative approaches
-                to corporate strategy foster collaborative thinking to further the overall value proposition.</p>
-              <p>Organically grow the holistic world view of disruptive innovation via workplace diversity and
-                empowerment.</p>
-            </div>
-          </div>
-        </div>
-        <div class="col-md-6">
-          <div class="card mb-3" data-aos="fade-left" data-aos-delay="400">
-            <div class="card-header px-3 py-2">
-              <div class="d-flex justify-content-between">
-                <div>
-                  <h3 class="h5 mb-1">Software Developer</h3>
-                  <div class="text-muted text-small">Anand Rathi. <small>(2015-2017)</small></div>
-                </div><img src="../../assets/images/Arit.png" width="35%" height="1%"
-                  alt="full stack" />
-              </div>
-            </div>
-            <div class="card-body px-3 py-2">
-              <p>Leverage agile frameworks to provide a robust synopsis for high level overviews. Iterative approaches
-                to corporate strategy foster collaborative thinking to further the overall value proposition.</p>
-              <p>Organically grow the holistic world view of disruptive innovation via workplace diversity and
-                empowerment.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
   </div>
+</section>

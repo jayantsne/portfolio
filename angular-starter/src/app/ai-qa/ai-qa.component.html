@@ -1,0 +1,183 @@
+<div class="ai-qa-container">
+  <!-- Hero Header -->
+  <div class="hero-header">
+    <div class="hero-content">
+      <div class="hero-icon">🤖</div>
+      <h1 class="hero-title">AI Learning Assistant</h1>
+      <p class="hero-subtitle">Ask any programming question and get comprehensive, real-world answers with examples!</p>
+      <div class="stats-bar" *ngIf="savedQAs.length > 0">
+        <div class="stat-badge">
+          <span class="stat-number">{{ savedQAs.length }}</span>
+          <span class="stat-label">Saved Q&As</span>
+        </div>
+      </div>
+    </div>
+    <div class="hero-decoration"></div>
+  </div>
+
+  <!-- Main Q&A Section -->
+  <div class="main-section">
+    <div class="qa-card">
+      <div class="card-header">
+        <div class="header-icon">💬</div>
+        <div>
+          <h2>Ask Your Question</h2>
+          <p class="header-subtitle">Get detailed technical explanations with real code examples</p>
+        </div>
+      </div>
+
+      <!-- Question Input -->
+      <div class="question-input-section">
+        <label class="input-label">
+          <span class="label-text">Your Question</span>
+          <span class="label-required">*</span>
+        </label>
+        <div class="input-wrapper">
+          <textarea 
+            [(ngModel)]="currentQuestion"
+            placeholder="Example: What is Angular? How do APIs work? Explain TypeScript with examples..."
+            class="question-input"
+            rows="4"
+            (keydown.ctrl.enter)="getAnswer()"
+          ></textarea>
+        </div>
+        <div class="input-footer">
+          <div class="input-hint">
+            <span class="hint-icon">💡</span>
+            <span>Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> for quick answer</span>
+          </div>
+          <div class="char-count">{{ currentQuestion.length }} characters</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button 
+          class="btn btn-primary btn-get-answer" 
+          (click)="getAnswer()"
+          [disabled]="!currentQuestion.trim() || isGenerating"
+          [class.loading]="isGenerating">
+          <span *ngIf="!isGenerating" class="btn-content">
+            <span class="btn-icon">🚀</span>
+            <span>Get Answer</span>
+          </span>
+          <span *ngIf="isGenerating" class="loading-text">
+            <span class="spinner"></span>
+            <span>Generating Answer...</span>
+          </span>
+        </button>
+        <button 
+          class="btn btn-secondary" 
+          (click)="clearForm()"
+          [disabled]="!currentQuestion && !generatedAnswer">
+          <span class="btn-icon">🔄</span>
+          <span>Clear</span>
+        </button>
+      </div>
+
+      <!-- Generated Answer Section -->
+      <div class="answer-section" *ngIf="generatedAnswer">
+        <div class="answer-header">
+          <div class="answer-title">
+            <span class="title-icon">✨</span>
+            <h3>Your Answer</h3>
+          </div>
+          <button 
+            class="btn btn-save" 
+            (click)="saveQA()"
+            [class.saved]="showSaved"
+            [disabled]="showSaved">
+            <span *ngIf="!showSaved" class="btn-content">
+              <span class="btn-icon">💾</span>
+              <span>Save for Later</span>
+            </span>
+            <span *ngIf="showSaved" class="btn-content">
+              <span class="btn-icon">✅</span>
+              <span>Saved!</span>
+            </span>
+          </button>
+        </div>
+        <div class="answer-content-wrapper">
+          <div class="answer-content" [innerHTML]="generatedAnswer | markdown"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saved Q&As Library Section -->
+  <div class="library-section" *ngIf="savedQAs.length > 0">
+    <div class="library-header">
+      <div class="header-left">
+        <span class="header-icon">📚</span>
+        <div>
+          <h2>AI-Powered Q&A Library</h2>
+          <p class="library-subtitle">{{ savedQAs.length }} saved answer{{ savedQAs.length !== 1 ? 's' : '' }} in your personal knowledge base</p>
+        </div>
+      </div>
+      <button class="btn btn-export" (click)="exportToJSON()">
+        <span class="btn-icon">📥</span>
+        <span>Export All</span>
+      </button>
+    </div>
+
+    <div class="library-grid">
+      <article class="library-card" *ngFor="let qa of savedQAs; let i = index" appRevealOnScroll>
+        <div class="card-number">#{{ savedQAs.length - i }}</div>
+        
+        <div class="card-header-section">
+          <div class="card-meta-top">
+            <span class="category-badge" [class]="'category-' + qa.category?.toLowerCase()">
+              {{ qa.category }}
+            </span>
+            <span class="timestamp">
+              <span class="time-icon">🕐</span>
+              {{ getFormattedDate(qa.timestamp) }}
+            </span>
+          </div>
+          <button class="btn-delete" (click)="deleteQA(qa.id)" title="Delete this Q&A">
+            <span class="delete-icon">🗑️</span>
+            <span class="delete-text">Delete</span>
+          </button>
+        </div>
+        
+        <div class="card-question">
+          <div class="question-badge">
+            <span class="badge-icon">Q</span>
+          </div>
+          <h3>{{ qa.question }}</h3>
+        </div>
+        
+        <div class="card-answer">
+          <div class="answer-badge">
+            <span class="badge-icon">A</span>
+          </div>
+          <div class="answer-preview" [innerHTML]="qa.answer | markdown"></div>
+        </div>
+
+        <div class="card-footer">
+          <button class="btn-view-full" (click)="expandCard(qa.id)">
+            <span class="view-icon">👁️</span>
+            <span>View Full Answer</span>
+          </button>
+        </div>
+      </article>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="savedQAs.length === 0 && !generatedAnswer">
+    <div class="empty-illustration">
+      <div class="empty-icon">📖</div>
+      <div class="empty-sparkles">✨</div>
+    </div>
+    <h3>Start Your Learning Journey</h3>
+    <p>Ask technical questions and save answers to build your personal knowledge library!</p>
+    <div class="quick-questions">
+      <p class="quick-title">Try asking:</p>
+      <button class="quick-btn" (click)="setQuestion('What is Angular?')">What is Angular?</button>
+      <button class="quick-btn" (click)="setQuestion('How do REST APIs work?')">How do REST APIs work?</button>
+      <button class="quick-btn" (click)="setQuestion('Explain TypeScript')">Explain TypeScript</button>
+    </div>
+  </div>
+</div>
+

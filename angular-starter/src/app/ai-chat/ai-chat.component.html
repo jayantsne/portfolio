@@ -1,0 +1,51 @@
+<!-- Floating Button -->
+<button class="chat-toggle"  (click)="toggleChat()">💬</button>
+
+<!-- Chat Box -->
+<div
+  class="chat-box"
+  [class.open]="isOpen"
+  [class.mobile]="isMobile"
+  *ngIf="isOpen"
+>
+  <!-- Header -->
+  <div class="chat-header">
+    <span>Ask AI about my work</span>
+    <div class="chat-actions">
+      <button class="icon-btn" (click)="toggleChat()">✕</button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="chat-body" #chatBody>
+    <div
+      *ngFor="let msg of messages"
+      class="message"
+      [ngClass]="msg.role"
+    >
+      {{ msg.text }}
+    </div>
+
+    <!-- Typing dots -->
+    <div class="typing" *ngIf="typing">
+      <span></span><span></span><span></span>
+    </div>
+
+    <!-- Suggestions -->
+    <div class="suggestions" *ngIf="showSuggestions">
+      <button (click)="quickAsk('Tell me about your skills')">Skills</button>
+      <button (click)="quickAsk('What projects have you worked on?')">Projects</button>
+      <button (click)="quickAsk('Describe your experience')">Experience</button>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="chat-footer">
+    <input
+      [(ngModel)]="input"
+      placeholder="Ask about my work..."
+      (keydown.enter)="send()"
+    />
+    <button (click)="send()">Send</button>
+  </div>
+</div>

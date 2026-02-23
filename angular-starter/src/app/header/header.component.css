@@ -1,135 +1,700 @@
-/* ===== FULL HEADER CSS WITH FONT STYLE ANIMATION ===== */
+/* Uses global theme variables from src/styles.css */
 
-/* Fixed header at top */
+/* Header */
 .site-header {
-  --progress: 0;             /* updated from TS */
-  --h1: calc(330 + var(--progress) * 120);  /* hue 1 */
-  --h2: calc( 40 + var(--progress) * 160);  /* hue 2 */
-
   position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 1000;
-
-  /* Transparent over hero; frosted when scrolled */
-  background: transparent;
-  transition:
-    background-color .28s ease,
-    box-shadow .28s ease,
-    padding .25s ease,
-    backdrop-filter .28s ease;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Above all sections; below splash (2000) and modals (9999) */
+  z-index: 1500;
+  overflow: visible;
+  isolation: isolate;
+  transform: translateZ(0);
+  will-change: transform;
+  backface-visibility: hidden;
+  background: rgba(2, 6, 23, 0.52);
+  backdrop-filter: blur(var(--glass-blur, 16px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 16px));
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow:
+    0 10px 34px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+  transition: all 0.35s ease;
 }
 
-/* Frosted + tinted background when scrolled */
-.site-header.scrolled {
+.site-header .navbar,
+.site-header .navbar-collapse,
+.site-header .container {
+  overflow: visible !important;
+}
+
+.site-header::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
   background:
-    linear-gradient(90deg,
-      hsla(var(--h1), 85%, 60%, .18),
-      hsla(var(--h2), 85%, 60%, .18))
-    , rgba(255,255,255,.75);
-  backdrop-filter: saturate(1.2) blur(10px);
-  -webkit-backdrop-filter: saturate(1.2) blur(10px);
-  box-shadow: 0 10px 26px rgba(0,0,0,0.06);
+    radial-gradient(520px 220px at 18% 0%, rgba(var(--accent-rgb), .18), rgba(var(--accent-rgb), 0) 70%),
+    radial-gradient(540px 240px at 86% 0%, rgba(var(--teal-rgb), .14), rgba(var(--teal-rgb), 0) 70%);
+  opacity: .9;
 }
 
-/* Progress bar at top driven by --progress */
+.site-header::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--accent-rgb), 0),
+    rgba(var(--accent-rgb), .55),
+    rgba(var(--highlight-rgb), .55),
+    rgba(var(--accent-rgb), 0)
+  );
+  opacity: .7;
+  pointer-events: none;
+}
+
+.site-header.scrolled {
+  background: var(--glass-dark, rgba(2, 6, 23, 0.78));
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.44),
+    0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.10);
+}
+
+/* Scroll progress bar */
 .scrollbar {
   position: absolute;
-  left: 0; top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   height: 3px;
-  width: calc(var(--progress) * 100%);
-  background:
-    linear-gradient(90deg,
-      hsl(var(--h1), 90%, 60%),
-      hsl(var(--h2), 90%, 60%));
-  transition: width .08s linear;
-  box-shadow: 0 1px 6px rgba(0,0,0,.15);
+  pointer-events: none;
+  border-radius: 999px;
+  transform-origin: 0 50%;
+  transform: scaleX(var(--progress, 0));
+  background: linear-gradient(90deg, var(--accent), var(--highlight), rgba(var(--teal-rgb), .92), var(--accent));
+  background-size: 220% 100%;
+  animation: progressFlow 3.6s linear infinite;
+  transition: transform 120ms linear, height 220ms ease;
+  box-shadow:
+    0 0 0 1px rgba(var(--accent-rgb), 0.10),
+    0 10px 22px rgba(var(--accent-rgb), 0.12);
 }
 
-/* Navbar sizing + shrink on scroll */
-#header-nav {
-  padding-block: 18px;
-  transition: padding .25s ease;
-  background: transparent !important;
+.scrollbar::after {
+  content: "";
+  position: absolute;
+  inset: -2px 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,.70), rgba(255,255,255,0));
+  transform: translateX(-140%);
+  opacity: 0.55;
+  mix-blend-mode: overlay;
+  animation: progressSheen 1.8s ease-in-out infinite;
 }
-.site-header.scrolled #header-nav { padding-block: 10px; }
 
-/* ===== Fallback text (always visible) ===== */
+.site-header.scrolled .scrollbar {
+  height: 4px;
+}
+
+@keyframes progressFlow {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 100% 50%; }
+}
+
+@keyframes progressSheen {
+  0% { transform: translateX(-140%); }
+  100% { transform: translateX(140%); }
+}
+
+/* Dark theme is the default */
+
+/* Brand */
 .brand {
+  font-size: 24px;
   font-weight: 800;
-  letter-spacing: .2px;
-  color: #111827; /* fallback */
-  transition: transform .25s ease, color .25s ease;
+  color: var(--accent);
+  letter-spacing: 0.4px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
 }
-.site-header.scrolled .brand {
-  transform: scale(.94);
-  color: #111827; /* fallback on scroll */
+
+.brand-stack {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.05;
+  gap: 4px;
+}
+
+.brand-text {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
+  line-height: 1;
+  font-size: clamp(22px, 2.4vw, 30px);
+  color: var(--accent);
+  text-shadow: 0 10px 26px rgba(var(--accent-rgb), 0.14);
+}
+
+.brand-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.30);
+
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-size: 12px;
+  letter-spacing: 0.2px;
+  color: rgba(226, 232, 240, 0.84);
+
+  opacity: 0;
+  transform: translateY(4px);
+  animation: metaIn 520ms var(--ease-out, ease) 120ms forwards;
+}
+
+.meta-prompt {
+  color: rgba(var(--accent-rgb), 0.95);
+  font-weight: 900;
+}
+
+.meta-text {
+  white-space: nowrap;
+}
+
+.meta-caret {
+  width: 8px;
+  height: 14px;
+  border-radius: 2px;
+  background: rgba(var(--accent-rgb), 0.75);
+  animation: caretBlink 900ms steps(1) infinite;
+}
+
+@keyframes metaIn {
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 520px) {
+  .brand-meta {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scrollbar { animation: none; }
+  .scrollbar::after { animation: none; }
+  .brand-meta { animation: none; opacity: 1; transform: none; }
+}
+
+.brand-text .brand-name {
+  position: relative;
+  display: inline-block;
+  color: var(--accent);
+}
+
+.brand-text .brand-caret {
+  display: inline-block;
+  width: 2px;
+  height: 0.95em;
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), 0.85);
+  box-shadow: 0 10px 22px rgba(var(--accent-rgb), 0.14);
+  transform: translateY(2px);
+  animation: caretBlink 1s step-end infinite;
+}
+
+.brand-text .brand-name::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -6px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(var(--accent-rgb), 0.15),
+    rgba(var(--accent-rgb), 0.95),
+    rgba(var(--highlight-rgb), 0.90),
+    rgba(var(--accent-rgb), 0.15)
+  );
+  background-size: 200% 100%;
+  opacity: 0.75;
+  transform-origin: 50% 50%;
+  animation: brandUnderline 3.8s ease-in-out infinite;
+}
+
+.brand-badge {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--highlight));
+  box-shadow: 0 0 0 0 var(--accent-soft);
+  animation: pulseBadge 1600ms var(--ease-out, ease) infinite;
+}
+
+.brand::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -8px;
+  width: 28px;
+  height: 3px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--highlight));
+}
+
+@keyframes pulseBadge {
+  0% { transform: translateY(0) scale(1); box-shadow: 0 0 0 0 var(--accent-soft); }
+  55% { transform: translateY(-1px) scale(1.06); box-shadow: 0 0 0 10px rgba(var(--accent-rgb), 0); }
+  100% { transform: translateY(0) scale(1); box-shadow: 0 0 0 0 rgba(var(--accent-rgb), 0); }
+}
+
+@keyframes caretBlink {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0; }
+}
+
+@keyframes brandUnderline {
+  0% {
+    background-position: 0% 50%;
+    transform: scaleX(0.85);
+  }
+  50% {
+    background-position: 100% 50%;
+    transform: scaleX(1);
+  }
+  100% {
+    background-position: 0% 50%;
+    transform: scaleX(0.85);
+  }
+}
+
+/* Navigation */
+.nav-item {
+  position: relative;
+  perspective: 600px;
+}
+
+/* Bootstrap can override .nav-link color via .navbar-nav/.navbar-* selectors.
+   Use higher specificity to keep menu items visible on the dark/glass header. */
+.site-header .navbar .navbar-nav .nav-link {
+  color: rgba(241, 245, 249, 0.88);
+  text-shadow: 0 8px 20px rgba(0,0,0,.22);
+}
+
+.site-header .navbar .navbar-nav .nav-link:hover {
+  color: rgba(var(--accent-rgb), 0.98);
+}
+
+.site-header .navbar .navbar-nav .nav-link.active {
+  color: #ffffff;
 }
 
 .nav-link {
   font-weight: 600;
-  color: #111827; /* fallback */
-  margin-inline: .5rem;
-  transition: color .25s ease, letter-spacing .25s ease;
-}
-.nav-link:hover { letter-spacing: .2px; }
-
-/* ===== Animated gradient text (font style only) ===== */
-@keyframes gradientTextPan {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+  color: var(--text-main);
+  margin-left: 22px;
+  position: relative;
+  padding: 6px 2px;
+  transition: color 0.25s ease, transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease;
+  will-change: transform;
 }
 
-@supports (-webkit-background-clip: text) or (background-clip: text) {
-  .brand {
-    background: linear-gradient(
-      -45deg,
-      hsl(var(--h1), 95%, 60%),
-      hsl(var(--h2), 95%, 60%),
-      hsl(calc(var(--h1) + 60), 95%, 60%),
-      hsl(calc(var(--h2) + 60), 95%, 60%)
-    );
-    background-size: 300% 300%;
-    -webkit-background-clip: text;
-            background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradientTextPan 12s ease-in-out infinite;
+.nav-link:focus-visible {
+  outline: 2px solid rgba(var(--accent-rgb), 0.35);
+  outline-offset: 3px;
+  border-radius: 10px;
+}
+
+.nav-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -6px;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--highlight));
+  transition: width 0.35s ease, left 0.35s ease;
+}
+
+.nav-link:hover {
+  color: var(--accent);
+  transform: translateY(-2px);
+  text-shadow: 0 10px 22px rgba(0,0,0,.22);
+}
+
+.nav-link:hover::after,
+.nav-link.active::after {
+  width: 100%;
+  left: 0;
+}
+
+.nav-link.active {
+  background:
+    radial-gradient(140px 90px at 25% 50%, rgba(var(--accent-rgb), .22), rgba(var(--accent-rgb), 0) 70%),
+    linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04));
+  color: #ffffff;
+  border-radius: 18px;
+  padding: 6px 14px;
+  box-shadow:
+    0 12px 22px rgba(0,0,0,.22),
+    0 0 0 1px rgba(255, 255, 255, 0.16) inset;
+}
+
+.nav-link.active::before {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  transform: translateY(-50%);
+  border-radius: 999px;
+  background: rgba(255,255,255,.95);
+  box-shadow: 0 0 0 6px rgba(255,255,255,.0);
+}
+
+.navbar-toggler {
+  color: rgba(241, 245, 249, 0.92);
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 8px 10px;
+  box-shadow:
+    0 14px 30px rgba(0, 0, 0, 0.35),
+    0 0 0 1px rgba(var(--accent-rgb), 0.10) inset;
+  backdrop-filter: blur(var(--glass-blur, 16px));
+  -webkit-backdrop-filter: blur(var(--glass-blur, 16px));
+  position: relative;
+  overflow: hidden;
+}
+
+/* Royal gradient border (no extra markup) */
+.navbar-toggler::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(90deg, rgba(var(--accent-rgb), .95), rgba(var(--highlight-rgb), .92));
+
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+
+  opacity: 0.35;
+  pointer-events: none;
+}
+
+.navbar-toggler::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(var(--accent-rgb), .28), transparent 60%),
+    radial-gradient(circle at 70% 30%, rgba(var(--highlight-rgb), .20), transparent 60%);
+  filter: blur(14px);
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.navbar-toggler:focus {
+  box-shadow: 0 0 0 0.2rem rgba(var(--accent-rgb), 0.18);
+}
+
+.navbar-toggler:focus-visible::before {
+  opacity: 0.75;
+}
+
+/* Ensure hamburger icon is always visible (Bootstrap can hide it depending on navbar-dark/light) */
+.navbar-toggler-icon {
+  width: 1.25em;
+  height: 1.25em;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  background-position: center;
+  /* Inline SVG gradient to guarantee visibility across Bootstrap variants */
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cdefs%3e%3clinearGradient id='g' x1='4' y1='0' x2='26' y2='0' gradientUnits='userSpaceOnUse'%3e%3cstop stop-color='%237c3aed'/%3e%3cstop offset='1' stop-color='%23fbbf24'/%3e%3c/linearGradient%3e%3c/defs%3e%3cpath stroke='url(%23g)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2.6' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+}
+
+@media (hover: hover) {
+  .navbar-toggler:hover {
+    transform: translateY(-1px);
+    border-color: rgba(var(--accent-rgb), 0.32);
+    box-shadow:
+      0 18px 44px rgba(0, 0, 0, 0.45),
+      0 0 0 1px rgba(var(--accent-rgb), 0.16) inset;
   }
 
-  .site-header.scrolled .brand {
-    transform: scale(.94);
-    /* gradient stays active */
-  }
+  .navbar-toggler:hover::before { opacity: 0.7; }
+  .navbar-toggler:hover::after { opacity: 0.38; }
+}
+
+/* Collapse menu polish */
+.navbar {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+@media (max-width: 991.98px) {
+  .brand-text { font-size: 22px; }
 
   .nav-link {
-    background: linear-gradient(
-      90deg,
-      hsl(var(--h1), 90%, 50%),
-      hsl(var(--h2), 90%, 50%)
-    );
-    background-size: 250% 250%;
-    -webkit-background-clip: text;
-            background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: gradientTextPan 16s linear infinite;
+    margin-left: 0;
+    padding: 10px 12px;
+    border-radius: 12px;
   }
 
-  .nav-link:hover {
-    letter-spacing: .2px;
-    animation-duration: 10s;
+  .navbar-collapse {
+    margin-top: 10px;
+    padding: 10px 6px;
+    border-radius: 14px;
+    background:
+      radial-gradient(520px 260px at 18% 0%, rgba(var(--accent-rgb), .14), transparent 70%),
+      radial-gradient(520px 260px at 86% 0%, rgba(var(--teal-rgb), .12), transparent 72%),
+      rgba(2, 6, 23, 0.76);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(var(--glass-blur, 16px));
+    -webkit-backdrop-filter: blur(var(--glass-blur, 16px));
+    box-shadow: 0 34px 80px rgba(0,0,0,.48);
   }
 }
 
-/* Optional: lighter fallback text if hero background is dark */
-.site-header:not(.scrolled) .brand,
-.site-header:not(.scrolled) .nav-link {
-  color: #0f172a; /* change to #fff if your hero is dark */
+@media (max-width: 420px) {
+  .brand-text { font-size: 20px; }
 }
 
-/* Spacer so content doesn't jump under fixed header */
-.header-spacer { height: var(--header-h, 72px); }
-
-/* Accessibility */
 @media (prefers-reduced-motion: reduce) {
-  * { transition: none !important; animation: none !important; }
+  .brand-text .brand-name::after { animation: none; }
+  .brand-text .brand-caret { animation: none; opacity: 1; }
 }
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header {
+    animation: none;
+    transition: none;
+  }
+  .nav-link {
+    transition: none;
+  }
+}
+
+/* AI Link Special Styling */
+.ai-link {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2)) !important;
+  border: 2px solid rgba(102, 126, 234, 0.4) !important;
+  border-radius: 20px !important;
+  padding: 8px 16px !important;
+  font-weight: 800 !important;
+  transition: all 0.3s ease !important;
+}
+
+.ai-link:hover {
+  background: linear-gradient(135deg, #667eea, #764ba2) !important;
+  border-color: #667eea !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Logout Button Styling */
+.logout-btn {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(220, 38, 38, 0.2)) !important;
+  border: 2px solid rgba(255, 107, 107, 0.4) !important;
+  border-radius: 20px !important;
+  padding: 8px 16px !important;
+  font-weight: 700 !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.logout-btn:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.4), rgba(220, 38, 38, 0.4)) !important;
+  border-color: rgba(255, 107, 107, 0.6) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(255, 107, 107, 0.4) !important;
+}
+
+/* Admin Dropdown Menu */
+.dropdown-toggle::after {
+  margin-left: 6px;
+  vertical-align: middle;
+}
+
+.nav-item.dropdown {
+  position: relative !important;
+}
+
+.navbar-nav .dropdown-menu {
+  background: rgba(2, 6, 23, 0.98) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 2px solid rgba(102, 126, 234, 0.5) !important;
+  border-radius: 16px !important;
+  padding: 12px 0 !important;
+  margin-top: 8px !important;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.8),
+    0 0 0 1px rgba(0, 242, 254, 0.3),
+    inset 0 0 30px rgba(102, 126, 234, 0.15) !important;
+  min-width: 240px !important;
+  z-index: 10000 !important;
+  position: absolute !important;
+  top: 100% !important;
+  right: 0 !important;
+  left: auto !important;
+  display: none;
+}
+
+.navbar-nav .dropdown-menu.show {
+  display: block !important;
+  animation: dropdownFadeIn 0.3s ease;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdown-item {
+  padding: 12px 20px !important;
+  color: #fff !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  border-radius: 12px !important;
+  margin: 4px 8px !important;
+  cursor: pointer !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  background: transparent !important;
+}
+
+.dropdown-item:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(0, 242, 254, 0.2)) !important;
+  transform: translateX(4px) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4) !important;
+  color: #fff !important;
+}
+
+.dropdown-item:focus,
+.dropdown-item:active {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(0, 242, 254, 0.2)) !important;
+  color: #fff !important;
+  outline: none !important;
+}
+
+/* Authentication Options Dropdown */
+.auth-options-link {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.15), rgba(102, 126, 234, 0.15)) !important;
+  border: 2px solid rgba(0, 242, 254, 0.3) !important;
+  border-radius: 20px !important;
+  padding: 8px 16px !important;
+  font-weight: 700 !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+}
+
+.auth-options-link:hover {
+  background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(102, 126, 234, 0.25)) !important;
+  border-color: rgba(0, 242, 254, 0.5) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 8px 20px rgba(0, 242, 254, 0.3) !important;
+}
+
+.auth-dropdown {
+  background: rgba(2, 6, 23, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 2px solid rgba(102, 126, 234, 0.3) !important;
+  border-radius: 16px !important;
+  padding: 12px 0 !important;
+  margin-top: 12px !important;
+  box-shadow: 
+    0 20px 60px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(0, 242, 254, 0.2),
+    inset 0 0 30px rgba(102, 126, 234, 0.1) !important;
+  min-width: 280px !important;
+}
+
+.auth-dropdown .dropdown-item {
+  padding: 14px 20px !important;
+  color: #fff !important;
+  transition: all 0.3s ease !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  border-radius: 12px !important;
+  margin: 4px 8px !important;
+  cursor: pointer !important;
+}
+
+.auth-dropdown .dropdown-item:hover {
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(0, 242, 254, 0.15)) !important;
+  transform: translateX(4px) !important;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3) !important;
+}
+
+.auth-dropdown .dropdown-item .auth-icon {
+  font-size: 24px !important;
+  flex-shrink: 0 !important;
+  width: 32px !important;
+  text-align: center !important;
+}
+
+.auth-dropdown .dropdown-item .auth-text {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.auth-dropdown .dropdown-item .auth-text strong {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #fff !important;
+  text-shadow: 0 0 10px rgba(102, 126, 234, 0.3) !important;
+}
+
+.auth-dropdown .dropdown-item .auth-text small {
+  font-size: 12px !important;
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-weight: 400 !important;
+}
+
+.auth-dropdown .dropdown-divider {
+  border-color: rgba(102, 126, 234, 0.3) !important;
+  margin: 8px 12px !important;
+}
+
+.auth-dropdown .logout-item:hover {
+  background: linear-gradient(135deg, rgba(255, 107, 107, 0.2), rgba(220, 38, 38, 0.15)) !important;
+}
+
+.auth-dropdown .logout-item:hover .auth-text strong {
+  color: #ff6b6b !important;
+  text-shadow: 0 0 10px rgba(255, 107, 107, 0.3) !important;
+}
+

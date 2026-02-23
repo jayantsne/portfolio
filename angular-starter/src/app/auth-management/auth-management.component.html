@@ -1,0 +1,184 @@
+<div class="auth-container">
+  <div class="auth-header">
+    <div class="auth-icon-header">🔐</div>
+    <h1>Authentication Management</h1>
+    <p class="subtitle">Control authentication methods available in your application</p>
+  </div>
+
+  <div class="info-banner">
+    <div class="info-icon">ℹ️</div>
+    <div class="info-content">
+      <strong>Settings Control:</strong> These settings control which authentication methods are available in the Auth Options dropdown in the navbar. Changes take effect immediately and are stored locally.
+    </div>
+  </div>
+
+  <div class="auth-grid">
+    <!-- Face ID Authentication -->
+    <div class="auth-card" [class.enabled]="authSettings.faceIdEnabled" [class.disabled]="!authSettings.faceIdEnabled">
+      <div class="auth-card-header">
+        <div class="auth-icon-large">👤</div>
+        <div class="auth-status-badge" [class.active]="authSettings.faceIdEnabled">
+          {{ authSettings.faceIdEnabled ? 'ENABLED' : 'DISABLED' }}
+        </div>
+      </div>
+      <div class="auth-card-body">
+        <h3>Face ID Authentication</h3>
+        <p>Allow users to login using facial recognition through their device camera.</p>
+        <ul class="auth-features">
+          <li>🎯 Biometric verification</li>
+          <li>📸 Camera-based enrollment</li>
+          <li>🔒 Secure face data storage</li>
+        </ul>
+      </div>
+      <div class="auth-card-footer">
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="authSettings.faceIdEnabled" (change)="saveAuthSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">{{ authSettings.faceIdEnabled ? 'Enabled' : 'Disabled' }}</span>
+      </div>
+    </div>
+
+    <!-- Two-Factor Authentication -->
+    <div class="auth-card" [class.enabled]="authSettings.twoFactorEnabled" [class.disabled]="!authSettings.twoFactorEnabled">
+      <div class="auth-card-header">
+        <div class="auth-icon-large">🔑</div>
+        <div class="auth-status-badge" [class.active]="authSettings.twoFactorEnabled">
+          {{ authSettings.twoFactorEnabled ? 'ENABLED' : 'DISABLED' }}
+        </div>
+      </div>
+      <div class="auth-card-body">
+        <h3>Two-Factor Authentication (2FA)</h3>
+        <p>Add an extra layer of security with time-based one-time passwords.</p>
+        <ul class="auth-features">
+          <li>🔐 TOTP verification</li>
+          <li>📱 Authenticator app support</li>
+          <li>💾 Backup recovery codes</li>
+        </ul>
+      </div>
+      <div class="auth-card-footer">
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="authSettings.twoFactorEnabled" (change)="saveAuthSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">{{ authSettings.twoFactorEnabled ? 'Enabled' : 'Disabled' }}</span>
+      </div>
+    </div>
+
+    <!-- Voice Login -->
+    <div class="auth-card" [class.enabled]="authSettings.voiceLoginEnabled" [class.disabled]="!authSettings.voiceLoginEnabled">
+      <div class="auth-card-header">
+        <div class="auth-icon-large">🎤</div>
+        <div class="auth-status-badge" [class.active]="authSettings.voiceLoginEnabled">
+          {{ authSettings.voiceLoginEnabled ? 'ENABLED' : 'DISABLED' }}
+        </div>
+        <span class="coming-soon-tag">COMING SOON</span>
+      </div>
+      <div class="auth-card-body">
+        <h3>Voice Authentication</h3>
+        <p>Enable voice biometric authentication for hands-free login experience.</p>
+        <ul class="auth-features">
+          <li>🔊 Voice biometric analysis</li>
+          <li>🎙️ Microphone-based auth</li>
+          <li>🧠 AI-powered recognition</li>
+        </ul>
+      </div>
+      <div class="auth-card-footer">
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="authSettings.voiceLoginEnabled" (change)="saveAuthSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">{{ authSettings.voiceLoginEnabled ? 'Enabled' : 'Disabled' }}</span>
+      </div>
+    </div>
+
+    <!-- Biometric -->
+    <div class="auth-card" [class.enabled]="authSettings.biometricEnabled" [class.disabled]="!authSettings.biometricEnabled">
+      <div class="auth-card-header">
+        <div class="auth-icon-large">👆</div>
+        <div class="auth-status-badge" [class.active]="authSettings.biometricEnabled">
+          {{ authSettings.biometricEnabled ? 'ENABLED' : 'DISABLED' }}
+        </div>
+      </div>
+      <div class="auth-card-body">
+        <h3>Biometric Authentication</h3>
+        <p>Support fingerprint, Touch ID, and Face ID on compatible devices.</p>
+        <ul class="auth-features">
+          <li>👆 Fingerprint scanning</li>
+          <li>📱 Device biometric APIs</li>
+          <li>⚡ Quick authentication</li>
+        </ul>
+      </div>
+      <div class="auth-card-footer">
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="authSettings.biometricEnabled" (change)="saveAuthSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">{{ authSettings.biometricEnabled ? 'Enabled' : 'Disabled' }}</span>
+      </div>
+    </div>
+
+    <!-- SMS Authentication -->
+    <div class="auth-card" [class.enabled]="authSettings.smsAuthEnabled" [class.disabled]="!authSettings.smsAuthEnabled">
+      <div class="auth-card-header">
+        <div class="auth-icon-large">📱</div>
+        <div class="auth-status-badge" [class.active]="authSettings.smsAuthEnabled">
+          {{ authSettings.smsAuthEnabled ? 'ENABLED' : 'DISABLED' }}
+        </div>
+        <span class="coming-soon-tag">COMING SOON</span>
+      </div>
+      <div class="auth-card-body">
+        <h3>SMS Authentication</h3>
+        <p>Send verification codes via SMS for secure phone-based authentication.</p>
+        <ul class="auth-features">
+          <li>📲 SMS verification codes</li>
+          <li>🌍 Global phone support</li>
+          <li>⏱️ Time-limited codes</li>
+        </ul>
+      </div>
+      <div class="auth-card-footer">
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="authSettings.smsAuthEnabled" (change)="saveAuthSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">{{ authSettings.smsAuthEnabled ? 'Enabled' : 'Disabled' }}</span>
+      </div>
+    </div>
+
+    <!-- Email Authentication -->
+    <div class="auth-card" [class.enabled]="authSettings.emailAuthEnabled" [class.disabled]="!authSettings.emailAuthEnabled">
+      <div class="auth-card-header">
+        <div class="auth-icon-large">📧</div>
+        <div class="auth-status-badge" [class.active]="authSettings.emailAuthEnabled">
+          {{ authSettings.emailAuthEnabled ? 'ENABLED' : 'DISABLED' }}
+        </div>
+        <span class="coming-soon-tag">COMING SOON</span>
+      </div>
+      <div class="auth-card-body">
+        <h3>Email Authentication</h3>
+        <p>Send magic links and verification codes via email for passwordless login.</p>
+        <ul class="auth-features">
+          <li>✉️ Magic link login</li>
+          <li>🔗 Email verification codes</li>
+          <li>🔒 Passwordless authentication</li>
+        </ul>
+      </div>
+      <div class="auth-card-footer">
+        <label class="toggle-switch">
+          <input type="checkbox" [(ngModel)]="authSettings.emailAuthEnabled" (change)="saveAuthSettings()">
+          <span class="toggle-slider"></span>
+        </label>
+        <span class="toggle-label">{{ authSettings.emailAuthEnabled ? 'Enabled' : 'Disabled' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-actions">
+    <button class="btn btn-primary" (click)="saveAuthSettings()">
+      💾 Save Authentication Settings
+    </button>
+    <button class="btn btn-warning" (click)="resetAuthSettings()">
+      🔄 Reset to Defaults
+    </button>
+  </div>
+</div>

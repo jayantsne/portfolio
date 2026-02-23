@@ -1,0 +1,122 @@
+<div class="namespace-container">
+  <div class="namespace-header">
+    <h1>🗄️ Database Namespace Management</h1>
+    <p class="subtitle">Create new KV namespaces to scale your database storage and organize data efficiently</p>
+  </div>
+
+  <div class="namespace-grid">
+    <!-- Create New Namespace Card -->
+    <div class="namespace-card create-card">
+      <h3>➕ Create New Namespace</h3>
+      
+      <!-- Namespace Name Suggestions -->
+      <div class="suggestions-box">
+        <div class="suggestion-title">💡 Suggested Names:</div>
+        <div class="suggestions-list">
+          <span class="suggestion-chip" (click)="newNamespace.name = 'PORTFOLIO_KV'; newNamespace.description = 'Portfolio website content and data'; validateNamespace()">PORTFOLIO_KV</span>
+          <span class="suggestion-chip" (click)="newNamespace.name = 'BLOG_KV'; newNamespace.description = 'Blog posts and articles'; validateNamespace()">BLOG_KV</span>
+          <span class="suggestion-chip" (click)="newNamespace.name = 'ANALYTICS_KV'; newNamespace.description = 'Analytics and tracking data'; validateNamespace()">ANALYTICS_KV</span>
+          <span class="suggestion-chip" (click)="newNamespace.name = 'CACHE_KV'; newNamespace.description = 'Cached API responses and data'; validateNamespace()">CACHE_KV</span>
+          <span class="suggestion-chip" (click)="newNamespace.name = 'MEDIA_KV'; newNamespace.description = 'Media files metadata'; validateNamespace()">MEDIA_KV</span>
+          <span class="suggestion-chip" (click)="newNamespace.name = 'SETTINGS_KV'; newNamespace.description = 'Application settings'; validateNamespace()">SETTINGS_KV</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>
+          Namespace Name
+          <span class="tooltip-icon" title="Must be UPPERCASE with underscores. Example: MY_NAMESPACE_KV">ℹ️</span>
+        </label>
+        <input 
+          type="text" 
+          [(ngModel)]="newNamespace.name"
+          (input)="validateNamespace()"
+          placeholder="e.g., PORTFOLIO_KV, BLOG_KV"
+          class="namespace-input"
+          [class.input-error]="namespaceValidation.hasError"
+          [class.input-success]="namespaceValidation.isValid">
+        
+        <!-- Real-time Validation Messages -->
+        <div class="validation-messages">
+          <div class="validation-msg error" *ngIf="namespaceValidation.hasError">
+            ❌ {{ namespaceValidation.errorMessage }}
+          </div>
+          <div class="validation-msg success" *ngIf="namespaceValidation.isValid">
+            ✅ Valid namespace name!
+          </div>
+          <div class="validation-msg info" *ngIf="!newNamespace.name">
+            💡 Tip: Use UPPERCASE letters, underscores, and end with _KV
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>
+          Purpose / Description
+          <span class="tooltip-icon" title="Describe what data this namespace will store. This helps with organization.">ℹ️</span>
+        </label>
+        <textarea 
+          [(ngModel)]="newNamespace.description" 
+          rows="3" 
+          placeholder="Describe what this namespace will store..."
+          class="namespace-input"></textarea>
+      </div>
+
+      <!-- Naming Guidelines -->
+      <div class="guidelines-box">
+        <div class="guideline-title">📋 Naming Guidelines:</div>
+        <ul class="guidelines-list">
+          <li [class.guideline-met]="namespaceValidation.checks.hasUppercase">
+            <span class="check-icon">{{ namespaceValidation.checks.hasUppercase ? '✅' : '⭕' }}</span>
+            All UPPERCASE letters
+          </li>
+          <li [class.guideline-met]="namespaceValidation.checks.hasUnderscore">
+            <span class="check-icon">{{ namespaceValidation.checks.hasUnderscore ? '✅' : '⭕' }}</span>
+            Use underscores for spaces
+          </li>
+          <li [class.guideline-met]="namespaceValidation.checks.endsWithKV">
+            <span class="check-icon">{{ namespaceValidation.checks.endsWithKV ? '✅' : '⭕' }}</span>
+            Ends with _KV
+          </li>
+          <li [class.guideline-met]="namespaceValidation.checks.noSpecialChars">
+            <span class="check-icon">{{ namespaceValidation.checks.noSpecialChars ? '✅' : '⭕' }}</span>
+            No special characters or spaces
+          </li>
+          <li [class.guideline-met]="namespaceValidation.checks.notDuplicate">
+            <span class="check-icon">{{ namespaceValidation.checks.notDuplicate ? '✅' : '⭕' }}</span>
+            Unique name (not already used)
+          </li>
+        </ul>
+      </div>
+
+      <button 
+        class="btn btn-create-ns" 
+        (click)="createNamespace()"
+        [disabled]="!namespaceValidation.isValid || !newNamespace.description"
+        [class.btn-disabled]="!namespaceValidation.isValid || !newNamespace.description">
+        🚀 Create Namespace
+      </button>
+    </div>
+
+    <!-- Existing Namespaces List -->
+    <div class="namespace-card list-card">
+      <h3>📋 Existing Namespaces</h3>
+      <div class="namespaces-list">
+        <div class="namespace-item" *ngFor="let ns of existingNamespaces">
+          <div class="ns-icon">🗄️</div>
+          <div class="ns-details">
+            <div class="ns-name">{{ ns.name }}</div>
+            <div class="ns-description">{{ ns.description }}</div>
+            <div class="ns-meta">
+              <span class="ns-id">ID: {{ ns.id }}</span>
+              <span class="ns-date">Created: {{ ns.created | date:'short' }}</span>
+            </div>
+          </div>
+          <button class="btn-delete" (click)="deleteNamespace(ns)" title="Delete Namespace">
+            🗑️
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

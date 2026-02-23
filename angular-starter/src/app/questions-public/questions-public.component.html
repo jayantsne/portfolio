@@ -1,0 +1,423 @@
+<div class="questions-public-container">
+  <!-- Hero Section with AI Theme -->
+  <div class="hero-section">
+    <div class="hero-content">
+      <div class="ai-icon">🤖</div>
+      <h1>AI-Powered Q&A Library</h1>
+      <p class="hero-subtitle">Smart learning with intelligent insights and recommendations</p>
+    </div>
+  </div>
+
+  <div class="content-wrapper">
+    <!-- AI Assistant Panel -->
+    <div class="ai-assistant-panel" *ngIf="showAIAssistant">
+      <div class="assistant-header">
+        <span class="assistant-icon">🤖</span>
+        <h3>AI Study Assistant</h3>
+        <button class="close-btn" (click)="toggleAIAssistant()">✕</button>
+      </div>
+      <div class="assistant-content">
+        <div class="assistant-card">
+          <h4>📈 Your Progress</h4>
+          <div class="progress-visual">
+            <div class="circular-progress">
+              <svg width="120" height="120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                <circle cx="60" cy="60" r="54" fill="none" stroke="url(#gradient)" stroke-width="8" 
+                        [attr.stroke-dasharray]="339.29" 
+                        [attr.stroke-dashoffset]="339.29 - (339.29 * studyStats.progress / 100)"
+                        transform="rotate(-90 60 60)"/>
+                <defs>
+                  <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#f093fb;stop-opacity:1" />
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="progress-text">{{ studyStats.progress }}%</div>
+            </div>
+            <div class="progress-details">
+              <p>✅ {{ studyStats.studied }} Studied</p>
+              <p>📚 {{ studyStats.remaining }} Remaining</p>
+              <p>⭐ {{ studyStats.bookmarks }} Bookmarked</p>
+            </div>
+          </div>
+        </div>
+        
+        <div class="assistant-card">
+          <h4>🎯 Recommended Next</h4>
+          <div class="recommendation-box">
+            <p class="difficulty-suggestion">
+              Try <strong>{{ predictNextDifficulty() }}</strong> level questions next
+            </p>
+          </div>
+        </div>
+
+        <div class="assistant-card">
+          <h4>📚 Category Mastery</h4>
+          <div class="mastery-list">
+            <div class="mastery-item" *ngFor="let cat of categories.slice(0, 5)">
+              <span class="mastery-label">{{ cat }}</span>
+              <div class="mastery-bar">
+                <div class="mastery-fill" [style.width.%]="getCategoryMastery(cat)"></div>
+              </div>
+              <span class="mastery-value">{{ getCategoryMastery(cat) }}%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Insights Panel - Hidden by default -->
+    <!-- Uncomment to show: showAIInsights = true in component -->
+
+    <!-- Enhanced Search and Filter Bar -->
+    <div class="filter-bar">
+      <div class="search-box">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          [(ngModel)]="searchTerm" 
+          (ngModelChange)="applyFilters()"
+          placeholder="AI-powered search: questions, answers, tags..."
+          class="search-input">
+        <span class="ai-search-badge" *ngIf="searchTerm">AI</span>
+      </div>
+
+      <div class="filter-controls">
+        <select [(ngModel)]="selectedCategory" (ngModelChange)="applyFilters()" class="filter-select">
+          <option value="all">All Categories</option>
+          <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+        </select>
+
+        <select [(ngModel)]="selectedDifficulty" (ngModelChange)="applyFilters()" class="filter-select">
+          <option value="all">All Levels</option>
+          <option value="Easy">Easy</option>
+          <option value="Medium">Medium</option>
+          <option value="Hard">Hard</option>
+        </select>
+
+        <select [(ngModel)]="sortBy" (ngModelChange)="applyFilters()" class="filter-select">
+          <option value="recent">Most Recent</option>
+          <option value="difficulty">By Difficulty</option>
+          <option value="category">By Category</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Results Header with AI Context -->
+    <div class="results-header">
+      <h2>
+        <span class="result-count">{{ filteredQuestions.length }}</span> 
+        Question{{ filteredQuestions.length !== 1 ? 's' : '' }} Found
+      </h2>
+    </div>
+
+    <!-- Questions Grid with AI Enhancements -->
+    <div class="questions-grid" *ngIf="filteredQuestions.length > 0">
+      <article class="question-article" *ngFor="let question of filteredQuestions" 
+               [class.studied]="getStudyProgress(question.id) === 100">
+        
+        <!-- Quick Action Buttons -->
+        <div class="quick-actions">
+          <button class="action-btn bookmark-btn" 
+                  [class.active]="isBookmarked(question.id)"
+                  (click)="toggleBookmark(question.id)"
+                  title="Bookmark">
+            {{ isBookmarked(question.id) ? '⭐' : '☆' }}
+          </button>
+          <button class="action-btn speak-btn" 
+                  [class.active]="isSpeaking(question.id)"
+                  (click)="speakAnswer(question)"
+                  title="Listen to answer">
+            {{ isSpeaking(question.id) ? '🔊' : '🔈' }}
+          </button>
+          <button class="action-btn study-btn" 
+                  [class.completed]="getStudyProgress(question.id) === 100"
+                  (click)="markAsStudied(question.id)"
+                  title="Mark as studied">
+            {{ getStudyProgress(question.id) === 100 ? '✓' : '○' }}
+          </button>
+        </div>
+
+        <div class="article-header">
+          <div class="meta-info">
+            <span class="category-tag">
+              <span class="tag-icon">📁</span>
+              {{ question.category }}
+            </span>
+            <span class="difficulty-tag" 
+                  [class.easy]="question.difficulty === 'Easy'"
+                  [class.medium]="question.difficulty === 'Medium'"
+                  [class.hard]="question.difficulty === 'Hard'">
+              <span class="difficulty-icon">{{ question.difficulty === 'Easy' ? '🟢' : question.difficulty === 'Medium' ? '🟡' : '🔴' }}</span>
+              {{ question.difficulty }}
+            </span>
+            <span class="ai-complexity-badge" [attr.data-score]="getAIComplexityScore(question)">
+              🎯 {{ getAIComplexityScore(question) }}/5
+            </span>
+            <span class="reading-time">
+              <span class="time-icon">📚</span>
+              {{ getAIReadingTime(question) }} min read
+            </span>
+            <span class="relevance-badge" *ngIf="searchTerm" 
+                  [style.opacity]="getSearchRelevance(question) / 100">
+              🎯 {{ getSearchRelevance(question) }}% Match
+            </span>
+          </div>
+        </div>
+
+        <div class="visual-separator"></div>
+
+        <div class="article-body">
+          <h3 class="question-title" (click)="toggleQuestion(question)">
+            <span class="q-icon">Q:</span> 
+            <span class="question-text">{{ question.question }}</span>
+            <span class="toggle-indicator">{{ question.expanded ? '−' : '+' }}</span>
+          </h3>
+
+          <!-- AI Answer Button Section -->
+          <div class="ai-answer-section" *ngIf="question.expanded && !isAIAnswerLoaded(question.id)">
+            <div class="ai-answer-prompt">
+              <div class="ai-prompt-content">
+                <span class="ai-icon-large">🤖</span>
+                <div class="ai-prompt-text">
+                  <h4>Get AI-Powered Answer</h4>
+                  <p>Click the button below to view the detailed answer with AI-enhanced insights</p>
+                  <p class="read-only-notice">📖 Read-only • View only • Cannot be saved</p>
+                </div>
+              </div>
+              <button 
+                class="btn-get-ai-answer" 
+                (click)="getAIAnswer(question.id)"
+                [disabled]="isAIAnswerLoading(question.id)">
+                <span class="btn-icon">{{ isAIAnswerLoading(question.id) ? '⏳' : '🤖' }}</span>
+                <span class="btn-text">
+                  {{ isAIAnswerLoading(question.id) ? 'Generating Answer...' : 'Get Answer from AI' }}
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div class="answer-section" *ngIf="question.expanded && isAIAnswerLoaded(question.id)">
+            <!-- Read-Only Notice Banner -->
+            <div class="read-only-banner">
+              <span class="banner-icon">🔒</span>
+              <span class="banner-text">Read-Only Mode - This answer is for viewing and understanding purposes only</span>
+              <span class="banner-badge">Cannot be saved or edited</span>
+            </div>
+            <!-- Comprehension Helper Toolbar -->
+            <div class="comprehension-toolbar">
+              <button class="helper-btn" 
+                      [class.active]="isELI5Visible(question.id)"
+                      (click)="toggleELI5(question.id)"
+                      title="Explain Like I'm 5">
+                🧒 ELI5
+              </button>
+              <button class="helper-btn"
+                      [class.active]="isVisualHintsVisible(question.id)"
+                      (click)="toggleVisualHints(question.id)"
+                      title="Visual Learning Hints">
+                🎨 Visual Hints
+              </button>
+              <div class="complexity-selector">
+                <label>📊 Level:</label>
+                <select class="complexity-select" 
+                        [value]="getComplexityLevel(question.id)"
+                        (change)="setComplexityLevel(question.id, $event.target.value)">
+                  <option value="beginner">🌱 Beginner</option>
+                  <option value="intermediate">🌿 Intermediate</option>
+                  <option value="expert">🌳 Expert</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- ELI5 Explanation -->
+            <div class="eli5-section" *ngIf="isELI5Visible(question.id)">
+              <div class="eli5-header">
+                <span class="eli5-icon">🧒</span>
+                <h4>Explain Like I'm 5</h4>
+                <span class="eli5-badge">Super Simple!</span>
+              </div>
+              <p class="eli5-text">{{ getELI5Explanation(question) }}</p>
+              <div class="analogy-card">
+                <div class="analogy-header">
+                  <span>{{ getRealWorldAnalogy(question).analogy }}</span>
+                </div>
+                <p class="analogy-text">{{ getRealWorldAnalogy(question).explanation }}</p>
+              </div>
+            </div>
+
+            <!-- Visual Learning Hints -->
+            <div class="visual-hints-section" *ngIf="isVisualHintsVisible(question.id)">
+              <div class="visual-hints-header">
+                <span class="hints-icon">🎨</span>
+                <h4>Visual Learning Hints</h4>
+              </div>
+              <div class="hints-grid">
+                <div class="hint-card" *ngFor="let hint of getVisualLearningHints(question)">
+                  <span class="hint-icon">{{ hint.icon }}</span>
+                  <p class="hint-text">{{ hint.hint }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Summary/TLDR -->
+            <div class="ai-summary-section">
+              <div class="summary-header">
+                <span class="summary-icon">⚡</span>
+                <h4>AI Quick Summary (TL;DR)</h4>
+              </div>
+              <p class="summary-text">{{ getAISummary(question) }}</p>
+              <div class="confidence-meter">
+                <span class="confidence-label">Answer Quality:</span>
+                <div class="confidence-bar">
+                  <div class="confidence-fill" [style.width.%]="getAIConfidenceScore(question)"></div>
+                </div>
+                <span class="confidence-score">{{ getAIConfidenceScore(question) }}%</span>
+              </div>
+            </div>
+
+            <div class="answer-header-beautiful">
+              <div class="answer-label">
+                <span class="a-icon-large">💡</span>
+                <span class="answer-title">Detailed Answer</span>
+                <span class="ai-verified-badge">
+                  <span class="badge-icon">✨</span>
+                  AI Formatted
+                </span>
+              </div>
+            </div>
+
+            <!-- Technical Terms Glossary -->
+            <div class="technical-terms-section" *ngIf="getTechnicalTerms(question).length > 0">
+              <div class="terms-header">
+                <span class="terms-icon">📚</span>
+                <h4>Technical Terms Glossary</h4>
+                <span class="terms-hint">Click any term to see its definition</span>
+              </div>
+              <div class="terms-grid">
+                <div class="term-pill" 
+                     *ngFor="let termObj of getTechnicalTerms(question)"
+                     [class.selected]="getSelectedTerm(question.id) === termObj.term"
+                     (click)="selectTerm(question.id, getSelectedTerm(question.id) === termObj.term ? null : termObj.term)">
+                  <span class="term-name">{{ termObj.term }}</span>
+                  <span class="term-icon">💭</span>
+                </div>
+              </div>
+              <div class="term-definition" *ngIf="getSelectedTerm(question.id)">
+                <div class="definition-header">
+                  <span class="def-icon">📖</span>
+                  <strong>{{ getSelectedTerm(question.id) }}</strong>
+                </div>
+                <p class="definition-text">{{ getSelectedTermDefinition(question) }}</p>
+              </div>
+            </div>
+
+            <!-- Complexity-based Answer Display -->
+            <div class="answer-content formatted-answer" [innerHTML]="getFormattedAnswer(question)"></div>
+            
+            <!-- AI Key Takeaways -->
+            <div class="ai-takeaways-section">
+              <div class="takeaways-header">
+                <span class="takeaways-icon">🎯</span>
+                <h4>Key Takeaways (AI Generated)</h4>
+              </div>
+              <ul class="takeaways-list">
+                <li *ngFor="let takeaway of getAIKeyTakeaways(question)">{{ takeaway }}</li>
+              </ul>
+            </div>
+
+            <!-- AI Learning Path -->
+            <div class="ai-learning-path">
+              <div class="learning-path-header">
+                <span class="path-icon">📈</span>
+                <h4>Recommended Learning Distribution</h4>
+              </div>
+              <div class="learning-bars">
+                <div class="learning-bar" *ngFor="let path of getAILearningPath(question)">
+                  <span class="bar-label">{{ path.label }}</span>
+                  <div class="bar-container">
+                    <div class="bar-fill" [style.width.%]="path.percentage"></div>
+                  </div>
+                  <span class="bar-percentage">{{ path.percentage }}%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Common Mistakes -->
+            <div class="ai-mistakes-section">
+              <div class="mistakes-header">
+                <span class="mistakes-icon">⚠️</span>
+                <h4>Common Mistakes to Avoid</h4>
+              </div>
+              <ul class="mistakes-list">
+                <li *ngFor="let mistake of getAICommonMistakes(question)">{{ mistake }}</li>
+              </ul>
+            </div>
+
+            <!-- AI Follow-up Questions -->
+            <div class="ai-followup-section">
+              <div class="followup-header">
+                <span class="followup-icon">🤔</span>
+                <h4>AI Suggested Follow-up Questions</h4>
+              </div>
+              <div class="followup-list">
+                <div class="followup-item" *ngFor="let followup of getAIFollowUpQuestions(question)">
+                  <span class="followup-bullet">❓</span>
+                  <span class="followup-text">{{ followup }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- AI Keywords -->
+            <div class="ai-keywords-section">
+              <div class="keywords-header">
+                <span class="keywords-icon">🔖</span>
+                <h5>Key Concepts</h5>
+              </div>
+              <div class="keywords-tags">
+                <span class="keyword-tag" *ngFor="let keyword of getAIKeywords(question)">
+                  ✦ {{ keyword }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Related Questions (AI-powered) -->
+            <div class="ai-related-section" *ngIf="getRelatedQuestions(question.id).length > 0">
+              <div class="related-header">
+                <span class="related-icon">🔗</span>
+                <h5>Related Questions</h5>
+              </div>
+              <div class="related-list">
+                <div class="related-item" *ngFor="let related of getRelatedQuestions(question.id)" 
+                     (click)="toggleQuestion(related)">
+                  <div class="related-question">→ {{ related.question }}</div>
+                  <span class="related-category">{{ related.category }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <!-- Empty State with AI Suggestion -->
+    <div class="empty-state" *ngIf="filteredQuestions.length === 0">
+      <div class="empty-icon">🤖</div>
+      <h3>No Questions Found</h3>
+      <p>AI Suggestion: Try adjusting your search or filter criteria</p>
+      <button class="btn-reset" (click)="searchTerm = ''; selectedCategory = 'all'; selectedDifficulty = 'all'; applyFilters()">
+        Reset All Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Footer with AI Info -->
+  <div class="page-footer">
+    <div class="ai-footer-badge">
+      <span class="ai-icon-small">🤖</span>
+      <span>Enhanced with AI-powered insights and recommendations</span>
+    </div>
+  </div>
+</div>

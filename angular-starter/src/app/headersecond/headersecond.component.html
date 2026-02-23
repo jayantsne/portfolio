@@ -1,58 +1,70 @@
-<header class="hero">
-  <div class="container hero-wrap row align-items-center gy-4 gx-lg-5">
-    <!-- GIF / Illustration -->
-    <div class="col-lg-6">
-      <div class="media fade-in-left">
-        <img
-          class="hero-img"
-          src="/assets/images/illustrations/jdev.gif"
-          alt="Developer animation" />
-      </div>
-    </div>
+<header class="hero" #hero (mousemove)="onHeroMove($event)" (mouseleave)="onHeroLeave()">
+  <div class="hero-wrap">
 
-    <!-- Intro -->
-    <div class="col-lg-6 fade-in-stagger">
-      <div class="bd-slider-five-hello mb-2">
-        <h2 class="hello">Hey <span class="wave">👋</span> I’m</h2>
-      </div>
+    <!-- LEFT : Illustration Card -->
+    <div class="hero-left parallax" #parallaxLeft>
+  <div class="code-float">
+    <!-- <span>&lt;code&gt;</span>
+    <span class="typing"></span>
+    <span>&lt;/code&gt;</span> -->
+  </div>
 
-      <h1 class="bd-slider-five-title intro-title marker no-wrap">
-  Jayant&nbsp;Bhardwaj
+  <img
+    src="/assets/images/illustrations/jdev2.gif"
+    alt="Developer illustration"
+    class="hero-img"
+  />
+</div>
+
+    <!-- RIGHT : Text Content -->
+    <div class="hero-right" #parallaxRight>
+      <h2 class="hello">
+        Hey <span class="wave">👋</span> I’m
+      </h2>
+
+      <h1 class="hero-title reveal-name">
+  Jayant Bhardwaj
 </h1>
-      <p class="lead fw-normal subtitle mt-2">
-        <b>Senior Developer 1</b><br />
-        <b>Ticket Master, India</b>
-      </p>
+      <span class="title-underline reveal-name"></span>
+     <p class="subtitle">
+  <span class="role typewriter">Software Engineering Manager</span><br />
+  <span class="reveal-sub"><b>PWC, India</b></span>
+</p>
 
-      <div class="social-nav mt-2">
-        <ul class="nav gap-2">
-          <li class="nav-item"><a target="_blank" class="soc" href="https://www.facebook.com/jayant.bhardwaj.75" aria-label="Facebook">f</a></li>
-          <li class="nav-item"><a target="_blank" class="soc" href="https://www.instagram.com/jayant.bhardwaj.75/" aria-label="Instagram">ig</a></li>
-          <li class="nav-item"><a target="_blank" class="soc" href="https://www.linkedin.com/in/jayant-bhardwaj-8bb510145" aria-label="LinkedIn">in</a></li>
-        </ul>
+      <div class="socials">
+        <a
+          href="https://www.facebook.com/jayant.bhardwaj.75"
+          target="_blank"
+          rel="noopener"
+          class="soc"
+          aria-label="Facebook"
+        >f</a>
+
+        <a
+          href="https://www.instagram.com/jayant.bhardwaj.75/"
+          target="_blank"
+          rel="noopener"
+          class="soc"
+          aria-label="Instagram"
+        >ig</a>
+
+        <a
+          href="https://www.linkedin.com/in/jayant-bhardwaj-8bb510145"
+          target="_blank"
+          rel="noopener"
+          class="soc"
+          aria-label="LinkedIn"
+        >in</a>
       </div>
 
-      <a class="btn btn-primary shadow-sm mt-3 hover-effect cta"
-         style="background-color:#EF0454;color:white;border-color:white"
-         href="#contact">
-        Get In Touch <i class="fas fa-arrow-right"></i>
-      </a>
+     <a href="#contact" class="cta-btn" #cta (mousemove)="onCtaMove($event)" (mouseleave)="onCtaLeave()">
+  Get In Touch →
+</a>
     </div>
-  </div>
 
-  <!-- Modern gradient wave footer (optional) -->
-  <div class="wavev2" aria-hidden="true">
-    <svg class="wavev2-svg" viewBox="0 0 1440 220" preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="waveGrad" x1="0" x2="1" y1="0" y2="0">
-          <stop offset="0%"  stop-color="#EF0454"/>
-          <stop offset="50%" stop-color="#ff6ec7"/>
-          <stop offset="100%" stop-color="#3bb2b8"/>
-        </linearGradient>
-      </defs>
-      <path class="wavev2-back"  d="M0,120 C220,180 420,60 720,120 C1000,170 1200,80 1440,120 L1440,220 L0,220 Z"  fill="url(#waveGrad)" fill-opacity="0.20"/>
-      <path class="wavev2-front" d="M0,140 C240,210 420,80 720,130 C1000,170 1200,110 1440,140 L1440,220 L0,220 Z" fill="url(#waveGrad)" fill-opacity="0.40"/>
-    </svg>
   </div>
-  
+  <div class="cursor-accent" #accent></div>
+
 </header>
+    });
+

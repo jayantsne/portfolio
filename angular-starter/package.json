@@ -14,7 +14,11 @@
     "e2e": "testcafe chrome ./e2e/",
     "compodoc": "npx compodoc -p tsconfig.doc.json",
     "audit": "npm audit fix",
-    "version": "auto-changelog -p && git add CHANGELOG.md"
+    "version": "auto-changelog -p && git add CHANGELOG.md",
+    "deploy": "npm run build && firebase deploy",
+    "deploy:hosting": "npm run build && firebase deploy --only hosting",
+    "deploy:functions": "firebase deploy --only functions",
+    "firebase:local": "firebase emulators:start"
   },
   "dependencies": {
     "@angular/animations": "^13.2.5",
@@ -29,6 +33,7 @@
     "@angular/router": "^13.2.5",
     "@ngneat/transloco": "^3.1.1",
     "firebase": "^9.6.8",
+    "mongoose": "^9.1.4",
     "ngx-scrollbar": "^9.0.2",
     "nodemailer": "^6.7.2",
     "rxjs": "^6.6.7",

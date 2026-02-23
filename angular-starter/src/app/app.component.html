@@ -1,25 +1,29 @@
-<app-header></app-header>
+<app-splash-screen *ngIf="showSplash" [minDurationMs]="4000" (done)="onSplashDone()"></app-splash-screen>
+
+<!-- PWA Install Banner -->
+<div class="pwa-install-banner" *ngIf="showInstallPrompt && !isAppInstalled">
+  <div class="pwa-banner-content">
+    <div class="pwa-banner-icon">📱</div>
+    <div class="pwa-banner-text">
+      <strong>Install App</strong>
+      <p>Add to home screen for quick access</p>
+    </div>
+    <button class="pwa-install-btn" (click)="installPWA()">Install</button>
+    <button class="pwa-dismiss-btn" (click)="dismissInstallPrompt()">×</button>
+  </div>
+</div>
+
+<app-header
+    [brandText]="fullName"
+    brandHref="#"
+    [roleText]="jobTitle"
+    [companyText]="companyName"
+></app-header>
+
+<div class="header-spacer" aria-hidden="true"></div>
 
 <!-- <div class="header-spacer"></div> -->
-<div id="my-scrollbar"  class="page-content">
-    <div id="content">
-        
-
-    <app-headersecond></app-headersecond>
-    <app-about></app-about>
-    <!-- <app-services></app-services> -->
-    <app-skills></app-skills>
-    <!-- <app-portfolio></app-portfolio> -->
-    <app-experience></app-experience>
-    <!-- <app-testimonials></app-testimonials> -->
-    <!-- <app-about></app-about> -->
-    <app-contactme></app-contactme>
-    <app-footer></app-footer>
-    
-
-        
-    </div>
-</div>
-<!-- <router-outlet></router-outlet> -->
+<router-outlet></router-outlet>
+<app-ai-chat></app-ai-chat>
 
 

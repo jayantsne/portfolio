@@ -1,0 +1,216 @@
+<div class="interview-container">
+  <!-- Portfolio Settings Section -->
+  <div class="portfolio-settings-section" *ngIf="showPortfolioSettings">
+    <h2>⚙️ Portfolio Settings</h2>
+    <div class="settings-grid">
+      <div class="setting-card">
+        <h3>👤 About Section</h3>
+        <textarea [(ngModel)]="portfolioData.about" rows="4" placeholder="About me description"></textarea>
+      </div>
+      
+      <div class="setting-card">
+        <h3>💼 Experience</h3>
+        <textarea [(ngModel)]="portfolioData.experience" rows="6" placeholder="Work experience (one entry per line)"></textarea>
+      </div>
+      
+      <div class="setting-card">
+        <h3>🛠️ Skills</h3>
+        <textarea [(ngModel)]="portfolioData.skills" rows="4" placeholder="Skills (comma-separated)"></textarea>
+      </div>
+      
+      <div class="setting-card">
+        <h3>📂 Projects</h3>
+        <textarea [(ngModel)]="portfolioData.projects" rows="6" placeholder="Projects (one per line with title and description)"></textarea>
+      </div>
+      
+      <div class="setting-card">
+        <h3>📞 Contact Info</h3>
+        <input type="email" [(ngModel)]="portfolioData.email" placeholder="Email">
+        <input type="tel" [(ngModel)]="portfolioData.phone" placeholder="Phone">
+        <input type="text" [(ngModel)]="portfolioData.location" placeholder="Location">
+      </div>
+      
+      <div class="setting-card">
+        <h3>🔗 Social Links</h3>
+        <input type="url" [(ngModel)]="portfolioData.linkedin" placeholder="LinkedIn URL">
+        <input type="url" [(ngModel)]="portfolioData.github" placeholder="GitHub URL">
+        <input type="url" [(ngModel)]="portfolioData.twitter" placeholder="Twitter URL">
+      </div>
+    </div>
+    
+    <div class="settings-actions">
+      <button class="btn btn-primary" (click)="savePortfolioSettings()">
+        💾 Save Portfolio Settings
+      </button>
+      <button class="btn btn-secondary" (click)="loadPortfolioSettings()">
+        🔄 Reload from Database
+      </button>
+    </div>
+  </div>
+
+  <!-- Data Management Section -->
+  <div class="data-management">
+    <h2>📦 Data Management</h2>
+    <div class="btn-group">
+      <button class="btn btn-export" (click)="exportToJSON()">
+        💾 Export JSON
+      </button>
+      <button class="btn btn-export" (click)="exportToMarkdown()">
+        📄 Export Markdown
+      </button>
+      <label class="btn btn-import">
+        📥 Import JSON
+        <input type="file" accept=".json" (change)="importFromFile($event)" style="display: none;">
+      </label>
+      <button class="btn btn-danger" (click)="clearAllData()">
+        🗑️ Clear All
+      </button>
+    </div>
+  </div>
+
+  <!-- Add New Question Form -->
+  <div class="add-question-section">
+    <h2>➕ Add New Question</h2>
+    <form class="question-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="category">Category *</label>
+          <select id="category" [(ngModel)]="newQuestion.category" name="category" required>
+            <option value="">Select Category</option>
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="difficulty">Difficulty *</label>
+          <select id="difficulty" [(ngModel)]="newQuestion.difficulty" name="difficulty" required>
+            <option value="Easy">Easy</option>
+            <option value="Medium">Medium</option>
+            <option value="Hard">Hard</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="question">Question *</label>
+        <textarea 
+          id="question" 
+          [(ngModel)]="newQuestion.question" 
+          name="question"
+          rows="4" 
+          placeholder="Enter your question here..."
+          required>
+        </textarea>
+      </div>
+
+      <div class="form-info">
+        <p>💡 <strong>Note:</strong> AI will generate answers for learning purposes when you study these questions.</p>
+      </div>
+
+      <button type="button" class="btn btn-primary" (click)="addQuestion()">
+        ✅ Add Question
+      </button>
+      <button type="button" class="btn btn-secondary" (click)="resetForm()">
+        🔄 Reset
+      </button>
+    </form>
+  </div>
+
+  <!-- Filter Section -->
+  <div class="filter-section">
+    <div class="filter-group">
+      <label for="search">🔍 Search:</label>
+      <input 
+        type="text" 
+        id="search" 
+        [(ngModel)]="searchTerm" 
+        placeholder="Search questions, answers, or tags...">
+    </div>
+
+    <div class="filter-group">
+      <label for="filter">📁 Category:</label>
+      <select id="filter" [(ngModel)]="selectedCategory">
+        <option value="all">All Categories</option>
+        <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label for="difficultyFilter">⚡ Difficulty:</label>
+      <select id="difficultyFilter" [(ngModel)]="selectedDifficulty">
+        <option value="all">All Levels</option>
+        <option value="Easy">Easy</option>
+        <option value="Medium">Medium</option>
+        <option value="Hard">Hard</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Questions List -->
+  <div class="questions-list">
+    <h2>📚 Questions ({{ filteredQuestions.length }})</h2>
+    
+    <div class="question-card" *ngFor="let question of filteredQuestions">
+      <div class="question-header" (click)="toggleQuestion(question)">
+        <div class="question-title">
+          <div class="badges">
+            <span class="category-badge">{{ question.category }}</span>
+            <span class="difficulty-badge" [class.easy]="question.difficulty === 'Easy'" 
+                  [class.medium]="question.difficulty === 'Medium'" 
+                  [class.hard]="question.difficulty === 'Hard'">
+              {{ question.difficulty }}
+            </span>
+          </div>
+          <h3>{{ question.question }}</h3>
+        </div>
+        <div class="question-actions">
+          <button class="btn-icon btn-delete" (click)="deleteQuestion(question.id); $event.stopPropagation()" title="Delete">
+            🗑️
+          </button>
+          <span class="expand-icon">{{ question.expanded ? '▼' : '▶' }}</span>
+        </div>
+      </div>
+      
+      <!-- AI Answer Button Section -->
+      <div class="ai-answer-section" *ngIf="question.expanded && !isAIAnswerLoaded(question.id)">
+        <div class="ai-answer-prompt">
+          <div class="ai-prompt-content">
+            <span class="ai-icon-large">🤖</span>
+            <div class="ai-prompt-text">
+              <h4>Get AI-Powered Answer</h4>
+              <p>Click the button below to view the answer</p>
+              <p class="read-only-notice">📖 Read-only • View only • Cannot be saved</p>
+            </div>
+          </div>
+          <button 
+            class="btn-get-ai-answer" 
+            (click)="getAIAnswer(question.id); $event.stopPropagation()"
+            [disabled]="isAIAnswerLoading(question.id)">
+            <span class="btn-icon">{{ isAIAnswerLoading(question.id) ? '⏳' : '🤖' }}</span>
+            <span class="btn-text">
+              {{ isAIAnswerLoading(question.id) ? 'Generating Answer...' : 'Get Answer from AI' }}
+            </span>
+          </button>
+        </div>
+      </div>
+      
+      <div class="question-answer" *ngIf="question.expanded && isAIAnswerLoaded(question.id)">
+        <!-- Read-Only Notice Banner -->
+        <div class="read-only-banner">
+          <span class="banner-icon">🔒</span>
+          <span class="banner-text">Read-Only Mode - This answer is for viewing purposes only</span>
+          <span class="banner-badge">Cannot be saved or edited</span>
+        </div>
+        <div class="answer-label">Answer:</div>
+        <p class="answer-text">{{ question.answer }}</p>
+        <div class="question-meta" *ngIf="question.dateAdded">
+          <small>Added: {{ question.dateAdded | date:'short' }}</small>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="filteredQuestions.length === 0" class="no-questions">
+      <p>No questions found. {{ searchTerm ? 'Try adjusting your search or filters.' : 'Add your first question above!' }}</p>
+    </div>
+  </div>
+</div>

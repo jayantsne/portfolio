@@ -13,12 +13,13 @@ platformBrowserDynamic().bootstrapModule(AppModule)
   .catch(err => console.error(err));
 
   const firebaseConfig = {
-    apiKey: "AIzaSyAkNJ3Y03d0H6-dQrYvXFVTBzIU9ZjPxp4",
-    authDomain: "myrersume.firebaseapp.com",
-    projectId: "myrersume",
-    storageBucket: "myrersume.appspot.com",
-    messagingSenderId: "900714367404",
-    appId: "1:900714367404:web:60307158d838dc6c471209"
+    apiKey: "AIzaSyCk0xzuG1GSDbNd2eeVVURe2LWdes1XPE8",
+  authDomain: "myportfolioadmin.firebaseapp.com",
+  projectId: "myportfolioadmin",
+  storageBucket: "myportfolioadmin.firebasestorage.app",
+  messagingSenderId: "840113821693",
+  appId: "1:840113821693:web:c478026d3066423bba6b94",
+  measurementId: "G-X94MS8XML4"
   };
   
   // Initialize Firebase

@@ -8,7 +8,21 @@
 
   <nav class="navbar navbar-expand-lg" id="header-nav" role="navigation">
     <div class="container">
-      <a class="navbar-brand site-title mb-0 brand" href="#">My PortFolio</a>
+      <a class="navbar-brand site-title mb-0 brand" [href]="brandHref">
+        <span class="brand-stack">
+          <span class="brand-text" aria-label="Site name">
+            <span class="brand-name">{{ displayBrandName }}</span>
+            <span class="brand-caret" aria-hidden="true"></span>
+          </span>
+
+          <span class="brand-meta" *ngIf="metaText" aria-label="Role and company">
+            <span class="meta-prompt" aria-hidden="true">&gt;</span>
+            <span class="meta-text">{{ metaText }}</span>
+            <span class="meta-caret" aria-hidden="true"></span>
+          </span>
+        </span>
+        <span class="brand-badge" aria-hidden="true"></span>
+      </a>
 
       <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
               data-bs-target="#navbarSupportedContent"
@@ -19,10 +33,35 @@
 
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav ms-auto me-2">
-          <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
-          <li class="nav-item"><a class="nav-link" href="#skills">Skills</a></li>
-          <li class="nav-item"><a class="nav-link" href="#experience">Experience</a></li>
-          <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#home" [class.active]="activeSection === 'home'">Home</a></li>
+          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#about" [class.active]="activeSection === 'about'">About</a></li>
+          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#skills" [class.active]="activeSection === 'skills'">Skills</a></li>
+          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#experience" [class.active]="activeSection === 'experience'">Experience</a></li>
+          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#contact" [class.active]="activeSection === 'contact'">Contact</a></li>
+          <li class="nav-item"><a class="nav-link ai-link" routerLink="/ai-qa">🤖 AI Learn</a></li>
+          <li class="nav-item" *ngIf="!authService.isAuthenticated()">
+            <a class="nav-link login-btn" (click)="login()" style="cursor: pointer;">
+              🔐 Login
+            </a>
+          </li>
+          <li class="nav-item" *ngIf="authService.isAuthenticated()"><a class="nav-link" routerLink="/questions">📚 Q&A</a></li>
+          <li class="nav-item dropdown" *ngIf="authService.isAuthenticated()">
+            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              🔒 Admin
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
+              <li><a class="dropdown-item" routerLink="/admin">🔐 Admin Panel</a></li>
+              <li><a class="dropdown-item" routerLink="/admin" fragment="portfolio">⚙️ Portfolio Settings</a></li>
+              <li><a class="dropdown-item" routerLink="/auth-management">🔐 Auth Management</a></li>
+              <li><hr class="dropdown-divider" style="border-color: rgba(102, 126, 234, 0.3);"></li>
+              <li><a class="dropdown-item" routerLink="/namespaces">🗄️ Database Namespaces</a></li>
+            </ul>
+          </li>
+          <li class="nav-item" *ngIf="authService.isAuthenticated()">
+            <a class="nav-link logout-btn" (click)="logout()" style="cursor: pointer;" title="Logout">
+              🚪 Logout
+            </a>
+          </li>
         </ul>
       </div>
     </div>

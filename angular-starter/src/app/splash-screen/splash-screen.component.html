@@ -1,0 +1,42 @@
+<div class="splash" [class.leaving]="leaving" (click)="skip()" role="dialog" aria-label="Loading">
+  <div class="terminal" role="status" aria-live="polite">
+    <div class="terminal-top">
+      <span class="dot dot-1" aria-hidden="true"></span>
+      <span class="dot dot-2" aria-hidden="true"></span>
+      <span class="dot dot-3" aria-hidden="true"></span>
+      <span class="title">init://portfolio</span>
+      <span class="ai-badge" aria-hidden="true">
+        <span class="ai-dot"></span>
+        AI online
+      </span>
+    </div>
+
+    <div class="terminal-body" aria-hidden="true">
+      <div class="line r1"><span class="prompt">$</span> node -v <span class="dim"># runtime</span></div>
+      <div class="line dim r2">v25.2.1</div>
+      <div class="line r3"><span class="prompt">$</span> npm run build <span class="dim">--configuration production</span></div>
+      <div class="line dim r4">Optimizing bundles…</div>
+      <div class="line dim r5">Generating routes…</div>
+      <div class="line dim r6">Minifying CSS…</div>
+      <div class="line r7"><span class="ok">✓</span> Build complete</div>
+      <div class="line r8"><span class="prompt">$</span> load ai-module <span class="dim"># assistant</span></div>
+      <div class="line dim r9"><span class="ok">✓</span> Neural context initialized</div>
+
+      <pre class="mini-code" aria-hidden="true"><code><span class="k">export</span> <span class="k">const</span> <span class="v">profile</span> = <span class="p">&#123;</span>
+  <span class="p">name</span>: <span class="s">"Jayant"</span>,
+  <span class="p">role</span>: <span class="s">"Software Engineering Manager"</span>,
+  <span class="p">company</span>: <span class="s">"PwC, India"</span>
+<span class="p">&#125;</span>;</code></pre>
+
+      <div class="progress" aria-hidden="true">
+        <div class="progress-bar"></div>
+      </div>
+    </div>
+
+    <div class="typing">
+      <span class="typing-text">Launching portfolio + AI</span><span class="caret" aria-hidden="true"></span>
+    </div>
+
+    <div class="hint">Click to skip</div>
+  </div>
+</div>

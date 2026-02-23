@@ -23,6 +23,7 @@ html {
  */
 .section {
   scroll-margin-top: 2rem;
+  background: transparent;
 }
 
 /* Header */
@@ -41,7 +42,7 @@ html {
 
 .nav-link {
   font-weight: 700;
-  color: rgba(0, 0, 0, 0.8) !important;
+  color: rgba(241, 245, 249, 0.88);
 }
 
 .social-nav .nav-link {
@@ -53,7 +54,7 @@ html {
 .nav-link:hover,
 .nav-link:focus,
 .active .nav-link {
-  color: rgba(0, 0, 0, 0.6) !important;
+  color: rgba(var(--accent-rgb), 0.98);
 }
 
 /* Hero (intro) section */

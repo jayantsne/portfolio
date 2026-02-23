@@ -1,0 +1,97 @@
+<header
+  class="hero"
+  id="home"
+  #hero
+  (mousemove)="onHeroMove($event)"
+  (mouseleave)="onHeroLeave()"
+>
+  <div class="hero-wrap">
+    <!-- LEFT: coder visual -->
+    <div class="hero-left" #parallaxLeft>
+      <div class="code-orbit" aria-hidden="true">
+        <div class="code-card">
+          <div class="code-top">
+            <span class="dot dot-1" aria-hidden="true"></span>
+            <span class="dot dot-2" aria-hidden="true"></span>
+            <span class="dot dot-3" aria-hidden="true"></span>
+            <span class="label">~/portfolio</span>
+          </div>
+
+          <pre class="code" aria-hidden="true"><code>
+<span class="line" style="--d: 0ms"><span class="k">const</span> <span class="v">profile</span> = {{ '{' }}</span>
+<span class="line" style="--d: 120ms">  <span class="p">name</span>: <span class="s">"{{ fullName }}"</span>,</span>
+<span class="line" style="--d: 220ms">  <span class="p">role</span>: <span class="s">"{{ jobTitle }}"</span>,</span>
+<span class="line" style="--d: 320ms">  <span class="p">company</span>: <span class="s">"{{ companyName }}"</span>,</span>
+<span class="line" style="--d: 420ms">  <span class="p">stack</span>: [<span class="s">"Angular"</span>, <span class="s">"Node"</span>, <span class="s">"Cloud"</span>]</span>
+<span class="line" style="--d: 520ms">{{ '}' }};</span>
+</code></pre>
+
+          <div class="scan" aria-hidden="true"></div>
+        </div>
+      </div>
+
+      <img
+        src="/assets/images/illustrations/jdev2.gif"
+        alt="Developer illustration"
+        class="hero-img"
+        loading="eager"
+      />
+    </div>
+
+    <!-- RIGHT: text -->
+    <div class="hero-right" #parallaxRight>
+      <div class="chip">{{ greetingMessage }} • <span class="chip-accent">Coder Mode</span></div>
+
+      <h1 class="hero-title">
+        <span class="grad">{{ firstName }}</span>
+        <span class="last">{{ lastName }}</span>
+      </h1>
+
+      <p class="subtitle">
+        <span class="role">{{ jobTitle }}</span>
+        <span class="sub">{{ companyName }}</span><span class="sub-caret" aria-hidden="true"></span>
+      </p>
+
+      <div class="socials">
+        <a
+          href="https://www.facebook.com/jayant.bhardwaj.75"
+          target="_blank"
+          rel="noopener"
+          class="soc"
+          aria-label="Facebook"
+        >f</a>
+
+        <a
+          href="https://www.instagram.com/jayant.bhardwaj.75/"
+          target="_blank"
+          rel="noopener"
+          class="soc"
+          aria-label="Instagram"
+        >ig</a>
+
+        <a
+          href="https://www.linkedin.com/in/jayant-bhardwaj-8bb510145"
+          target="_blank"
+          rel="noopener"
+          class="soc"
+          aria-label="LinkedIn"
+        >in</a>
+      </div>
+
+      <div class="cta-row">
+        <a
+          href="#contact"
+          class="cta-btn"
+          #cta
+          (mousemove)="onCtaMove($event)"
+          (mouseleave)="onCtaLeave()"
+        >
+          Get In Touch →
+        </a>
+        <a class="ghost" href="#about">Explore ↓</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="cursor-accent" #accent aria-hidden="true"></div>
+</header>

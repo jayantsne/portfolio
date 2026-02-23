@@ -3,7 +3,8 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  apiUrl: 'https://jayant-portfolio-api.jayant-ai.workers.dev/api'  // Cloudflare Workers API
 };
 
 /*
