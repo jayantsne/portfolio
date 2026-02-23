@@ -34,13 +34,10 @@ jobs:
         run: npm run build -- --configuration production
       
       - name: 🚀 Deploy to Firebase Hosting
-        uses: FirebaseExtended/action-hosting-deploy@v0
-        with:
-          repoToken: '${{ secrets.GITHUB_TOKEN }}'
-          firebaseServiceAccount: '${{ secrets.FIREBASE_TOKEN }}'
-          channelId: live
-          projectId: myportfolioadmin
-          entryPoint: ./angular-starter
+        working-directory: ./angular-starter
+        run: |
+          npm install -g firebase-tools
+          firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}" --project myportfolioadmin --non-interactive
       
       - name: 📊 Deployment Summary
         if: success()
