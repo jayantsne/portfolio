@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "my-portfolio-prod",
+    "default": "myportfolioadmin",
     "prod": "myportfolioadmin"
   },
   "targets": {},

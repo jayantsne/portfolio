@@ -37,7 +37,7 @@ jobs:
         working-directory: ./angular-starter
         run: |
           npm install -g firebase-tools
-          firebase deploy --only hosting --token "${{ secrets.FIREBASE_TOKEN }}" --project myportfolioadmin --non-interactive
+          firebase deploy --only hosting:myportfolioadmin-d45bd --token "${{ secrets.FIREBASE_TOKEN }}" --project myportfolioadmin --non-interactive
       
       - name: 📊 Deployment Summary
         if: success()
