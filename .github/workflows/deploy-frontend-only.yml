@@ -1,10 +1,13 @@
-name: Deploy Frontend to VPS
+name: Deploy AI Learn App to VPS
 
 on:
   push:
     branches:
       - main
-  workflow_dispatch:
+    paths:
+      - 'angular-starter/**'
+      - '.github/workflows/deploy-frontend-only.yml'
+  workflow_dispatch:  # Allow manual trigger from GitHub UI
 
 jobs:
   deploy:
@@ -28,31 +31,88 @@ jobs:
       
       - name: 🏗️ Build Angular app
         working-directory: ./angular-starter
-        run: npm run build -- --configuration production
+        run: |
+          npm run build -- --configuration production
+          echo "✓ Build completed successfully"
+          ls -lh dist/angular-starter/
+      
+      - name: 📦 Create deployment archive
+        working-directory: ./angular-starter/dist
+        run: |
+          tar -czf ../../frontend-deploy.tar.gz angular-starter/
+          cd ../..
+          echo "Archive size: $(du -h frontend-deploy.tar.gz | cut -f1)"
       
       - name: 🔑 Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H 76.13.244.113 >> ~/.ssh/known_hosts
       
-      - name: 🚀 Deploy to VPS
+      - name: 📤 Upload to VPS
         run: |
-          rsync -avz --delete \
-            -e "ssh -i ~/.ssh/deploy_key" \
-            ./angular-starter/dist/angular-starter/ \
-            ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }}:/var/www/learnwithai.tech/frontend/
-          
-          ssh -i ~/.ssh/deploy_key \
-            ${{ secrets.VPS_USERNAME }}@${{ secrets.VPS_HOST }} \
-            "sudo systemctl reload nginx"
+          scp -i ~/.ssh/deploy_key \
+            frontend-deploy.tar.gz \
+            root@76.13.244.113:/tmp/frontend-deploy.tar.gz
+          echo "✓ Archive uploaded to VPS"
+      
+      - name: 🚀 Deploy on VPS
+        run: |
+          ssh -i ~/.ssh/deploy_key root@76.13.244.113 << 'ENDSSH'
+            set -e
+            echo "🗑️  Cleaning old files..."
+            rm -rf /var/www/learnwithai.tech/frontend/*
+            
+            echo "📦 Extracting new files..."
+            cd /var/www/learnwithai.tech/frontend/
+            tar -xzf /tmp/frontend-deploy.tar.gz --strip-components=1
+            rm /tmp/frontend-deploy.tar.gz
+            
+            echo "🔧 Setting permissions..."
+            chmod -R 755 /var/www/learnwithai.tech/frontend/
+            chown -R www-data:www-data /var/www/learnwithai.tech/frontend/
+            
+            echo "🔄 Reloading nginx..."
+            nginx -t && systemctl reload nginx
+            
+            echo "✅ Deployment complete!"
+            echo "📊 Files deployed:"
+            ls -lh /var/www/learnwithai.tech/frontend/ | head -10
+            
+            if [ -f /var/www/learnwithai.tech/frontend/index.html ]; then
+              echo "✓ index.html verified"
+            else
+              echo "❌ ERROR: index.html missing!"
+              exit 1
+            fi
+          ENDSSH
       
       - name: 🧹 Cleanup
         if: always()
-        run: rm -f ~/.ssh/deploy_key
-      
-      - name: 📊 Summary
         run: |
-          echo "### 🎉 Frontend Deployed!" >> $GITHUB_STEP_SUMMARY
-          echo "**Site:** http://76.13.244.113" >> $GITHUB_STEP_SUMMARY
+          rm -f ~/.ssh/deploy_key
+          rm -f frontend-deploy.tar.gz
+      
+      - name: 📊 Deployment Summary
+        if: success()
+        run: |
+          echo "### 🎉 AI Learn App Deployed Successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**🌐 Live URL:** http://76.13.244.113" >> $GITHUB_STEP_SUMMARY
+          echo "**🌐 Domain:** http://learnwithai.tech" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**📦 Deployed:** \`$(date)\`" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "✅ All checks passed. Your app is live!" >> $GITHUB_STEP_SUMMARY
+      
+      - name: ❌ Deployment Failed
+        if: failure()
+        run: |
+          echo "### ❌ Deployment Failed" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Please check the logs above for details." >> $GITHUB_STEP_SUMMARY
+          echo "Common issues:" >> $GITHUB_STEP_SUMMARY
+          echo "- SSH key not configured in GitHub Secrets" >> $GITHUB_STEP_SUMMARY
+          echo "- VPS not accessible" >> $GITHUB_STEP_SUMMARY
+          echo "- Build errors" >> $GITHUB_STEP_SUMMARY
