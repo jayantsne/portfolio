@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://jayant-portfolio-api.jayant-ai.workers.dev/api'
+  apiUrl: 'http://learnwithai.tech/api'  // VPS Backend API
 };

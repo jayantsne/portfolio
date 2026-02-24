@@ -14,15 +14,15 @@ import { NamespaceManagementComponent } from './namespace-management/namespace-m
 import { AuthManagementComponent } from './auth-management/auth-management.component';
 
 const routes: Routes = [
-  { path: '', component: MainPortfolioComponent },
+  { path: '', component: AiQaComponent }, // AI Learn App as default
   { path: 'home', component: MainPortfolioComponent },
+  { path: 'portfolio', component: MainPortfolioComponent }, // Portfolio accessible via /portfolio
   { path: 'login', component: LoginComponent },
   { path: 'ai-qa', component: AiQaComponent },
   { path: 'questions', component: QuestionsPublicComponent }, // Public access
   { path: 'admin', component: InterviewQuestionsComponent, canActivate: [AuthGuard] }, // Admin only
   { path: 'auth-management', component: AuthManagementComponent, canActivate: [AuthGuard] }, // Authentication management
   { path: 'namespaces', component: NamespaceManagementComponent, canActivate: [AuthGuard] }, // Database namespace management
-  //{ path: '', redirectTo: '/home', pathMatch: 'full' },
 ]
 
 @NgModule({
