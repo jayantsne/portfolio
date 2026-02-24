@@ -4,9 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - 'angular-starter/**'
-      - '.github/workflows/deploy-frontend-only.yml'
   workflow_dispatch:
 
 jobs:
