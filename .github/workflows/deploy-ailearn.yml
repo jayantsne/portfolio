@@ -43,16 +43,16 @@ jobs:
           dotnet-version: '8.0.x'
       
       - name: 📦 Restore .NET dependencies
-        working-directory: ./enterprise-dotnet-api
-        run: dotnet restore AILearnAPI.sln
+        working-directory: ./enterprise-dotnet-api/src/AILearnAPI.Api
+        run: dotnet restore
       
       - name: 🏗️ Build .NET API
-        working-directory: ./enterprise-dotnet-api
-        run: dotnet build AILearnAPI.sln --configuration Release --no-restore
+        working-directory: ./enterprise-dotnet-api/src/AILearnAPI.Api
+        run: dotnet build --configuration Release --no-restore
       
       - name: 📦 Publish .NET API
-        working-directory: ./enterprise-dotnet-api
-        run: dotnet publish src/AILearnAPI.Api/AILearnAPI.Api.csproj -c Release -o ./publish
+        working-directory: ./enterprise-dotnet-api/src/AILearnAPI.Api
+        run: dotnet publish -c Release -o ../../publish
       
       # ===== DEPLOY TO VPS =====
       - name: 🔑 Setup SSH
