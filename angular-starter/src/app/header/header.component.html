@@ -66,13 +66,13 @@
           <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link certification-link" routerLink="/azure-ai-102" routerLinkActive="active" (click)="closeNavbar()">☁️ Azure AI-102</a></li>
           
           <!-- AI Learn Link - Show when NOT on AI Learn pages -->
-          <li class="nav-item" *ngIf="!isAILearnPage"><a class="nav-link ai-link" routerLink="/ai-learn">🤖 AI Learn</a></li>
+          <li class="nav-item" *ngIf="!isAILearnPage"><a class="nav-link ai-link" href="https://learnwithai.tech/" target="_blank" rel="noopener noreferrer">🤖 AI Learn</a></li>
           
-          <li class="nav-item" *ngIf="!authService.isAuthenticated() && !isAILearnPage">
+          <!-- <li class="nav-item" *ngIf="!authService.isAuthenticated() && !isAILearnPage">
             <a class="nav-link login-btn" (click)="login()" style="cursor: pointer;">
               🔐 Login
             </a>
-          </li>
+          </li> -->
           <li class="nav-item" *ngIf="authService.isAuthenticated()"><a class="nav-link" routerLink="/questions">📚 Q&A</a></li>
           <li class="nav-item dropdown" *ngIf="authService.isAuthenticated()">
             <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
