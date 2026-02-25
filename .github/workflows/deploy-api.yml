@@ -112,15 +112,20 @@ jobs:
 
             # ── Deploy API files ──
             rm -rf /var/www/learnwithai.tech/backend/*
-            tar -xzf /tmp/api-deploy.tar.gz -C /var/www/learnwithai.tech/backend/
-            rm /tmp/api-deploy.tar.gz
+            ARCHIVE=$(find /tmp -name "api-deploy.tar.gz" 2>/dev/null | head -1)
+            if [ -z "$ARCHIVE" ]; then echo "❌ Archive not found in /tmp!"; find /tmp -type f | head -20; exit 1; fi
+            echo "📦 Found archive: $ARCHIVE"
+            tar -xzf "$ARCHIVE" -C /var/www/learnwithai.tech/backend/
+            rm "$ARCHIVE"
             chmod -R 755 /var/www/learnwithai.tech/backend/
             echo "📦 API files deployed"
 
             # ── Install/update systemd service ──
             # Use root user since we deploy as root
-            sed 's/User=deployuser/User=root/g; s/Group=deployuser/Group=root/g' /tmp/ailearnapi.service > /etc/systemd/system/ailearnapi.service
-            rm /tmp/ailearnapi.service
+            SERVICE=$(find /tmp -name "ailearnapi.service" 2>/dev/null | head -1)
+            if [ -z "$SERVICE" ]; then echo "❌ Service file not found!"; exit 1; fi
+            sed 's/User=deployuser/User=root/g; s/Group=deployuser/Group=root/g' "$SERVICE" > /etc/systemd/system/ailearnapi.service
+            rm "$SERVICE"
             systemctl daemon-reload
             systemctl enable ailearnapi
             echo "⚙️  Systemd service installed"
