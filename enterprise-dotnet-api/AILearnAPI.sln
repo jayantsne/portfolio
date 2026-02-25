@@ -1,0 +1,49 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AILearnAPI.Api", "src\AILearnAPI.Api\AILearnAPI.Api.csproj", "{53814965-18C1-43E5-9C26-94B63913770D}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AILearnAPI.Application", "src\AILearnAPI.Application\AILearnAPI.Application.csproj", "{57E7B338-F5DC-429F-A187-1406AABCC8B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AILearnAPI.Domain", "src\AILearnAPI.Domain\AILearnAPI.Domain.csproj", "{40E71A64-3876-404C-A12A-3BF54DF2FDBF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AILearnAPI.Infrastructure", "src\AILearnAPI.Infrastructure\AILearnAPI.Infrastructure.csproj", "{3FFD49F7-CE7E-4ADD-94DF-66013AA752C3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AILearnAPI.Shared", "src\AILearnAPI.Shared\AILearnAPI.Shared.csproj", "{8EE95B2E-0696-4558-ADB4-3370E61EE191}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{53814965-18C1-43E5-9C26-94B63913770D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53814965-18C1-43E5-9C26-94B63913770D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53814965-18C1-43E5-9C26-94B63913770D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53814965-18C1-43E5-9C26-94B63913770D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{57E7B338-F5DC-429F-A187-1406AABCC8B6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{57E7B338-F5DC-429F-A187-1406AABCC8B6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{57E7B338-F5DC-429F-A187-1406AABCC8B6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{57E7B338-F5DC-429F-A187-1406AABCC8B6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{40E71A64-3876-404C-A12A-3BF54DF2FDBF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{40E71A64-3876-404C-A12A-3BF54DF2FDBF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{40E71A64-3876-404C-A12A-3BF54DF2FDBF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{40E71A64-3876-404C-A12A-3BF54DF2FDBF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3FFD49F7-CE7E-4ADD-94DF-66013AA752C3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3FFD49F7-CE7E-4ADD-94DF-66013AA752C3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3FFD49F7-CE7E-4ADD-94DF-66013AA752C3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3FFD49F7-CE7E-4ADD-94DF-66013AA752C3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8EE95B2E-0696-4558-ADB4-3370E61EE191}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8EE95B2E-0696-4558-ADB4-3370E61EE191}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8EE95B2E-0696-4558-ADB4-3370E61EE191}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8EE95B2E-0696-4558-ADB4-3370E61EE191}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {BD95A23C-D0A3-4CFA-96CA-750E7915A6F4}
+	EndGlobalSection
+EndGlobal
