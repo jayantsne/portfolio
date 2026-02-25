@@ -135,9 +135,14 @@ jobs:
             sleep 3
             systemctl is-active --quiet ailearnapi && echo "✅ ailearnapi service is running" || (journalctl -u ailearnapi -n 20 --no-pager; exit 1)
 
-            # ── Reload nginx ──
-            systemctl reload nginx
-            echo "🔄 Nginx reloaded"
+            # ── Reload nginx (only if config test passes) ──
+            if nginx -t 2>/dev/null; then
+              systemctl reload nginx
+              echo "🔄 Nginx reloaded"
+            else
+              echo "⚠️  Nginx config test failed — skipping reload (API still running on port 5000)"
+              nginx -t 2>&1 || true
+            fi
 
             echo "✅ API deployed at https://learnwithai.tech/api"
 
