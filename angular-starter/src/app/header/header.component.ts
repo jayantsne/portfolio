@@ -58,7 +58,7 @@ export class HeaderComponent implements AfterViewInit {
     this.isAILearnPage = url.startsWith('/ai-learn') || url.includes('/dsa-game') || 
                          url.includes('/memory-game') || url.includes('/learn-quest') || 
                          url.includes('/azure-ai-102');
-    
+    this.isAILearnPage  = true;
     // Show portfolio links on root, portfolio, or home routes (but not on AI Learn pages)
     this.isPortfolioRoute = (url === '/' || url.includes('/portfolio') || url.includes('/home')) && !this.isAILearnPage;
   }
