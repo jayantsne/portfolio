@@ -25,7 +25,7 @@ const routes: Routes = [
   { path: 'test', component: TestPageComponent },
   
   // Portfolio as default
-  { path: '', component: MainPortfolioComponent },
+  { path: 'folio', component: MainPortfolioComponent },
   { path: 'home', component: MainPortfolioComponent },
   { path: 'portfolio', component: MainPortfolioComponent },
   
@@ -34,7 +34,7 @@ const routes: Routes = [
   
   // AI Learn App with nested routes
   { 
-    path: 'ai-learn', 
+    path: '', 
     component: AiQaComponent,
     children: [
       // No redirect - show landing page when on /ai-learn
