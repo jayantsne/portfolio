@@ -124,16 +124,31 @@ jobs:
             # Use root user since we deploy as root
             SERVICE=$(find /tmp -name "ailearnapi.service" 2>/dev/null | head -1)
             if [ -z "$SERVICE" ]; then echo "❌ Service file not found!"; exit 1; fi
-            sed 's/User=deployuser/User=root/g; s/Group=deployuser/Group=root/g' "$SERVICE" > /etc/systemd/system/ailearnapi.service
+            DOTNET_PATH=$(command -v dotnet)
+            echo "🔍 dotnet path: $DOTNET_PATH"
+            sed \
+              -e 's/User=deployuser/User=root/g' \
+              -e 's/Group=deployuser/Group=root/g' \
+              -e 's|Type=notify|Type=simple|g' \
+              -e '/Wants=mongod.service/d' \
+              -e '/After=network.target mongod.service/c\After=network.target' \
+              -e "s|ExecStart=/usr/bin/dotnet|ExecStart=$DOTNET_PATH|g" \
+              "$SERVICE" > /etc/systemd/system/ailearnapi.service
             rm "$SERVICE"
+            echo "📄 Installed service file:"
+            cat /etc/systemd/system/ailearnapi.service
             systemctl daemon-reload
             systemctl enable ailearnapi
             echo "⚙️  Systemd service installed"
 
             # ── Start API service ──
-            systemctl start ailearnapi
-            sleep 3
-            systemctl is-active --quiet ailearnapi && echo "✅ ailearnapi service is running" || (journalctl -u ailearnapi -n 20 --no-pager; exit 1)
+            systemctl start ailearnapi || true
+            sleep 5
+            echo "📋 Service status:"
+            systemctl status ailearnapi --no-pager || true
+            echo "📋 Journal logs:"
+            journalctl -u ailearnapi -n 30 --no-pager || true
+            systemctl is-active --quiet ailearnapi && echo "✅ ailearnapi service is running" || (echo "❌ Service failed to start — see logs above"; exit 1)
 
             # ── Reload nginx (only if config test passes) ──
             if nginx -t 2>/dev/null; then
