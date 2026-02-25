@@ -1,0 +1,168 @@
+name: Deploy .NET API to VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'enterprise-dotnet-api/**'
+      - '.github/workflows/deploy-api.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Build & Deploy .NET API
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🔍 Check required secrets
+        id: check_secrets
+        run: |
+          if [ -z "${{ secrets.VPS_SSH_PRIVATE_KEY }}" ]; then
+            echo "⚠️  VPS_SSH_PRIVATE_KEY not set. Skipping."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Secret found."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: 📥 Checkout code
+        if: steps.check_secrets.outputs.skip == 'false'
+        uses: actions/checkout@v4
+
+      - name: 🟣 Setup .NET 8
+        if: steps.check_secrets.outputs.skip == 'false'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: 📦 Restore dependencies
+        if: steps.check_secrets.outputs.skip == 'false'
+        working-directory: ./enterprise-dotnet-api
+        run: dotnet restore src/AILearnAPI.Api/AILearnAPI.Api.csproj
+
+      - name: 🏗️ Publish API (linux-x64)
+        if: steps.check_secrets.outputs.skip == 'false'
+        working-directory: ./enterprise-dotnet-api
+        run: |
+          dotnet publish src/AILearnAPI.Api/AILearnAPI.Api.csproj \
+            --configuration Release \
+            --runtime linux-x64 \
+            --self-contained false \
+            --output ./publish
+          echo "✓ Build complete"
+          ls -lh publish/
+
+      - name: 📦 Create deployment archive
+        if: steps.check_secrets.outputs.skip == 'false'
+        run: |
+          tar -czf api-deploy.tar.gz -C enterprise-dotnet-api/publish .
+          echo "Archive: $(du -h api-deploy.tar.gz | cut -f1)"
+
+      - name: 📤 Upload API archive to VPS
+        if: steps.check_secrets.outputs.skip == 'false'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 76.13.244.113
+          username: root
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          source: api-deploy.tar.gz
+          target: /tmp/
+
+      - name: 📤 Upload nginx config to VPS
+        if: steps.check_secrets.outputs.skip == 'false'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 76.13.244.113
+          username: root
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          source: server-configs/nginx/learnwithai.tech.conf
+          target: /tmp/
+          strip_components: 2
+
+      - name: 📤 Upload systemd service to VPS
+        if: steps.check_secrets.outputs.skip == 'false'
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 76.13.244.113
+          username: root
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          source: server-configs/systemd/ailearnapi.service
+          target: /tmp/
+          strip_components: 2
+
+      - name: 🚀 Deploy & Start API on VPS
+        if: steps.check_secrets.outputs.skip == 'false'
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 76.13.244.113
+          username: root
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script: |
+            set -e
+
+            # ── Install .NET 8 runtime if missing ──
+            if ! command -v dotnet &>/dev/null || ! dotnet --list-runtimes | grep -q "Microsoft.AspNetCore.App 8"; then
+              echo "📥 Installing .NET 8 runtime..."
+              wget -q https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O /tmp/ms-prod.deb
+              dpkg -i /tmp/ms-prod.deb
+              apt-get update -qq
+              apt-get install -y aspnetcore-runtime-8.0
+              rm /tmp/ms-prod.deb
+              echo "✅ .NET 8 runtime installed: $(dotnet --version)"
+            else
+              echo "✅ .NET runtime already present: $(dotnet --list-runtimes | grep 'AspNetCore.App 8')"
+            fi
+
+            # ── Create backend directory ──
+            mkdir -p /var/www/learnwithai.tech/backend
+
+            # ── Stop service if running ──
+            systemctl stop ailearnapi 2>/dev/null || true
+            echo "⏸️  Service stopped"
+
+            # ── Deploy API files ──
+            rm -rf /var/www/learnwithai.tech/backend/*
+            tar -xzf /tmp/api-deploy.tar.gz -C /var/www/learnwithai.tech/backend/
+            rm /tmp/api-deploy.tar.gz
+            chmod -R 755 /var/www/learnwithai.tech/backend/
+            echo "📦 API files deployed"
+
+            # ── Install/update systemd service ──
+            # Use root user since we deploy as root
+            sed 's/User=deployuser/User=root/g; s/Group=deployuser/Group=root/g' /tmp/ailearnapi.service > /etc/systemd/system/ailearnapi.service
+            rm /tmp/ailearnapi.service
+            systemctl daemon-reload
+            systemctl enable ailearnapi
+            echo "⚙️  Systemd service installed"
+
+            # ── Install/update nginx config ──
+            cp /tmp/learnwithai.tech.conf /etc/nginx/sites-available/learnwithai.tech
+            ln -sf /etc/nginx/sites-available/learnwithai.tech /etc/nginx/sites-enabled/learnwithai.tech
+            rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+            nginx -t
+            rm /tmp/learnwithai.tech.conf
+            echo "🔧 Nginx config updated"
+
+            # ── Start API service ──
+            systemctl start ailearnapi
+            sleep 3
+            systemctl is-active --quiet ailearnapi && echo "✅ ailearnapi service is running" || (journalctl -u ailearnapi -n 20 --no-pager; exit 1)
+
+            # ── Reload nginx ──
+            systemctl reload nginx
+            echo "🔄 Nginx reloaded"
+
+            echo "✅ API deployed at https://learnwithai.tech/api"
+
+      - name: ⏭️ Skipped
+        if: steps.check_secrets.outputs.skip == 'true'
+        run: echo "Skipped — VPS_SSH_PRIVATE_KEY not set"
+
+      - name: 📊 Summary
+        if: success() && steps.check_secrets.outputs.skip == 'false'
+        run: |
+          echo "### 🎉 .NET API Deployed!" >> $GITHUB_STEP_SUMMARY
+          echo "**API URL:** https://learnwithai.tech/api" >> $GITHUB_STEP_SUMMARY
+          echo "**Health:** https://learnwithai.tech/api/health" >> $GITHUB_STEP_SUMMARY
+          echo "**Swagger:** https://learnwithai.tech/swagger" >> $GITHUB_STEP_SUMMARY
