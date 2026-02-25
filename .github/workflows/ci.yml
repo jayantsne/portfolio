@@ -27,7 +27,18 @@ jobs:
         run: npm run build
         working-directory: angular-starter
 
+      - name: 🔍 Check Firebase token
+        id: check_firebase
+        run: |
+          if [ -z "${{ secrets.FIREBASE_TOKEN }}" ]; then
+            echo "⚠️  FIREBASE_TOKEN secret is not set. Skipping Firebase deployment."
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy to Firebase from subdirectory
+        if: steps.check_firebase.outputs.skip == 'false'
         run: |
           cd angular-starter
           npm install firebase-tools

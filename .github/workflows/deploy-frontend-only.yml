@@ -15,42 +15,61 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+      - name: 🔍 Check required secrets
+        id: check_secrets
+        run: |
+          if [ -z "${{ secrets.VPS_SSH_PRIVATE_KEY }}" ]; then
+            echo "⚠️  VPS_SSH_PRIVATE_KEY secret is not set. Skipping VPS deployment."
+            echo "👉 Add it at: Settings → Secrets and variables → Actions → New repository secret"
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ VPS_SSH_PRIVATE_KEY secret found."
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: 📥 Checkout code
+        if: steps.check_secrets.outputs.skip == 'false'
         uses: actions/checkout@v4
       
       - name: 🟢 Setup Node.js
+        if: steps.check_secrets.outputs.skip == 'false'
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: '20'
           cache: 'npm'
           cache-dependency-path: angular-starter/package-lock.json
       
       - name: 📦 Install dependencies
+        if: steps.check_secrets.outputs.skip == 'false'
         working-directory: ./angular-starter
         run: npm ci
       
       - name: 🏗️ Build Angular app
+        if: steps.check_secrets.outputs.skip == 'false'
         working-directory: ./angular-starter
         run: |
-          npm run build -- --configuration production
+          npm run build
           echo "✓ Build completed successfully"
           ls -lh dist/angular-starter/
       
       - name: 📦 Create deployment archive
+        if: steps.check_secrets.outputs.skip == 'false'
         working-directory: ./angular-starter/dist
         run: |
           tar -czf ../../frontend-deploy.tar.gz angular-starter/
-          cd ../..
+          cd ../..  
           echo "Archive size: $(du -h frontend-deploy.tar.gz | cut -f1)"
       
       - name: 🔑 Setup SSH
+        if: steps.check_secrets.outputs.skip == 'false'
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H 76.13.244.113 >> ~/.ssh/known_hosts
-      
+          ssh-keyscan -p 22 -H 76.13.244.113 >> ~/.ssh/known_hosts 2>/dev/null || true
+
       - name: 📤 Upload to VPS
+        if: steps.check_secrets.outputs.skip == 'false'
         run: |
           scp -i ~/.ssh/deploy_key \
             frontend-deploy.tar.gz \
@@ -58,6 +77,7 @@ jobs:
           echo "✓ Archive uploaded to VPS"
       
       - name: 🚀 Deploy on VPS
+        if: steps.check_secrets.outputs.skip == 'false'
         run: |
           ssh -i ~/.ssh/deploy_key root@76.13.244.113 << 'ENDSSH'
             set -e
@@ -93,9 +113,16 @@ jobs:
         run: |
           rm -f ~/.ssh/deploy_key
           rm -f frontend-deploy.tar.gz
+
+      - name: ⏭️  Skipped Summary
+        if: steps.check_secrets.outputs.skip == 'true'
+        run: |
+          echo "### ⏭️ VPS Deployment Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "Secret VPS_SSH_PRIVATE_KEY is not configured." >> $GITHUB_STEP_SUMMARY
+          echo "Add it in: **Settings → Secrets and variables → Actions**" >> $GITHUB_STEP_SUMMARY
       
       - name: 📊 Deployment Summary
-        if: success()
+        if: success() && steps.check_secrets.outputs.skip == 'false'
         run: |
           echo "### 🎉 AI Learn App Deployed Successfully!" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
