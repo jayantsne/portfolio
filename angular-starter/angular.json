@@ -25,7 +25,8 @@
               "src/favicon.ico", 
               "src/assets",
               "src/manifest.json",
-              "src/service-worker.js"
+              "src/service-worker.js",
+              "src/unregister-sw.html"
             ],
             "styles": [
               "./node_modules/@angular/material/prebuilt-themes/indigo-pink.css",
@@ -63,8 +64,8 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "20kb",
-                  "maximumError": "50kb"
+                  "maximumWarning": "50kb",
+                  "maximumError": "150kb"
                 }
               ]
             }

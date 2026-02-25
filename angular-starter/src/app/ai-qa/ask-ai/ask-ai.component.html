@@ -1,0 +1,144 @@
+<div class="ask-ai-page">
+  <div class="page-header">
+    <a routerLink="/ai-qa" class="back-btn">
+      <span class="back-icon">←</span>
+      <span>Back to Home</span>
+    </a>
+    <h1 class="page-title">
+      <span class="title-icon">🤖</span>
+      Ask AI Anything
+    </h1>
+    <p class="page-subtitle">Get instant, detailed answers to your programming questions</p>
+  </div>
+
+  <div class="main-section">
+    <div class="qa-card" [@cardAnimation]>
+      <div class="card-header">
+        <div class="header-icon">💬</div>
+        <div>
+          <h2>Ask Your Question</h2>
+          <p class="header-subtitle">Get detailed technical explanations with real code examples</p>
+        </div>
+      </div>
+
+      <!-- Question Input -->
+      <div class="question-input-section">
+        <label class="input-label">
+          <span class="label-text">Your Question</span>
+          <span class="label-required">*</span>
+        </label>
+        <div class="input-wrapper">
+          <textarea 
+            [(ngModel)]="currentQuestion"
+            placeholder="Example: What is Angular? How do APIs work? Explain TypeScript with examples..."
+            class="question-input"
+            rows="4"
+            (keydown.ctrl.enter)="getAnswer()"
+          ></textarea>
+        </div>
+        <div class="input-footer">
+          <div class="input-hint">
+            <span class="hint-icon">💡</span>
+            <span>Press <kbd>Ctrl</kbd> + <kbd>Enter</kbd> for quick answer</span>
+          </div>
+          <div class="char-count">{{ currentQuestion.length }} characters</div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button 
+          class="btn btn-primary btn-get-answer" 
+          (click)="getAnswer()"
+          [disabled]="!currentQuestion.trim() || isGenerating"
+          [class.loading]="isGenerating">
+          <span *ngIf="!isGenerating" class="btn-content">
+            <span class="btn-icon">🚀</span>
+            <span>Get Answer</span>
+          </span>
+          <span *ngIf="isGenerating" class="loading-text">
+            <span class="spinner"></span>
+            <span>Generating Answer...</span>
+          </span>
+        </button>
+        <button 
+          class="btn btn-secondary" 
+          (click)="clearQuestion()"
+          [disabled]="!currentQuestion && !generatedAnswer">
+          <span class="btn-icon">🔄</span>
+          <span>Clear</span>
+        </button>
+      </div>
+
+      <!-- Generated Answer Section -->
+      <div class="answer-section" *ngIf="generatedAnswer" [@expandAnswer]>
+        <div class="answer-header">
+          <div class="answer-title">
+            <span class="title-icon">✨</span>
+            <h3>Your Answer</h3>
+          </div>
+          <button 
+            class="btn btn-save" 
+            (click)="saveQA()">
+            <span class="btn-icon">💾</span>
+            <span>Save for Later</span>
+          </button>
+        </div>
+        <div class="answer-content-wrapper">
+          <div class="answer-content">{{ generatedAnswer }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saved Q&As Library Section -->
+  <div class="library-section" *ngIf="savedQAs.length > 0">
+    <div class="library-header">
+      <div class="header-left">
+        <span class="header-icon">📚</span>
+        <div>
+          <h2>Your Saved Answers</h2>
+          <p class="library-subtitle">{{ savedQAs.length }} saved answer{{ savedQAs.length !== 1 ? 's' : '' }} in your personal library</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="library-grid">
+      <article class="library-card" *ngFor="let qa of savedQAs; let i = index" [@cardAnimation]>
+        <div class="card-number">#{{ savedQAs.length - i }}</div>
+        
+        <div class="card-header-section">
+          <span class="timestamp">
+            <span class="time-icon">🕐</span>
+            {{ qa.timestamp | date:'short' }}
+          </span>
+          <button class="btn-delete" (click)="deleteQA(qa.id)" title="Delete this Q&A">
+            <span class="delete-icon">🗑️</span>
+            <span class="delete-text">Delete</span>
+          </button>
+        </div>
+        
+        <div class="card-question">
+          <div class="question-badge">
+            <span class="badge-icon">Q</span>
+          </div>
+          <h3>{{ qa.question }}</h3>
+        </div>
+        
+        <div class="card-answer">
+          <div class="answer-badge">
+            <span class="badge-icon">A</span>
+          </div>
+          <div class="answer-preview">{{ qa.answer }}</div>
+        </div>
+
+        <div class="card-footer">
+          <button class="btn-view-full" (click)="expandCard(qa.id)">
+            <span class="view-icon">👁️</span>
+            <span>View Full Answer</span>
+          </button>
+        </div>
+      </article>
+    </div>
+  </div>
+</div>

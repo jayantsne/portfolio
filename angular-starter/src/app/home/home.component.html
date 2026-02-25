@@ -80,15 +80,16 @@
 
       <div class="cta-row">
         <a
-          href="#contact"
+          (click)="scrollToSection('contact', $event)"
           class="cta-btn"
           #cta
           (mousemove)="onCtaMove($event)"
           (mouseleave)="onCtaLeave()"
+          style="cursor: pointer;"
         >
           Get In Touch →
         </a>
-        <a class="ghost" href="#about">Explore ↓</a>
+        <a class="ghost" (click)="scrollToSection('about', $event)" style="cursor: pointer;">Explore ↓</a>
       </div>
     </div>
   </div>

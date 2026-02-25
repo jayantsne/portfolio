@@ -1,6 +1,7 @@
 import { Component, HostListener, ElementRef, ViewChild, AfterViewInit, Input } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { AuthService } from '../shared/auth.service';
 import { ApiService } from '../shared/api.service';
 
@@ -31,12 +32,46 @@ export class HeaderComponent implements AfterViewInit {
   @Input() roleText = '';
   @Input() companyText = '';
 
+  isAILearnPage = false;
+
   constructor(
     private el: ElementRef,
     public authService: AuthService,
     private router: Router,
     private apiService: ApiService
-  ) { }
+  ) {
+    // Check initial route
+    this.checkRoute(this.router.url);
+    
+    // Track route changes to show/hide portfolio links
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.checkRoute(event.url);
+      // Collapse navbar on route change (mobile)
+      setTimeout(() => this.closeNavbar(), 100);
+    });
+  }
+  
+  private checkRoute(url: string): void {
+    // Detect AI Learn page first
+    this.isAILearnPage = url.startsWith('/ai-learn') || url.includes('/dsa-game') || 
+                         url.includes('/memory-game') || url.includes('/learn-quest') || 
+                         url.includes('/azure-ai-102');
+    
+    // Show portfolio links on root, portfolio, or home routes (but not on AI Learn pages)
+    this.isPortfolioRoute = (url === '/' || url.includes('/portfolio') || url.includes('/home')) && !this.isAILearnPage;
+  }
+
+  closeNavbar(): void {
+    const navbarCollapse = document.getElementById('navbarSupportedContent');
+    const navbarToggler = document.querySelector('.navbar-toggler');
+
+    if (navbarCollapse?.classList.contains('show')) {
+      navbarCollapse.classList.remove('show');
+      navbarToggler?.setAttribute('aria-expanded', 'false');
+    }
+  }
 
   get displayBrandName(): string {
     const raw = (this.brandText || '').trim();
@@ -56,6 +91,7 @@ export class HeaderComponent implements AfterViewInit {
   @ViewChild('hdr', { static: true }) hdr!: ElementRef<HTMLElement>;
   scrolled = false;
   activeSection: 'home' | 'about' | 'skills' | 'experience' | 'contact' | null = 'home';
+  isPortfolioRoute = false; // Track if we're on portfolio routes
 
   private lastScrollY = 0;
 
@@ -223,6 +259,40 @@ export class HeaderComponent implements AfterViewInit {
     );
 
     els.forEach(el => this.sectionObserver!.observe(el));
+  }
+
+  /**
+   * Scroll to a specific section on the page
+   */
+  scrollToSection(sectionId: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    
+    const element = document.getElementById(sectionId);
+    if (!element) return;
+
+    // Close mobile navbar if open
+    this.closeNavbar();
+
+    // Smooth scroll to section
+    if (this.scrollbarInstance?.scrollIntoView) {
+      // Use smooth-scrollbar if available
+      this.scrollbarInstance.scrollIntoView(element, {
+        alignToTop: true,
+        offsetTop: 80
+      });
+    } else {
+      // Fallback to native scroll
+      const headerOffset = 80;
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
+    }
   }
 
   /**

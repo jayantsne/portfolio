@@ -4,7 +4,14 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'https://jayant-portfolio-api.jayant-ai.workers.dev/api'  // Cloudflare Workers API
+  apiUrl: 'https://jayant-portfolio-api.jayant-ai.workers.dev/api',  // Cloudflare Workers API
+  groqApiKeys: [
+    // Add your Groq API keys here for local development
+    // Get free keys at: https://console.groq.com/keys
+    'YOUR_GROQ_API_KEY_1',
+    'YOUR_GROQ_API_KEY_2',
+    'YOUR_GROQ_API_KEY_3'
+  ]
 };
 
 /*

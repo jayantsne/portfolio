@@ -1,0 +1,434 @@
+<div class="learn-quest-container">
+  
+  <!-- 🎮 MAIN MENU -->
+  <div *ngIf="currentMode === 'menu'" class="game-menu" @fadeInOut>
+    <!-- Hero Header -->
+    <div class="quest-hero">
+      <h1 class="quest-title">
+        <span class="gradient-text">🎮 LEARN QUEST</span>
+      </h1>
+      <p class="quest-subtitle">Master Technical Interviews Through Epic Adventures!</p>
+    </div>
+
+    <!-- User Profile Card -->
+    <div class="profile-card" @bounceIn>
+      <div class="profile-header">
+        <div class="user-avatar">
+          <span class="avatar-level">{{userLevel}}</span>
+        </div>
+        <div class="user-info">
+          <h3>Level {{userLevel}} Warrior</h3>
+          <div class="xp-bar">
+            <div class="xp-fill" [style.width.%]="getXPPercentage()"></div>
+          </div>
+          <p class="xp-text">{{userXP}} / {{userXPToNext}} XP</p>
+        </div>
+      </div>
+      
+      <!-- Stats Row -->
+      <div class="stats-row">
+        <div class="stat-item">
+          <span class="stat-icon">✅</span>
+          <div>
+            <div class="stat-value">{{totalQuestionsCompleted}}</div>
+            <div class="stat-label">Completed</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🏆</span>
+          <div>
+            <div class="stat-value">{{unlockedAchievements.length}}/{{achievements.length}}</div>
+            <div class="stat-label">Achievements</div>
+          </div>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🔥</span>
+          <div>
+            <div class="stat-value">{{dailyChallenge?.streak || 0}}</div>
+            <div class="stat-label">Day Streak</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category Filter -->
+    <div class="category-filter-section" @bounceIn>
+      <h3>🎯 Choose Your Focus</h3>
+      <div class="category-pills">
+        <button 
+          class="category-pill" 
+          [class.active]="selectedCategory === 'all'"
+          (click)="changeCategory('all')">
+          🌐 All Topics ({{allQuestions.length}})
+        </button>
+        <button 
+          *ngFor="let category of availableCategories" 
+          class="category-pill"
+          [class.active]="selectedCategory === category"
+          [class.dotnet]="category.includes('.NET') || category.includes('C#') || category.includes('ASP.NET') || category.includes('Entity Framework')"
+          (click)="changeCategory(category)">
+          {{ category === '.NET Core' ? '🔷' : 
+             category === 'C#' ? '💎' : 
+             category === 'ASP.NET' ? '🌐' : 
+             category === 'Entity Framework' ? '🗄️' :
+             category === 'React' ? '⚛️' :
+             category === 'Angular' ? '🅰️' :
+             category === 'JavaScript' ? '📜' :
+             category === 'TypeScript' ? '📘' : '📚' }}
+          {{ category }}
+          <span class="question-count">({{ getQuestionCountByCategory(category) }})</span>
+        </button>
+      </div>
+      <div class="ai-badge" *ngIf="selectedCategory.includes('.NET') || selectedCategory.includes('C#')">
+        <span class="ai-icon">🤖</span>
+        <span>AI-Generated .NET Questions Included!</span>
+      </div>
+    </div>
+
+    <!-- Game Modes Grid -->
+    <div class="game-modes-grid">
+      
+      <!-- Flashcard Swipe Mode -->
+      <div class="game-mode-card flashcard-mode" (click)="startFlashcardMode()" @bounceIn>
+        <div class="mode-icon">💳</div>
+        <h3>Flashcard Swipe</h3>
+        <p>Swipe right if you know it, left if you don't!</p>
+        <div class="mode-badge hot">🔥 Popular</div>
+      </div>
+
+      <!-- Battle Arena -->
+      <div class="game-mode-card battle-mode" (click)="startBattleMode()" @bounceIn>
+        <div class="mode-icon">⚔️</div>
+        <h3>Battle Arena</h3>
+        <p>Timed quiz battles - speed & accuracy matter!</p>
+        <div class="mode-badge new">✨ Exciting</div>
+      </div>
+
+      <!-- Memory Palace -->
+      <div class="game-mode-card memory-mode" (click)="startMemoryPalace()" @bounceIn>
+        <div class="mode-icon">🏰</div>
+        <h3>Memory Palace</h3>
+        <p>Visual storytelling for better retention!</p>
+        <div class="mode-badge">🧠 Smart</div>
+      </div>
+
+      <!-- Daily Challenge -->
+      <div class="game-mode-card daily-mode" 
+           [class.completed]="dailyChallenge?.completed"
+           (click)="!dailyChallenge?.completed && startDailyChallenge()" 
+           @bounceIn>
+        <div class="mode-icon">📅</div>
+        <h3>Daily Challenge</h3>
+        <p *ngIf="!dailyChallenge?.completed">5 questions - maintain your streak!</p>
+        <p *ngIf="dailyChallenge?.completed" class="completed-text">✅ Completed Today!</p>
+        <div class="mode-badge streak">🔥 {{dailyChallenge?.streak || 0}} days</div>
+      </div>
+
+    </div>
+
+    <!-- Achievements Section -->
+    <div class="achievements-section" *ngIf="unlockedAchievements.length > 0">
+      <h2>🏆 Recent Achievements</h2>
+      <div class="achievements-scroll">
+        <div *ngFor="let achievement of unlockedAchievements.slice(-3)" class="achievement-badge">
+          <span class="achievement-icon">{{achievement.icon}}</span>
+          <div class="achievement-info">
+            <div class="achievement-name">{{achievement.name}}</div>
+            <div class="achievement-desc">{{achievement.description}}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- All Achievements Progress -->
+    <div class="all-achievements">
+      <h3>📊 All Achievements</h3>
+      <div class="achievements-grid">
+        <div *ngFor="let achievement of achievements" 
+             class="achievement-item"
+             [class.unlocked]="achievement.unlocked">
+          <div class="achievement-icon-large">{{achievement.icon}}</div>
+          <div class="achievement-name">{{achievement.name}}</div>
+          <div class="achievement-progress-bar">
+            <div class="achievement-progress-fill" 
+                 [style.width.%]="(achievement.progress / achievement.maxProgress) * 100"></div>
+          </div>
+          <div class="achievement-progress-text">{{achievement.progress}}/{{achievement.maxProgress}}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 💳 FLASHCARD SWIPE MODE -->
+  <div *ngIf="currentMode === 'flashcard'" class="flashcard-container" @fadeInOut>
+    <!-- Modern Header -->
+    <div class="modern-header">
+      <button class="modern-back-btn" (click)="backToMenu()">
+        <span class="back-icon">←</span>
+        <span>Back</span>
+      </button>
+      <div class="header-center">
+        <div class="progress-indicator">
+          <div class="progress-bar">
+            <div class="progress-fill" [style.width.%]="((totalCards - flashcardStack.length) / totalCards) * 100"></div>
+          </div>
+          <div class="progress-text">{{totalCards - flashcardStack.length}} / {{totalCards}}</div>
+        </div>
+      </div>
+      <div class="score-display">
+        <div class="score-item success">
+          <span class="score-icon">✓</span>
+          <span class="score-value">{{knownCards}}</span>
+        </div>
+        <div class="score-item fail">
+          <span class="score-icon">✕</span>
+          <span class="score-value">{{unknownCards}}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Flashcard -->
+    <div class="modern-flashcard-arena" *ngIf="currentCard">
+      <!-- Background Cards Stack Effect -->
+      <div class="card-stack">
+        <div *ngFor="let card of flashcardStack.slice(1, 3); let i = index" 
+             class="stack-card"
+             [style.transform]="'translateY(' + ((i + 1) * 8) + 'px) translateX(' + ((i + 1) * 2) + 'px) scale(' + (1 - (i * 0.03)) + ')'"
+             [style.opacity]="1 - (i * 0.3)">
+        </div>
+      </div>
+
+      <!-- Main Card -->
+      <div class="modern-flashcard" 
+           [@cardSwipe]="swipeState"
+           [class.is-flipped]="currentCard.question.expanded"
+           (click)="currentCard.question.expanded = !currentCard.question.expanded">
+        
+        <!-- Card Front -->
+        <div class="card-face card-front">
+          <div class="card-header">
+            <div class="category-tag">
+              <span class="tag-icon">📚</span>
+              <span>{{currentCard.question.category}}</span>
+            </div>
+            <div class="difficulty-badge">{{currentCard.question.difficulty || 'Medium'}}</div>
+          </div>
+          
+          <div class="card-content">
+            <div class="question-label">
+              <span class="label-icon">🧠</span>
+              <span>Question</span>
+            </div>
+            <div class="question-text">{{currentCard.question.question}}</div>
+          </div>
+          
+          <div class="card-footer">
+            <div class="flip-indicator">
+              <span class="flip-icon">🔄</span>
+              <span class="flip-text">Tap to reveal answer</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card Back -->
+        <div class="card-face card-back">
+          <div class="card-header">
+            <div class="category-tag light">
+              <span class="tag-icon">💡</span>
+              <span>Answer</span>
+            </div>
+          </div>
+          
+          <div class="card-content">
+            <div class="answer-text">{{currentCard.question.answer}}</div>
+          </div>
+          
+          <div class="card-footer">
+            <div class="flip-indicator light">
+              <span class="flip-icon">🔄</span>
+              <span class="flip-text">Tap to see question</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modern Action Buttons -->
+    <div class="modern-actions">
+      <button class="action-btn reject" (click)="swipeCard('dont-know')">
+        <span class="btn-bg-circle"></span>
+        <span class="btn-icon-large">✗</span>
+        <span class="btn-label">Don't Know</span>
+      </button>
+      
+      <div class="center-indicator">
+        <div class="swipe-hint-text">
+          <span class="hint-icon">👆</span>
+          <span>Swipe or tap buttons</span>
+        </div>
+      </div>
+      
+      <button class="action-btn accept" (click)="swipeCard('know')">
+        <span class="btn-bg-circle"></span>
+        <span class="btn-icon-large">✓</span>
+        <span class="btn-label">Got It!</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ⚔️ BATTLE ARENA MODE -->
+  <div *ngIf="currentMode === 'battle'" class="battle-container" @fadeInOut>
+    <div class="mode-header battle-header">
+      <button class="back-btn" (click)="backToMenu()">← Back</button>
+      <div class="mode-title-group">
+        <h2>⚔️ Battle Arena</h2>
+        <div class="category-badge" *ngIf="selectedCategory !== 'all'">{{selectedCategory}}</div>
+      </div>
+    </div>
+
+    <div class="battle-hud">
+      <div class="battle-stat">
+        <span class="hud-label">Score</span>
+        <span class="hud-value score-value">{{battleStats.score}}</span>
+      </div>
+      <div class="battle-stat">
+        <span class="hud-label">Lives</span>
+        <span class="hud-value lives-value">
+          <span *ngFor="let i of [1,2,3]" [class.lost]="i > battleStats.lives">❤️</span>
+        </span>
+      </div>
+      <div class="battle-stat">
+        <span class="hud-label">Time</span>
+        <span class="hud-value time-value" 
+              [class.warning]="battleStats.timeLeft <= 10">{{battleStats.timeLeft}}s</span>
+      </div>
+      <div class="battle-stat">
+        <span class="hud-label">Combo</span>
+        <span class="hud-value combo-value">x{{battleStats.combo}}</span>
+      </div>
+    </div>
+
+    <div class="battle-question-card" *ngIf="battleQuestion && battleActive">
+      <div class="battle-category">{{battleQuestion.category}}</div>
+      <h3 class="battle-question">{{battleQuestion.question}}</h3>
+      
+      <div class="battle-options">
+        <button *ngFor="let option of battleOptions; let i = index" 
+                class="battle-option"
+                (click)="answerBattle(option)">
+          <span class="option-letter">{{['A', 'B', 'C', 'D'][i]}}</span>
+          <span class="option-text">{{option}}</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="battle-progress-bar">
+      <div class="battle-progress-fill" [style.width.%]="(battleStats.timeLeft / 60) * 100"></div>
+    </div>
+  </div>
+
+  <!-- 🏰 MEMORY PALACE MODE -->
+  <div *ngIf="currentMode === 'memory-palace'" class="memory-container" @fadeInOut>
+    <div class="mode-header">
+      <button class="back-btn" (click)="backToMenu()">← Back</button>
+      <h2>🏰 Memory Palace</h2>
+    </div>
+
+    <div class="palace-intro">
+      <p class="palace-story">{{visualStory || 'Welcome to your Memory Palace! Each room represents a different concept. Use visual associations to remember better.'}}</p>
+    </div>
+
+    <div class="memory-rooms-grid">
+      <div *ngFor="let room of memoryRooms; let i = index" 
+           class="memory-room"
+           [class.visited]="room.visited"
+           [class.current]="currentRoom === i"
+           (click)="enterRoom(i)">
+        <div class="room-icon">{{room.icon}}</div>
+        <div class="room-name">{{room.name}}</div>
+        <div class="room-count">{{room.questions.length}} questions</div>
+        <div class="room-status">
+          <span *ngIf="room.visited">✅</span>
+          <span *ngIf="!room.visited">🔒</span>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="memoryRooms[currentRoom]" class="current-room-details">
+      <h3>{{memoryRooms[currentRoom].icon}} {{memoryRooms[currentRoom].name}} Chamber</h3>
+      
+      <div class="room-questions">
+        <div *ngFor="let question of memoryRooms[currentRoom].questions" 
+             class="memory-question-card"
+             (click)="question.expanded = !question.expanded">
+          <div class="memory-q">
+            <span class="memory-icon">💭</span>
+            {{question.question}}
+          </div>
+          <div class="memory-a" *ngIf="question.expanded">
+            <span class="memory-icon">💡</span>
+            {{question.answer}}
+          </div>
+          <div class="visual-mnemonic">
+            <p>🎨 Visual Tip: Imagine this as a scene in your mind...</p>
+          </div>
+        </div>
+      </div>
+
+      <button class="complete-room-btn" (click)="completeMemoryRoom()">
+        Complete Room & Continue →
+      </button>
+    </div>
+  </div>
+
+  <!-- 📅 DAILY CHALLENGE MODE -->
+  <div *ngIf="currentMode === 'daily-challenge'" class="daily-container" @fadeInOut>
+    <div class="mode-header">
+      <button class="back-btn" (click)="backToMenu()">← Back</button>
+      <h2>📅 Daily Challenge</h2>
+      <div class="streak-badge">🔥 {{dailyChallenge?.streak || 0}} days</div>
+    </div>
+
+    <div class="daily-progress">
+      <div class="progress-circles">
+        <div *ngFor="let q of dailyChallenge?.questions; let i = index" 
+             class="progress-circle"
+             [class.completed]="i < currentQuestionIndex"
+             [class.current]="i === currentQuestionIndex">
+          {{i + 1}}
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="dailyChallenge && currentQuestionIndex < dailyChallenge.questions.length" 
+         class="daily-question-card">
+      <div class="question-number">Question {{currentQuestionIndex + 1}} of {{dailyChallenge.questions.length}}</div>
+      
+      <div class="daily-question">
+        <h3>{{dailyChallenge.questions[currentQuestionIndex].question}}</h3>
+      </div>
+
+      <button class="reveal-btn" 
+              (click)="dailyChallenge.questions[currentQuestionIndex].expanded = !dailyChallenge.questions[currentQuestionIndex].expanded">
+        {{dailyChallenge.questions[currentQuestionIndex].expanded ? 'Hide' : 'Show'}} Answer
+      </button>
+
+      <div *ngIf="dailyChallenge.questions[currentQuestionIndex].expanded" class="daily-answer">
+        {{dailyChallenge.questions[currentQuestionIndex].answer}}
+      </div>
+
+      <button class="next-question-btn" (click)="nextDailyQuestion()">
+        Next Question →
+      </button>
+    </div>
+
+    <div *ngIf="currentQuestionIndex >= (dailyChallenge?.questions.length || 0)" class="challenge-complete">
+      <div class="complete-icon">🎉</div>
+      <h2>Daily Challenge Complete!</h2>
+      <button class="finish-btn" (click)="completeDailyChallenge()">
+        Claim Rewards
+      </button>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,903 @@
+<!-- Main Container -->
+<div class="dsa-game-container" [class.mobile]="isMobile">
+  
+  <!-- Confetti Effect -->
+  <div class="confetti-container" *ngIf="showConfetti">
+    <div *ngFor="let item of confettiItems; let i = index" 
+         class="confetti-item" 
+         [style.left.%]="(i * 12) + 5"
+         [style.animation-delay.ms]="i * 100"
+         [@confetti]>
+      {{ item }}
+    </div>
+  </div>
+
+  <!-- Menu View -->
+  <div class="menu-view" *ngIf="currentView === 'menu'" [@fadeIn]>
+    <div class="hero-section">
+      <div class="hero-content">
+        <div class="hero-icon-small">🎮</div>
+        <div class="hero-text">
+          <h1 class="hero-title-compact">DSA Game Arena</h1>
+          <p class="hero-subtitle-compact">Master Algorithms Through Interactive Play</p>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-icon">🎯</span>
+          <span class="stat-label">{{ levels.length }} Algorithms</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">⭐</span>
+          <span class="stat-label">{{ totalStars }} Stars</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-icon">🏆</span>
+          <span class="stat-label">{{ completedLevelsCount }} Completed</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="levels-grid">
+      <div 
+        *ngFor="let level of levels" 
+        class="level-card"
+        [class.locked]="level.locked"
+        [class.completed]="level.completed"
+        [@slideIn]
+        [style.cursor]="level.locked ? 'not-allowed' : 'pointer'">
+        
+        <div class="level-status-badge" *ngIf="level.completed">✓</div>
+        <div class="level-lock-badge" *ngIf="level.locked">🔒</div>
+        
+        <!-- Game Cover/Thumbnail Area -->
+        <div class="level-icon">{{ level.icon }}</div>
+        
+        <!-- Game Info Area -->
+        <div class="level-info">
+          <h3 class="level-name">{{ level.name }}</h3>
+          <div class="game-difficulty-badge" [class]="level.difficulty.toLowerCase()">
+            {{ level.difficulty }}
+          </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="level-quick-actions" *ngIf="!level.locked">
+          <button class="quick-action-icon" type="button" (click)="showAlgorithmTutorial($event, level)" [attr.data-level]="level.id" title="Learn More">
+            📖
+          </button>
+          <button class="quick-action-icon primary" type="button" (click)="selectLevel(level)" [attr.data-level]="level.id" title="Play Now">
+            <span style="margin-left: 2px;">▶</span>
+          </button>
+        </div>
+        
+        <!-- Locked State Message -->
+        <div class="locked-message" *ngIf="level.locked">
+          <span class="locked-text">🔒 Unlock with {{ level.requiredStars }} stars</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="menu-actions">
+      <button class="menu-btn" (click)="showTutorial()">
+        <span class="btn-icon">📚</span>
+        <span>How to Play</span>
+      </button>
+      <button class="menu-btn" (click)="showLeaderboard()">
+        <span class="btn-icon">🏆</span>
+        <span>Leaderboard</span>
+      </button>
+      <button class="menu-btn comparison-btn" (click)="showComparisonModal = true">
+        <span class="btn-icon">⚖️</span>
+        <span>Compare Algorithms</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Algorithm Comparison Modal -->
+  <div class="algorithm-comparison-modal" *ngIf="showComparisonModal" [@fadeIn]>
+    <div class="comparison-modal-content" [@modalSlide]>
+      <div class="comparison-header">
+        <h2>⚖️ Algorithm Performance Comparison</h2>
+        <button class="close-btn" (click)="showComparisonModal = false">×</button>
+      </div>
+      
+      <div class="comparison-body">
+        <div class="comparison-table">
+          <div class="comparison-row header-row">
+            <div class="comparison-cell algorithm-cell">Algorithm</div>
+            <div class="comparison-cell">Time (Best)</div>
+            <div class="comparison-cell">Time (Average)</div>
+            <div class="comparison-cell">Time (Worst)</div>
+            <div class="comparison-cell">Space</div>
+            <div class="comparison-cell">Stable?</div>
+          </div>
+          
+          <div class="comparison-row" *ngFor="let algo of algorithmComparisons">
+            <div class="comparison-cell algorithm-cell">
+              <span class="algo-icon">{{ algo.icon }}</span>
+              <span class="algo-name">{{ algo.name }}</span>
+            </div>
+            <div class="comparison-cell" [class.best]="algo.bestTime === 'O(n)'">{{ algo.bestTime }}</div>
+            <div class="comparison-cell">{{ algo.avgTime }}</div>
+            <div class="comparison-cell" [class.worst]="algo.worstTime === 'O(n²)'">{{ algo.worstTime }}</div>
+            <div class="comparison-cell">{{ algo.space }}</div>
+            <div class="comparison-cell">
+              <span [class.yes]="algo.stable" [class.no]="!algo.stable">
+                {{ algo.stable ? '✓ Yes' : '✗ No' }}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="comparison-notes">
+          <h3>📝 Quick Guide</h3>
+          <ul>
+            <li><strong>Time Complexity:</strong> How fast the algorithm runs relative to input size (n)</li>
+            <li><strong>Space Complexity:</strong> How much extra memory is needed</li>
+            <li><strong>Stable:</strong> Maintains relative order of equal elements</li>
+            <li><strong>O(n):</strong> Linear time - proportional to input size</li>
+            <li><strong>O(n log n):</strong> Linearithmic - very efficient for large data</li>
+            <li><strong>O(n²):</strong> Quadratic - slower for large datasets</li>
+          </ul>
+        </div>
+      </div>
+      
+      <div class="comparison-footer">
+        <button class="modal-action-btn" (click)="showComparisonModal = false">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game View -->
+  <div class="game-view" *ngIf="currentView === 'game'" [@fadeIn]>
+    <!-- Compact Game Header -->
+    <div class="game-header-compact" [class.mobile]="isMobile">
+      <button class="back-btn-compact" (click)="showMenu(); $event.stopPropagation()" type="button" title="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      
+      <div class="game-title-compact">
+        <span class="title-icon">{{ selectedLevel?.icon }}</span>
+        <span *ngIf="!isMobile">{{ selectedLevel?.name }}</span>
+      </div>
+      
+      <div class="quick-stats">
+        <div class="stat-mini"><span>⏱️</span>{{ formatTime(timeElapsed) }}</div>
+        <div class="stat-mini"><span>🔄</span>{{ moves }}</div>
+        <div class="stat-mini" *ngIf="!isMobile"><span>🎯</span>{{ getAccuracy() }}%</div>
+      </div>
+      
+      <div class="header-actions-compact">
+        <button class="action-icon" (click)="toggleGuidedMode()" [class.active]="guidedMode" title="Guided Mode">
+          {{ guidedMode ? '🎯' : '🎲' }}
+        </button>
+        <button class="action-icon" (click)="showSettings = !showSettings" [class.active]="showSettings" title="Settings">
+          ⚙️
+        </button>
+        <button class="action-icon" (click)="toggleSound()" [class.active]="soundEnabled" title="Sound">
+          {{ soundEnabled ? '🔊' : '🔇' }}
+        </button>
+        <button class="action-icon" (click)="showAlgorithmGuide = !showAlgorithmGuide" [class.active]="showAlgorithmGuide" title="Guide" *ngIf="!isMobile">
+          📖
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" *ngIf="showSettings" [@fadeIn]>
+      <div class="settings-content">
+        <div class="settings-header">
+          <h3>⚙️ Game Settings</h3>
+          <button class="close-btn-small" (click)="showSettings = false">×</button>
+        </div>
+        
+        <div class="settings-body">
+          <div class="setting-group">
+            <label class="setting-label">
+              <span class="label-icon">🎲</span>
+              Number of Blocks
+            </label>
+            <div class="block-count-options">
+              <button 
+                *ngFor="let count of blockCountOptions" 
+                class="block-count-btn"
+                [class.active]="customBlockCount === count"
+                (click)="setBlockCount(count)">
+                {{ count }} Blocks
+              </button>
+            </div>
+            <p class="setting-hint">💡 More blocks = harder challenge! Current: {{ blocks.length }} blocks</p>
+          </div>
+          
+          <div class="setting-group">
+            <label class="setting-label">
+              <span class="label-icon">📱</span>
+              Auto-Adapt to Screen
+            </label>
+            <div class="toggle-switch">
+              <input 
+                type="checkbox" 
+                id="autoAdapt" 
+                [(ngModel)]="autoAdaptBlockCount"
+                (change)="toggleAutoAdapt()">
+              <label for="autoAdapt" class="toggle-label">
+                {{ autoAdaptBlockCount ? 'ON' : 'OFF' }}
+              </label>
+            </div>
+            <p class="setting-hint">🖥️ Automatically adjusts block count based on your screen size</p>
+          </div>
+          
+          <div class="setting-group">
+            <button class="reset-btn" (click)="applyBlockCount()">
+              ✨ Apply & Restart Level
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Complexity Meter - Hidden -->
+    <!-- <div class="complexity-meter" *ngIf="showComplexityMeter && !complexityQuizMode" [@fadeIn]>
+      <div class="meter-header">
+        <h3>📊 Complexity Analysis</h3>
+      </div>
+      <div class="meter-content">
+        <div class="complexity-stats">
+          <div class="complexity-stat">
+            <span class="stat-icon">🔍</span>
+            <div class="stat-info">
+              <span class="stat-value">{{ currentComplexity.comparisons }}</span>
+              <span class="stat-label">Comparisons</span>
+            </div>
+          </div>
+          <div class="complexity-stat">
+            <span class="stat-icon">🔄</span>
+            <div class="stat-info">
+              <span class="stat-value">{{ currentComplexity.swaps }}</span>
+              <span class="stat-label">Swaps</span>
+            </div>
+          </div>
+          <div class="complexity-stat">
+            <span class="stat-icon">📥</span>
+            <div class="stat-info">
+              <span class="stat-value">{{ currentComplexity.arrayAccesses }}</span>
+              <span class="stat-label">Array Access</span>
+            </div>
+          </div>
+        </div>
+        <div class="theoretical-complexity" *ngIf="selectedLevel">
+          <span class="complexity-label">Expected:</span>
+          <span class="complexity-value">{{ getTheoreticalComplexity() }}</span>
+        </div>
+      </div>
+    </div> -->
+
+    <!-- Code Visualization Panel -->
+    <div class="code-visualization" *ngIf="showCodeVisualization" [@fadeIn]>
+      <div class="code-header">
+        <h3>💻 Algorithm Code</h3>
+        <button class="close-btn-small" (click)="toggleCodeVisualization()">×</button>
+      </div>
+      <div class="code-content">
+        <div class="code-lines">
+          <div *ngFor="let line of algorithmCode; let i = index"
+               class="code-line"
+               [class.active]="i === currentCodeLine">
+            <span class="line-number">{{ i + 1 }}</span>
+            <span class="line-code">{{ line }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Move Affirmation -->
+    <div class="move-affirmation" *ngIf="moveAffirmation" [@modalSlide]
+         [class.correct]="lastMoveCorrect === true"
+         [class.incorrect]="lastMoveCorrect === false">
+      <p>{{ moveAffirmation }}</p>
+    </div>
+
+    <!-- Algorithm Guide Panel -->
+    <div class="algorithm-guide" *ngIf="showAlgorithmGuide && currentAlgorithmStep" [@fadeIn]>
+      <div class="guide-header">
+        <h3>📖 Algorithm Guide</h3>
+        <button class="close-btn-small" (click)="showAlgorithmGuide = false">×</button>
+      </div>
+      <div class="guide-content">
+        <!-- Guided Mode Instruction -->
+        <div class="guided-instruction" *ngIf="guidedMode && expectedMove">
+          <div class="instruction-badge">🎯 Next Move</div>
+          <div class="instruction-text">{{ expectedMove.description }}</div>
+          <div class="instruction-reason">{{ expectedMove.reason }}</div>
+        </div>
+        
+        <div class="current-step">
+          <div class="step-title">{{ currentAlgorithmStep.title }}</div>
+          <div class="step-desc">{{ currentAlgorithmStep.description }}</div>
+          <div class="step-example">💡 Example: {{ currentAlgorithmStep.example }}</div>
+        </div>
+        <div class="step-indicators">
+          <span 
+            *ngFor="let step of algorithmSteps; let i = index"
+            class="step-dot"
+            [class.active]="i === currentStepIndex">
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Helper Panel -->
+    <div class="ai-helper-panel" *ngIf="showAIHelper" [@modalSlide]>
+      <div class="ai-header">
+        <span class="ai-avatar">🤖</span>
+        <h3>AI Assistant</h3>
+        <button class="close-btn" (click)="toggleAIHelper()">×</button>
+      </div>
+      <div class="ai-message">
+        <p>{{ aiMessage }}</p>
+      </div>
+      <div class="ai-actions">
+        <button class="ai-action-btn" (click)="getAIHint()">
+          <span>💡</span>
+          <span>Next Hint</span>
+        </button>
+        <button class="ai-action-btn" (click)="visualizeSolution()" [disabled]="isVisualizing || !selectedLevel || isGameComplete">
+          <span>🎬</span>
+          <span>{{ isVisualizing ? 'Visualizing...' : 'Show Solution' }}</span>
+        </button>
+      </div>
+      <div class="speed-controls">
+        <label class="speed-label">Animation Speed:</label>
+        <div class="speed-buttons">
+          <button class="speed-btn" [class.active]="visualizationSpeed === 1200" (click)="setVisualizationSpeed(1200)">
+            🐢 Slow
+          </button>
+          <button class="speed-btn" [class.active]="visualizationSpeed === 600" (click)="setVisualizationSpeed(600)">
+            🚶 Normal
+          </button>
+          <button class="speed-btn" [class.active]="visualizationSpeed === 300" (click)="setVisualizationSpeed(300)">
+            🏃 Fast
+          </button>
+        </div>
+      </div>
+      <div class="step-explanation" *ngIf="currentStepExplanation">
+        <div class="step-indicator">Step {{ currentStep }}</div>
+        <div class="step-text">{{ currentStepExplanation }}</div>
+      </div>
+    </div>
+
+    <!-- Game Board -->
+    <div class="game-board-enhanced">
+      <!-- Drag Instruction -->
+      <div class="drag-instruction-game" *ngIf="!isGameComplete" [@fadeIn]>
+        <span class="drag-hand">👆</span>
+        <span class="drag-text">Drag to sort: <strong>smallest → largest</strong></span>
+      </div>
+
+      <div class="board-instruction completion-msg" *ngIf="isGameComplete">
+        <span class="trophy-icon glow">🏆</span>
+        <span>Perfect!</span>
+      </div>
+
+      <div class="blocks-arena">
+        <div 
+          *ngFor="let block of blocks; let i = index"
+          class="block block-enhanced"
+          [style.height.px]="block.value * (isMobile ? 40 : 50)"
+          [style.background]="getBlockGradient(block)"
+          [attr.data-value]="block.value"
+          [draggable]="!isGameComplete && !isVisualizing"
+          (dragstart)="onBlockDragStart(block, $event)"
+          (dragover)="onBlockDragOver($event)"
+          (drop)="onBlockDrop(block, $event)"
+          (dragend)="onBlockDragEnd($event)"
+          (touchstart)="onBlockTouchStart(block, $event)"
+          (touchmove)="onBlockTouchMove($event)"
+          (touchend)="onBlockTouchEnd(block, $event)"
+          [@blockAnimation]="block.state"
+          [@fadeIn]>
+          <div class="block-number">{{ block.value }}</div>
+          <div class="block-glow"></div>
+          <div class="block-particles" *ngIf="block.state === 'correct'">
+            <span *ngFor="let p of [1,2,3,4]" class="particle">✨</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compact Game Controls -->
+    <div class="game-controls-compact">
+      <button class="control-icon" (click)="restartLevel()" title="Restart">
+        <span>🔄</span>
+      </button>
+      <button class="control-icon" (click)="toggleAIHelper()" title="Hint">
+        <span>💡</span>
+      </button>
+      <button class="control-icon" (click)="showAlgorithmGuide = !showAlgorithmGuide" title="Guide" *ngIf="!isMobile">
+        <span>📖</span>
+      </button>
+    </div>
+
+    <!-- Completion Modal -->
+    <div class="completion-modal" *ngIf="isGameComplete" [@modalSlide]>
+      <div class="completion-content">
+        <div class="celebration-icon" *ngIf="showCelebration" [@starPop]>🎉</div>
+        <h2 class="completion-title">Level Complete!</h2>
+        <p class="completion-subtitle">You mastered {{ selectedLevel?.name }}!</p>
+        
+        <div class="stars-display">
+          <span 
+            *ngFor="let star of [1,2,3]" 
+            class="star"
+            [class.earned]="star <= stars"
+            [@starPop]>
+            {{ star <= stars ? '⭐' : '☆' }}
+          </span>
+        </div>
+        
+        <div class="completion-stats">
+          <div class="completion-stat">
+            <span class="stat-label">Time</span>
+            <span class="stat-value">{{ formatTime(timeElapsed) }}</span>
+          </div>
+          <div class="completion-stat">
+            <span class="stat-label">Moves</span>
+            <span class="stat-value">{{ moves }}</span>
+          </div>
+          <div class="completion-stat">
+            <span class="stat-label">Accuracy</span>
+            <span class="stat-value">{{ getAccuracy() }}%</span>
+          </div>
+          <div class="completion-stat">
+            <span class="stat-label">Score</span>
+            <span class="stat-value highlight">{{ score }}</span>
+          </div>
+        </div>
+
+        <!-- Complexity Analysis - Hidden -->
+        <!-- <div class="completion-complexity" *ngIf="selectedLevel?.tutorial">
+          <h3 class="complexity-title">📊 Algorithm Complexity</h3>
+          <div class="complexity-cards-completion">
+            <div class="complexity-card-small time">
+              <div class="card-icon">⏱️</div>
+              <div class="card-value">{{ selectedLevel.tutorial.complexity.time }}</div>
+              <div class="card-label">Time</div>
+            </div>
+            <div class="complexity-card-small space">
+              <div class="card-icon">💾</div>
+              <div class="card-value">{{ selectedLevel.tutorial.complexity.space }}</div>
+              <div class="card-label">Space</div>
+            </div>
+          </div>
+          <p class="complexity-hint">💡 {{ selectedLevel.tutorial.complexity.timeExplanation }}</p>
+        </div> -->
+
+        <div class="unlocked-message" *ngIf="totalStars >= 2">
+          <p>🎊 You've unlocked new levels!</p>
+        </div>
+        
+        <div class="completion-actions">
+          <button class="completion-btn primary" (click)="restartLevel()">
+            <span>🔄</span>
+            <span>Play Again</span>
+          </button>
+          <button class="completion-btn secondary" (click)="showMenu()">
+            <span>🏠</span>
+            <span>Menu</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Complexity Quiz Game View -->
+  <div class="complexity-quiz-view" *ngIf="complexityQuizMode" [@fadeIn]>
+    <div class="quiz-header">
+      <button class="back-btn" (click)="exitComplexityQuiz()" type="button" title="Exit Quiz">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 12H5M12 19l-7-7 7-7"/>
+        </svg>
+      </button>
+      
+      <div class="quiz-progress">
+        <h2 class="quiz-title">📊 Big O Complexity Master</h2>
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="(currentComplexityQuestion / complexityQuizTotal) * 100"></div>
+        </div>
+        <p class="progress-text">Question {{ currentComplexityQuestion + 1 }} of {{ complexityQuizTotal }}</p>
+        <p class="score-text">Score: {{ complexityQuizScore }}/{{ complexityQuizTotal }}</p>
+      </div>
+    </div>
+
+    <div class="quiz-content" *ngIf="currentComplexityQuestion < complexityQuizTotal">
+      <!-- Question Card -->
+      <div class="question-card">
+        <div class="question-header">
+          <span class="category-badge">{{ getCurrentComplexityQuestion().category }}</span>
+          <h3 class="question-title">What's the time complexity?</h3>
+        </div>
+        
+        <div class="code-snippet-container">
+          <pre class="code-snippet"><code>{{ getCurrentComplexityQuestion().code }}</code></pre>
+        </div>
+        
+        <p class="code-description">{{ getCurrentComplexityQuestion().description }}</p>
+      </div>
+
+      <!-- Draggable Code Block -->
+      <div class="code-block-drag-area" *ngIf="!complexityBlockPlaced">
+        <div class="instruction-text">
+          <span class="drag-icon">👆</span>
+          Drag this code block to the correct Big O complexity zone below!
+        </div>
+        
+        <div 
+          class="draggable-code-block"
+          draggable="true"
+          (dragstart)="onComplexityDragStart($event)"
+          (touchstart)="onComplexityTouchStart($event)"
+          (touchmove)="onComplexityTouchMove($event)"
+          (touchend)="onComplexityTouchEnd($event)">
+          
+          <div class="block-icon">💻</div>
+          <div class="block-content">
+            <h4>Code Analysis</h4>
+            <p>Drag to complexity zone →</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Complexity Drop Zones -->
+      <div class="complexity-zones-grid">
+        <div 
+          *ngFor="let zone of complexityZones"
+          class="complexity-drop-zone"
+          [class.drag-over]="dragOverComplexityZone === zone.type"
+          [class.correct]="correctComplexityZone === zone.type"
+          [class.incorrect]="incorrectComplexityZone === zone.type"
+          [class.placed]="placedInComplexityZone === zone.type"
+          [attr.data-complexity]="zone.type"
+          (dragover)="onComplexityDragOver($event, zone.type)"
+          (dragleave)="onComplexityDragLeave($event)"
+          (drop)="onComplexityDrop($event, zone.type)">
+          
+          <div class="zone-icon">{{ zone.icon }}</div>
+          <div class="zone-name">{{ zone.type }}</div>
+          <div class="zone-label">{{ zone.name }}</div>
+          <div class="zone-description">{{ zone.description }}</div>
+        </div>
+      </div>
+
+      <!-- Feedback Card -->
+      <div class="feedback-card" *ngIf="showComplexityFeedback" [@slideIn]>
+        <div class="feedback-icon" [class.correct]="isComplexityCorrect" [class.incorrect]="!isComplexityCorrect">
+          {{ isComplexityCorrect ? '✅' : '❌' }}
+        </div>
+        <p class="feedback-message">{{ complexityFeedbackMessage }}</p>
+        
+        <button 
+          *ngIf="currentComplexityQuestion < complexityQuizTotal - 1"
+          class="next-btn" 
+          (click)="nextComplexityQuestion()">
+          Next Question →
+        </button>
+        
+        <button 
+          *ngIf="currentComplexityQuestion === complexityQuizTotal - 1"
+          class="next-btn" 
+          (click)="nextComplexityQuestion()">
+          See Results →
+        </button>
+      </div>
+    </div>
+
+    <!-- Quiz Results -->
+    <div class="quiz-results" *ngIf="currentComplexityQuestion >= complexityQuizTotal">
+      <div class="results-card">
+        <div class="results-icon">
+          {{ complexityQuizScore === complexityQuizTotal ? '🏆' : 
+             complexityQuizScore >= complexityQuizTotal * 0.8 ? '🌟' : 
+             complexityQuizScore >= complexityQuizTotal * 0.6 ? '👍' : '📚' }}
+        </div>
+        
+        <h2 class="results-title">Quiz Complete!</h2>
+        
+        <div class="final-score">
+          <div class="score-circle">
+            <div class="score-value">{{ Math.round((complexityQuizScore / complexityQuizTotal) * 100) }}%</div>
+            <div class="score-label">{{ complexityQuizScore }}/{{ complexityQuizTotal }}</div>
+          </div>
+        </div>
+        
+        <p class="results-message">{{ complexityFeedbackMessage }}</p>
+        
+        <div class="results-actions">
+          <button class="action-btn primary" (click)="restartComplexityQuiz()">
+            <span>🔄</span>
+            Try Again
+          </button>
+          
+          <button class="action-btn secondary" (click)="exitComplexityQuiz()">
+            <span>🏠</span>
+            Main Menu
+          </button>
+        </div>
+        
+        <div class="learning-tip">
+          <h3>💡 Want to improve?</h3>
+          <p>Practice analyzing loops, recursion, and nested operations. Remember:</p>
+          <ul>
+            <li>Single loop = O(n)</li>
+            <li>Nested loops = O(n²)</li>
+            <li>Halving each step = O(log n)</li>
+            <li>Array access = O(1)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tutorial View -->
+  <div class="tutorial-view" *ngIf="currentView === 'tutorial'" [@fadeIn]>
+    <button class="back-btn tutorial-back" (click)="showMenu(); $event.stopPropagation()" type="button" title="Back to Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+    </button>
+    
+    <div class="tutorial-content">
+      <h1 class="tutorial-title">🎮 How to Play DSA Game Arena</h1>
+      
+      <div class="tutorial-section">
+        <div class="tutorial-icon">🎯</div>
+        <h3>Goal</h3>
+        <p>Sort the colorful blocks from smallest to largest using the algorithm shown in the level. <strong>Follow the algorithm's logic</strong> to earn points!</p>
+      </div>
+      
+      <div class="tutorial-section">
+        <div class="tutorial-icon">📖</div>
+        <h3>Learn the Algorithm</h3>
+        <p>Each level teaches you a specific sorting algorithm. The <strong>Algorithm Guide</strong> shows you exactly what steps the algorithm follows. Pay attention to these steps!</p>
+      </div>
+      
+      <div class="tutorial-section">
+        <div class="tutorial-icon">✅</div>
+        <h3>Correct vs Incorrect Moves</h3>
+        <p><strong>Correct moves</strong> follow the algorithm's logic and give you +50 points and a green flash! ✨</p>
+        <p><strong>Incorrect moves</strong> don't follow the algorithm and give you -10 points with a red shake. 💭</p>
+      </div>
+      
+      <div class="tutorial-section">
+        <div class="tutorial-icon">👆</div>
+        <h3>Controls</h3>
+        <p><strong>Desktop:</strong> Click and drag blocks to swap their positions.</p>
+        <p><strong>Mobile:</strong> Tap and drag blocks with your finger.</p>
+      </div>
+      
+      <div class="tutorial-section">
+        <div class="tutorial-icon">🎚️</div>
+        <h3>Difficulty Levels</h3>
+        <p><strong>Easy:</strong> Fewer blocks, perfect for learning</p>
+        <p><strong>Medium:</strong> More blocks, better challenge</p>
+        <p><strong>Hard:</strong> Most blocks, ultimate test!</p>
+      </div>
+      
+      <div class="tutorial-section">
+        <div class="tutorial-icon">🤖</div>
+        <h3>AI Assistant</h3>
+        <p>Stuck? The AI can give you hints or show you the full solution step-by-step. Use it to learn, then try again!</p>
+      </div>
+      
+      <div class="tutorial-section">
+        <div class="tutorial-icon">⭐</div>
+        <h3>Scoring & Stars</h3>
+        <p>Earn stars based on your performance:</p>
+        <ul>
+          <li><strong>Time:</strong> Faster completion = more points</li>
+          <li><strong>Accuracy:</strong> More correct moves = higher score</li>
+          <li><strong>Stars:</strong> Collect stars to unlock new levels!</li>
+        </ul>
+      </div>
+      
+      <div class="tutorial-section">
+        <div class="tutorial-icon">🔓</div>
+        <h3>Level Progression</h3>
+        <p>Levels unlock as you earn stars. Each level requires a certain number of stars to unlock. Master easier algorithms first!</p>
+      </div>
+      
+      <div class="tutorial-section">
+        <div class="tutorial-icon">🎓</div>
+        <h3>Learning Tip</h3>
+        <p>Don't just sort blindly! <strong>Understand WHY each move is correct</strong> according to the algorithm. That's how you truly learn DSA!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Leaderboard View -->
+  <div class="leaderboard-view" *ngIf="currentView === 'leaderboard'" [@fadeIn]>
+    <button class="back-btn" (click)="showMenu()">← Back to Menu</button>
+    
+    <div class="leaderboard-content">
+      <h1 class="leaderboard-title">🏆 Your Progress</h1>
+      <p class="leaderboard-subtitle">Total Stars Earned: ⭐ {{ totalStars }}</p>
+      
+      <div class="progress-grid">
+        <div *ngFor="let level of levels" class="progress-card"
+             [class.completed]="level.completed"
+             [class.locked]="level.locked">
+          <div class="progress-icon">{{ level.icon }}</div>
+          <div class="progress-info">
+            <h4>{{ level.name }}</h4>
+            <p *ngIf="level.completed" class="progress-score">Best: {{ level.bestScore }} pts</p>
+            <p *ngIf="level.locked" class="progress-locked">Requires {{ level.requiredStars }} ⭐</p>
+            <p *ngIf="!level.completed && !level.locked" class="progress-available">Ready to play!</p>
+          </div>
+          <div class="progress-status">
+            <span *ngIf="level.completed">✓</span>
+            <span *ngIf="level.locked">🔒</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="leaderboard-note">
+        <p>💡 Keep playing to unlock all levels and master DSA!</p>
+        <p>🎯 Try harder difficulties for more stars!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Algorithm Tutorial Modal -->
+  <div class="tutorial-modal-overlay" *ngIf="showAlgorithmModal" (click)="closeAlgorithmTutorial()" [@fadeIn]>
+    <div class="tutorial-modal" (click)="$event.stopPropagation()" [@slideIn]>
+      <button class="tutorial-close-btn" (click)="closeAlgorithmTutorial()">×</button>
+      
+      <div class="tutorial-modal-content" *ngIf="selectedTutorial">
+        <!-- Header -->
+        <div class="tutorial-header">
+          <div class="tutorial-level-icon">{{ selectedTutorial.icon }}</div>
+          <div>
+            <h2 class="tutorial-level-name">{{ selectedTutorial.name }}</h2>
+            <span class="tutorial-difficulty" [ngClass]="selectedTutorial.difficulty.toLowerCase()">
+              {{ selectedTutorial.difficulty }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Quick Summary Box -->
+        <section class="tutorial-section quick-summary-section">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">✨</span>
+            Quick Summary
+          </h3>
+          <div class="quick-summary-box">
+            <p class="summary-text">
+              <strong>In Simple Words:</strong> {{ selectedTutorial.tutorial?.whatIsIt }}
+            </p>
+            <div class="summary-stats">
+              <div class="stat-chip">⏱️ Time: {{ selectedTutorial.tutorial?.complexity.time }}</div>
+              <div class="stat-chip">💾 Space: {{ selectedTutorial.tutorial?.complexity.space }}</div>
+              <div class="stat-chip">📈 Level: {{ selectedTutorial.difficulty }}</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- What is it? -->
+        <section class="tutorial-section">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">💡</span>
+            What is {{ selectedTutorial.name }}?
+          </h3>
+          <p class="tutorial-text">{{ selectedTutorial.tutorial?.whatIsIt }}</p>
+        </section>
+
+        <!-- How it works -->
+        <section class="tutorial-section">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">⚙️</span>
+            How Does It Work?
+          </h3>
+          <pre class="tutorial-text tutorial-steps">{{ selectedTutorial.tutorial?.howItWorks }}</pre>
+        </section>
+
+        <!-- Complexity Analysis - Hidden to make modal more concise -->
+        <!-- Will be shown after game completion -->
+        <!--
+        <section class="tutorial-section complexity-section">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">📊</span>
+            Time & Space Complexity
+          </h3>
+          <div class="complexity-grid">
+            <div class="complexity-card time-complexity">
+              <div class="complexity-label">⏱️ Time Complexity</div>
+              <div class="complexity-value">{{ selectedTutorial.tutorial?.complexity.time }}</div>
+              <p class="complexity-explanation">{{ selectedTutorial.tutorial?.complexity.timeExplanation }}</p>
+            </div>
+            <div class="complexity-card space-complexity">
+              <div class="complexity-label">💾 Space Complexity</div>
+              <div class="complexity-value">{{ selectedTutorial.tutorial?.complexity.space }}</div>
+              <p class="complexity-explanation">{{ selectedTutorial.tutorial?.complexity.spaceExplanation }}</p>
+            </div>
+          </div>
+        </section>
+        -->
+
+        <!-- When to Use -->
+        <section class="tutorial-section">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">🎯</span>
+            When Should You Use This?
+          </h3>
+          <ul class="tutorial-list">
+            <li *ngFor="let item of selectedTutorial.tutorial?.whenToUse">{{ item }}</li>
+          </ul>
+        </section>
+
+        <!-- Advantages -->
+        <section class="tutorial-section">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">👍</span>
+            Advantages
+          </h3>
+          <ul class="tutorial-list advantages-list">
+            <li *ngFor="let item of selectedTutorial.tutorial?.advantages">{{ item }}</li>
+          </ul>
+        </section>
+
+        <!-- Disadvantages -->
+        <section class="tutorial-section">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">👎</span>
+            Disadvantages
+          </h3>
+          <ul class="tutorial-list disadvantages-list">
+            <li *ngFor="let item of selectedTutorial.tutorial?.disadvantages">{{ item }}</li>
+          </ul>
+        </section>
+
+        <!-- Real World Example -->
+        <section class="tutorial-section highlight-section">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">🌍</span>
+            Real-World Example
+          </h3>
+          <p class="tutorial-text tutorial-example">{{ selectedTutorial.tutorial?.realWorldExample }}</p>
+        </section>
+
+        <!-- Interview Tips -->
+        <section class="tutorial-section tips-section">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">🎤</span>
+            Interview Tips & What Interviewers Look For
+          </h3>
+          <ul class="tutorial-list interview-tips">
+            <li *ngFor="let tip of selectedTutorial.tutorial?.interviewTips" class="tip-item">{{ tip }}</li>
+          </ul>
+        </section>
+
+        <!-- Code Example -->
+        <section class="tutorial-section code-section" *ngIf="selectedTutorial.tutorial?.codeExample">
+          <h3 class="tutorial-section-title">
+            <span class="section-icon">💻</span>
+            Code Implementation
+          </h3>
+          <pre class="tutorial-code"><code>{{ selectedTutorial.tutorial?.codeExample }}</code></pre>
+        </section>
+
+        <!-- Action Buttons -->
+        <div class="tutorial-footer">
+          <button class="tutorial-action-btn start-game-btn" (click)="startGameFromTutorial()">
+            <span class="btn-icon">🎮</span>
+            <span>Start Playing!</span>
+          </button>
+          <button class="tutorial-action-btn close-tutorial-btn" (click)="closeAlgorithmTutorial()">
+            <span>Close Tutorial</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

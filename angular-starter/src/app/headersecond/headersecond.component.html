@@ -57,7 +57,7 @@
         >in</a>
       </div>
 
-     <a href="#contact" class="cta-btn" #cta (mousemove)="onCtaMove($event)" (mouseleave)="onCtaLeave()">
+     <a (click)="scrollToSection('contact', $event)" class="cta-btn" #cta (mousemove)="onCtaMove($event)" (mouseleave)="onCtaLeave()" style="cursor: pointer;">
   Get In Touch →
 </a>
     </div>

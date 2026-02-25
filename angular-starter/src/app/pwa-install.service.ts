@@ -97,10 +97,17 @@ export class PwaInstallService {
   }
 
   public registerServiceWorker(): void {
-    // Only register service worker in production (not localhost or ng serve)
+    // DISABLED IN DEVELOPMENT - Service worker causes reload loops
     const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     const isDevServer = window.location.port && (window.location.port === '4200' || window.location.port === '4300');
-    if ('serviceWorker' in navigator && !isLocalhost && !isDevServer) {
+    
+    if (isLocalhost || isDevServer) {
+      console.log('🔧 DEV: Service worker registration DISABLED (localhost/dev server)');
+      return;
+    }
+    
+    // Only register service worker in production (not localhost or ng serve)
+    if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('/service-worker.js')
           .then((registration) => {

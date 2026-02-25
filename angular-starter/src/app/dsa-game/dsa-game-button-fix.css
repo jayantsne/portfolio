@@ -1,0 +1,32 @@
+/* Emergency Button Fix - Add this as last resort if buttons still don't work */
+
+/* Force buttons to be on top and clickable */
+.level-actions {
+  isolation: isolate !important;
+}
+
+.learn-btn,
+.play-btn {
+  will-change: transform !important;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
+}
+
+/* Prevent any overlays from blocking */
+.level-card > * {
+  pointer-events: none;
+}
+
+.level-actions,
+.level-actions > * {
+  pointer-events: auto !important;
+}
+
+/* Mobile-specific button fixes */
+@media (max-width: 768px) {
+  .learn-btn,
+  .play-btn {
+    min-height: 52px !important;
+    font-size: 1rem !important;
+  }
+}

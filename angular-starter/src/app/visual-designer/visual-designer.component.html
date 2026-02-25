@@ -1,0 +1,522 @@
+<div class="visual-designer">
+  <!-- Header -->
+  <div class="designer-header">
+    <div class="header-left">
+      <h1>🎨 Visual Designer</h1>
+      <p>Edit code, select elements, adjust styling visually</p>
+    </div>
+    
+    <div class="header-actions">
+      <button class="action-btn" (click)="toggleAIPanel()" title="AI Assistant">
+        <span class="icon">🤖</span> AI Assistant
+      </button>
+      <button class="action-btn" (click)="loadComponentHTML()" title="Load Component HTML">
+        <span class="icon">📂</span> Load Component
+      </button>
+      <button class="action-btn" (click)="refreshPreview()" title="Refresh Preview">
+        <span class="icon">🔄</span> Refresh
+      </button>
+      <button class="action-btn" (click)="exportHTML()" title="Export HTML">
+        <span class="icon">📥</span> Export HTML
+      </button>
+      <button class="action-btn" (click)="exportDesign()" title="Export JSON">
+        <span class="icon">💾</span> Save JSON
+      </button>
+      <label class="toggle-label">
+        <input type="checkbox" [(ngModel)]="livePreview" />
+        <span>Live Preview</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="designer-main">
+    <!-- Left Panel - Code Editor -->
+    <div class="code-panel">
+      <div class="code-tabs">
+        <button 
+          class="tab-btn" 
+          [class.active]="activeCodeTab === 'html'"
+          (click)="activeCodeTab = 'html'">
+          HTML
+        </button>
+        <button 
+          class="tab-btn" 
+          [class.active]="activeCodeTab === 'css'"
+          (click)="activeCodeTab = 'css'">
+          CSS
+        </button>
+        <button class="copy-btn-small" (click)="copyCode(activeCodeTab)">
+          📋 Copy
+        </button>
+      </div>
+      
+      <div class="code-editor-container">
+        <!-- HTML Editor -->
+        <div class="code-editor" *ngIf="activeCodeTab === 'html'">
+          <textarea 
+            [(ngModel)]="htmlCode"
+            (ngModelChange)="onHTMLChange()"
+            class="code-textarea"
+            spellcheck="false"
+            placeholder="Enter your HTML here..."></textarea>
+        </div>
+        
+        <!-- CSS Editor -->
+        <div class="code-editor" *ngIf="activeCodeTab === 'css'">
+          <textarea 
+            [(ngModel)]="cssCode"
+            (ngModelChange)="onCSSChange()"
+            class="code-textarea"
+            spellcheck="false"
+            placeholder="Enter your CSS here..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- Center - Live Preview -->
+    <div class="preview-panel">
+      <div class="preview-header">
+        <h3>🖥️ Live Preview</h3>
+        <p class="preview-hint">Click any element to select and edit</p>
+      </div>
+      
+      <div class="preview-container">
+        <iframe 
+          #previewFrame
+          class="preview-iframe"
+          frameborder="0"></iframe>
+        
+        <div class="selection-overlay" *ngIf="selectedElement">
+          <div class="selection-info">
+            <strong>Selected:</strong> {{ selectedElementPath }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel - Properties -->
+    <div class="properties-panel" *ngIf="showPropertiesPanel">
+      <div class="panel-header">
+        <h3>🎨 Properties</h3>
+        <button class="clear-btn" (click)="clearSelection()" *ngIf="selectedElement">
+          ✕
+        </button>
+      </div>
+      
+      <div class="properties-content" *ngIf="selectedElement">
+        
+        <!-- Element Info -->
+        <div class="property-section">
+          <h4>📍 Selected Element</h4>
+          <div class="element-path">{{ selectedElementPath }}</div>
+        </div>
+
+        <!-- Size -->
+        <div class="property-section size-section">
+          <h4>📐 Size & Dimensions</h4>
+          
+          <!-- Width with +/- buttons and unit selector -->
+          <div class="size-control">
+            <label>Width:</label>
+            <div class="size-input-group">
+              <button class="spacing-btn" (click)="adjustSize('width', -10)">-</button>
+              <input 
+                type="text" 
+                [value]="selectedElementStyles.width"
+                (change)="updateElementStyle('width', $any($event.target).value)"
+                placeholder="auto"
+                class="spacing-input" />
+              <button class="spacing-btn" (click)="adjustSize('width', 10)">+</button>
+              <select 
+                class="unit-selector"
+                [(ngModel)]="widthUnit"
+                (change)="changeUnit('width', widthUnit)">
+                <option value="px">px</option>
+                <option value="%">%</option>
+                <option value="rem">rem</option>
+                <option value="vw">vw</option>
+                <option value="auto">auto</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Height with +/- buttons and unit selector -->
+          <div class="size-control">
+            <label>Height:</label>
+            <div class="size-input-group">
+              <button class="spacing-btn" (click)="adjustSize('height', -10)">-</button>
+              <input 
+                type="text" 
+                [value]="selectedElementStyles.height"
+                (change)="updateElementStyle('height', $any($event.target).value)"
+                placeholder="auto"
+                class="spacing-input" />
+              <button class="spacing-btn" (click)="adjustSize('height', 10)">+</button>
+              <select 
+                class="unit-selector"
+                [(ngModel)]="heightUnit"
+                (change)="changeUnit('height', heightUnit)">
+                <option value="px">px</option>
+                <option value="%">%</option>
+                <option value="rem">rem</option>
+                <option value="vh">vh</option>
+                <option value="auto">auto</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Responsive constraints -->
+          <div class="size-control">
+            <label>Max Width:</label>
+            <input 
+              type="text" 
+              [value]="selectedElementStyles.maxWidth"
+              (change)="updateElementStyle('maxWidth', $any($event.target).value)"
+              placeholder="none"
+              class="spacing-input" />
+          </div>
+          <div class="size-control">
+            <label>Min Width:</label>
+            <input 
+              type="text" 
+              [value]="selectedElementStyles.minWidth"
+              (change)="updateElementStyle('minWidth', $any($event.target).value)"
+              placeholder="0"
+              class="spacing-input" />
+          </div>
+        </div>
+
+        <!-- Margin -->
+        <div class="property-section spacing-section">
+          <h4>📏 Margin</h4>
+          <div class="spacing-visual">
+            <div class="spacing-row">
+              <button class="spacing-btn" (click)="adjustMargin('top', -5)">-</button>
+              <input 
+                type="text" 
+                [value]="selectedElementStyles.marginTop"
+                (change)="updateElementStyle('marginTop', $any($event.target).value)"
+                class="spacing-input" />
+              <button class="spacing-btn" (click)="adjustMargin('top', 5)">+</button>
+            </div>
+            <div class="spacing-row-horizontal">
+              <div class="spacing-col">
+                <button class="spacing-btn" (click)="adjustMargin('left', -5)">-</button>
+                <input 
+                  type="text" 
+                  [value]="selectedElementStyles.marginLeft"
+                  (change)="updateElementStyle('marginLeft', $any($event.target).value)"
+                  class="spacing-input" />
+                <button class="spacing-btn" (click)="adjustMargin('left', 5)">+</button>
+              </div>
+              <div class="spacing-center">M</div>
+              <div class="spacing-col">
+                <button class="spacing-btn" (click)="adjustMargin('right', -5)">-</button>
+                <input 
+                  type="text" 
+                  [value]="selectedElementStyles.marginRight"
+                  (change)="updateElementStyle('marginRight', $any($event.target).value)"
+                  class="spacing-input" />
+                <button class="spacing-btn" (click)="adjustMargin('right', 5)">+</button>
+              </div>
+            </div>
+            <div class="spacing-row">
+              <button class="spacing-btn" (click)="adjustMargin('bottom', -5)">-</button>
+              <input 
+                type="text" 
+                [value]="selectedElementStyles.marginBottom"
+                (change)="updateElementStyle('marginBottom', $any($event.target).value)"
+                class="spacing-input" />
+              <button class="spacing-btn" (click)="adjustMargin('bottom', 5)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Padding -->
+        <div class="property-section spacing-section">
+          <h4>📦 Padding</h4>
+          <div class="spacing-visual">
+            <div class="spacing-row">
+              <button class="spacing-btn" (click)="adjustPadding('top', -5)">-</button>
+              <input 
+                type="text" 
+                [value]="selectedElementStyles.paddingTop"
+                (change)="updateElementStyle('paddingTop', $any($event.target).value)"
+                class="spacing-input" />
+              <button class="spacing-btn" (click)="adjustPadding('top', 5)">+</button>
+            </div>
+            <div class="spacing-row-horizontal">
+              <div class="spacing-col">
+                <button class="spacing-btn" (click)="adjustPadding('left', -5)">-</button>
+                <input 
+                  type="text" 
+                  [value]="selectedElementStyles.paddingLeft"
+                  (change)="updateElementStyle('paddingLeft', $any($event.target).value)"
+                  class="spacing-input" />
+                <button class="spacing-btn" (click)="adjustPadding('left', 5)">+</button>
+              </div>
+              <div class="spacing-center">P</div>
+              <div class="spacing-col">
+                <button class="spacing-btn" (click)="adjustPadding('right', -5)">-</button>
+                <input 
+                  type="text" 
+                  [value]="selectedElementStyles.paddingRight"
+                  (change)="updateElementStyle('paddingRight', $any($event.target).value)"
+                  class="spacing-input" />
+                <button class="spacing-btn" (click)="adjustPadding('right', 5)">+</button>
+              </div>
+            </div>
+            <div class="spacing-row">
+              <button class="spacing-btn" (click)="adjustPadding('bottom', -5)">-</button>
+              <input 
+                type="text" 
+                [value]="selectedElementStyles.paddingBottom"
+                (change)="updateElementStyle('paddingBottom', $any($event.target).value)"
+                class="spacing-input" />
+              <button class="spacing-btn" (click)="adjustPadding('bottom', 5)">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Colors -->
+        <div class="property-section">
+          <h4>🎨 Colors</h4>
+          <div class="property-row">
+            <label>Background:</label>
+            <div class="color-input-group">
+              <input 
+                type="color" 
+                [value]="selectedElementStyles.backgroundColor || '#ffffff'"
+                (change)="updateElementStyle('backgroundColor', $any($event.target).value)"
+                class="color-picker" />
+              <input 
+                type="text" 
+                [value]="selectedElementStyles.backgroundColor"
+                (change)="updateElementStyle('backgroundColor', $any($event.target).value)"
+                class="color-text" />
+            </div>
+          </div>
+          <div class="property-row">
+            <label>Text Color:</label>
+            <div class="color-input-group">
+              <input 
+                type="color" 
+                [value]="selectedElementStyles.color || '#000000'"
+                (change)="updateElementStyle('color', $any($event.target).value)"
+                class="color-picker" />
+              <input 
+                type="text" 
+                [value]="selectedElementStyles.color"
+                (change)="updateElementStyle('color', $any($event.target).value)"
+                class="color-text" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Border & Effects -->
+        <div class="property-section">
+          <h4>✨ Border & Effects</h4>
+          <div class="property-row">
+            <label>Border:</label>
+            <input 
+              type="text" 
+              [value]="selectedElementStyles.border"
+              (change)="updateElementStyle('border', $any($event.target).value)"
+              placeholder="1px solid #000" />
+          </div>
+          <div class="property-row">
+            <label>Border Radius:</label>
+            <input 
+              type="text" 
+              [value]="selectedElementStyles.borderRadius"
+              (change)="updateElementStyle('borderRadius', $any($event.target).value)"
+              placeholder="0px" />
+          </div>
+        </div>
+
+        <!-- Typography -->
+        <div class="property-section">
+          <h4>✍️ Typography</h4>
+          <div class="property-row">
+            <label>Font Size:</label>
+            <input 
+              type="text" 
+              [value]="selectedElementStyles.fontSize"
+              (change)="updateElementStyle('fontSize', $any($event.target).value)"
+              placeholder="16px" />
+          </div>
+          <div class="property-row">
+            <label>Font Weight:</label>
+            <select 
+              [value]="selectedElementStyles.fontWeight"
+              (change)="updateElementStyle('fontWeight', $any($event.target).value)">
+              <option value="normal">Normal</option>
+              <option value="bold">Bold</option>
+              <option value="600">Semi-bold</option>
+              <option value="300">Light</option>
+            </select>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="no-selection" *ngIf="!selectedElement">
+        <div class="no-selection-icon">👆</div>
+        <p>Click an element in the preview to edit its properties</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Component Loader Panel -->
+  <div class="loader-panel" [class.show]="showLoaderPanel">
+    <div class="loader-header">
+      <h3>📂 Load Component</h3>
+      <button class="close-btn" (click)="toggleLoaderPanel()">×</button>
+    </div>
+
+    <div class="loader-content">
+      <div class="loader-section">
+        <h4>📄 Upload Files</h4>
+        <p class="help-text">Select HTML and CSS files from your project</p>
+        
+        <div class="file-upload-group">
+          <label class="file-upload-btn">
+            <input type="file" accept=".html" (change)="onHTMLFileSelected($event)" style="display: none;" />
+            <span class="upload-icon">📄</span>
+            <span>Choose HTML File</span>
+          </label>
+          <span class="file-name" *ngIf="htmlFileName">✅ {{ htmlFileName }}</span>
+        </div>
+
+        <div class="file-upload-group">
+          <label class="file-upload-btn">
+            <input type="file" accept=".css" (change)="onCSSFileSelected($event)" style="display: none;" />
+            <span class="upload-icon">🎨</span>
+            <span>Choose CSS File</span>
+          </label>
+          <span class="file-name" *ngIf="cssFileName">✅ {{ cssFileName }}</span>
+        </div>
+
+        <button class="load-files-btn" (click)="loadSelectedFiles()" [disabled]="!htmlFileName && !cssFileName">
+          ✨ Load Files into Editor
+        </button>
+      </div>
+
+      <div class="loader-divider">OR</div>
+
+      <div class="loader-section">
+        <h4>📝 Paste Code Directly</h4>
+        <p class="help-text">Copy and paste your HTML/CSS here</p>
+        
+        <textarea 
+          class="paste-textarea" 
+          [(ngModel)]="pastedHTML" 
+          placeholder="Paste HTML here..."
+          rows="6"
+        ></textarea>
+
+        <textarea 
+          class="paste-textarea" 
+          [(ngModel)]="pastedCSS" 
+          placeholder="Paste CSS here..."
+          rows="6"
+        ></textarea>
+
+        <button class="load-files-btn" (click)="loadPastedCode()" [disabled]="!pastedHTML && !pastedCSS">
+          ✨ Load Pasted Code
+        </button>
+      </div>
+
+      <div class="loader-section">
+        <h4>💡 Quick Start Templates</h4>
+        <div class="template-options">
+          <button class="template-btn" (click)="loadTemplate('button')">
+            🔘 Button
+          </button>
+          <button class="template-btn" (click)="loadTemplate('card')">
+            🃏 Card
+          </button>
+          <button class="template-btn" (click)="loadTemplate('form')">
+            📝 Form
+          </button>
+          <button class="template-btn" (click)="loadTemplate('landing')">
+            🌐 Landing Page
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AI Assistant Panel -->
+  <div class="ai-panel" [class.show]="showAIPanel">
+    <div class="ai-header">
+      <h3>🤖 AI Assistant</h3>
+      <button class="close-btn" (click)="toggleAIPanel()">×</button>
+    </div>
+
+    <div class="ai-content">
+      <div class="ai-mode-selector">
+        <label class="mode-option">
+          <input type="radio" name="aiMode" value="generate" [(ngModel)]="aiMode" />
+          <span>Generate</span>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="aiMode" value="improve" [(ngModel)]="aiMode" />
+          <span>Improve</span>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="aiMode" value="fix" [(ngModel)]="aiMode" />
+          <span>Fix</span>
+        </label>
+        <label class="mode-option">
+          <input type="radio" name="aiMode" value="suggest" [(ngModel)]="aiMode" />
+          <span>Suggest</span>
+        </label>
+      </div>
+
+      <div class="ai-prompt-section">
+        <label>Describe what you want:</label>
+        <textarea 
+          class="ai-prompt-input" 
+          [(ngModel)]="aiPrompt" 
+          placeholder="e.g., 'create a blue button', 'make a login form', 'improve my code', 'fix errors'"
+          rows="4"
+          [disabled]="aiLoading"
+        ></textarea>
+      </div>
+
+      <button 
+        class="ai-generate-btn" 
+        (click)="generateWithAI()" 
+        [disabled]="aiLoading || !aiPrompt.trim()"
+      >
+        <span *ngIf="!aiLoading">✨ {{ aiMode === 'generate' ? 'Generate' : aiMode === 'improve' ? 'Improve' : aiMode === 'fix' ? 'Fix' : 'Get Suggestions' }}</span>
+        <span *ngIf="aiLoading" class="loading-spinner">⏳ Processing...</span>
+      </button>
+
+      <div class="ai-response" *ngIf="aiResponse">
+        <div class="response-header">Response:</div>
+        <div class="response-content">{{ aiResponse }}</div>
+      </div>
+
+      <div class="ai-examples">
+        <div class="examples-header">💡 Example Prompts:</div>
+        <div class="example-list">
+          <button class="example-btn" (click)="aiPrompt = 'create a blue button with rounded corners'">
+            "create a blue button"
+          </button>
+          <button class="example-btn" (click)="aiPrompt = 'make a modern login form'">
+            "make a login form"
+          </button>
+          <button class="example-btn" (click)="aiPrompt = 'create a hero section with gradient background'">
+            "create a hero section"
+          </button>
+          <button class="example-btn" (click)="aiPrompt = 'build a navigation bar'">
+            "build a navbar"
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

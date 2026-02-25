@@ -1,0 +1,175 @@
+<div class="memory-game-container">
+  
+  <!-- Menu View -->
+  <div class="menu-view" *ngIf="currentView === 'menu'" [@fadeIn]>
+    <!-- Header -->
+    <div class="game-header">
+      <div class="header-icon">🧠</div>
+      <h1 class="game-title">Memory Types Game</h1>
+      <p class="game-subtitle">Drag code blocks to correct memory sections!</p>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-badge">
+        <span class="stat-icon">🎯</span>
+        <span class="stat-value">4 Memory Types</span>
+      </div>
+      <div class="stat-badge">
+        <span class="stat-icon">🎮</span>
+        <span class="stat-value">8 Challenges</span>
+      </div>
+    </div>
+
+    <!-- Start Game Button -->
+    <button class="start-quiz-btn" (click)="startQuiz()">
+      <span class="btn-icon">🎯</span>
+      <span class="btn-text">Start Game</span>
+    </button>
+  </div>
+
+  <!-- Quiz View -->
+  <div class="quiz-view" *ngIf="currentView === 'quiz'" [@fadeIn]>
+    <!-- Quiz Header -->
+    <div class="quiz-header">
+      <button class="back-btn" (click)="backToMenu()">← Back</button>
+      <div class="quiz-info">
+        <h2>🎯 Memory Type Quiz</h2>
+        <p>Question {{ currentQuestionIndex + 1 }} / {{ totalQuestions }}</p>
+      </div>
+      <div class="quiz-score">
+        <span class="score-label">Score</span>
+        <span class="score-value">{{ score }}/{{ totalQuestions }}</span>
+      </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="quiz-progress-bar">
+      <div class="progress-fill" 
+           [style.width.%]="(currentQuestionIndex / totalQuestions) * 100"></div>
+    </div>
+
+    <!-- Game Board - Drag & Drop Interface -->
+    <div class="game-board" *ngIf="currentQuizItem && !showFeedback">
+      
+      <!-- Draggable Code Block -->
+      <div class="code-block-container">
+        <h3 class="instruction">🎯 Drag this code block to the correct memory section:</h3>
+        <div class="code-block draggable"
+             [attr.draggable]="true"
+             (dragstart)="onDragStart($event)"
+             (touchstart)="onTouchStart($event)"
+             (touchmove)="onTouchMove($event)"
+             (touchend)="onTouchEnd($event)"
+             [id]="'block-' + currentQuizItem.id"
+             [class.dragging]="isDragging"
+             [class.hidden]="blockPlaced">
+          <div class="block-header">
+            <span class="block-icon">📦</span>
+            <span class="block-label">Code Block #{{ currentQuestionIndex + 1 }}</span>
+          </div>
+          <div class="block-code">
+            <code>{{ currentQuizItem.name }}</code>
+          </div>
+        </div>
+      </div>
+
+      <!-- Memory Sections - Drop Zones -->
+      <div class="memory-sections">
+        <div class="memory-zone"
+             *ngFor="let section of memorySections"
+             [attr.data-type]="section.type"
+             (dragover)="onDragOver($event)"
+             (drop)="onDrop($event, section.type)"
+             (dragleave)="onDragLeave($event)"
+             [class.drag-over]="dragOverZone === section.type"
+             [class.correct-zone]="correctZone === section.type"
+             [class.incorrect-zone]="incorrectZone === section.type"
+             [style.border-color]="section.color">
+          <div class="zone-header" [style.background]="section.color">
+            <span class="zone-icon">{{ section.icon }}</span>
+            <span class="zone-name">{{ section.nameEnglish }}</span>
+          </div>
+          <div class="zone-description">{{ section.description }}</div>
+          <div class="drop-hint" *ngIf="!blockPlaced">⬇️ Drop here</div>
+          
+          <!-- Placed Block -->
+          <div class="placed-block" *ngIf="blockPlaced && placedInZone === section.type" [@allocate]>
+            <div class="block-content">
+              <code>{{ currentQuizItem.name }}</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feedback Section -->
+    <div class="feedback-section" *ngIf="showFeedback" [@fadeIn]>
+      <div class="feedback-card" [class.correct]="isCorrect" [class.incorrect]="!isCorrect">
+        <div class="feedback-icon">
+          {{ isCorrect ? '🎉' : '📚' }}
+        </div>
+        <div class="feedback-message">{{ feedbackMessage }}</div>
+        
+        <!-- Show correct memory visualization -->
+        <div class="feedback-visual" *ngIf="currentQuizItem">
+          <div class="memory-preview" 
+               [style.border-color]="getMemoryTypeColor(currentQuizItem.memoryType || 'stack')">
+            <span class="memory-icon">{{ getMemoryTypeIcon(currentQuizItem.memoryType || 'stack') }}</span>
+            <div class="memory-info">
+              <div class="memory-name">{{ currentQuizItem.name }}</div>
+              <div class="memory-details">
+                <span>Size: {{ currentQuizItem.size }}</span>
+                <span>•</span>
+                <span>{{ currentQuizItem.lifetime }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Auto-advance indicator -->
+        <div class="next-indicator">
+          <span class="loading-dots">Loading next question...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quiz Complete -->
+    <div class="quiz-complete" *ngIf="currentQuestionIndex >= totalQuestions && showFeedback" [@fadeIn]>
+      <div class="complete-card">
+        <div class="complete-icon">🏆</div>
+        <h2 class="complete-title">Quiz Completed!</h2>
+        <div class="complete-message">{{ feedbackMessage }}</div>
+        
+        <!-- Score visualization -->
+        <div class="score-visualization">
+          <div class="score-circle">
+            <svg viewBox="0 0 100 100">
+              <circle cx="50" cy="50" r="45" fill="none" stroke="#e0e0e0" stroke-width="8"/>
+              <circle cx="50" cy="50" r="45" fill="none" 
+                      stroke="#4CAF50" 
+                      stroke-width="8"
+                      stroke-linecap="round"
+                      [attr.stroke-dasharray]="(score / totalQuestions) * 283 + ' 283'"
+                      transform="rotate(-90 50 50)"/>
+            </svg>
+            <div class="score-text">
+              <span class="score-number">{{ ((score / totalQuestions) * 100).toFixed(0) }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="complete-actions">
+          <button class="action-btn primary" (click)="restartQuiz()">
+            <span>🔄 Play Again</span>
+          </button>
+          <button class="action-btn secondary" (click)="backToMenu()">
+            <span>🏠 Main Menu</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

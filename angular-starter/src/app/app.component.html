@@ -1,7 +1,8 @@
+<!-- Splash screen - Re-enabled -->
 <app-splash-screen *ngIf="showSplash" [minDurationMs]="4000" (done)="onSplashDone()"></app-splash-screen>
 
 <!-- PWA Install Banner -->
-<div class="pwa-install-banner" *ngIf="showInstallPrompt && !isAppInstalled">
+<!-- <div class="pwa-install-banner" *ngIf="showInstallPrompt && !isAppInstalled">
   <div class="pwa-banner-content">
     <div class="pwa-banner-icon">📱</div>
     <div class="pwa-banner-text">
@@ -11,11 +12,12 @@
     <button class="pwa-install-btn" (click)="installPWA()">Install</button>
     <button class="pwa-dismiss-btn" (click)="dismissInstallPrompt()">×</button>
   </div>
-</div>
+</div> -->
 
+<!-- Header - Always shown, but with different navigation based on route -->
 <app-header
     [brandText]="fullName"
-    brandHref="#"
+    brandHref="/"
     [roleText]="jobTitle"
     [companyText]="companyName"
 ></app-header>

@@ -12,4 +12,14 @@ export class FooterComponent implements OnInit {
   ngOnInit(): void {
   }
 
+  scrollToTop(event?: Event): void {
+    if (event) {
+      event.preventDefault();
+    }
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  }
+
 }

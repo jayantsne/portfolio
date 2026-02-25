@@ -1,7 +1,17 @@
 <header #hdr
         class="site-header"
+        [class.ai-learn-header]="isAILearnPage"
         [@fadeDown]
         [class.scrolled]="scrolled">
+
+  <!-- Royal Sparkle Particles (only for AI Learn) -->
+  <div class="royal-particles" *ngIf="isAILearnPage" aria-hidden="true">
+    <div class="sparkle sparkle-1">✨</div>
+    <div class="sparkle sparkle-2">💫</div>
+    <div class="sparkle sparkle-3">🎆</div>
+    <div class="sparkle sparkle-4">✨</div>
+    <div class="sparkle sparkle-5">💫</div>
+  </div>
 
   <!-- Scroll progress bar -->
   <div class="scrollbar"></div>
@@ -11,13 +21,20 @@
       <a class="navbar-brand site-title mb-0 brand" [href]="brandHref">
         <span class="brand-stack">
           <span class="brand-text" aria-label="Site name">
-            <span class="brand-name">{{ displayBrandName }}</span>
+            <span class="brand-name" *ngIf="!isAILearnPage">{{ displayBrandName }}</span>
+            <span class="brand-name" *ngIf="isAILearnPage">🤖 AI Learn</span>
             <span class="brand-caret" aria-hidden="true"></span>
           </span>
 
-          <span class="brand-meta" *ngIf="metaText" aria-label="Role and company">
+          <span class="brand-meta" *ngIf="metaText && !isAILearnPage" aria-label="Role and company">
             <span class="meta-prompt" aria-hidden="true">&gt;</span>
             <span class="meta-text">{{ metaText }}</span>
+            <span class="meta-caret" aria-hidden="true"></span>
+          </span>
+
+          <span class="brand-meta" *ngIf="isAILearnPage" aria-label="AI Learn subtitle">
+            <span class="meta-prompt" aria-hidden="true">&gt;</span>
+            <span class="meta-text">Master Programming & Interview Skills</span>
             <span class="meta-caret" aria-hidden="true"></span>
           </span>
         </span>
@@ -33,13 +50,25 @@
 
       <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav ms-auto me-2">
-          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#home" [class.active]="activeSection === 'home'">Home</a></li>
-          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#about" [class.active]="activeSection === 'about'">About</a></li>
-          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#skills" [class.active]="activeSection === 'skills'">Skills</a></li>
-          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#experience" [class.active]="activeSection === 'experience'">Experience</a></li>
-          <li class="nav-item" *ngIf="!authService.isAuthenticated()"><a class="nav-link" href="#contact" [class.active]="activeSection === 'contact'">Contact</a></li>
-          <li class="nav-item"><a class="nav-link ai-link" routerLink="/ai-qa">🤖 AI Learn</a></li>
-          <li class="nav-item" *ngIf="!authService.isAuthenticated()">
+          <!-- Portfolio Navigation - Only show when NOT on AI Learn pages -->
+          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('home', $event)" [class.active]="activeSection === 'home'" style="cursor: pointer;">Home</a></li>
+          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('about', $event)" [class.active]="activeSection === 'about'" style="cursor: pointer;">About</a></li>
+          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('skills', $event)" [class.active]="activeSection === 'skills'" style="cursor: pointer;">Skills</a></li>
+          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('experience', $event)" [class.active]="activeSection === 'experience'" style="cursor: pointer;">Experience</a></li>
+          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('contact', $event)" [class.active]="activeSection === 'contact'" style="cursor: pointer;">Contact</a></li>
+          
+          <!-- AI Learn Navigation - Only show on AI Learn pages -->
+          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" (click)="closeNavbar()">🏠 Home</a></li>
+          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn/questions" routerLinkActive="active" (click)="closeNavbar()">📚 Interview Q&A</a></li>
+          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/learn-quest" routerLinkActive="active" (click)="closeNavbar()">🎫 Learn Quest</a></li>
+          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/dsa-game" routerLinkActive="active" (click)="closeNavbar()">🎮 DSA Game</a></li>
+          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/memory-game" routerLinkActive="active" (click)="closeNavbar()">🧠 Memory Game</a></li>
+          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link certification-link" routerLink="/azure-ai-102" routerLinkActive="active" (click)="closeNavbar()">☁️ Azure AI-102</a></li>
+          
+          <!-- AI Learn Link - Show when NOT on AI Learn pages -->
+          <li class="nav-item" *ngIf="!isAILearnPage"><a class="nav-link ai-link" routerLink="/ai-learn">🤖 AI Learn</a></li>
+          
+          <li class="nav-item" *ngIf="!authService.isAuthenticated() && !isAILearnPage">
             <a class="nav-link login-btn" (click)="login()" style="cursor: pointer;">
               🔐 Login
             </a>

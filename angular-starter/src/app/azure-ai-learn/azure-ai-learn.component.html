@@ -1,0 +1,523 @@
+<div class="azure-ai-container">
+  <!-- Roadmap View -->
+  <div *ngIf="currentView === 'roadmap'" class="roadmap-view" @fadeInUp>
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="hero-icon">☁️</div>
+      <h1 class="hero-title">Azure AI-102 Certification</h1>
+      <p class="hero-subtitle">Master AI Engineering with Analogies & Real-World Examples</p>
+      
+      <!-- Progress Overview -->
+      <div class="progress-overview">
+        <div class="progress-card">
+          <div class="progress-icon">📈</div>
+          <div class="progress-info">
+            <div class="progress-label">Overall Progress</div>
+            <div class="progress-value">{{getOverallProgress()}}%</div>
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="getOverallProgress()"></div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="stats-grid">
+          <div class="stat-item">
+            <div class="stat-icon">📚</div>
+            <div class="stat-value">{{getCompletedModules()}} / {{modules.length}}</div>
+            <div class="stat-label">Modules Complete</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">✅</div>
+            <div class="stat-value">{{getCompletedTopics()}} / {{getTotalTopics()}}</div>
+            <div class="stat-label">Topics Mastered</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon">🏆</div>
+            <div class="stat-value">{{modules.length * 10}}</div>
+            <div class="stat-label">Total Hours</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Learning Roadmap -->
+    <div class="roadmap-section">
+      <h2 class="section-title">
+        <span class="title-icon">🗺️</span>
+        Your Learning Journey
+      </h2>
+      
+      <div class="modules-roadmap">
+        <div *ngFor="let module of modules; let i = index" 
+             class="module-card" 
+             [class.completed]="module.completed"
+             (click)="selectModule(module)"
+             @slideIn>
+          
+          <!-- Module Number Badge -->
+          <div class="module-number">{{i + 1}}</div>
+          
+          <!-- Module Icon -->
+          <div class="module-icon">{{module.icon}}</div>
+          
+          <!-- Module Content -->
+          <div class="module-content">
+            <h3 class="module-title">{{module.title}}</h3>
+            <p class="module-meta">
+              <span class="module-duration">⏱️ {{module.duration}}</span>
+              <span class="module-difficulty" [class]="module.difficulty.toLowerCase()">
+                {{module.difficulty}}
+              </span>
+            </p>
+            
+            <!-- Progress Bar -->
+            <div class="module-progress">
+              <div class="progress-bar-small">
+                <div class="progress-fill-small" [style.width.%]="module.progress"></div>
+              </div>
+              <span class="progress-text">{{module.progress}}% Complete</span>
+            </div>
+            
+            <!-- Topics Preview -->
+            <div class="topics-preview">
+              <span class="topics-count">{{module.topics.length}} Topics</span>
+              <span class="topics-completed">
+                {{getCompletedTopicsForModule(module)}} / {{module.topics.length}} ✓
+              </span>
+            </div>
+          </div>
+          
+          <!-- Completion Badge -->
+          <div *ngIf="module.completed" class="completion-badge">
+            <span>✓</span>
+          </div>
+          
+          <!-- Arrow -->
+          <div class="module-arrow">→</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-section">
+      <button class="action-btn reset-btn" (click)="resetProgress()">
+        <span class="btn-icon">🔄</span>
+        Reset Progress
+      </button>
+    </div>
+  </div>
+
+  <!-- Module View -->
+  <div *ngIf="currentView === 'module' && selectedModule" class="module-view" @fadeInUp>
+    <!-- Module Header -->
+    <div class="module-header">
+      <button class="back-btn" (click)="backToRoadmap()">
+        <span>←</span> Back to Roadmap
+      </button>
+      
+      <div class="module-hero">
+        <div class="module-hero-icon">{{selectedModule.icon}}</div>
+        <div class="module-hero-content">
+          <h1 class="module-hero-title">{{selectedModule.title}}</h1>
+          <div class="module-hero-meta">
+            <span class="meta-item">⏱️ {{selectedModule.duration}}</span>
+            <span class="meta-item difficulty" [class]="selectedModule.difficulty.toLowerCase()">
+              {{selectedModule.difficulty}}
+            </span>
+            <span class="meta-item">📝 {{selectedModule.topics.length}} Topics</span>
+          </div>
+          
+          <!-- Module Progress -->
+          <div class="module-hero-progress">
+            <div class="progress-bar-large">
+              <div class="progress-fill-large" 
+                   [style.width.%]="selectedModule.progress"></div>
+            </div>
+            <span class="progress-label-large">{{selectedModule.progress}}% Complete</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topics List -->
+    <div class="topics-section">
+      <h2 class="section-title">
+        <span class="title-icon">📖</span>
+        Topics to Master
+      </h2>
+      
+      <div class="topics-grid">
+        <div *ngFor="let topic of selectedModule.topics; let j = index" 
+             class="topic-card"
+             [class.completed]="topic.completed"
+             @slideIn>
+          
+          <!-- Topic Number -->
+          <div class="topic-number">{{j + 1}}</div>
+          
+          <!-- Topic Content -->
+          <div class="topic-content" (click)="selectTopic(topic)">
+            <h3 class="topic-title">{{topic.name}}</h3>
+            <p class="topic-description">{{topic.description}}</p>
+            
+            <!-- Key Points Preview -->
+            <div class="topic-preview">
+              <span class="preview-label">📌 {{topic.keyPoints.length}} Key Points</span>
+            </div>
+          </div>
+          
+          <!-- Action Buttons -->
+          <div class="topic-actions-inline">
+            <button class="ai-understand-btn" 
+                    (click)="understandWithAi(topic.name); $event.stopPropagation()"
+                    title="Get AI-powered explanation">
+              <span class="btn-icon">🤖</span>
+              <span class="btn-text">Understand with AI</span>
+            </button>
+            
+            <!-- Status Badge -->
+            <div class="topic-status">
+              <span *ngIf="topic.completed" class="status-badge completed-badge">✓ Completed</span>
+              <span *ngIf="!topic.completed" class="status-badge pending-badge" (click)="selectTopic(topic)">Start Learning</span>
+            </div>
+          </div>
+          
+          <!-- Arrow -->
+          <div class="topic-arrow" (click)="selectTopic(topic)">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Topic Detail View -->
+  <div *ngIf="currentView === 'topic' && selectedTopic && selectedModule" class="topic-view" @fadeInUp>
+    <!-- Topic Header -->
+    <div class="topic-header">
+      <button class="back-btn" (click)="backToModule()">
+        <span>←</span> Back to {{selectedModule.title}}
+      </button>
+      
+      <div class="topic-hero">
+        <div class="topic-hero-badge">
+          <span *ngIf="selectedTopic.completed">✓</span>
+          <span *ngIf="!selectedTopic.completed">📖</span>
+        </div>
+        <h1 class="topic-hero-title">{{selectedTopic.name}}</h1>
+      </div>
+    </div>
+
+    <!-- Topic Content -->
+    <div class="topic-content-section">
+      <!-- Overview -->
+      <div class="content-card overview-card">
+        <div class="card-icon">💡</div>
+        <h3 class="card-title">What is this?</h3>
+        <p class="card-text">{{selectedTopic.description}}</p>
+      </div>
+
+      <!-- Analogy -->
+      <div class="content-card analogy-card">
+        <div class="card-icon-large">{{selectedTopic.analogy.split(' ')[0]}}</div>
+        <h3 class="card-title">Think of it like this...</h3>
+        <div class="analogy-content">
+          <p class="card-text">{{selectedTopic.analogy.substring(selectedTopic.analogy.indexOf(' ') + 1)}}</p>
+        </div>
+      </div>
+
+      <!-- Key Points -->
+      <div class="content-card keypoints-card">
+        <div class="card-icon">📌</div>
+        <h3 class="card-title">Key Points to Remember</h3>
+        <ul class="keypoints-list">
+          <li *ngFor="let point of selectedTopic.keyPoints" class="keypoint-item">
+            <span class="keypoint-marker">✓</span>
+            <span class="keypoint-text">{{point}}</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Example -->
+      <div class="content-card example-card">
+        <div class="card-icon">💼</div>
+        <h3 class="card-title">Real-World Example</h3>
+        <div class="example-content">
+          <p class="card-text">{{selectedTopic.example}}</p>
+        </div>
+      </div>
+      
+      <!-- Step-by-Step Guide (if available) -->
+      <div *ngIf="selectedTopic.stepByStep" class="content-card steps-card">
+        <div class="card-icon">🎯</div>
+        <h3 class="card-title">Step-by-Step Guide</h3>
+        <ol class="steps-list">
+          <li *ngFor="let step of selectedTopic.stepByStep" class="step-item">
+            <span class="step-text">{{step}}</span>
+          </li>
+        </ol>
+      </div>
+      
+      <!-- Code Example (if available) -->
+      <div *ngIf="selectedTopic.codeExample" class="content-card code-card">
+        <div class="card-icon">💻</div>
+        <h3 class="card-title">Code Example</h3>
+        <div class="code-container">
+          <pre><code>{{selectedTopic.codeExample}}</code></pre>
+          <button class="copy-btn" title="Copy code">📋</button>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="topic-actions">
+        <button class="nav-btn prev-btn" 
+                (click)="previousTopic()"
+                [disabled]="selectedModule.topics.indexOf(selectedTopic) === 0">
+          <span>←</span> Previous Topic
+        </button>
+        
+        <button *ngIf="!selectedTopic.completed" 
+                class="action-btn complete-btn" 
+                (click)="markTopicComplete(selectedTopic)">
+          <span class="btn-icon">✓</span>
+          Mark as Complete
+        </button>
+        
+        <button *ngIf="selectedTopic.completed" 
+                class="action-btn completed-indicator">
+          <span class="btn-icon">✓</span>
+          Completed
+        </button>
+        
+        <button class="nav-btn next-btn" 
+                (click)="nextTopic()">
+          Next Topic <span>→</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- AI Understanding Modal -->
+<div *ngIf="showAiModal" class="ai-modal-overlay" [class.dark-mode]="darkMode" (click)="closeAiModal()">
+  <div class="ai-modal-content modern-glass" (click)="$event.stopPropagation()" @fadeInUp>
+    
+    <!-- Modern Header with Dark Mode Toggle -->
+    <div class="ai-modal-header">
+      <div class="header-left">
+        <div class="ai-icon-animated">
+          <svg viewBox="0 0 24 24" class="ai-brain-icon">
+            <circle cx="12" cy="12" r="10" class="pulse-ring"/>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" fill="url(#gradient)"/>
+            <defs>
+              <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#667eea"/>
+                <stop offset="100%" stop-color="#764ba2"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="header-text">
+          <h2 class="ai-modal-title gradient-text">AI Learning Assistant</h2>
+          <p class="ai-modal-subtitle">Powered by Ollama</p>
+        </div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" (click)="toggleDarkMode(); $event.stopPropagation()" 
+                title="Toggle Dark Mode">
+          <span *ngIf="!darkMode">☀️</span>
+          <span *ngIf="darkMode">🌙</span>
+        </button>
+        <button class="icon-btn close-btn" (click)="closeAiModal(); $event.stopPropagation()" 
+                aria-label="Close">
+          <span>×</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div class="ai-modal-body custom-scrollbar">
+      
+      <!-- Enhanced Loading State -->
+      <div *ngIf="aiLoading" class="ai-loading-container modern-loading">
+        <!-- AI Brain Animation -->
+        <div class="ai-brain-container">
+          <div class="ai-brain">
+            <div class="brain-core">
+              <svg viewBox="0 0 100 100" class="brain-svg">
+                <circle cx="50" cy="50" r="20" class="brain-pulse" />
+                <circle cx="50" cy="50" r="15" class="brain-pulse-2" />
+                <circle cx="50" cy="50" r="10" class="brain-center" />
+              </svg>
+            </div>
+            <!-- Neural Network Lines -->
+            <div class="neural-network">
+              <div class="neural-line line-1"></div>
+              <div class="neural-line line-2"></div>
+              <div class="neural-line line-3"></div>
+              <div class="neural-line line-4"></div>
+              <div class="neural-line line-5"></div>
+              <div class="neural-line line-6"></div>
+            </div>
+            <!-- Floating Particles -->
+            <div class="ai-particles">
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+              <span class="particle"></span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Loading Text -->
+        <div class="ai-loading-text-wrapper">
+          <h3 class="ai-loading-title gradient-text">
+            <span class="ai-icon-pulse">🧠</span>
+            Analyzing: <strong>{{ currentAiTopic }}</strong>
+          </h3>
+          <p class="ai-status-text">{{ aiStatusText }}</p>
+          
+          <!-- Modern Progress Bar -->
+          <div class="modern-progress-container">
+            <div class="modern-progress-bar">
+              <div class="modern-progress-fill" [style.width.%]="aiProgress"></div>
+              <div class="progress-glow"></div>
+            </div>
+            <span class="progress-percentage">{{ aiProgress.toFixed(0) }}%</span>
+          </div>
+          
+          <div class="ai-loading-dots">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="aiError && !aiLoading" class="ai-error-container modern-error">
+        <div class="error-icon-container">
+          <div class="error-icon">⚠️</div>
+          <div class="error-pulse"></div>
+        </div>
+        <h3 class="ai-error-title">{{ aiError }}</h3>
+        <p class="ai-error-message">
+          Unable to generate AI explanation. This could be due to:
+        </p>
+        <ul class="ai-error-list">
+          <li><span class="error-bullet">🔴</span> AI service temporarily unavailable</li>
+          <li><span class="error-bullet">🔴</span> Network connection issue</li>
+          <li><span class="error-bullet">🔴</span> Server processing overload</li>
+        </ul>
+        <button class="modern-btn primary-btn" (click)="retryAiRequest()">
+          <span class="btn-icon">🔄</span>
+          <span>Try Again</span>
+        </button>
+      </div>
+
+      <!-- Success State -->
+      <div *ngIf="aiResponse && !aiLoading && !aiError" class="ai-explanation-container modern-content" @fadeInUp>
+        
+        <!-- Topic Header Card -->
+        <div class="topic-header-card glass-card" @slideIn>
+          <div class="topic-badge-container">
+            <span class="topic-emoji">🎯</span>
+          </div>
+          <div class="topic-info">
+            <h3 class="topic-title gradient-text">{{ aiResponse.topicName }}</h3>
+            <div class="topic-meta">
+              <span class="meta-badge exam-badge">
+                <span class="badge-icon">📚</span>
+                {{ aiResponse.examCode }}
+              </span>
+              <span class="meta-badge" *ngIf="aiResponse.processingTimeMs">
+                <span class="badge-icon">⏱️</span>
+                {{ (aiResponse.processingTimeMs / 1000).toFixed(1) }}s
+              </span>
+              <span class="meta-badge" *ngIf="aiResponse.tokensUsed">
+                <span class="badge-icon">📊</span>
+                {{ aiResponse.tokensUsed }} tokens
+              </span>
+            </div>
+          </div>
+          <button class="icon-btn copy-btn" 
+                  (click)="copyToClipboard(aiResponse.explanation, 'full')"
+                  [class.copied]="isCopied('full')"
+                  title="Copy full explanation">
+            <span *ngIf="!isCopied('full')">📋</span>
+            <span *ngIf="isCopied('full')">✅</span>
+          </button>
+        </div>
+
+        <!-- Explanation Content with Sections -->
+        <div class="explanation-sections">
+          
+          <!-- Main Explanation Section -->
+          <div class="content-section glass-card" @slideIn>
+            <div class="section-header" (click)="toggleSection('explanation')">
+              <div class="section-title-wrapper">
+                <span class="section-icon">🎓</span>
+                <h4 class="section-title">Comprehensive Explanation</h4>
+                <span class="expand-badge">{{ isSectionExpanded('explanation') ? 'Collapse' : 'Expand' }}</span>
+              </div>
+              <button class="expand-btn" [class.expanded]="isSectionExpanded('explanation')">
+                <span class="arrow">▼</span>
+              </button>
+            </div>
+            <div class="section-content" 
+                 [@expandCollapse]="isSectionExpanded('explanation') ? 'expanded' : 'collapsed'">
+              <div class="content-wrapper" [innerHTML]="aiResponse.explanation | markdown"></div>
+              <button class="copy-section-btn" 
+                      (click)="copyToClipboard(aiResponse.explanation, 'explanation')"
+                      [class.copied]="isCopied('explanation')">
+                <span *ngIf="!isCopied('explanation')">📋 Copy Section</span>
+                <span *ngIf="isCopied('explanation')">✅ Copied!</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Actions -->
+          <div class="quick-actions glass-card" @slideIn>
+            <button class="action-card" (click)="toggleSection('explanation')">
+              <span class="action-icon">🔖</span>
+              <div class="action-text">
+                <span class="action-label">Quick Read</span>
+                <span class="action-desc">Essential points</span>
+              </div>
+            </button>
+            <button class="action-card" (click)="scrollToTop()">
+              <span class="action-icon">⬆️</span>
+              <div class="action-text">
+                <span class="action-label">Scroll Top</span>
+                <span class="action-desc">Back to start</span>
+              </div>
+            </button>
+            <button class="action-card" (click)="copyToClipboard(aiResponse.explanation, 'full-copy')">
+              <span class="action-icon">{{ isCopied('full-copy') ? '✅' : '📑' }}</span>
+              <div class="action-text">
+                <span class="action-label">Copy All</span>
+                <span class="action-desc">Full content</span>
+              </div>
+            </button>
+            <button class="action-card" (click)="retryAiRequest()">
+              <span class="action-icon">🔄</span>
+              <div class="action-text">
+                <span class="action-label">Regenerate</span>
+                <span class="action-desc">New version</span>
+              </div>
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Bottom Actions -->
+        <div class="modal-footer" @fadeInUp>
+          <button class="modern-btn secondary-btn" (click)="closeAiModal()">
+            <span class="btn-icon">✓</span>
+            <span>Got It!</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

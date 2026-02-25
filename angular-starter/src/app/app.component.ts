@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs/operators';
 import { AnalyticsService } from './shared/analytics.service';
 import { PwaInstallService } from './pwa-install.service';
 
@@ -17,21 +19,26 @@ export class AppComponent implements OnInit {
     return this.fullName;
   }
 
-  showSplash = true;
+  showSplash = true; // Re-enabled - reload issue fixed
   showInstallPrompt = false;
   isAppInstalled = false;
+  showPortfolioHeader = true; // Always show header, but conditionally hide portfolio sections
 
   constructor(
     private analyticsService: AnalyticsService,
-    private pwaInstallService: PwaInstallService
-  ) {}
+    private pwaInstallService: PwaInstallService,
+    private router: Router
+  ) {
+    // No longer need to track route changes for header visibility
+  }
 
   ngOnInit(): void {
     // Initialize Google Analytics
     this.analyticsService.init();
     
-    // Initialize PWA
-    this.pwaInstallService.registerServiceWorker();
+    // DISABLED: Service worker registration to prevent reload loops in development
+    // Only enable in production builds
+    // this.pwaInstallService.registerServiceWorker();
     
     // Check if app can be installed
     this.pwaInstallService.installable$.subscribe(installable => {

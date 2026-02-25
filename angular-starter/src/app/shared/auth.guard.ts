@@ -29,13 +29,14 @@ export class AuthGuard implements CanActivate {
       // Wait a bit for the async call to complete
       setTimeout(() => {
         if (this.authService.isAuthenticated()) {
-          window.location.reload();
+          // Use router navigation instead of window.location.reload()
+          this.router.navigate([state.url]);
         } else {
           alert('Access denied. Incorrect credentials.');
           this.router.navigate(['/']);
         }
       }, 1000);
-      return false; // Will reload if successful
+      return false; // Will navigate if successful
     }
 
     alert('Access denied. Credentials required.');

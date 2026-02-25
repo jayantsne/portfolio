@@ -1,0 +1,466 @@
+<div class="questions-page">
+  <!-- Animated Background -->
+  <div class="bg-decorations">
+    <div class="decoration decoration-1"></div>
+    <div class="decoration decoration-2"></div>
+    <div class="decoration decoration-3"></div>
+  </div>
+
+  <!-- Modern Header -->
+  <div class="page-header">
+    <a routerLink="/ai-qa" class="back-btn">
+      <svg class="back-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      <span>Back</span>
+    </a>
+    
+    <div class="header-content">
+      <div class="header-badge-wrapper">
+        <div class="header-badge">
+          <span class="badge-icon">🎓</span>
+        </div>
+        <div class="title-wrapper">
+          <h1 class="page-title">
+            <span class="title-gradient">Interview Questions</span>
+          </h1>
+        </div>
+      </div>
+      
+      <!-- API Usage Stats Badge -->
+      <div class="api-stats-badge" *ngIf="apiStats" (click)="toggleApiStatsDetails()">
+        <div class="stats-quick-view">
+          <span class="stats-icon">📊</span>
+          <div class="stats-numbers">
+            <span class="stats-today">Today: {{apiStats.todayApiCalls}}</span>
+            <span class="stats-saved">Saved: {{apiStats.apiCallsSavedByCache}}</span>
+          </div>
+        </div>
+        
+        <!-- Detailed Stats Panel (expandable) -->
+        <div class="stats-details" *ngIf="showApiStatsDetails" @expandCollapse>
+          <div class="stats-header">
+            <h3>📈 API Usage Statistics</h3>
+            <span class="efficiency-badge" [class.high]="parseFloat(apiStats.efficiencyRate) > 50">
+              {{apiStats.efficiencyRate}} Efficiency
+            </span>
+          </div>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-label">🌐 Total API Calls</span>
+              <span class="stat-value">{{apiStats.totalApiCalls}}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">⚡ Today's Calls</span>
+              <span class="stat-value">{{apiStats.todayApiCalls}}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">💾 Cache Hits</span>
+              <span class="stat-value">{{apiStats.cachedResponses}}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">❤️ Liked Answers</span>
+              <span class="stat-value">{{apiStats.likedAnswers}}</span>
+            </div>
+            <div class="stat-item highlight">
+              <span class="stat-label">💰 Calls Saved</span>
+              <span class="stat-value">{{apiStats.apiCallsSavedByCache}}</span>
+            </div>
+            <div class="stat-item highlight">
+              <span class="stat-label">💸 Cost Saved</span>
+              <span class="stat-value">${{apiStats.estimatedCostSaved.toFixed(2)}}</span>
+            </div>
+          </div>
+          <div class="stats-footer">
+            <p class="stats-tip">💡 Like answers to load them instantly next time — zero API calls!</p>
+            <p class="stats-date">Last reset: {{apiStats.lastResetDate}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-container">
+      <div class="filter-card">
+        <label class="filter-label">
+          <span class="label-icon">🎯</span>
+          <span>Category</span>
+        </label>
+        <div class="select-wrapper">
+          <select [(ngModel)]="selectedCategory" class="filter-select">
+            <option value="all">All Topics ({{ interviewQuestions.length }})</option>
+            <option *ngFor="let cat of categories" [value]="cat">{{ cat }}</option>
+          </select>
+          <svg class="select-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 9l6 6 6-6"/>
+          </svg>
+        </div>
+      </div>
+      
+      <div class="search-card">
+        <label class="filter-label">
+          <span class="label-icon">🔍</span>
+          <span>Search</span>
+        </label>
+        <div class="search-wrapper">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
+          <input 
+            type="text" 
+            [(ngModel)]="searchTerm" 
+            placeholder="Type to search questions..." 
+            class="search-input">
+        </div>
+      </div>
+      
+      <div class="results-badge" *ngIf="filteredInterviewQuestions.length > 0">
+        <div class="results-content">
+          <span class="badge-icon">💡</span>
+          <div class="badge-text-wrapper">
+            <span class="badge-number">{{ filteredInterviewQuestions.length }}</span>
+            <span class="badge-label">questions found</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Questions Grid -->
+  <div class="questions-container">
+    <div class="questions-grid">
+      <article 
+        *ngFor="let question of paginatedQuestions; let i = index" 
+        class="question-card"
+        [class.learning]="question.isLearning"
+        [class.mobile-tappable]="isMobile"
+        (click)="isMobile ? learnQuestion(question) : null"
+        [@cardAnimation]>
+        
+        <!-- Card Header -->
+        <div class="card-header">
+          <div class="card-number">{{ (currentPage - 1) * questionsPerPage + i + 1 }}</div>
+          
+          <div class="card-meta">
+            <span class="difficulty-badge" [ngClass]="question.difficulty.toLowerCase()">
+              <span class="badge-dot"></span>
+              <span class="badge-text">{{ question.difficulty }}</span>
+            </span>
+            <span class="category-badge">
+              <span class="cat-icon">📚</span>
+              <span class="cat-text">{{ question.category }}</span>
+            </span>
+          </div>
+        </div>
+        
+        <!-- Card Body -->
+        <div class="card-body">
+          <h3 class="question-title">{{ question.question }}</h3>
+          
+          <div class="question-tags" *ngIf="question.tags && question.tags.length > 0">
+            <span class="tag" *ngFor="let tag of question.tags">
+              #{{ tag }}
+            </span>
+          </div>
+        </div>
+        
+        <!-- Card Footer -->
+        <div class="card-footer" *ngIf="!isMobile">
+          <button 
+            class="btn-learn"
+            (click)="learnQuestion(question)"
+            [class.expanded]="isQuestionExpanded(question.id)">
+            <span class="btn-background"></span>
+            <span class="btn-content">
+              <span class="btn-icon">✨</span>
+              <span class="btn-text">{{ isQuestionExpanded(question.id) && isMobile ? 'Hide Answer' : 'Learn with AI' }}</span>
+              <svg class="btn-arrow" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M5 12h14M12 5l7 7-7 7"/>
+              </svg>
+            </span>
+          </button>
+        </div>
+      </article>
+    </div>
+    
+    <!-- Pagination -->
+    <div class="pagination" *ngIf="totalPages > 1 && !isMobile">
+      <button 
+        class="pagination-btn" 
+        (click)="previousPage()" 
+        [disabled]="currentPage === 1">
+        <span class="btn-icon">←</span>
+        <span>Previous</span>
+      </button>
+      
+      <div class="page-numbers">
+        <button 
+          *ngFor="let page of getPageNumbers()" 
+          class="page-num"
+          [class.active]="page === currentPage"
+          (click)="goToPage(page)">
+          {{ page }}
+        </button>
+      </div>
+      
+      <div class="page-info">
+        Page <strong>{{ currentPage }}</strong> of <strong>{{ totalPages }}</strong>
+      </div>
+      
+      <button 
+        class="pagination-btn" 
+        (click)="nextPage()" 
+        [disabled]="currentPage === totalPages">
+        <span>Next</span>
+        <span class="btn-icon">→</span>
+      </button>
+    </div>
+    
+    <!-- Empty State -->
+    <div *ngIf="filteredInterviewQuestions.length === 0" class="empty-state">
+      <div class="empty-icon">🔍</div>
+      <h3>No questions found</h3>
+      <p>Try adjusting your filters or search term</p>
+      <button class="btn-reset" (click)="searchTerm = ''; selectedCategory = 'all'">
+        Reset Filters
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Beautiful Mobile Modal Overlay -->
+<div class="mobile-modal-overlay" *ngIf="isMobile && expandedQuestionId !== null" [@fadeIn] (click)="closeMobileModal()">
+  <div class="mobile-modal-container" (click)="$event.stopPropagation()" [@slideUpBounce]>
+    <!-- Modal Header -->
+    <div class="mobile-modal-header">
+      <div class="header-icon-wrapper">
+        <div class="header-icon-pulse"></div>
+        <span class="header-icon">💡</span>
+      </div>
+      <h2 class="mobile-modal-title">{{ getCurrentQuestion()?.question }}</h2>
+      <button class="mobile-close-btn" (click)="closeMobileModal()">
+        <span class="close-icon">×</span>
+      </button>
+    </div>
+
+    <!-- Modal Body -->
+    <div class="mobile-modal-body">
+      <!-- Answer Section -->
+      <div class="mobile-answer-section" *ngIf="!showAlternativeExplanation" [@fadeInUp]>
+        <div class="section-header">
+          <div class="header-left">
+            <span class="section-icon">🎯</span>
+            <h3 class="section-title">FRESH PERSPECTIVE #{{regenerationCount}}</h3>
+          </div>
+          <!-- Like Button in Header -->
+          <button 
+            class="header-heart-btn" 
+            *ngIf="aiExplanation && !isLoadingAIExplanation"
+            [class.active]="userLikedAnswer"
+            (click)="likeAnswer()"
+            [attr.title]="userLikedAnswer ? '❤️ Saved!' : '🤍 Save answer'">
+            <span class="heart-icon">{{ userLikedAnswer ? '❤️' : '🤍' }}</span>
+          </button>
+        </div>
+        
+        <div class="answer-content">
+          <!-- AI-Generated Answer -->
+          <div class="ai-answer-content" [innerHTML]="modalAnswer"></div>
+        </div>
+      </div>
+
+      <!-- Alternative Explanation Section -->
+      <div class="mobile-answer-section alternative-section" *ngIf="showAlternativeExplanation" [@fadeIn]>
+        <div class="section-header">
+          <div class="header-left">
+            <span class="section-icon">🎯</span>
+            <h3 class="section-title">FRESH PERSPECTIVE #{{regenerationCount}}</h3>
+          </div>
+          <!-- Like Button in Header -->
+          <button 
+            class="header-heart-btn" 
+            *ngIf="alternativeAIExplanation && !isLoadingAlternative"
+            [class.active]="alternativeAnswerLiked"
+            (click)="toggleAlternativeAnswerLike()"
+            title="Save this version">
+            <span class="heart-icon">{{ alternativeAnswerLiked ? '❤️' : '🤍' }}</span>
+          </button>
+        </div>
+        
+        <!-- Analogy Type Badge -->
+        <div class="analogy-type-badge" *ngIf="getCurrentAnalogyType()" style="margin: 1rem 0;">
+          {{ getCurrentAnalogyType() }} Explanation
+        </div>
+        
+        <!-- Animated Diagram Section -->
+        <div class="diagram-section" *ngIf="showAnimatedDiagram" [@fadeIn]>
+          <div class="diagram-header" style="margin-bottom: 1rem; padding: 0.75rem; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); border-radius: 10px;">
+            <h4 style="color: white; font-size: 1rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+              <span>🎨</span>
+              <span>Visual Flow Diagram</span>
+            </h4>
+          </div>
+          <div [innerHTML]="diagramContent" class="diagram-content"></div>
+        </div>
+        
+        <div class="answer-content">
+          <!-- Direct content display without wrapper -->
+          <div [innerHTML]="alternativeContentSafe" class="alternative-answer-content direct-render"></div>
+          
+          <!-- Show raw text if HTML seems incomplete -->
+          <div *ngIf="alternativeAIExplanation && alternativeAIExplanation.length < 100" class="content-too-short">
+            <div class="warning-badge">⚠️ Content seems incomplete</div>
+            <div class="raw-display">{{ alternativeAIExplanation }}</div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- Modal Footer with Buttons -->
+    <div class="mobile-modal-footer" [@fadeInUp]>
+      <button class="mobile-btn-icon mobile-btn-diagram" 
+              (click)="generateAnimatedDiagram()"
+              [disabled]="isLoadingDiagram"
+              [title]="isLoadingDiagram ? 'Creating diagram...' : 'Generate Visual Diagram'">
+        <span class="icon-wrapper">{{ isLoadingDiagram ? '⏳' : '🎨' }}</span>
+      </button>
+      
+      <button class="mobile-btn-icon mobile-btn-regenerate" 
+              (click)="showAlternativeAnswer()"
+              [disabled]="isLoadingAlternative"
+              [title]="isLoadingAlternative ? 'Generating...' : 'Get Fresh Perspective'">
+        <span class="icon-wrapper">{{ isLoadingAlternative ? '⏳' : '🤖' }}</span>
+        <span class="regen-badge-icon" *ngIf="regenerationCount > 0">{{regenerationCount}}</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for Web Version -->
+<div class="modal-overlay" *ngIf="showModal && !isMobile" [@fadeIn] (click)="closeModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()" [@slideUp]>
+    <div class="modal-header">
+      <div class="modal-title-section">
+        <span class="modal-icon">💡</span>
+        <h2>{{ showAlternativeExplanation ? 'Fresh Perspective #' + regenerationCount : 'AI Answer' }}</h2>
+      </div>
+      <button class="modal-close-btn" (click)="closeModal()">
+        <span class="close-icon">×</span>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="modal-question">
+        <div class="question-label">
+          <span class="label-icon">❓</span>
+          <h3>Question</h3>
+        </div>
+        <p>{{ modalQuestion }}</p>
+      </div>
+      
+      <div class="modal-answer">
+        <div class="answer-label">
+          <div class="label-content">
+            <span class="label-icon">{{ showAlternativeExplanation ? '🎯' : '💡' }}</span>
+            <h3>{{ showAlternativeExplanation ? '🎯 Fresh Perspective #' + regenerationCount : 'AI-Powered Detailed Explanation' }}</h3>
+          </div>
+          <!-- Like Button in Header for Main Answer -->
+          <button 
+            class="header-heart-btn" 
+            *ngIf="!showAlternativeExplanation && aiExplanation && !isLoadingAIExplanation"
+            [class.active]="userLikedAnswer"
+            (click)="likeAnswer()"
+            [attr.title]="userLikedAnswer ? '❤️ Saved!' : '🤍 Save answer'">
+            <span class="heart-icon">{{ userLikedAnswer ? '❤️' : '🤍' }}</span>
+          </button>
+          <!-- Like Button in Header for Alternative Answer -->
+          <button 
+            class="header-heart-btn" 
+            *ngIf="showAlternativeExplanation && alternativeAIExplanation && !isLoadingAlternative"
+            [class.active]="alternativeAnswerLiked"
+            (click)="toggleAlternativeAnswerLike()"
+            title="Like this explanation">
+            <span class="heart-icon">{{ alternativeAnswerLiked ? '❤️' : '🤍' }}</span>
+          </button>
+        </div>
+        
+        <div class="answer-sections" *ngIf="!showAlternativeExplanation">
+          <!-- AI-Generated Answer -->
+          <div class="ai-answer-content" [innerHTML]="modalAnswer"></div>
+          
+          <!-- AI Provider Badge -->
+          <div class="ai-provider-badge" *ngIf="aiExplanation && !isLoadingAIExplanation" [@fadeIn]>
+            <span class="badge-icon">
+              {{ currentAIProvider === 'gemini' ? '🤖' : 
+                 currentAIProvider === 'groq' ? '🚀' : 
+                 currentAIProvider === 'huggingface' ? '🤗' : 
+                 currentAIProvider === 'together' ? '🌟' : '🤖' }}
+            </span>
+            <span class="badge-text">
+              {{ currentAIProvider === 'gemini' ? 'Powered by Google Gemini 2.5 Flash' : 
+                 currentAIProvider === 'groq' ? 'Powered by Groq (Fallback)' : 
+                 currentAIProvider === 'huggingface' ? 'Powered by HuggingFace (Fallback)' : 
+                 currentAIProvider === 'together' ? 'Powered by Together.ai (Fallback)' : 
+                 'AI-Powered Answer' }}
+            </span>
+          </div>
+          
+        </div>
+
+        <!-- Alternative Explanation -->
+        <div class="alternative-answer-content" *ngIf="showAlternativeExplanation" [@fadeIn]>
+          <!-- Analogy Type Badge -->
+          <div class="analogy-type-badge" *ngIf="getCurrentAnalogyType()">
+            {{ getCurrentAnalogyType() }} Explanation
+          </div>
+          
+          <!-- Animated Diagram Section -->
+          <div class="diagram-section" *ngIf="showAnimatedDiagram" [@fadeIn]>
+            <div class="diagram-header" style="margin-bottom: 1rem; padding: 0.75rem; background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%); border-radius: 10px;">
+              <h4 style="color: white; font-size: 1rem; font-weight: 700; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                <span>🎨</span>
+                <span>Visual Flow Diagram</span>
+              </h4>
+            </div>
+            <div [innerHTML]="diagramContent" class="diagram-content"></div>
+          </div>
+          
+          <!-- Direct content display without wrapper -->
+          <div [innerHTML]="alternativeContentSafe" class="alternative-answer-content direct-render"></div>
+          
+          <!-- Show raw text if HTML seems incomplete -->
+          <div *ngIf="alternativeAIExplanation && alternativeAIExplanation.length < 100" class="content-too-short">
+            <div class="warning-badge">⚠️ Content seems incomplete</div>
+            <div class="raw-display">{{ alternativeAIExplanation }}</div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn-modal-diagram" 
+              (click)="generateAnimatedDiagram()" 
+              [disabled]="isLoadingDiagram"
+              [@fadeIn]>
+        <span class="btn-icon">{{ isLoadingDiagram ? '⏳' : '🎨' }}</span>
+        <span>{{ isLoadingDiagram ? 'Creating Diagram...' : 'Visual Diagram' }}</span>
+      </button>
+      <button class="btn-modal-alternative" 
+              (click)="showAlternativeAnswer()" 
+              [disabled]="isLoadingAlternative"
+              [@fadeIn]>
+        <span class="btn-icon">🎯</span>
+        <span>{{ isLoadingAlternative ? '⏳ Generating Fresh Perspective...' : (showAlternativeExplanation && regenerationCount > 0 ? '🔄 Fresh Perspective #' + (regenerationCount + 1) : '🎯 Get Fresh Perspective') }}</span>
+      </button>
+      <button class="btn-modal-close" (click)="closeModal()">
+        <span class="btn-icon">✓</span>
+        <span>Got it!</span>
+      </button>
+    </div>
+  </div>
+</div>

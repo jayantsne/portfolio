@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
 import { ApiService } from '../shared/api.service';
+import { filter } from 'rxjs/operators';
 
 interface QAPair {
   _id?: string;
@@ -22,8 +24,26 @@ export class AiQaComponent implements OnInit {
   isGenerating = false;
   savedQAs: QAPair[] = [];
   showSaved = false;
+  isChildRoute = false;
 
-  constructor(private apiService: ApiService) { }
+  constructor(
+    private apiService: ApiService,
+    private router: Router
+  ) {
+    // Detect if we're on a child route
+    this.checkIfChildRoute();
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe(() => {
+      this.checkIfChildRoute();
+    });
+  }
+
+  private checkIfChildRoute(): void {
+    const url = this.router.url;
+    // Check if URL has child routes (not just /ai-learn)
+    this.isChildRoute = url !== '/ai-learn' && url.startsWith('/ai-learn/');
+  }
 
   ngOnInit(): void {
     this.loadSavedQAs();
@@ -1466,6 +1486,14 @@ Ask a specific question and I'll provide detailed technical explanations with re
   // Set question (for quick question buttons)
   setQuestion(question: string): void {
     this.currentQuestion = question;
+  }
+
+  // Scroll to Ask AI section
+  scrollToAskAI(): void {
+    const askAISection = document.querySelector('.main-section');
+    if (askAISection) {
+      askAISection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   }
 
   // Expand card (placeholder for future modal)
