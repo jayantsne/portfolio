@@ -1,0 +1,13 @@
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\bin\Release\net8.0\AILearnAPI.Domain.deps.json
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\bin\Release\net8.0\AILearnAPI.Domain.dll
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\bin\Release\net8.0\AILearnAPI.Domain.pdb
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\AILearnAPI.Domain.csproj.AssemblyReference.cache
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\AILearnAPI.Domain.GeneratedMSBuildEditorConfig.editorconfig
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\AILearnAPI.Domain.AssemblyInfoInputs.cache
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\AILearnAPI.Domain.AssemblyInfo.cs
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\AILearnAPI.Domain.csproj.CoreCompileInputs.cache
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\AILearnAPI.Domain.sourcelink.json
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\AILearnAPI.Domain.dll
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\refint\AILearnAPI.Domain.dll
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\AILearnAPI.Domain.pdb
+D:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Domain\obj\Release\net8.0\ref\AILearnAPI.Domain.dll

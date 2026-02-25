@@ -1,0 +1,124 @@
+using AILearnAPI.Domain.Entities;
+using AILearnAPI.Shared.DTOs.Questions;
+using AILearnAPI.Shared.DTOs.UserProgress;
+using AILearnAPI.Shared.DTOs.Auth;
+using AILearnAPI.Shared.DTOs.AIQA;
+
+namespace AILearnAPI.Shared.Extensions
+{
+    public static class MappingExtensions
+    {
+        // Question mappings
+        public static QuestionDto ToDto(this Question entity)
+        {
+            return new QuestionDto
+            {
+                id = entity.QuestionId,
+                question = entity.QuestionText,
+                answer = entity.Answer,
+                category = entity.Category,
+                tags = entity.Tags,
+                difficulty = entity.Difficulty,
+                dateAdded = entity.DateAdded,
+                expanded = entity.Expanded
+            };
+        }
+
+        public static Question ToEntity(this CreateQuestionDto dto, int questionId)
+        {
+            return new Question
+            {
+                QuestionId = questionId,
+                QuestionText = dto.question,
+                Answer = dto.answer,
+                Category = dto.category,
+                Tags = dto.tags ?? new List<string>(),
+                Difficulty = dto.difficulty ?? "medium",
+                DateAdded = DateTime.UtcNow,
+                Expanded = dto.expanded ?? false
+            };
+        }
+
+        public static Question ToEntity(this QuestionDto dto)
+        {
+            return new Question
+            {
+                QuestionId = dto.id,
+                QuestionText = dto.question,
+                Answer = dto.answer,
+                Category = dto.category,
+                Tags = dto.tags,
+                Difficulty = dto.difficulty,
+                DateAdded = dto.dateAdded,
+                Expanded = dto.expanded
+            };
+        }
+
+        // UserProgress mappings
+        public static UserProgressDto ToDto(this UserProgress entity)
+        {
+            return new UserProgressDto
+            {
+                userId = entity.UserId,
+                bookmarks = entity.Bookmarks,
+                progress = entity.Progress,
+                totalTime = entity.TotalTime,
+                lastVisit = entity.LastVisit,
+                visitDates = entity.VisitDates
+            };
+        }
+
+        public static UserProgress ToEntity(this UserProgressDto dto)
+        {
+            return new UserProgress
+            {
+                UserId = dto.userId,
+                Bookmarks = dto.bookmarks,
+                Progress = dto.progress,
+                TotalTime = dto.totalTime,
+                LastVisit = dto.lastVisit,
+                VisitDates = dto.visitDates
+            };
+        }
+
+        // Auth mappings
+        public static AuthDto ToDto(this Auth entity)
+        {
+            return new AuthDto
+            {
+                userId = entity.UserId,
+                username = entity.Username,
+                isAuthenticated = entity.IsAuthenticated,
+                lastLogin = entity.LastLogin
+            };
+        }
+
+        // AIQA mappings
+        public static AIQADto ToDto(this AIQA entity)
+        {
+            return new AIQADto
+            {
+                _id = entity.Id,
+                userId = entity.UserId,
+                question = entity.Question,
+                answer = entity.Answer,
+                category = entity.Category,
+                saved = entity.Saved,
+                timestamp = entity.Timestamp
+            };
+        }
+
+        public static AIQA ToEntity(this CreateAIQADto dto)
+        {
+            return new AIQA
+            {
+                UserId = dto.userId,
+                Question = dto.question,
+                Answer = dto.answer,
+                Category = dto.category,
+                Saved = dto.saved,
+                Timestamp = DateTime.UtcNow
+            };
+        }
+    }
+}

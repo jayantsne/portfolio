@@ -1,0 +1,583 @@
+[
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AIQAController",
+    "Method": "CreateAIQA",
+    "RelativePath": "api/ai-qa",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "AILearnAPI.Shared.DTOs.AIQA.CreateAIQADto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.AIQA.AIQADto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AIQAController",
+    "Method": "DeleteAIQA",
+    "RelativePath": "api/ai-qa/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AIQAController",
+    "Method": "UpdateAIQA",
+    "RelativePath": "api/ai-qa/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "AILearnAPI.Shared.DTOs.AIQA.UpdateAIQADto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.AIQA.AIQADto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AIQAController",
+    "Method": "GetUserAIQAs",
+    "RelativePath": "api/ai-qa/{userId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "System.Collections.Generic.List\u00601[[AILearnAPI.Shared.DTOs.AIQA.AIQADto, AILearnAPI.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AiUnderstandController",
+    "Method": "UnderstandTopic",
+    "RelativePath": "api/ai/understand",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "AILearnAPI.Api.Models.DTOs.UnderstandRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.UnderstandResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 408
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 500
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 503
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AiUnderstandController",
+    "Method": "UnderstandTopicQuick",
+    "RelativePath": "api/ai/understand",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "topicName",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "examCode",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.UnderstandResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AuthController",
+    "Method": "GetAuthStatus",
+    "RelativePath": "api/auth/{userId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.Auth.AuthDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AuthController",
+    "Method": "Login",
+    "RelativePath": "api/auth/login",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "AILearnAPI.Shared.DTOs.Auth.LoginDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.Auth.LoginResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AuthController",
+    "Method": "Logout",
+    "RelativePath": "api/auth/logout",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "AILearnAPI.Api.Controllers.LogoutDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.AuthController",
+    "Method": "Register",
+    "RelativePath": "api/auth/register",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "AILearnAPI.Shared.DTOs.Auth.RegisterDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.Auth.LoginResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.HealthController",
+    "Method": "GetHealth",
+    "RelativePath": "api/health",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.LearnController",
+    "Method": "GenerateLearningContent",
+    "RelativePath": "api/learn",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "AILearnAPI.Api.Models.DTOs.LearnRequestDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.LearnResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 400
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 401
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 408
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 500
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 503
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.LearnController",
+    "Method": "QuickLearn",
+    "RelativePath": "api/learn/{topic}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "topic",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "examCode",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.LearnResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 200
+      },
+      {
+        "Type": "AILearnAPI.Api.Models.DTOs.ErrorResponseDto",
+        "MediaTypes": [
+          "application/json"
+        ],
+        "StatusCode": 401
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.QuestionsController",
+    "Method": "GetAllQuestions",
+    "RelativePath": "api/questions",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.Questions.QuestionsResponseDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.QuestionsController",
+    "Method": "CreateQuestion",
+    "RelativePath": "api/questions",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "AILearnAPI.Shared.DTOs.Questions.CreateQuestionDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.Questions.QuestionDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.QuestionsController",
+    "Method": "DeleteAllQuestions",
+    "RelativePath": "api/questions",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.QuestionsController",
+    "Method": "GetQuestionById",
+    "RelativePath": "api/questions/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.Questions.QuestionDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.QuestionsController",
+    "Method": "UpdateQuestion",
+    "RelativePath": "api/questions/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "AILearnAPI.Shared.DTOs.Questions.UpdateQuestionDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.Questions.QuestionDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.QuestionsController",
+    "Method": "DeleteQuestion",
+    "RelativePath": "api/questions/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.QuestionsController",
+    "Method": "ImportQuestions",
+    "RelativePath": "api/questions/import",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "AILearnAPI.Shared.DTOs.Questions.ImportQuestionsDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.UserProgressController",
+    "Method": "GetUserProgress",
+    "RelativePath": "api/user-progress/{userId}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.UserProgress.UserProgressDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  },
+  {
+    "ContainingType": "AILearnAPI.Api.Controllers.UserProgressController",
+    "Method": "UpdateUserProgress",
+    "RelativePath": "api/user-progress/{userId}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "userId",
+        "Type": "System.String",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "AILearnAPI.Shared.DTOs.UserProgress.UpdateUserProgressDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": [
+      {
+        "Type": "AILearnAPI.Shared.DTOs.UserProgress.UserProgressDto",
+        "MediaTypes": [
+          "text/plain",
+          "application/json",
+          "text/json"
+        ],
+        "StatusCode": 200
+      }
+    ]
+  }
+]

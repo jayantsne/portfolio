@@ -1,0 +1,7 @@
+{
+  "AILearnAPI.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\AILearnAPI.Api",
+  "AILearnAPI.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\AILearnAPI.Application",
+  "AILearnAPI.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\AILearnAPI.Domain",
+  "AILearnAPI.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\AILearnAPI.Infrastructure",
+  "AILearnAPI.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\AILearnAPI.Shared"
+}
