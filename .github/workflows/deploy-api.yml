@@ -69,17 +69,6 @@ jobs:
           source: api-deploy.tar.gz
           target: /tmp/
 
-      - name: 📤 Upload nginx config to VPS
-        if: steps.check_secrets.outputs.skip == 'false'
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: 76.13.244.113
-          username: root
-          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          source: server-configs/nginx/learnwithai.tech.conf
-          target: /tmp/
-          strip_components: 2
-
       - name: 📤 Upload systemd service to VPS
         if: steps.check_secrets.outputs.skip == 'false'
         uses: appleboy/scp-action@v0.1.7
@@ -135,14 +124,6 @@ jobs:
             systemctl daemon-reload
             systemctl enable ailearnapi
             echo "⚙️  Systemd service installed"
-
-            # ── Install/update nginx config ──
-            cp /tmp/learnwithai.tech.conf /etc/nginx/sites-available/learnwithai.tech
-            ln -sf /etc/nginx/sites-available/learnwithai.tech /etc/nginx/sites-enabled/learnwithai.tech
-            rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
-            nginx -t
-            rm /tmp/learnwithai.tech.conf
-            echo "🔧 Nginx config updated"
 
             # ── Start API service ──
             systemctl start ailearnapi
