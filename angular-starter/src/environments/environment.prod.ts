@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://learnwithai.tech/api',  // VPS Backend API
+  apiUrl: 'https://learnwithai.tech/api',  // VPS Backend API (HTTPS - required to avoid Mixed Content errors)
   groqApiKeys: [
     // ⚠️ ADD YOUR GROQ API KEYS HERE FOR PRODUCTION
     // Get free keys at: https://console.groq.com/keys
