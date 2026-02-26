@@ -29,12 +29,15 @@ const routes: Routes = [
   { path: 'home', component: MainPortfolioComponent },
   { path: 'portfolio', component: MainPortfolioComponent },
   
+  // Default redirect to AI Learn
+  { path: '', redirectTo: '/ai-learn', pathMatch: 'full' },
+  
   // { path: 'login', component: LoginComponent }, // Temporarily disabled
   // { path: 'tools', component: FreeToolsComponent }, // Free Tools - Public (removed)
   
   // AI Learn App with nested routes
   { 
-    path: '', 
+    path: 'ai-learn', 
     component: AiQaComponent,
     children: [
       // No redirect - show landing page when on /ai-learn
