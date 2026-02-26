@@ -25,7 +25,7 @@ import { FormsModule } from '@angular/forms';
 import { RevealOnScrollDirective } from './shared/reveal-on-scroll.directive';
 import { InterviewQuestionsComponent } from './interview-questions/interview-questions.component';
 import { MainPortfolioComponent } from './main-portfolio/main-portfolio.component';
-// import { QuestionsPublicComponent } from './questions-public/questions-public.component'; // Temporarily disabled
+import { QuestionsPublicComponent } from './questions-public/questions-public.component';
 import { AiQaComponent } from './ai-qa/ai-qa.component';
 import { MarkdownPipe } from './shared/markdown.pipe';
 // import { LoginComponent } from './login/login.component'; // Temporarily disabled
@@ -58,7 +58,7 @@ import { MemoryGameComponent } from './memory-game/memory-game.component';
     RevealOnScrollDirective,
     InterviewQuestionsComponent,
     MainPortfolioComponent,
-    // QuestionsPublicComponent, // Temporarily disabled - FormsModule issues
+    QuestionsPublicComponent,
     AiQaComponent,
     MarkdownPipe,
     // LoginComponent, // Temporarily disabled - FormsModule issues

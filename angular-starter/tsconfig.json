@@ -3,7 +3,6 @@
   "compilerOptions": {
     "baseUrl": "./",
     "outDir": "./dist/out-tsc",
-    "ignoreDeprecations": "5.0",
     "sourceMap": true,
     "declaration": false,
     "downlevelIteration": true,
