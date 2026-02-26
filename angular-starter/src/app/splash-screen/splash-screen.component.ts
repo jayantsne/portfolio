@@ -1,5 +1,13 @@
 import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 
+interface Particle {
+  x: number;
+  y: number;
+  delay: number;
+  dur: number;
+  size: number;
+}
+
 @Component({
   selector: 'app-splash-screen',
   templateUrl: './splash-screen.component.html',
@@ -7,20 +15,27 @@ import { Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angu
 })
 export class SplashScreenComponent implements OnInit, OnDestroy {
   @Output() done = new EventEmitter<void>();
-
-  // How long splash stays on screen before fading out.
-  @Input() minDurationMs = 3200;
+  @Input() minDurationMs = 3800;
 
   leaving = false;
+  particles: Particle[] = [];
 
   private hideTimer?: number;
   private doneTimer?: number;
 
   ngOnInit(): void {
-    // Keep it snappy: show briefly, then fade out.
+    // Generate random particles
+    this.particles = Array.from({ length: 55 }, () => ({
+      x: Math.random() * 100,
+      y: Math.random() * 100,
+      delay: Math.random() * 4,
+      dur: 3 + Math.random() * 4,
+      size: 1 + Math.random() * 2.5
+    }));
+
     this.hideTimer = window.setTimeout(() => {
       this.leaving = true;
-      this.doneTimer = window.setTimeout(() => this.done.emit(), 420);
+      this.doneTimer = window.setTimeout(() => this.done.emit(), 600);
     }, Math.max(0, this.minDurationMs));
   }
 
@@ -29,9 +44,9 @@ export class SplashScreenComponent implements OnInit, OnDestroy {
     if (this.doneTimer) window.clearTimeout(this.doneTimer);
   }
 
-  skip() {
+  skip(): void {
     if (this.leaving) return;
     this.leaving = true;
-    this.doneTimer = window.setTimeout(() => this.done.emit(), 220);
+    this.doneTimer = window.setTimeout(() => this.done.emit(), 300);
   }
 }
