@@ -19,9 +19,11 @@ export class SplashScreenComponent implements OnInit, OnDestroy {
 
   leaving = false;
   particles: Particle[] = [];
+  pct = 0;
 
   private hideTimer?: number;
   private doneTimer?: number;
+  private pctTimer?: number;
 
   ngOnInit(): void {
     // Generate random particles
@@ -33,6 +35,13 @@ export class SplashScreenComponent implements OnInit, OnDestroy {
       size: 1 + Math.random() * 2.5
     }));
 
+    // Drive progress percentage counter
+    const step = 100 / (this.minDurationMs / 80);
+    this.pctTimer = window.setInterval(() => {
+      this.pct = Math.min(100, Math.round(this.pct + step));
+      if (this.pct >= 100) window.clearInterval(this.pctTimer);
+    }, 80);
+
     this.hideTimer = window.setTimeout(() => {
       this.leaving = true;
       this.doneTimer = window.setTimeout(() => this.done.emit(), 600);
@@ -42,6 +51,7 @@ export class SplashScreenComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.hideTimer) window.clearTimeout(this.hideTimer);
     if (this.doneTimer) window.clearTimeout(this.doneTimer);
+    if (this.pctTimer) window.clearInterval(this.pctTimer);
   }
 
   skip(): void {

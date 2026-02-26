@@ -1,14 +1,19 @@
-<div class="splash" [class.leaving]="leaving" (click)="skip()" role="dialog" aria-label="Loading">
+﻿<div class="splash" [class.leaving]="leaving" (click)="skip()" role="dialog" aria-label="Loading">
 
-  <!-- ░░ Aurora blobs ░░ -->
+  <!-- Neural grid background -->
+  <div class="neural-grid" aria-hidden="true"></div>
+
+  <!-- Scan beam -->
+  <div class="scan-beam" aria-hidden="true"></div>
+
+  <!-- Aurora blobs -->
   <div class="aurora" aria-hidden="true">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
-    <div class="orb orb-4"></div>
   </div>
 
-  <!-- ░░ Dot particles ░░ -->
+  <!-- Floating particles -->
   <div class="particles" aria-hidden="true">
     <span *ngFor="let p of particles" class="particle"
       [style.left.%]="p.x"
@@ -20,62 +25,69 @@
     </span>
   </div>
 
-  <!-- ░░ Pulsing rings ░░ -->
-  <div class="rings" aria-hidden="true">
-    <div class="ring ring-1"></div>
-    <div class="ring ring-2"></div>
-    <div class="ring ring-3"></div>
+  <!-- Floating AI icons (independent, no broken orbit rotation) -->
+  <div class="float-icons" aria-hidden="true">
+    <span class="fi fi-1"></span>
+    <span class="fi fi-2"></span>
+    <span class="fi fi-3"></span>
+    <span class="fi fi-4"></span>
+    <span class="fi fi-5"></span>
+    <span class="fi fi-6"></span>
   </div>
 
-  <!-- ░░ Main stage ░░ -->
+  <!-- Corner data nodes -->
+  <div class="node node-tl" aria-hidden="true"><span class="nd"></span></div>
+  <div class="node node-tr" aria-hidden="true"><span class="nd"></span></div>
+  <div class="node node-bl" aria-hidden="true"><span class="nd"></span></div>
+  <div class="node node-br" aria-hidden="true"><span class="nd"></span></div>
+
+  <!--  Main stage  -->
   <div class="stage">
 
-    <!-- Orbiting icons -->
-    <div class="icon-orbit" aria-hidden="true">
-      <span class="oi oi-1">⚡</span>
-      <span class="oi oi-2">🧠</span>
-      <span class="oi oi-3">🚀</span>
-      <span class="oi oi-4">✨</span>
+    <!-- System boot chip -->
+    <div class="boot-chip">
+      <span class="boot-dot"></span>
+      <span class="boot-label">AI SYSTEM BOOT</span>
     </div>
 
     <!-- Logo -->
-    <div class="logo-wrap">
-      <h1 class="logo">
-        <span class="logo-ai">AI</span><span class="logo-gap"> </span><span class="logo-learn">Learn</span>
+    <div class="logo-block">
+      <div class="halo"></div>
+      <h1 class="logo" aria-label="AI Learn">
+        <span class="logo-ai">AI</span>
+        <span class="logo-space">&nbsp;</span>
+        <span class="logo-learn">Learn</span>
       </h1>
-      <div class="logo-underline" aria-hidden="true"></div>
+      <p class="logo-sub">by Jayant Bhardwaj</p>
     </div>
 
-    <!-- Tagline -->
-    <p class="tagline" aria-live="polite">
-      Master&nbsp;<span class="word-cycle">
-        <span class="wc wc1">Programming.</span>
-        <span class="wc wc2">Interviews.</span>
-        <span class="wc wc3">AI Skills.</span>
+    <!-- Tagline  CSS grid stacking (no overflow clipping) -->
+    <div class="tagline-wrap">
+      <span class="tag-prefix">Master&nbsp;</span>
+      <span class="tag-cycle" aria-live="polite">
+        <span class="tw tw1">Programming</span>
+        <span class="tw tw2">Interviews</span>
+        <span class="tw tw3">AI Skills</span>
       </span>
-    </p>
+    </div>
 
-    <!-- Pills -->
-    <div class="pills" aria-hidden="true">
-      <span class="pill p1">500+ Questions</span>
-      <span class="pill p2">⚡ AI Powered</span>
-      <span class="pill p3">🎮 Games</span>
+    <!-- Status line -->
+    <div class="status-line" aria-hidden="true">
+      <span class="sl-dot"></span>
+      <span class="sl-text">Initializing AI engine...</span>
     </div>
 
     <!-- Progress -->
-    <div class="pbar-wrap" role="progressbar" aria-label="Loading">
+    <div class="pbar-outer" role="progressbar" aria-label="Loading">
       <div class="pbar-track">
         <div class="pbar-fill"></div>
       </div>
+      <div class="pbar-pct">{{ pct }}%</div>
     </div>
 
     <!-- Skip -->
     <div class="skip-hint">tap anywhere to skip</div>
 
   </div>
-
-  <!-- Corner glints -->
-  <div class="glint glint-tl" aria-hidden="true"></div>
-  <div class="glint glint-br" aria-hidden="true"></div>
 
 </div>
