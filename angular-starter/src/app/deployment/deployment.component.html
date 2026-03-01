@@ -1,0 +1,195 @@
+<div class="deploy-page">
+
+  <!-- ─── Header ─────────────────────────────────────────────────────── -->
+  <header class="deploy-header">
+    <div class="header-left">
+      <button class="back-btn" (click)="goToDashboard()">← Dashboard</button>
+      <div class="header-title">
+        <span class="header-icon">🚀</span>
+        <div>
+          <h1>Deployment Manager</h1>
+          <p>Deploy backend &amp; frontend to production</p>
+        </div>
+      </div>
+    </div>
+    <div class="header-user" *ngIf="user">
+      <div class="user-initial">{{ (user.username | slice:0:1) | uppercase }}</div>
+      <span class="user-name">{{ user.username }}</span>
+      <span class="role-badge">{{ user.role }}</span>
+    </div>
+  </header>
+
+  <!-- ─── NOT LOGGED IN ──────────────────────────────────────────────── -->
+  <div class="access-denied" *ngIf="!isLoggedIn">
+    <div class="denied-card">
+      <div class="denied-icon">🔐</div>
+      <h2>Authentication Required</h2>
+      <p>You must be logged in as <strong>ADMIN</strong> to access this page.</p>
+      <p class="hint">Use the login button in the site header.</p>
+    </div>
+  </div>
+
+  <!-- ─── WRONG ROLE ─────────────────────────────────────────────────── -->
+  <div class="access-denied" *ngIf="isLoggedIn && !isAdmin">
+    <div class="denied-card">
+      <div class="denied-icon">🚫</div>
+      <h2>Access Denied</h2>
+      <p>Deployment management is restricted to <strong>ADMIN</strong> users only.</p>
+      <p class="hint">Your role: <code>{{ user?.role }}</code></p>
+    </div>
+  </div>
+
+  <!-- ─── MAIN CONTENT (ADMIN only) ─────────────────────────────────── -->
+  <div class="deploy-content" *ngIf="isAdmin">
+
+    <!-- Security notice -->
+    <div class="security-notice">
+      <span class="notice-icon">🛡️</span>
+      <span>Deployment endpoints are additionally restricted to <strong>localhost</strong> at the server level.
+        Remote requests will be rejected with <code>403 Forbidden</code>.</span>
+    </div>
+
+    <!-- ── Deploy Buttons ─────────────────────────────────────────── -->
+    <section class="deploy-actions">
+      <h2 class="section-title">Trigger Deployment</h2>
+      <div class="action-cards">
+
+        <!-- Backend Deploy -->
+        <div class="action-card backend-card">
+          <div class="card-icon">⚙️</div>
+          <div class="card-body">
+            <h3>Backend</h3>
+            <p>Pull latest code, build .NET API, restart systemd service.</p>
+            <ul class="step-list">
+              <li>git pull (main)</li>
+              <li>dotnet publish</li>
+              <li>systemctl restart jayant-api</li>
+            </ul>
+          </div>
+          <button class="deploy-btn backend-btn"
+                  [disabled]="isDeploying"
+                  (click)="deploy('backend')">
+            <span *ngIf="!isDeploying">🚀 Deploy Backend</span>
+            <span *ngIf="isDeploying">⏳ Deploying…</span>
+          </button>
+        </div>
+
+        <!-- Frontend Deploy -->
+        <div class="action-card frontend-card">
+          <div class="card-icon">🌐</div>
+          <div class="card-body">
+            <h3>Frontend</h3>
+            <p>Pull latest code, build Angular app, update Nginx web root.</p>
+            <ul class="step-list">
+              <li>git pull (main)</li>
+              <li>npm ci &amp;&amp; ng build --prod</li>
+              <li>rsync to /var/www + nginx reload</li>
+            </ul>
+          </div>
+          <button class="deploy-btn frontend-btn"
+                  [disabled]="isDeploying"
+                  (click)="deploy('frontend')">
+            <span *ngIf="!isDeploying">🚀 Deploy Frontend</span>
+            <span *ngIf="isDeploying">⏳ Deploying…</span>
+          </button>
+        </div>
+
+      </div><!-- /.action-cards -->
+
+      <!-- Deploy error -->
+      <div class="deploy-error" *ngIf="deployError">
+        <span>⚠️</span> {{ deployError }}
+      </div>
+    </section>
+
+    <!-- ── Active Deployment Terminal ─────────────────────────────── -->
+    <section class="active-deploy" *ngIf="activeLog">
+      <div class="terminal-header">
+        <div class="terminal-title">
+          {{ targetIcon(activeLog.target) }}
+          <strong>{{ activeLog.target | titlecase }} Deployment</strong>
+          <span class="status-chip" [class]="'chip-' + activeLog.status">
+            {{ statusIcon(activeLog.status) }} {{ activeLog.status | uppercase }}
+          </span>
+        </div>
+        <div class="terminal-meta">
+          <span>Started: {{ formatDate(activeLog.startedAt) }}</span>
+          <span *ngIf="activeLog.completedAt"> · Duration: {{ durationMs(activeLog) }}</span>
+          <span *ngIf="activeLog.exitCode != null"> · Exit code: {{ activeLog.exitCode }}</span>
+        </div>
+        <button class="close-terminal-btn"
+                *ngIf="!isDeploying"
+                (click)="closeActiveLog()">✕ Close</button>
+      </div>
+
+      <!-- Running indicator -->
+      <div class="terminal-running" *ngIf="isRunning(activeLog)">
+        <div class="pulse-dot"></div>
+        <span>Deployment in progress… auto-refreshing every 2s</span>
+      </div>
+
+      <!-- Script output -->
+      <pre class="terminal-output" [class.running]="isRunning(activeLog)">{{ activeLog.output || '(waiting for output…)' }}</pre>
+
+      <!-- Error message if script couldn't start -->
+      <div class="terminal-error" *ngIf="activeLog.error">
+        <strong>Error:</strong> {{ activeLog.error }}
+      </div>
+    </section>
+
+    <!-- ── Deployment History ──────────────────────────────────────── -->
+    <section class="deploy-history">
+      <div class="history-header">
+        <h2 class="section-title">Deployment History</h2>
+        <button class="refresh-btn" (click)="loadLogs()" [disabled]="logsLoading">
+          {{ logsLoading ? '⟳ Loading…' : '⟳ Refresh' }}
+        </button>
+      </div>
+
+      <div class="history-error" *ngIf="logsError">
+        ⚠️ {{ logsError }}
+      </div>
+
+      <div class="history-empty" *ngIf="!logsLoading && !logsError && logs.length === 0">
+        <span>📭</span> No deployments yet. Click a deploy button above to get started.
+      </div>
+
+      <div class="history-table-wrap" *ngIf="logs.length > 0">
+        <table class="history-table">
+          <thead>
+            <tr>
+              <th>Status</th>
+              <th>Target</th>
+              <th>By</th>
+              <th>Started</th>
+              <th>Duration</th>
+              <th>Exit</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let log of logs" [class.row-active]="activeLog?.id === log.id">
+              <td>
+                <span class="status-chip" [class]="'chip-' + log.status">
+                  {{ statusIcon(log.status) }} {{ log.status }}
+                </span>
+              </td>
+              <td>{{ targetIcon(log.target) }} {{ log.target }}</td>
+              <td>{{ log.triggeredByUsername }}</td>
+              <td>{{ formatDate(log.startedAt) }}</td>
+              <td>{{ durationMs(log) }}</td>
+              <td [class.exit-fail]="log.exitCode !== 0 && log.exitCode != null">
+                {{ log.exitCode ?? '—' }}
+              </td>
+              <td>
+                <button class="view-btn" (click)="viewLog(log)">View</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </section>
+
+  </div><!-- /.deploy-content -->
+</div>

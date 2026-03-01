@@ -11,19 +11,24 @@ namespace AILearnAPI.Shared.DTOs.Auth
     public class RegisterDto
     {
         public string username { get; set; } = string.Empty;
+        public string email { get; set; } = string.Empty;
         public string password { get; set; } = string.Empty;
     }
 
     public class LoginDto
     {
-        public string username { get; set; } = string.Empty;
+        /// <summary>Login with email address</summary>
+        public string email { get; set; } = string.Empty;
         public string password { get; set; } = string.Empty;
     }
 
     public class LoginResponseDto
     {
-        public string message { get; set; } = string.Empty;
-        public string userId { get; set; } = string.Empty;
+        public string message  { get; set; } = string.Empty;
+        public string userId   { get; set; } = string.Empty;
         public string username { get; set; } = string.Empty;
+        public string email    { get; set; } = string.Empty;
+        public string role     { get; set; } = "USER";
+        public string token    { get; set; } = string.Empty;
     }
 }

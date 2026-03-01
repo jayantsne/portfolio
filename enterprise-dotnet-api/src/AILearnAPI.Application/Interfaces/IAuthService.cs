@@ -9,5 +9,7 @@ namespace AILearnAPI.Application.Interfaces
         Task<LoginResponseDto> LoginAsync(LoginDto dto);
         Task<bool> LogoutAsync(string userId);
         Task InitializeDefaultUserAsync();
+        /// <summary>Admin-only: change a user's role.</summary>
+        Task<bool> AssignRoleAsync(string targetUserId, string newRole);
     }
 }

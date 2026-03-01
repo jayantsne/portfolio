@@ -1,0 +1,305 @@
+<div class="mc-overlay" *ngIf="isOpen" (click)="onOverlayClick($event)">
+  <div class="mc-panel" role="dialog" aria-label="Master Configuration">
+
+    <!-- Header -->
+    <div class="mc-header">
+      <div class="mc-header-left">
+        <span class="mc-icon">⚙️</span>
+        <div>
+          <h2 class="mc-title">Master Configuration</h2>
+          <p class="mc-subtitle">Global AI settings — ADMIN only. Changes take effect immediately (no redeploy).</p>
+        </div>
+      </div>
+      <button class="mc-close" (click)="close()" title="Close">✕</button>
+    </div>
+
+    <!-- Loading -->
+    <div class="mc-loading" *ngIf="isLoading">
+      <div class="spinner"></div>
+      <span>Loading configuration…</span>
+    </div>
+
+    <!-- Form -->
+    <form [formGroup]="form" (ngSubmit)="save()" *ngIf="!isLoading" class="mc-body">
+
+      <!-- Error / Success banners -->
+      <div class="mc-banner mc-error"   *ngIf="errorMsg">{{ errorMsg }}</div>
+      <div class="mc-banner mc-success" *ngIf="successMsg">{{ successMsg }}</div>
+
+      <!-- ── Section: AI Provider Routing ─────────────────────── -->
+      <section class="mc-section">
+        <h3 class="mc-section-title">🔀 Provider Routing</h3>
+
+        <div class="mc-row">
+          <label>Default Provider</label>
+          <select formControlName="defaultProvider">
+            <option *ngFor="let p of ALL_PROVIDERS" [value]="p">{{ p }}</option>
+          </select>
+        </div>
+
+        <div class="mc-row mc-row-col">
+          <label>Fallback Order <span class="mc-hint-inline">(comma-separated)</span></label>
+          <input type="text" formControlName="fallbackOrderRaw" placeholder="groq,backend,openrouter,..." />
+        </div>
+
+        <div class="mc-row">
+          <label class="mc-toggle">
+            <input type="checkbox" formControlName="ollamaEnabled" />
+            <span class="mc-toggle-track"></span>
+            <span class="mc-toggle-label">Ollama enabled</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- ── Section: Allowed Providers ───────────────────────── -->
+      <section class="mc-section">
+        <h3 class="mc-section-title">🔌 Allowed AI Providers</h3>
+        <div class="mc-providers">
+          <label class="mc-toggle" *ngFor="let p of PROVIDERS">
+            <input type="checkbox" [formControlName]="'p_' + p" />
+            <span class="mc-toggle-track"></span>
+            <span class="mc-toggle-label">{{ p }}</span>
+          </label>
+        </div>
+      </section>
+
+      <!-- ── Section: Model Names ──────────────────────────────── -->
+      <section class="mc-section">
+        <h3 class="mc-section-title">🧠 Model Names</h3>
+
+        <div class="mc-row mc-row-col">
+          <label>Groq model</label>
+          <input type="text" formControlName="modelGroq" placeholder="llama-3.3-70b-versatile" />
+        </div>
+
+        <div class="mc-row mc-row-col">
+          <label>Together.ai model</label>
+          <input type="text" formControlName="modelTogether" placeholder="mistralai/Mixtral-8x7B-Instruct-v0.1" />
+        </div>
+
+        <div class="mc-row mc-row-col">
+          <label>OpenRouter model</label>
+          <input type="text" formControlName="modelOpenrouter" placeholder="meta-llama/llama-3.1-8b-instruct:free" />
+        </div>
+
+        <div class="mc-row mc-row-col">
+          <label>Ollama streaming model</label>
+          <input type="text" formControlName="modelOllamaStream" placeholder="qwen2.5:3b-instruct-q4_0" />
+        </div>
+
+        <div class="mc-row mc-row-col">
+          <label>Ollama fallbacks <span class="mc-hint-inline">(comma-separated)</span></label>
+          <input type="text" formControlName="modelOllamaFallbacksRaw" placeholder="llama2,llama3,mistral,..." />
+        </div>
+      </section>
+
+      <!-- ── Section: Generation Defaults ─────────────────────── -->
+      <section class="mc-section">
+        <h3 class="mc-section-title">🤖 Generation Defaults</h3>
+
+        <div class="mc-row">
+          <label>Temperature</label>
+          <input type="number" formControlName="defaultTemperature" step="0.1" min="0" max="2" />
+          <span class="mc-hint">0.0 = deterministic · 2.0 = creative</span>
+        </div>
+
+        <div class="mc-row">
+          <label>Top-K</label>
+          <input type="number" formControlName="topK" min="1" max="200" />
+        </div>
+
+        <div class="mc-row">
+          <label>Top-P</label>
+          <input type="number" formControlName="topP" step="0.01" min="0" max="1" />
+        </div>
+
+        <div class="mc-row">
+          <label>Max Output Tokens</label>
+          <input type="number" formControlName="maxOutputTokens" min="128" max="16384" />
+          <span class="mc-hint">Main explanations</span>
+        </div>
+
+        <div class="mc-row">
+          <label>Max Tokens (Stream)</label>
+          <input type="number" formControlName="maxTokensStream" min="128" max="16384" />
+          <span class="mc-hint">SSE / Ollama stream endpoint</span>
+        </div>
+
+        <div class="mc-row">
+          <label>Max Tokens (Simplified)</label>
+          <input type="number" formControlName="maxTokensSimplified" min="128" max="16384" />
+          <span class="mc-hint">Explain Differently mode</span>
+        </div>
+
+        <div class="mc-row">
+          <label>Default Max Tokens (legacy)</label>
+          <input type="number" formControlName="defaultMaxTokens" min="128" max="16384" />
+        </div>
+
+        <div class="mc-row mc-row-col">
+          <label>Default System Prompt</label>
+          <textarea formControlName="defaultSystemPrompt" rows="3"></textarea>
+        </div>
+      </section>
+
+      <!-- ── Section: AI Prompts ───────────────────────────────── -->
+      <section class="mc-section">
+        <h3 class="mc-section-title">💬 AI Prompt Templates</h3>
+
+        <div class="mc-row mc-row-col">
+          <label>System Role (opening line)</label>
+          <textarea formControlName="systemRole" rows="2"></textarea>
+        </div>
+
+        <h4 class="mc-sub-title">Type Instructions</h4>
+        <div class="mc-row mc-row-col">
+          <label>Code questions</label>
+          <textarea formControlName="promptTypeCode" rows="2"></textarea>
+        </div>
+        <div class="mc-row mc-row-col">
+          <label>Concept questions</label>
+          <textarea formControlName="promptTypeConcept" rows="2"></textarea>
+        </div>
+        <div class="mc-row mc-row-col">
+          <label>Comparison questions</label>
+          <textarea formControlName="promptTypeComparison" rows="2"></textarea>
+        </div>
+        <div class="mc-row mc-row-col">
+          <label>Troubleshooting questions</label>
+          <textarea formControlName="promptTypeTroubleshooting" rows="2"></textarea>
+        </div>
+        <div class="mc-row mc-row-col">
+          <label>Default (fallback)</label>
+          <textarea formControlName="promptTypeDefault" rows="2"></textarea>
+        </div>
+
+        <h4 class="mc-sub-title">Format &amp; Complexity</h4>
+        <div class="mc-row mc-row-col">
+          <label>Format instruction (appended to every prompt)</label>
+          <textarea formControlName="formatInstruction" rows="2"></textarea>
+        </div>
+        <div class="mc-row mc-row-col">
+          <label>Complexity: Simple</label>
+          <textarea formControlName="complexitySimple" rows="2"></textarea>
+        </div>
+        <div class="mc-row mc-row-col">
+          <label>Complexity: Medium</label>
+          <textarea formControlName="complexityMedium" rows="4"></textarea>
+        </div>
+        <div class="mc-row mc-row-col">
+          <label>Complexity: Complex</label>
+          <textarea formControlName="complexityComplex" rows="4"></textarea>
+        </div>
+      </section>
+
+      <!-- ── Section: Cache Settings ──────────────────────────── -->
+      <section class="mc-section">
+        <h3 class="mc-section-title">💾 Cache Settings</h3>
+
+        <div class="mc-row">
+          <label class="mc-toggle">
+            <input type="checkbox" formControlName="cacheEnabled" />
+            <span class="mc-toggle-track"></span>
+            <span class="mc-toggle-label">Enable response caching</span>
+          </label>
+        </div>
+
+        <div class="mc-row">
+          <label>Cache Duration (hours)</label>
+          <input type="number" formControlName="cacheDurationHours" min="1" max="168" />
+        </div>
+
+        <div class="mc-row">
+          <label>Cache Version</label>
+          <input type="number" formControlName="cacheVersion" min="1" />
+          <span class="mc-hint">Increment to invalidate all cached answers</span>
+        </div>
+
+        <div class="mc-row mc-row-col">
+          <label>Cache Key Prefix</label>
+          <input type="text" formControlName="cacheKeyPrefix" />
+        </div>
+      </section>
+
+      <!-- ── Section: Rate Limiting ────────────────────────────── -->
+      <section class="mc-section">
+        <h3 class="mc-section-title">🚦 Rate Limiting</h3>
+
+        <div class="mc-row">
+          <label class="mc-toggle">
+            <input type="checkbox" formControlName="enableRateLimiting" />
+            <span class="mc-toggle-track"></span>
+            <span class="mc-toggle-label">Enable rate limiting</span>
+          </label>
+        </div>
+
+        <div class="mc-row">
+          <label>Max Requests / User / Day</label>
+          <input type="number" formControlName="maxRequestsPerUserPerDay" min="1" />
+        </div>
+
+        <div class="mc-row">
+          <label>Max Requests / Minute (global)</label>
+          <input type="number" formControlName="maxRequestsPerMinute" min="1" />
+        </div>
+
+        <div class="mc-row">
+          <label>Min Delay Between Requests (ms)</label>
+          <input type="number" formControlName="requestDelayMs" min="0" />
+        </div>
+
+        <div class="mc-row">
+          <label>Context History Length</label>
+          <input type="number" formControlName="maxHistory" min="0" max="50" />
+          <span class="mc-hint">Previous questions kept for context</span>
+        </div>
+
+        <div class="mc-row mc-row-col">
+          <label>Per-Provider Limits (JSON) <span class="mc-hint-inline">e.g. {{ '{' }}"groq": 30, "ollama": 9999{{ '}' }}</span></label>
+          <textarea formControlName="perProviderLimitsRaw" rows="5" class="mc-code"></textarea>
+        </div>
+
+        <div class="mc-row mc-row-col">
+          <label>Provider Cooldowns in ms (JSON) <span class="mc-hint-inline">e.g. {{ '{' }}"groq": 60000{{ '}' }}</span></label>
+          <textarea formControlName="cooldownMsRaw" rows="5" class="mc-code"></textarea>
+        </div>
+      </section>
+
+      <!-- ── Section: Feature Flags ────────────────────────────── -->
+      <section class="mc-section">
+        <h3 class="mc-section-title">🚩 Feature Flags</h3>
+
+        <div class="mc-row">
+          <label class="mc-toggle">
+            <input type="checkbox" formControlName="enableSignup" />
+            <span class="mc-toggle-track"></span>
+            <span class="mc-toggle-label">Allow new user signups</span>
+          </label>
+        </div>
+
+        <div class="mc-row">
+          <label class="mc-toggle">
+            <input type="checkbox" formControlName="maintenanceMode" />
+            <span class="mc-toggle-track"></span>
+            <span class="mc-toggle-label">Maintenance mode</span>
+          </label>
+        </div>
+
+        <div class="mc-row mc-row-col" *ngIf="f('maintenanceMode')?.value">
+          <label>Maintenance Message</label>
+          <input type="text" formControlName="maintenanceMessage" />
+        </div>
+      </section>
+
+      <!-- Save -->
+      <div class="mc-footer">
+        <button type="button" class="mc-btn-cancel" (click)="close()">Cancel</button>
+        <button type="submit" class="mc-btn-save" [disabled]="isSaving">
+          <span *ngIf="!isSaving">💾 Save Changes</span>
+          <span *ngIf="isSaving" class="spinner-sm"></span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>

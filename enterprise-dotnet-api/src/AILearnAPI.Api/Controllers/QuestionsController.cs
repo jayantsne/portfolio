@@ -152,5 +152,45 @@ namespace AILearnAPI.Api.Controllers
                 return StatusCode(500, new { message = "Error importing questions" });
             }
         }
+
+        // GET /api/questions/{id}/prompts - Get available prompts for a question
+        [HttpGet("{id}/prompts")]
+        public async Task<ActionResult<QuestionPromptsResponseDto>> GetQuestionPrompts(int id)
+        {
+            try
+            {
+                var prompts = await _questionService.GetQuestionPromptsAsync(id);
+                
+                if (prompts == null)
+                    return NotFound(new { message = $"Question with id {id} not found" });
+                
+                return Ok(prompts);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting prompts for question {Id}", id);
+                return StatusCode(500, new { message = "Error fetching prompts" });
+            }
+        }
+
+        // POST /api/questions/{id}/learn - Get AI prompt for learning
+        [HttpPost("{id}/learn")]
+        public async Task<ActionResult<LearnWithAIResponseDto>> LearnWithAI(int id, [FromBody] LearnWithAIRequestDto request)
+        {
+            try
+            {
+                var response = await _questionService.GenerateAIResponseAsync(id, request.PromptId);
+                
+                if (response == null)
+                    return NotFound(new { message = $"Question with id {id} or prompt not found" });
+                
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error generating AI response for question {Id}", id);
+                return StatusCode(500, new { message = "Error generating AI response" });
+            }
+        }
     }
 }

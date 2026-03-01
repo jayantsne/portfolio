@@ -3,6 +3,7 @@ using AILearnAPI.Shared.DTOs.Questions;
 using AILearnAPI.Shared.DTOs.UserProgress;
 using AILearnAPI.Shared.DTOs.Auth;
 using AILearnAPI.Shared.DTOs.AIQA;
+using AILearnAPI.Shared.DTOs.UserConfig;
 
 namespace AILearnAPI.Shared.Extensions
 {
@@ -118,6 +119,17 @@ namespace AILearnAPI.Shared.Extensions
                 Category = dto.category,
                 Saved = dto.saved,
                 Timestamp = DateTime.UtcNow
+            };
+        }
+        // UserConfig mappings
+        public static UserConfigDto ToDto(this UserConfig entity)
+        {
+            return new UserConfigDto
+            {
+                userId          = entity.UserId,
+                maxTokens       = entity.MaxTokens,
+                systemPrompt    = entity.SystemPrompt,
+                providerToggles = entity.ProviderToggles
             };
         }
     }

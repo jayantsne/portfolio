@@ -1,4 +1,5 @@
 using MongoDB.Bson.Serialization.Attributes;
+using AILearnAPI.Domain.Constants;
 
 namespace AILearnAPI.Domain.Entities
 {
@@ -13,6 +14,13 @@ namespace AILearnAPI.Domain.Entities
 
         [BsonElement("password")]
         public string Password { get; set; } = string.Empty;
+
+        [BsonElement("email")]
+        public string Email { get; set; } = string.Empty;
+
+        /// <summary>ADMIN or USER — stored in MongoDB and embedded in the JWT.</summary>
+        [BsonElement("role")]
+        public string Role { get; set; } = UserRoles.User;
 
         [BsonElement("isAuthenticated")]
         public bool IsAuthenticated { get; set; } = false;

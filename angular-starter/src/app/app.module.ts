@@ -1,6 +1,6 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
-import { NgModule } from '@angular/core';
+import { NgModule, APP_INITIALIZER } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { TestPageComponent } from './test-page/test-page.component';
@@ -21,10 +21,9 @@ import { ExperienceComponent } from './experience/experience.component';
 import { AiChatComponent } from './ai-chat/ai-chat.component';
 import { SplashScreenComponent } from './splash-screen/splash-screen.component';
 import { NgScrollbarModule } from 'ngx-scrollbar';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { RevealOnScrollDirective } from './shared/reveal-on-scroll.directive';
 import { InterviewQuestionsComponent } from './interview-questions/interview-questions.component';
-import { MainPortfolioComponent } from './main-portfolio/main-portfolio.component';
 import { QuestionsPublicComponent } from './questions-public/questions-public.component';
 import { AiQaComponent } from './ai-qa/ai-qa.component';
 import { MarkdownPipe } from './shared/markdown.pipe';
@@ -38,6 +37,17 @@ import { LearnQuestComponent } from './learn-quest/learn-quest.component';
 import { DsaGameComponent } from './dsa-game/dsa-game.component';
 import { AzureAiLearnComponent } from './azure-ai-learn/azure-ai-learn.component';
 import { MemoryGameComponent } from './memory-game/memory-game.component';
+import { AiLoaderComponent } from './shared/ai-loader/ai-loader.component';
+import { PromptSelectionModalComponent } from './shared/prompt-selection-modal/prompt-selection-modal.component';
+import { AdminLoginComponent } from './admin/admin-login/admin-login.component';
+import { AdminDashboardComponent } from './admin/admin-dashboard/admin-dashboard.component';
+import { SafePipe } from './pipes/safe.pipe';
+import { NotesComponent } from './notes/notes.component';
+import { AuthModalComponent } from './auth-modal/auth-modal.component';
+import { UserSettingsComponent } from './user-settings/user-settings.component';
+import { MasterConfigComponent } from './master-config/master-config.component';
+import { DeploymentComponent } from './deployment/deployment.component';
+import { AppConfigService } from './shared/app-config.service';
 
 @NgModule({
   declarations: [
@@ -57,7 +67,6 @@ import { MemoryGameComponent } from './memory-game/memory-game.component';
     AiChatComponent,
     RevealOnScrollDirective,
     InterviewQuestionsComponent,
-    MainPortfolioComponent,
     QuestionsPublicComponent,
     AiQaComponent,
     MarkdownPipe,
@@ -71,6 +80,16 @@ import { MemoryGameComponent } from './memory-game/memory-game.component';
     DsaGameComponent,
     AzureAiLearnComponent,
     MemoryGameComponent,
+    AiLoaderComponent,  // AI Loading Animation
+    PromptSelectionModalComponent,  // Prompt Selection Modal (NEW)
+    AdminLoginComponent,  // Admin Login
+    AdminDashboardComponent,  // Admin Dashboard
+    SafePipe,  // Safe HTML pipe for AI content
+    NotesComponent,  // Saved Notes page
+    AuthModalComponent,  // Custom Auth Modal
+    UserSettingsComponent,  // User Settings Panel
+    MasterConfigComponent,  // Admin Master Config
+    DeploymentComponent,    // Admin Deployment Manager
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],
@@ -80,11 +99,19 @@ import { MemoryGameComponent } from './memory-game/memory-game.component';
     BrowserAnimationsModule,
     HttpClientModule,
     FormsModule,
+    ReactiveFormsModule,
     TranslocoRootModule,
     AppRoutingModule,
     NgScrollbarModule
   ],
-  providers: [],
+  providers: [
+    {
+      provide:    APP_INITIALIZER,
+      useFactory: (appCfg: AppConfigService) => () => appCfg.load().toPromise(),
+      deps:       [AppConfigService],
+      multi:      true,
+    }
+  ],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

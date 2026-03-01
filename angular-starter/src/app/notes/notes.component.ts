@@ -1,8 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription, combineLatest } from 'rxjs';
-import { filter, take } from 'rxjs/operators';
-import { GoogleAuthService, AppUser } from '../shared/google-auth.service';
+import { Subscription } from 'rxjs';
+import { CustomAuthService, AuthUser } from '../shared/custom-auth.service';
 import { NotesService, SavedNote } from '../shared/notes.service';
 
 @Component({
@@ -11,41 +10,31 @@ import { NotesService, SavedNote } from '../shared/notes.service';
   styleUrls: ['./notes.component.css']
 })
 export class NotesComponent implements OnInit, OnDestroy {
-  user: AppUser | null = null;
+  user: AuthUser | null = null;
   notes: SavedNote[] = [];
   activeNote: SavedNote | null = null;
-  isLoading = false;       // loading notes from Firestore
-  authChecking = true;     // waiting for Firebase to resolve login state
+  isLoading = false;
   deletingId: string | null = null;
-  signInError: string | null = null;
 
   private subs: Subscription[] = [];
 
   constructor(
-    private googleAuth: GoogleAuthService,
+    private authSvc:      CustomAuthService,
     private notesService: NotesService,
-    private router: Router
+    private router:       Router
   ) {}
 
   ngOnInit(): void {
-    // Phase 1: wait for Firebase to resolve the initial auth state.
-    // This prevents the sign-in form from flashing before auth is confirmed.
-    this.subs.push(
-      this.googleAuth.authReady$.pipe(filter(ready => ready), take(1)).subscribe(() => {
-        this.authChecking = false;
-        this.user = this.googleAuth.currentUser;
-        if (this.user) this.startLoadingNotes();
-      })
-    );
+    // JWT auth is synchronous — user is available immediately from localStorage
+    this.user = this.authSvc.currentUser;
+    if (this.user) this.startLoadingNotes();
 
-    // Phase 2: react to sign-in / sign-out after initial check
+    // React to sign-in / sign-out events (e.g. login via header modal)
     this.subs.push(
-      this.googleAuth.user$.subscribe(user => {
-        if (this.authChecking) return; // ignore pre-ready emissions
+      this.authSvc.currentUser$.subscribe(user => {
         const wasNull = !this.user;
         this.user = user;
         if (user && wasNull) {
-          // Just signed in — load notes
           this.startLoadingNotes();
         } else if (!user) {
           this.isLoading = false;
@@ -96,26 +85,6 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   goHome(): void {
     this.router.navigate(['/']);
-  }
-
-  async signIn(): Promise<void> {
-    this.signInError = null;
-    try {
-      await this.googleAuth.signInWithGoogle();
-    } catch (e: any) {
-      console.error(e);
-      // Show a friendly message for common Firebase errors
-      const msg: string = e?.message || '';
-      if (msg.includes('Firebase is not configured')) {
-        this.signInError = '⚙️ Google Sign-In is not set up yet. Contact the admin to configure Firebase credentials.';
-      } else if (msg.includes('popup-closed-by-user') || msg.includes('cancelled-popup-request')) {
-        this.signInError = 'Sign-in was cancelled. Please try again.';
-      } else if (msg.includes('popup-blocked')) {
-        this.signInError = 'Pop-up was blocked by your browser. Please allow pop-ups for this site and try again.';
-      } else {
-        this.signInError = 'Sign-in failed. Please try again.';
-      }
-    }
   }
 
   formatDate(ms: number | undefined): string {

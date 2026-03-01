@@ -1490,3 +1490,19 @@
   0%, 100% { opacity: 0.5; transform: scaleX(1); }
   50% { opacity: 1; transform: scaleX(1.1); }
 }
+
+.streaming-cursor {
+  display: inline-block;
+  animation: blink 0.7s step-end infinite;
+  color: #667eea;
+  font-weight: bold;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.streaming-in-progress .answer-label {
+  color: #667eea;
+}

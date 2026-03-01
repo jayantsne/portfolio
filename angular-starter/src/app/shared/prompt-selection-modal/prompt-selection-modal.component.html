@@ -1,0 +1,71 @@
+<div class="modal-overlay" *ngIf="isVisible" (click)="close()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    
+    <!-- Modal Header -->
+    <div class="modal-header">
+      <h2 class="modal-title">
+        <span class="ai-icon">🤖</span>
+        Learn with AI
+      </h2>
+      <button class="close-btn" (click)="close()" aria-label="Close">
+        <span>&times;</span>
+      </button>
+    </div>
+
+    <!-- Question Info -->
+    <div class="question-info" *ngIf="promptData && !selectedPrompt">
+      <h3>{{ promptData.question }}</h3>
+      <div class="question-meta">
+        <span class="badge category-badge">{{ promptData.category }}</span>
+        <span class="badge difficulty-badge" [class.easy]="promptData.difficulty === 'Easy'" 
+              [class.medium]="promptData.difficulty === 'Medium'" 
+              [class.hard]="promptData.difficulty === 'Hard'">
+          {{ promptData.difficulty }}
+        </span>
+      </div>
+    </div>
+
+    <!-- Prompt Selection Grid -->
+    <div class="prompts-grid" *ngIf="promptData && !selectedPrompt && !isGenerating && !aiResponse">
+      <h4>Choose your learning style:</h4>
+      <div class="prompts-container">
+        <button 
+          *ngFor="let prompt of promptData.prompts" 
+          class="prompt-card"
+          (click)="selectPrompt(prompt)">
+          <span class="prompt-icon">{{ prompt.icon }}</span>
+          <h5>{{ prompt.title }}</h5>
+          <p>{{ prompt.description }}</p>
+        </button>
+      </div>
+    </div>
+
+    <!-- AI Thinking Animation -->
+    <div class="ai-thinking" *ngIf="isGenerating">
+      <app-ai-loader [loadingMessage]="'AI is crafting your personalized explanation...'"></app-ai-loader>
+    </div>
+
+    <!-- AI Response Display -->
+    <div class="ai-response-container" *ngIf="aiResponse && !isGenerating">
+      <div class="response-header">
+        <span class="response-icon">✨</span>
+        <h3>AI Generated Explanation</h3>
+        <span class="prompt-badge" *ngIf="selectedPrompt">
+          {{ selectedPrompt.icon }} {{ selectedPrompt.title }}
+        </span>
+      </div>
+      
+      <div class="ai-response-content" [innerHTML]="aiResponse"></div>
+      
+      <div class="response-actions">
+        <button class="action-btn primary-btn" (click)="tryAnotherPrompt()">
+          <span>🔄</span> Try Another Style
+        </button>
+        <button class="action-btn secondary-btn" (click)="close()">
+          <span>✅</span> Got It!
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

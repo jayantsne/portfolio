@@ -938,3 +938,105 @@
       0 0 30px rgba(251, 191, 36, 0.3);
   }
 }
+
+/* ═══════════════════════════════════════════════════
+   GOOGLE AUTH NAV  — Sign-in button + User chip
+   ═══════════════════════════════════════════════════ */
+
+/* Notes link highlight */
+.notes-link.active,
+.notes-link:focus {
+  color: #ffd93d !important;
+}
+
+/* Google sign-in button */
+.google-signin-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: white;
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
+  color: #2d3748;
+  padding: 0.38rem 0.9rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  line-height: 1;
+  margin: auto 0.25rem;
+}
+.google-signin-nav-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 3px 12px rgba(255,255,255,0.2);
+}
+
+/* Signed-in chip: avatar + name + ✕ */
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 24px;
+  padding: 0.22rem 0.65rem 0.22rem 0.25rem;
+  margin: auto 0.15rem;
+  white-space: nowrap;
+}
+.user-chip-avatar {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255,255,255,0.4);
+  flex-shrink: 0;
+}
+.user-chip-name {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: rgba(255,255,255,0.9);
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.user-chip-signout {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.65rem;
+  cursor: pointer;
+  padding: 0 0.1rem;
+  line-height: 1;
+  transition: color 0.15s;
+}
+.user-chip-signout:hover { color: #fc8181; }
+
+/* Letter-avatar for custom auth (no photo) */
+.user-chip-avatar-letter {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  border: 1.5px solid rgba(255,255,255,0.4);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  text-transform: uppercase;
+}
+.user-chip-settings {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.6);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0 0.1rem;
+  line-height: 1;
+  transition: color 0.15s, transform 0.2s;
+}
+.user-chip-settings:hover { color: #fff; transform: rotate(30deg); }
+

@@ -11,5 +11,9 @@ namespace AILearnAPI.Application.Interfaces
         Task<bool> DeleteQuestionAsync(int id);
         Task<bool> DeleteAllQuestionsAsync();
         Task<(int imported, int failed)> ImportQuestionsAsync(List<QuestionDto> questions);
+        
+        // New methods for AI learning with prompts
+        Task<QuestionPromptsResponseDto?> GetQuestionPromptsAsync(int id);
+        Task<LearnWithAIResponseDto?> GenerateAIResponseAsync(int questionId, string promptId);
     }
 }

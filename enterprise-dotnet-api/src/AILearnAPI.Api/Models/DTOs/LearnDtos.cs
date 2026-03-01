@@ -176,8 +176,35 @@ public class OllamaRequestDto
 
 public class OllamaOptionsDto
 {
-    public int Temperature { get; set; } = 0;
-    public int NumPredict { get; set; } = 2000;
+    /// <summary>
+    /// Temperature for response generation (0-10 scale in Ollama)
+    /// Higher = more creative, Lower = more focused
+    /// </summary>
+    public int Temperature { get; set; } = 7; // Default 0.7 on 0-10 scale
+
+    /// <summary>
+    /// Maximum number of tokens to generate
+    /// </summary>
+    public int NumPredict { get; set; } = 2048;
+
+    /// <summary>
+    /// Top-K sampling: Consider top K tokens
+    /// Typical: 40
+    /// </summary>
+    public int TopK { get; set; } = 40;
+
+    /// <summary>
+    /// Top-P (nucleus) sampling threshold
+    /// Typical: 0.9
+    /// </summary>
+    public float TopP { get; set; } = 0.9f;
+
+    /// <summary>
+    /// Penalty for repeating tokens
+    /// Higher = less repetition
+    /// Typical: 1.1
+    /// </summary>
+    public float RepeatPenalty { get; set; } = 1.1f;
 }
 
 public class OllamaResponseDto

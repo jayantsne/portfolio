@@ -166,5 +166,58 @@ namespace AILearnAPI.Application.Services
                 return (0, questions.Count);
             }
         }
+
+        public async Task<QuestionPromptsResponseDto?> GetQuestionPromptsAsync(int id)
+        {
+            var question = await _questionRepository.GetByQuestionIdAsync(id);
+            
+            if (question == null)
+                return null;
+
+            var response = new QuestionPromptsResponseDto
+            {
+                QuestionId = question.QuestionId,
+                Question = question.QuestionText,
+                Category = question.Category,
+                Difficulty = question.Difficulty,
+                Prompts = question.Prompts.Select(p => new PromptDto
+                {
+                    Id = p.Id,
+                    Title = p.Title,
+                    Description = p.Description,
+                    Icon = p.Icon
+                }).ToList()
+            };
+
+            return response;
+        }
+
+        public async Task<LearnWithAIResponseDto?> GenerateAIResponseAsync(int questionId, string promptId)
+        {
+            var question = await _questionRepository.GetByQuestionIdAsync(questionId);
+            
+            if (question == null)
+                return null;
+
+            var selectedPrompt = question.Prompts.FirstOrDefault(p => p.Id == promptId);
+            
+            if (selectedPrompt == null)
+                return null;
+
+            // Return the prompt details for frontend to use with AI
+            // Frontend will call Claude/Groq/Gemini API directly
+            var response = new LearnWithAIResponseDto
+            {
+                QuestionId = questionId,
+                PromptId = selectedPrompt.Id,
+                PromptTitle = selectedPrompt.Title,
+                Response = selectedPrompt.SystemPrompt + "\n\n" + selectedPrompt.UserPromptTemplate,
+                TokensUsed = 0,
+                ResponseTimeMs = 0,
+                Model = "frontend-ai"
+            };
+
+            return response;
+        }
     }
 }

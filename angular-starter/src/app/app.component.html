@@ -1,5 +1,5 @@
-<!-- Splash screen - Re-enabled -->
-<app-splash-screen *ngIf="showSplash" [minDurationMs]="4000" (done)="onSplashDone()"></app-splash-screen>
+<!-- Splash screen - Controlled by app.config.ts -->
+<app-splash-screen *ngIf="showSplash" [minDurationMs]="splashDuration" (done)="onSplashDone()"></app-splash-screen>
 
 <!-- PWA Install Banner -->
 <!-- <div class="pwa-install-banner" *ngIf="showInstallPrompt && !isAppInstalled">
@@ -26,6 +26,6 @@
 
 <!-- <div class="header-spacer"></div> -->
 <router-outlet></router-outlet>
-<app-ai-chat></app-ai-chat>
+<!-- <app-ai-chat></app-ai-chat> -->
 
 

@@ -23,13 +23,38 @@ namespace AILearnAPI.Domain.Interfaces
     {
         Task<Auth?> GetByUsernameAsync(string username);
         Task<Auth?> GetByUserIdAsync(string userId);
+        Task<Auth?> GetByEmailAsync(string email);
         Task<bool> UsernameExistsAsync(string username);
+        Task<bool> EmailExistsAsync(string email);
         Task<string> GetNextUserIdAsync();
         Task<bool> UpdateAuthenticationStatusAsync(string userId, bool isAuthenticated);
+        /// <summary>Returns total number of users — used to assign ADMIN to the very first signup.</summary>
+        Task<long> CountUsersAsync();
+        Task<bool> UpdateRoleAsync(string userId, string role);
     }
 
     public interface IAIQARepository : IBaseRepository<AIQA>
     {
         Task<List<AIQA>> GetByUserIdAsync(string userId);
+    }
+
+    public interface IUserConfigRepository : IBaseRepository<UserConfig>
+    {
+        Task<UserConfig?> GetByUserIdAsync(string userId);
+        Task<UserConfig> UpsertAsync(string userId, UserConfig config);
+    }
+
+    public interface IMasterConfigRepository
+    {
+        /// <summary>Returns the singleton global config, creating it with defaults if absent.</summary>
+        Task<MasterConfig> GetOrCreateAsync();
+        Task<MasterConfig> UpdateAsync(MasterConfig config);
+    }
+
+    public interface INoteRepository : IBaseRepository<Note>
+    {
+        Task<List<Note>> GetByUserIdAsync(string userId);
+        /// <summary>Fetches a note only when it belongs to the given userId (prevents cross-user access).</summary>
+        Task<Note?> GetByIdAndUserIdAsync(string noteId, string userId);
     }
 }

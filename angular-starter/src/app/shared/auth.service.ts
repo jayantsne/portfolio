@@ -12,10 +12,9 @@ export class AuthService {
   private username = '';
 
   constructor(private apiService: ApiService) {
-    // Check authentication status from KV storage
     this.isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
     this.isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
-    this.checkAuthStatus();
+    // KV-based check removed — auth is now handled by JWT (CustomAuthService)
   }
 
   private checkAuthStatus(): void {

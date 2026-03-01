@@ -1,0 +1,173 @@
+<div class="dashboard-container">
+  <!-- Header -->
+  <header class="dashboard-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>AI Provider Dashboard</h1>
+        <p>Manage AI providers and API configurations</p>
+      </div>
+      <div class="header-right">
+        <div class="user-info">
+          <div class="user-avatar">{{ user?.username?.charAt(0).toUpperCase() }}</div>
+          <div class="user-details">
+            <span class="user-name">{{ user?.username }}</span>
+            <span class="user-role">{{ user?.role }}</span>
+          </div>
+        </div>
+        <button class="deploy-nav-button" (click)="goToDeployment()">
+          <svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd"/>
+          </svg>
+          Deploy
+        </button>
+        <button class="logout-button" (click)="logout()">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+            <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/>
+          </svg>
+          Logout
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading providers...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-container">
+    <svg width="48" height="48" viewBox="0 0 20 20" fill="currentColor">
+      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+    </svg>
+    <h3>{{ error }}</h3>
+    <button class="retry-button" (click)="loadProviders()">Retry</button>
+  </div>
+
+  <!-- Providers Grid -->
+  <div *ngIf="!loading && !error" class="providers-grid">
+    <div *ngFor="let provider of providers" class="provider-card" [class.disabled]="!provider.enabled">
+      <!-- Provider Header -->
+      <div class="provider-header">
+        <div class="provider-title">
+          <span class="provider-icon">{{ getProviderIcon(provider.type) }}</span>
+          <div>
+            <h3>{{ provider.displayName }}</h3>
+            <span class="provider-type">{{ provider.type }}</span>
+          </div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" [checked]="provider.enabled" (change)="toggleProvider(provider)">
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Provider Details -->
+      <div class="provider-details">
+        <div class="detail-row">
+          <span class="detail-label">Model:</span>
+          <span class="detail-value">{{ provider.model }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Priority:</span>
+          <div class="priority-control">
+            <input 
+              type="number" 
+              [value]="provider.priority" 
+              (change)="updatePriority(provider, +$any($event.target).value)"
+              min="1"
+              max="10"
+              class="priority-input"
+            >
+            <span class="priority-badge">{{ provider.priority }}</span>
+          </div>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Endpoint:</span>
+          <span class="detail-value endpoint">{{ provider.endpoint }}</span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="provider-stats">
+        <div class="stat-item">
+          <span class="stat-label">Total Requests</span>
+          <span class="stat-value">{{ formatNumber(provider.stats.totalRequests) }}</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Success Rate</span>
+          <span class="stat-value success-rate">{{ provider.stats.successRate.toFixed(1) }}%</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Avg Response</span>
+          <span class="stat-value">{{ provider.stats.avgResponseTime.toFixed(0) }}ms</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-label">Last Used</span>
+          <span class="stat-value">{{ formatDate(provider.stats.lastUsed) }}</span>
+        </div>
+      </div>
+
+      <!-- API Keys (for non-local providers) -->
+      <div *ngIf="provider.type === 'api'" class="api-keys-section">
+        <div class="api-keys-header">
+          <h4>API Keys ({{ provider.apiKeys.length }})</h4>
+          <button class="add-key-button" (click)="openAddKeyModal(provider)">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
+            </svg>
+            Add Key
+          </button>
+        </div>
+        <div class="api-keys-list">
+          <div *ngFor="let key of provider.apiKeys" class="api-key-item">
+            <span class="key-value">{{ key }}</span>
+            <button class="remove-key-button" (click)="removeApiKey(provider, key)">
+              <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+              </svg>
+            </button>
+          </div>
+          <div *ngIf="provider.apiKeys.length === 0" class="no-keys-message">
+            No API keys configured
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Indicator -->
+      <div class="provider-status" [style.background-color]="getStatusColor(provider.enabled)">
+        {{ provider.enabled ? 'Active' : 'Disabled' }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add API Key Modal -->
+<div *ngIf="showAddKeyModal" class="modal-overlay" (click)="closeAddKeyModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>Add API Key</h3>
+      <button class="close-button" (click)="closeAddKeyModal()">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <p>Provider: <strong>{{ selectedProvider?.displayName }}</strong></p>
+      <label for="api-key">API Key:</label>
+      <input 
+        type="text" 
+        id="api-key"
+        [(ngModel)]="newApiKey" 
+        placeholder="Enter API key"
+        class="modal-input"
+      >
+    </div>
+    <div class="modal-footer">
+      <button class="cancel-button" (click)="closeAddKeyModal()">Cancel</button>
+      <button class="submit-button" (click)="addApiKey()" [disabled]="!newApiKey.trim()">Add Key</button>
+    </div>
+  </div>
+</div>

@@ -37,6 +37,48 @@ public class ApiKeyAuthenticationMiddleware
             return;
         }
 
+        // Skip for /api/auth/* — these use JWT (login/signup/logout)
+        if (path.StartsWith("/api/auth/") || path.Equals("/api/auth"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Skip for /api/user-config — protected by JWT Bearer token
+        if (path.StartsWith("/api/user-config"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Skip for /api/master-config — protected by JWT Bearer + ADMIN role
+        if (path.StartsWith("/api/master-config"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Skip for /api/notes — protected by JWT Bearer token
+        if (path.StartsWith("/api/notes"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Skip for /api/deploy — protected by JWT Bearer (ADMIN) + localhost IP filter
+        if (path.StartsWith("/api/deploy"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Skip authentication for Ollama AI endpoints (frontend integration)
+        if (path.Contains("/api/ai/ollama"))
+        {
+            await _next(context);
+            return;
+        }
+
         if (!context.Request.Headers.TryGetValue("X-API-Key", out var extractedApiKey))
         {
             context.Response.StatusCode = 401;

@@ -8,8 +8,8 @@
       <h1 class="notes-title">My Saved Notes</h1>
     </div>
     <div class="notes-user" *ngIf="user">
-      <img class="user-avatar" [src]="user.photoURL || 'assets/default-avatar.png'" [alt]="user.displayName || 'User'" />
-      <span class="user-name">{{ user.displayName }}</span>
+      <div class="user-avatar-initial">{{ (user.username || 'U') | slice:0:1 | uppercase }}</div>
+      <span class="user-name">{{ user.username }}</span>
     </div>
   </div>
 
@@ -18,16 +18,11 @@
     <div class="signin-card">
       <div class="signin-icon">🔐</div>
       <h2>Sign in to view your notes</h2>
-      <p>Your saved AI explanations are tied to your Google account.</p>
-      <button class="google-signin-btn" (click)="signIn()">
-        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google" />
-        Sign in with Google
-      </button>
-      <p class="signin-error" *ngIf="signInError">{{ signInError }}</p>
+      <p>Your saved AI explanations are tied to your account. Please log in using the button in the top-right corner.</p>
     </div>
   </div>
 
-  <!-- LOADING -->
+  <!-- LOADING (notes fetch) -->
   <div class="notes-loading" *ngIf="isLoading">
     <div class="loading-dots"><span></span><span></span><span></span></div>
     <p>Loading notes…</p>

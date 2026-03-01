@@ -25,6 +25,12 @@ export class AiQaComponent implements OnInit {
   savedQAs: QAPair[] = [];
   showSaved = false;
   isChildRoute = false;
+  
+  // New interactive features
+  showDemoMessage = 0;
+  activeTool: string | null = null;
+  animatedStats = [0, 0, 0]; // For animated stat counters
+  private demoInterval: any;
 
   constructor(
     private apiService: ApiService,
@@ -49,6 +55,61 @@ export class AiQaComponent implements OnInit {
     this.loadSavedQAs();
     console.log('AiQaComponent initialized');
     console.log('Saved Q&As loaded:', this.savedQAs.length, 'items');
+    
+    // Start demo animation
+    this.startDemoAnimation();
+    
+    // Animate stats
+    this.animateAllStats();
+  }
+
+  // Start AI demo chat animation
+  startDemoAnimation(): void {
+    this.showDemoMessage = 0;
+    setTimeout(() => {
+      this.showDemoMessage = 1; // Show user message
+      setTimeout(() => {
+        this.showDemoMessage = 2; // Show AI typing
+        setTimeout(() => {
+          this.showDemoMessage = 3; // Show complete AI message
+        }, 2000);
+      }, 1000);
+    }, 500);
+  }
+
+  // Restart demo animation
+  restartDemo(): void {
+    this.showDemoMessage = 0;
+    clearTimeout(this.demoInterval);
+    this.startDemoAnimation();
+  }
+
+  // Animate individual stat
+  animateStat(index: number): void {
+    const targets = [500, 10, 5];
+    const target = targets[index];
+    const duration = 1000;
+    const steps = 30;
+    const increment = target / steps;
+    let current = 0;
+    const interval = duration / steps;
+
+    const timer = setInterval(() => {
+      current += increment;
+      if (current >= target) {
+        this.animatedStats[index] = target;
+        clearInterval(timer);
+      } else {
+        this.animatedStats[index] = Math.floor(current);
+      }
+    }, interval);
+  }
+
+  // Animate all stats on load
+  animateAllStats(): void {
+    setTimeout(() => this.animateStat(0), 200);
+    setTimeout(() => this.animateStat(1), 400);
+    setTimeout(() => this.animateStat(2), 600);
   }
 
   // Generate AI answer based on question

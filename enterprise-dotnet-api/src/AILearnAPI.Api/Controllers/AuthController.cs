@@ -1,5 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using AILearnAPI.Application.Interfaces;
+using AILearnAPI.Domain.Constants;
 using AILearnAPI.Shared.DTOs.Auth;
 
 namespace AILearnAPI.Api.Controllers
@@ -98,10 +101,40 @@ namespace AILearnAPI.Api.Controllers
                 return StatusCode(500, new { message = "Error logging out" });
             }
         }
+
+        // POST /api/auth/assign-role  [ADMIN only]
+        [HttpPost("assign-role")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = UserRoles.Admin)]
+        public async Task<ActionResult> AssignRole([FromBody] AssignRoleDto dto)
+        {
+            try
+            {
+                var success = await _authService.AssignRoleAsync(dto.targetUserId, dto.role);
+                if (!success)
+                    return NotFound(new { message = $"User {dto.targetUserId} not found" });
+
+                return Ok(new { message = $"Role updated to '{dto.role}' for user {dto.targetUserId}" });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error assigning role");
+                return StatusCode(500, new { message = "Error assigning role" });
+            }
+        }
     }
 
     public class LogoutDto
     {
         public string userId { get; set; } = string.Empty;
+    }
+
+    public class AssignRoleDto
+    {
+        public string targetUserId { get; set; } = string.Empty;
+        public string role         { get; set; } = string.Empty;
     }
 }

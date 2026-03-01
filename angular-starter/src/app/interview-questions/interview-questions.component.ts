@@ -1,8 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { QuestionsDataService, InterviewQuestion, QuestionData } from '../shared/questions-data.service';
 import { AuthService } from '../shared/auth.service';
 import { ApiService } from '../shared/api.service';
+import { AiStreamingService } from '../services/ai-streaming.service';
 
 /**
  * Admin component for managing interview questions
@@ -12,7 +14,7 @@ import { ApiService } from '../shared/api.service';
   templateUrl: './interview-questions.component.html',
   styleUrls: ['./interview-questions.component.css']
 })
-export class InterviewQuestionsComponent implements OnInit {
+export class InterviewQuestionsComponent implements OnInit, OnDestroy {
   questions: InterviewQuestion[] = [];
 
   newQuestion: InterviewQuestion = {
@@ -117,13 +119,16 @@ export class InterviewQuestionsComponent implements OnInit {
   // AI Answer Features - Only show answers via AI button
   loadedAIAnswers: Map<number, boolean> = new Map(); // Track which answers are loaded
   loadingAIAnswers: Map<number, boolean> = new Map(); // Track loading state
+  aiAnswers: Map<number, string> = new Map(); // Store AI-generated answers per question
+  streamingSubs: Map<number, Subscription> = new Map(); // Active streaming subscriptions
 
   constructor(
     private questionsService: QuestionsDataService,
     private authService: AuthService,
     private router: Router,
     private route: ActivatedRoute,
-    private apiService: ApiService
+    private apiService: ApiService,
+    private aiStreaming: AiStreamingService
   ) { }
 
   ngOnInit(): void {
@@ -216,20 +221,46 @@ export class InterviewQuestionsComponent implements OnInit {
     return this.loadingAIAnswers.get(questionId) || false;
   }
 
+  ngOnDestroy(): void {
+    this.streamingSubs.forEach(sub => sub.unsubscribe());
+  }
+
   /**
-   * Get AI-generated answer for a question
-   * Simulates AI processing with a delay
+   * Get AI-generated answer for a question via streaming
    */
   getAIAnswer(questionId: number): void {
-    // Set loading state
+    const question = this.questions.find(q => q.id === questionId);
+    if (!question) return;
+
+    // Cancel any existing stream for this question
+    this.streamingSubs.get(questionId)?.unsubscribe();
+
     this.loadingAIAnswers.set(questionId, true);
-    
-    // Simulate AI processing delay
-    setTimeout(() => {
-      // Mark answer as loaded
-      this.loadedAIAnswers.set(questionId, true);
-      this.loadingAIAnswers.set(questionId, false);
-    }, 1500); // 1.5 second delay to simulate AI processing
+    this.aiAnswers.set(questionId, '');
+
+    const sub = this.aiStreaming.streamExplanation(question.question, 'qwen').subscribe({
+      next: chunk => {
+        if (chunk.error) {
+          this.loadingAIAnswers.set(questionId, false);
+          this.loadedAIAnswers.set(questionId, true);
+          this.aiAnswers.set(questionId, 'Error: ' + chunk.error);
+          return;
+        }
+        if (!chunk.done) {
+          this.aiAnswers.set(questionId, (this.aiAnswers.get(questionId) || '') + chunk.token);
+        } else {
+          this.loadingAIAnswers.set(questionId, false);
+          this.loadedAIAnswers.set(questionId, true);
+        }
+      },
+      error: () => {
+        this.loadingAIAnswers.set(questionId, false);
+        this.loadedAIAnswers.set(questionId, true);
+        this.aiAnswers.set(questionId, 'Failed to get AI answer. Please try again.');
+      }
+    });
+
+    this.streamingSubs.set(questionId, sub);
   }
 
   addQuestion(): void {

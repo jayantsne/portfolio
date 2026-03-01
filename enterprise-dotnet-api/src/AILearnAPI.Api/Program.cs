@@ -128,8 +128,11 @@ builder.Services.AddScoped<IUserProgressRepository, UserProgressRepository>();
 builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 builder.Services.AddScoped<IAIQARepository, AIQARepository>();
 builder.Services.AddScoped<IAiTopicPromptRepository, AiTopicPromptRepository>();
-
-// Configure strongly-typed settings for Ollama
+builder.Services.AddScoped<IUserConfigRepository, UserConfigRepository>();
+builder.Services.AddScoped<IMasterConfigRepository, MasterConfigRepository>();
+builder.Services.AddScoped<INoteRepository, NoteRepository>();
+// Deployment service — no repository layer needed (uses IMongoDatabase directly)
+builder.Services.AddScoped<IDeploymentService, DeploymentService>();
 builder.Services.Configure<OllamaSettings>(builder.Configuration.GetSection("OllamaSettings"));
 builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
 
@@ -146,6 +149,9 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAIQAService, AIQAService>();
 builder.Services.AddScoped<ILearningService, LearningService>();
 builder.Services.AddScoped<IAiUnderstandService, AiUnderstandService>();
+builder.Services.AddScoped<IUserConfigService, UserConfigService>();
+builder.Services.AddScoped<IMasterConfigService, MasterConfigService>();
+builder.Services.AddScoped<INoteService, NoteService>();
 
 // Configure CORS
 builder.Services.AddCors(options =>
@@ -211,6 +217,8 @@ app.UseSwaggerUI(c =>
 });
 
 app.UseCors("AllowAll");
+
+app.UseAuthentication(); // ← required for JWT Bearer
 
 // Custom middleware from LearnQuest
 app.UseMiddleware<ApiKeyAuthenticationMiddleware>();

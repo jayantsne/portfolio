@@ -8249,3 +8249,165 @@ app-questions-list .question-tags .tag {
   visibility: visible !important;
   pointer-events: auto !important;
 }
+
+/* ─── Search Suggestions Dropdown ─────────────────────────── */
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #1e2030;
+  border: 1px solid rgba(99, 102, 241, 0.35);
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  overflow: hidden;
+  backdrop-filter: blur(12px);
+}
+
+.suggestion-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.suggestion-item:last-child { border-bottom: none; }
+
+.suggestion-item:hover {
+  background: rgba(99, 102, 241, 0.18);
+}
+
+.suggestion-icon {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.suggestion-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.suggestion-question {
+  font-size: 0.82rem;
+  color: #e2e8f0;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-category {
+  font-size: 0.7rem;
+  color: #818cf8;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ─── Streaming Answer Display ─────────────────────────────── */
+.streaming-answer-container {
+  padding: 1rem;
+  background: rgba(15, 15, 30, 0.6);
+  border-radius: 10px;
+  border: 1px solid rgba(99, 102, 241, 0.2);
+}
+
+.streaming-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #818cf8;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.streaming-dot-pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6366f1;
+  animation: pulse-dot 1.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+.streaming-text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 0.88rem;
+  line-height: 1.7;
+  color: #e2e8f0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+}
+
+.streaming-cursor {
+  display: inline-block;
+  color: #6366f1;
+  animation: blink-cursor 0.8s step-end infinite;
+  margin-left: 1px;
+}
+
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0; }
+}
+
+/* ─── Model Selector Buttons ───────────────────────────────── */
+.model-selector {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.model-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(99, 102, 241, 0.35);
+  background: transparent;
+  color: #94a3b8;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.model-btn:hover {
+  border-color: #6366f1;
+  color: #c7d2fe;
+  background: rgba(99, 102, 241, 0.1);
+}
+
+.model-btn.active {
+  background: linear-gradient(135deg, #4f46e5, #818cf8);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(99,102,241,0.35);
+}
+
+/* Mobile modal footer model selector */
+.mobile-modal-footer .model-selector {
+  margin-right: auto;
+}
+
+/* Web modal footer model selector */
+.modal-footer .model-selector {
+  margin-right: auto;
+}

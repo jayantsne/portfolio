@@ -1,0 +1,203 @@
+.ai-loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-out;
+}
+
+.ai-loader-container {
+  text-align: center;
+}
+
+/* Neural Network Animation */
+.ai-brain {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 2rem;
+  position: relative;
+}
+
+.neural-network {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.neuron {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.8),
+              0 0 40px rgba(255, 255, 255, 0.4);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.neuron-1 {
+  top: 10%;
+  left: 50%;
+  transform: translateX(-50%);
+  animation-delay: 0s;
+}
+
+.neuron-2 {
+  top: 40%;
+  left: 20%;
+  animation-delay: 0.2s;
+}
+
+.neuron-3 {
+  top: 40%;
+  right: 20%;
+  animation-delay: 0.4s;
+}
+
+.neuron-4 {
+  bottom: 20%;
+  left: 30%;
+  animation-delay: 0.6s;
+}
+
+.neuron-5 {
+  bottom: 20%;
+  right: 30%;
+  animation-delay: 0.8s;
+}
+
+.synapse {
+  position: absolute;
+  background: linear-gradient(90deg, 
+    transparent 0%, 
+    rgba(255, 255, 255, 0.8) 50%, 
+    transparent 100%);
+  height: 2px;
+  transform-origin: left center;
+  animation: synapseFlow 2s ease-in-out infinite;
+}
+
+.synapse-1 {
+  top: 20%;
+  left: 50%;
+  width: 80px;
+  transform: rotate(45deg);
+  animation-delay: 0.1s;
+}
+
+.synapse-2 {
+  top: 20%;
+  left: 50%;
+  width: 80px;
+  transform: rotate(-45deg);
+  animation-delay: 0.3s;
+}
+
+.synapse-3 {
+  top: 50%;
+  left: 30%;
+  width: 100px;
+  transform: rotate(30deg);
+  animation-delay: 0.5s;
+}
+
+.synapse-4 {
+  top: 50%;
+  right: 30%;
+  width: 100px;
+  transform: rotate(-30deg);
+  animation-delay: 0.7s;
+}
+
+/* Loading Text */
+.loading-text {
+  color: white;
+}
+
+.loading-text h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: white;
+  animation: dotBounce 1.4s ease-in-out infinite;
+}
+
+.dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.3);
+    opacity: 0.7;
+  }
+}
+
+@keyframes synapseFlow {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes dotBounce {
+  0%, 80%, 100% {
+    transform: scale(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .ai-brain {
+    width: 150px;
+    height: 150px;
+  }
+  
+  .loading-text h3 {
+    font-size: 1.2rem;
+  }
+}

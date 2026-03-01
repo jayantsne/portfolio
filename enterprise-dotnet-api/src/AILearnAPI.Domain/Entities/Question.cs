@@ -29,5 +29,29 @@ namespace AILearnAPI.Domain.Entities
 
         [BsonElement("expanded")]
         public bool Expanded { get; set; } = false;
+
+        [BsonElement("prompts")]
+        public List<QuestionPrompt> Prompts { get; set; } = new List<QuestionPrompt>();
+    }
+
+    public class QuestionPrompt
+    {
+        [BsonElement("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [BsonElement("title")]
+        public string Title { get; set; } = string.Empty;
+
+        [BsonElement("description")]
+        public string Description { get; set; } = string.Empty;
+
+        [BsonElement("systemPrompt")]
+        public string SystemPrompt { get; set; } = string.Empty;
+
+        [BsonElement("userPromptTemplate")]
+        public string UserPromptTemplate { get; set; } = string.Empty;
+
+        [BsonElement("icon")]
+        public string Icon { get; set; } = string.Empty;
     }
 }

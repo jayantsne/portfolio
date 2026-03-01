@@ -1,10 +1,12 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { trigger, transition, style, animate, state } from '@angular/animations';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { INTERVIEW_QUESTIONS } from '../interview-questions-data'; // Fallback for offline mode
 import { AILearnService } from '../../services/ai-learn.service';
-// TODO: Re-enable when MongoDB API is ready
-// import { InterviewQuestionsService } from '../../services/interview-questions.service';
+import { AiStreamingService, OllamaModel } from '../../services/ai-streaming.service';
+import { InterviewQuestionsService, QuestionPromptsResponse, QuestionPrompt } from '../../services/interview-questions.service';
 
 @Component({
   selector: 'app-questions-list',
@@ -107,13 +109,26 @@ import { AILearnService } from '../../services/ai-learn.service';
     ])
   ]
 })
-export class QuestionsListComponent implements OnInit {
+export class QuestionsListComponent implements OnInit, OnDestroy {
   interviewQuestions: any[] = [];
   selectedCategory: string = 'all';
   searchTerm: string = '';
+  // Search suggestions
+  searchSuggestions: { question: string; category: string; id: number }[] = [];
+  showSuggestions = false;
+  private searchSubject = new Subject<string>();
+  private searchSub?: Subscription;
+
+  // Streaming AI state
+  selectedModel: OllamaModel = 'qwen';  // 'qwen' = fast tech, 'llama' = tutor style
+  isStreaming = false;
+  streamingText = '';
+  private streamSub?: Subscription;
   currentPage: number = 1;
   questionsPerPage: number = 10;
   isMobile: boolean = false;
+  isLoadingQuestions: boolean = false;//  Loading state for API
+  apiError: string | null = null;  // API error message
   
   // Modal state
   showModal = false;
@@ -144,6 +159,13 @@ export class QuestionsListComponent implements OnInit {
   alternativeContentSafe: SafeHtml = ''; // Sanitized HTML content ready for display
   regenerationCount: number = 0; // Track how many times user regenerated for variety
   
+  // NEW: Prompt-based Learning state
+  showPromptModal: boolean = false;
+  promptData: QuestionPromptsResponse | null = null;
+  isGeneratingAIResponse: boolean = false;
+  generatedAIResponse: string | null = null;
+  currentSelectedPrompt: QuestionPrompt | null = null;
+  
   // Animated Diagram state
   showAnimatedDiagram: boolean = false;
   isLoadingDiagram: boolean = false;
@@ -167,32 +189,66 @@ export class QuestionsListComponent implements OnInit {
 
   constructor(
     private aiLearnService: AILearnService,
+    private aiStreamingService: AiStreamingService,
     private sanitizer: DomSanitizer,
-    private cdr: ChangeDetectorRef
-    // TODO: Re-enable InterviewQuestionsService when MongoDB API is ready
-    // private interviewQuestionsService: InterviewQuestionsService
+    private cdr: ChangeDetectorRef,
+    private interviewQuestionsService: InterviewQuestionsService
   ) { }
 
   ngOnInit(): void {
     this.loadInterviewQuestions();
     this.checkMobile();
-    this.loadApiStats(); // Load API usage statistics
+    this.loadApiStats();
     window.addEventListener('resize', () => this.checkMobile());
+
+    // Debounced search suggestions
+    this.searchSub = this.searchSubject.pipe(
+      debounceTime(250),
+      distinctUntilChanged()
+    ).subscribe(term => this.updateSuggestions(term));
+  }
+
+  ngOnDestroy(): void {
+    this.searchSub?.unsubscribe();
+    this.streamSub?.unsubscribe();
   }
 
   loadInterviewQuestions(): void {
-    // Temporarily using fallback static data
-    // TODO: Re-enable MongoDB API when service is ready
-    // this.interviewQuestionsService.getAllQuestions().subscribe({...
-    console.log('📋 Using fallback static questions data');
-    this.interviewQuestions = INTERVIEW_QUESTIONS.map(q => ({
-      ...q,
-      timestamp: new Date(),
-      saved: false,
-      expanded: false,
-      isLearning: false
-    }));
-    this.cdr.detectChanges();
+    // Load questions from MongoDB API
+    console.log('📡 Loading questions from API...');
+    this.isLoadingQuestions = true;
+    this.apiError = null;
+    
+    this.interviewQuestionsService.getAllQuestions().subscribe({
+      next: (response) => {
+        console.log('✅ Loaded questions from MongoDB:', response.total, 'questions');
+        this.interviewQuestions = response.questions.map(q => ({
+          ...q,
+          timestamp: new Date(),
+          saved: false,
+          expanded: false,
+          isLearning: false
+        }));
+        this.isLoadingQuestions = false;
+        this.cdr.detectChanges();
+      },
+      error: (error) => {
+        console.error('❌ Failed to load questions from API:', error);
+        this.apiError = 'Failed to load questions from server';
+        this.isLoadingQuestions = false;
+        
+        // Fallback to static data on error
+        console.log('📋 Using fallback static questions data');
+        this.interviewQuestions = INTERVIEW_QUESTIONS.map(q => ({
+          ...q,
+          timestamp: new Date(),
+          saved: false,
+          expanded: false,
+          isLearning: false
+        }));
+        this.cdr.detectChanges();
+      }
+    });
     
     /* Original MongoDB API code (temporarily disabled):
     this.interviewQuestionsService.getAllQuestions().subscribe({
@@ -247,7 +303,140 @@ export class QuestionsListComponent implements OnInit {
   checkMobile(): void {
     this.isMobile = window.innerWidth <= 768;
   }
-  
+
+  // ─── Search Suggestions ──────────────────────────────────────────────────
+
+  /** Called by (input) event on the search box */
+  onSearchInput(value: string): void {
+    this.searchSubject.next(value);
+    if (!value.trim()) {
+      this.showSuggestions = false;
+      this.searchSuggestions = [];
+    } else {
+      this.showSuggestions = true;
+    }
+  }
+
+  /** Build suggestions list (called after debounce) */
+  private updateSuggestions(term: string): void {
+    if (!term.trim()) {
+      this.searchSuggestions = [];
+      this.showSuggestions = false;
+      return;
+    }
+    const lower = term.toLowerCase();
+    this.searchSuggestions = this.interviewQuestions
+      .filter(q =>
+        q.question.toLowerCase().includes(lower) ||
+        q.category.toLowerCase().includes(lower)
+      )
+      .slice(0, 8)
+      .map(q => ({ question: q.question, category: q.category, id: q.id }));
+    this.showSuggestions = this.searchSuggestions.length > 0;
+    this.cdr.detectChanges();
+  }
+
+  /** Pick a suggestion — fills the search box */
+  selectSuggestion(suggestion: { question: string; category: string; id: number }): void {
+    this.searchTerm = suggestion.question;
+    this.showSuggestions = false;
+    this.searchSuggestions = [];
+    this.currentPage = 1;
+  }
+
+  hideSuggestions(): void {
+    // Delay so click on suggestion registers first
+    setTimeout(() => {
+      this.showSuggestions = false;
+    }, 200);
+  }
+
+  // ─── Model Selection ─────────────────────────────────────────────────────
+
+  /** Toggle between qwen (fast/tech) and llama (tutor-style) */
+  setModel(model: OllamaModel): void {
+    this.selectedModel = model;
+    console.log(`🤖 Model switched to: ${model === 'qwen' ? 'qwen2.5:3b (fast tech)' : 'llama3.2:3b (tutor style)'}`);
+  }
+
+  // ─── Streaming AI ────────────────────────────────────────────────────────
+
+  /**
+   * Stream an AI explanation directly into the modal, token by token.
+   * Falls back to non-streaming if the model is the 'qwen' default.
+   */
+  streamAIExplanation(question: any): void {
+    // Cancel any ongoing stream
+    this.streamSub?.unsubscribe();
+    this.isStreaming = true;
+    this.streamingText = '';
+    this.modalAnswer = '';
+    this.aiExplanationError = false;
+    this.currentAIProvider = this.selectedModel === 'llama' ? 'llama3.2:3b' : 'qwen2.5:3b';
+
+    this.streamSub = this.aiStreamingService
+      .streamExplanation(question.question, this.selectedModel)
+      .subscribe({
+        next: chunk => {
+          if (chunk.error) {
+            this.isStreaming = false;
+            this.aiExplanationError = true;
+            this.modalAnswer = `<div class="ai-error-fallback"><h3>⚠️ AI Error</h3><p>${chunk.error}</p></div>`;
+            this.cdr.detectChanges();
+            return;
+          }
+          if (!chunk.done) {
+            this.streamingText += chunk.token;
+            // Lightweight live display — plain text with streaming cursor
+            this.modalAnswer = this.streamingText;
+            this.cdr.detectChanges();
+          }
+        },
+        error: err => {
+          console.error('Streaming error:', err);
+          this.isStreaming = false;
+          this.aiExplanationError = true;
+          this.modalAnswer = `<div class="ai-error-fallback"><h3>⚠️ Streaming Failed</h3>
+            <p>Could not stream AI response. Trying standard mode...</p></div>`;
+          // Fallback to non-streaming
+          this.getAIExplanationLegacy(question);
+          this.cdr.detectChanges();
+        },
+        complete: () => {
+          this.isStreaming = false;
+          // Strip leading title duplicate then convert to formatted HTML
+          const cleanedStream = this.stripLeadingTitle(this.streamingText, question.question);
+          this.modalAnswer = this.cleanMarkdownCodeFences(cleanedStream);
+          this.aiExplanation = this.modalAnswer;
+          this.cdr.detectChanges();
+          console.log(`✅ Stream complete: ${this.streamingText.length} chars`);
+        }
+      });
+  }
+
+  /** Original non-streaming path — kept as fallback */
+  getAIExplanationLegacy(question: any): void {
+    this.isLoadingAIExplanation = true;
+    this.aiLearnService.explainTopicInDetail(question.question, question.category, question.answer, this.currentQuestionId)
+      .subscribe({
+        next: response => {
+          this.isLoadingAIExplanation = false;
+          if (response.success) {
+            const stripped = this.stripLeadingTitle(response.explanation, question.question);
+            this.aiExplanation = stripped;
+            this.modalAnswer = stripped;
+            this.currentAIProvider = response.provider || 'ollama';
+          }
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.isLoadingAIExplanation = false;
+          this.aiExplanationError = true;
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
   loadApiStats(): void {
     this.apiStats = this.aiLearnService.getApiStats();
   }
@@ -262,35 +451,98 @@ export class QuestionsListComponent implements OnInit {
   }
 
   learnQuestion(question: any): void {
-    if (this.isMobile) {
-      // Mobile: Toggle collapse and get AI explanation
-      if (this.expandedQuestionId === question.id) {
-        this.expandedQuestionId = null;
-        this.slideshowMode = false;
-        this.showAIExplanation = false;
-      } else {
-        this.expandedQuestionId = question.id;
-        this.showAlternativeExplanation = false;
-        this.alternativeAnswerSaved = false; // Reset save state
-        this.regenerationCount = 0; // Reset for new question
-        this.currentQuestionForAlternative = question;
-        
-        // Get AI explanation
-        this.getAIExplanation(question);
+    console.log('🎓 Learn with AI clicked for question:', question.id);
+    
+    // Fetch available prompts for this question
+    this.showPromptModal = true;
+    this.generatedAIResponse = null;
+    this.currentSelectedPrompt = null;
+    
+    this.interviewQuestionsService.getQuestionPrompts(question.id).subscribe({
+      next: (response) => {
+        console.log('✅ Prompts fetched:', response.prompts.length, 'options');
+        this.promptData = response;
+      },
+      error: (error) => {
+        console.error('❌ Failed to fetch prompts:', error);
+        // Fallback: show default learning behavior
+        this.showPromptModal = false;
+        if (this.isMobile) {
+          this.expandedQuestionId = question.id;
+          this.showAlternativeExplanation = false;
+          this.currentQuestionForAlternative = question;
+          this.getAIExplanation(question);
+        } else {
+          this.modalQuestion = question.question;
+          this.modalCategory = question.category;
+          this.currentQuestionForAlternative = question;
+          this.showModal = true;
+          this.getAIExplanation(question);
+        }
       }
-    } else {
-      // Web: Show modal with AI explanation
-      this.modalQuestion = question.question;
-      this.modalCategory = question.category;
-      this.currentQuestionForAlternative = question;
-      this.showModal = true;
-      this.showAlternativeExplanation = false;
-      this.alternativeAnswerSaved = false; // Reset save state
-      this.regenerationCount = 0; // Reset for new question
-      
-      // Get AI explanation
-      this.getAIExplanation(question);
-    }
+    });
+  }
+  
+  // Handle prompt selection from modal
+  onPromptSelected(prompt: QuestionPrompt): void {
+    if (!this.promptData) return;
+    
+    console.log('🎯 Prompt selected:', prompt.title);
+    this.currentSelectedPrompt = prompt;
+    this.isGeneratingAIResponse = true;
+    this.generatedAIResponse = null;
+    
+    // Get the prompt details from API
+    this.interviewQuestionsService.getAIPromptDetails(this.promptData.questionId, prompt.id).subscribe({
+      next: (response) => {
+        console.log('📝 Prompt details received');
+        
+        // Now use the prompt to generate AI response
+        const fullPrompt = response.response; // systemPrompt + userPromptTemplate
+        
+        this.aiLearnService.getSimplifiedExplanation(fullPrompt).subscribe({
+          next: (aiResponse) => {
+            this.isGeneratingAIResponse = false;
+            if (aiResponse.success && aiResponse.explanation) {
+              console.log('✅ AI response generated successfully');
+              this.generatedAIResponse = this.cleanMarkdownCodeFences(aiResponse.explanation);
+            } else {
+              console.error('❌ AI response failed:', aiResponse.error);
+              this.generatedAIResponse = '<div class="error-message">Failed to generate explanation. Please try again.</div>';
+            }
+            this.cdr.detectChanges();
+          },
+          error: (err) => {
+            console.error('❌ AI generation error:', err);
+            this.isGeneratingAIResponse = false;
+            this.generatedAIResponse = '<div class="error-message">Error connecting to AI service. Please try again.</div>';
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (error) => {
+        console.error('❌ Failed to get prompt details:', error);
+        this.isGeneratingAIResponse = false;
+        this.generatedAIResponse = '<div class="error-message">Failed to load prompt. Please try again.</div>';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+  
+  // Close prompt modal
+  onClosePromptModal(): void {
+    this.showPromptModal = false;
+    this.promptData = null;
+    this.generatedAIResponse = null;
+    this.currentSelectedPrompt = null;
+    this.isGeneratingAIResponse = false;
+  }
+  
+  // Start new prompt selection
+  onStartNewPrompt(): void {
+    this.generatedAIResponse = null;
+    this.currentSelectedPrompt = null;
+    this.isGeneratingAIResponse = false;
   }
   
   /**
@@ -298,103 +550,31 @@ export class QuestionsListComponent implements OnInit {
    */
   getAIExplanation(question: any): void {
     this.showAIExplanation = true;
-    this.isLoadingAIExplanation = true;
     this.aiExplanationError = false;
     this.aiExplanation = '';
+    this.streamingText = '';
     this.currentQuestionId = question.id?.toString() || '';
     this.answerIsFromDB = false;
     this.showRatingSection = false;
-    
-    // Check if we already have a rating for this question
+
+    // Check for a cached/liked answer — load instantly without streaming
     const existingRating = this.aiLearnService.getAnswerRating(this.currentQuestionId);
     if (existingRating) {
       this.currentAnswerRating = existingRating.rating;
       this.answerRatingCount = existingRating.ratingCount;
       this.userLikedAnswer = existingRating.rating >= 4;
-      
-      // Show instant loading message for cached answers
       this.modalAnswer = '<div class="ai-loading cached"><div class="spinner fast"></div><p>⚡ Loading your saved answer instantly...</p><p class="loading-tip">💝 This is a liked answer - no API call needed!</p></div>';
-    } else {
-      this.currentAnswerRating = 0;
-      this.answerRatingCount = 0;
-      this.userLikedAnswer = false;
-      
-      // Show normal loading message for new API calls
-      this.modalAnswer = '<div class="ai-loading"><div class="spinner"></div><p>🧠 AI Tutor is thinking through this step-by-step... (2-4 seconds)</p><p class="loading-tip">💡 Tip: Like answers to load them instantly next time!</p></div>';
+      this.isLoadingAIExplanation = true;
+      this.getAIExplanationLegacy(question);
+      return;
     }
-    
-    // Call AI service with existing answer as context and question ID
-    this.aiLearnService.explainTopicInDetail(question.question, question.category, question.answer, this.currentQuestionId).subscribe({
-      next: (response) => {
-        this.isLoadingAIExplanation = false;
-        
-        if (response.success) {
-          this.aiExplanation = response.explanation;
-          this.modalAnswer = response.explanation;
-          this.aiExplanationError = false;
-          
-          // Track which AI provider was used
-          this.currentAIProvider = response.provider || 'gemini';
-          console.log(`✅ Answer generated by: ${this.currentAIProvider.toUpperCase()}`);
-          
-          // Check if answer came from database
-          if (response.fromDB) {
-            this.answerIsFromDB = true;
-            this.currentAnswerRating = response.rating || 0;
-            this.answerRatingCount = response.ratingCount || 0;
-            this.currentAIProvider = 'database'; // Database = instant
-            this.userLikedAnswer = true; // Set liked state for cached answers
-            console.log('⚡ INSTANT LOAD! Using cached liked answer (no API call made)');
-            console.log(`💾 Answer rating: ${response.rating}/5 stars`);
-          } else {
-            console.log(`🌐 Fresh answer generated by: ${this.currentAIProvider.toUpperCase()}`);
-            console.log('💡 Like this answer to load it instantly next time!');
-          }
-          
-          // Refresh API stats after each response
-          this.loadApiStats();
-        } else {
-          // Use fallback or original answer
-          this.aiExplanation = `
-            <div class="ai-error-fallback">
-              <h3>⚠️ AI Service Error</h3>
-              <p class="error-message"><strong>Error:</strong> ${response.error || 'Unknown error'}</p>
-              <hr>
-              <h3>📚 Basic Answer</h3>
-              ${this.formatAnswer(question.answer)}
-              <div class="error-note">
-                <p>💡 <strong>Tip:</strong> Check browser console (F12) for detailed error logs.</p>
-                <p>The basic answer above covers the key points you need for your interview!</p>
-              </div>
-            </div>
-          `;
-          this.modalAnswer = this.aiExplanation;
-          this.aiExplanationError = true;
-          console.warn('❌ AI explanation failed:', response.error);
-        }
-      },
-      error: (error) => {
-        this.isLoadingAIExplanation = false;
-        this.aiExplanationError = true;
-        
-        // Use original answer as fallback
-        this.aiExplanation = `
-          <div class="ai-error-fallback">
-            <h3>📚 Basic Explanation</h3>
-            <p>${this.formatAnswer(question.answer)}</p>
-            <div class="error-note">
-              <p>💡 <strong>Note:</strong> AI-powered detailed explanation is temporarily unavailable.</p>
-              <p>The basic answer above covers the key points. For more details, try searching online or asking a mentor!</p>
-            </div>
-          </div>
-        `;
-        this.modalAnswer = this.aiExplanation;
-        console.error('Error getting AI explanation:', error);
-        
-        // Refresh API stats even on error
-        this.loadApiStats();
-      }
-    });
+
+    // Fresh answer — use streaming for instant first-token response
+    this.currentAnswerRating = 0;
+    this.answerRatingCount = 0;
+    this.userLikedAnswer = false;
+    this.isLoadingAIExplanation = false;
+    this.streamAIExplanation(question);
   }
 
   closeModal(): void {
@@ -1314,6 +1494,28 @@ Make every word count. Make it unforgettable!`;
     console.log('📝 First 300 chars:', cleaned.substring(0, 300));
     
     return cleaned;
+  }
+
+  /**
+   * Strip a leading title line from AI response if it duplicates the question title.
+   */
+  stripLeadingTitle(content: string, questionTitle: string): string {
+    if (!content || !questionTitle) return content;
+    const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const lines = content.split('\n');
+    // Remove up to 2 lines at the top if they match the question title
+    let start = 0;
+    for (let i = 0; i < Math.min(3, lines.length); i++) {
+      const line = lines[i].replace(/[#*_`>]/g, '').trim();
+      if (line && normalize(line) === normalize(questionTitle)) {
+        start = i + 1;
+        break;
+      }
+    }
+    if (start === 0) return content;
+    // Skip blank lines right after the removed title
+    while (start < lines.length && lines[start].trim() === '') start++;
+    return lines.slice(start).join('\n');
   }
 
   /**

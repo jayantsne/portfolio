@@ -4,6 +4,10 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService } from '../shared/auth.service';
 import { ApiService } from '../shared/api.service';
+import { CustomAuthService } from '../shared/custom-auth.service';
+import { AuthModalComponent } from '../auth-modal/auth-modal.component';
+import { UserSettingsComponent } from '../user-settings/user-settings.component';
+import { MasterConfigComponent } from '../master-config/master-config.component';
 
 declare global {
   interface Window {
@@ -34,11 +38,16 @@ export class HeaderComponent implements AfterViewInit {
 
   isAILearnPage = false;
 
+  @ViewChild('authModal')    authModal!:    AuthModalComponent;
+  @ViewChild('userSettings') userSettings!: UserSettingsComponent;
+  @ViewChild('masterConfig') masterConfig!: MasterConfigComponent;
+
   constructor(
     private el: ElementRef,
     public authService: AuthService,
     private router: Router,
-    private apiService: ApiService
+    private apiService: ApiService,
+    public customAuth: CustomAuthService
   ) {
     // Check initial route
     this.checkRoute(this.router.url);
@@ -117,9 +126,6 @@ export class HeaderComponent implements AfterViewInit {
     // set header height var for spacer (prevents layout jump)
     const h = this.hdr.nativeElement.offsetHeight;
     document.documentElement.style.setProperty('--header-h', h + 'px');
-
-    // Load auth settings
-    this.loadAuthSettings();
 
     // Detect custom scroll container (Smooth Scrollbar) if present
     this.scrollRootEl = document.getElementById('my-scrollbar') ?? undefined;
@@ -371,11 +377,36 @@ export class HeaderComponent implements AfterViewInit {
   }
 
   /**
-   * Logout user
+   * Logout user (admin)
    */
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/']);
+  }
+
+  /** Open the auth modal (login / signup) */
+  openAuthModal(mode: 'login' | 'signup' = 'login'): void {
+    this.authModal?.open(mode);
+  }
+
+  /** Open the user-settings panel */
+  openSettings(): void {
+    this.userSettings?.open();
+  }
+
+  /** Called by user-settings when admin clicks Master Configuration */
+  openMasterConfig(): void {
+    this.masterConfig?.open();
+  }
+
+  /** Called when auth-modal emits loggedIn */
+  onLoggedIn(): void {
+    console.log('✅ User logged in:', this.customAuth.currentUser?.username);
+  }
+
+  /** Called when user-settings emits signedOut */
+  onSignedOut(): void {
+    console.log('👋 User signed out');
   }
 
   /**

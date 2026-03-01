@@ -202,10 +202,16 @@
           <span class="banner-badge">Cannot be saved or edited</span>
         </div>
         <div class="answer-label">Answer:</div>
-        <p class="answer-text">{{ question.answer }}</p>
+        <pre class="answer-text" style="white-space:pre-wrap;font-family:inherit">{{ aiAnswers.get(question.id) }}</pre>
         <div class="question-meta" *ngIf="question.dateAdded">
           <small>Added: {{ question.dateAdded | date:'short' }}</small>
         </div>
+      </div>
+
+      <!-- Streaming in progress -->
+      <div class="question-answer streaming-in-progress" *ngIf="question.expanded && isAIAnswerLoading(question.id) && aiAnswers.get(question.id)">
+        <div class="answer-label">⚡ Generating...</div>
+        <pre class="answer-text" style="white-space:pre-wrap;font-family:inherit">{{ aiAnswers.get(question.id) }}<span class="streaming-cursor">▊</span></pre>
       </div>
     </div>
 

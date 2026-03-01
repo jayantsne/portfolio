@@ -1,0 +1,253 @@
+<div class="ai-qa-container">
+  <!-- Show landing page content only when NOT on child route -->
+  <div *ngIf="!isChildRoute">
+    <!-- Animated Background -->
+    <div class="animated-bg">
+      <div class="gradient-orb orb-1"></div>
+      <div class="gradient-orb orb-2"></div>
+      <div class="gradient-orb orb-3"></div>
+      <div class="floating-emoji emoji-1">✨</div>
+      <div class="floating-emoji emoji-2">🚀</div>
+      <div class="floating-emoji emoji-3">💡</div>
+      <div class="floating-emoji emoji-4">🎯</div>
+      <div class="floating-emoji emoji-5">⚡</div>
+    </div>
+
+    <!-- Hero Header -->
+    <div class="hero-header">
+      <div class="hero-content">
+        <div class="hero-badge" data-aos="fade-down">
+          <span class="badge-icon">🔥</span>
+          <span class="badge-text">Learn Smarter, Code Better</span>
+        </div>
+        <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
+          Master <span class="gradient-text">Programming</span><br>
+          With <span class="gradient-text-alt">AI Power</span> 🚀
+        </h1>
+        <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
+          Get instant AI-powered answers, practice with games, and ace your interviews.<br>
+          <span class="subtitle-highlight">500+ questions • Interactive games • Real-time AI help</span>
+        </p>
+        
+        <!-- CTA Buttons -->
+        <div class="hero-ctas" data-aos="fade-up" data-aos-delay="300">
+          <button class="cta-btn cta-primary cta-coming-soon" disabled title="Coming Soon!">
+            <span class="btn-icon">🔜</span>
+            <span>Ask AI - Coming Soon</span>
+            <span class="btn-pulse"></span>
+          </button>
+          <a routerLink="/ai-learn/questions" class="cta-btn cta-secondary">
+            <span class="btn-icon">📚</span>
+            <span>Browse Questions</span>
+          </a>
+        </div>
+
+        <!-- Stats Counter -->
+        <div class="hero-stats" data-aos="fade-up" data-aos-delay="400">
+          <div class="stat-item">
+            <div class="stat-number">500+</div>
+            <div class="stat-label">Interview Questions</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-number">10+</div>
+            <div class="stat-label">Tech Categories</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item">
+            <div class="stat-number">5</div>
+            <div class="stat-label">Learning Games</div>
+          </div>
+          <div class="stat-divider"></div>
+          <div class="stat-item" *ngIf="savedQAs.length > 0">
+            <div class="stat-number">{{ savedQAs.length }}</div>
+            <div class="stat-label">Your Saved Q&As</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  <!-- Features Grid - Bento Box Style -->
+  <div class="features-section">
+    <div class="section-header" data-aos="fade-up">
+      <h2 class="section-title">
+        <span class="title-icon">⚡</span>
+        Everything You Need to Excel
+      </h2>
+      <p class="section-desc">Powerful features designed for modern learners</p>
+    </div>
+    
+    <div class="bento-grid">
+      <!-- Large Feature Card -->
+      <a routerLink="/ai-learn/questions" class="bento-card large-card interview-gradient" data-aos="fade-up" data-aos-delay="100">
+        <div class="bento-header">
+          <div class="bento-icon">📚</div>
+          <span class="bento-badge">Most Popular</span>
+        </div>
+        <h3 class="bento-title">Interview Questions Bank</h3>
+        <p class="bento-desc">500+ curated questions covering Angular, .NET, DSA, and more with AI-powered explanations</p>
+        <div class="bento-tags">
+          <span class="tag">500+ Questions</span>
+          <span class="tag">10+ Categories</span>
+          <span class="tag">AI Explanations</span>
+        </div>
+        <div class="bento-arrow">→</div>
+        <div class="card-glow"></div>
+      </a>
+      
+      <!-- Medium Feature Cards -->
+      <div class="bento-card medium-card quest-gradient bento-coming-soon" data-aos="fade-up" data-aos-delay="200">
+        <div class="coming-soon-badge">🔜 Soon</div>
+        <div class="bento-icon">🎫</div>
+        <h3 class="bento-title">Learn Quest</h3>
+        <p class="bento-desc">Gamified learning with progressive challenges</p>
+        <div class="bento-tags">
+          <span class="tag">🏆 Rewards</span>
+          <span class="tag">📊 Track Progress</span>
+        </div>
+        <div class="card-glow"></div>
+      </div>
+      
+      <div class="bento-card small-card dsa-gradient bento-coming-soon" data-aos="fade-up" data-aos-delay="250">
+        <div class="coming-soon-badge">🔜 Soon</div>
+        <div class="bento-icon">🎮</div>
+        <h3 class="bento-title">DSA Game</h3>
+        <p class="bento-desc">Master algorithms through interactive gameplay</p>
+        <div class="bento-tags">
+          <span class="tag">🎯 Interactive</span>
+          <span class="tag">👁️ Visual</span>
+        </div>
+        <div class="card-glow"></div>
+      </div>
+      
+      <!-- Small Feature Cards -->
+      <div class="bento-card small-card memory-gradient bento-coming-soon" data-aos="fade-up" data-aos-delay="300">
+        <div class="coming-soon-badge">🔜 Soon</div>
+        <div class="bento-icon">🧠</div>
+        <h3 class="bento-title">Memory Game</h3>
+        <p class="bento-desc">Fun Hindi learning</p>
+      </div>
+      
+      <a routerLink="/azure-ai-102" class="bento-card small-card azure-gradient" data-aos="fade-up" data-aos-delay="350">
+        <div class="bento-icon">☁️</div>
+        <h3 class="bento-title">Azure AI-102</h3>
+        <p class="bento-desc">Certification prep</p>
+        <div class="bento-arrow">→</div>
+      </a>
+    </div>
+  </div>
+
+  <!-- Why Choose Section -->
+  <div class="why-choose-section">
+    <div class="section-header" data-aos="fade-up">
+      <h2 class="section-title">
+        <span class="title-icon">💎</span>
+        Why Students Love Us
+      </h2>
+      <p class="section-desc">Built by developers, for developers</p>
+    </div>
+    
+    <div class="benefits-grid">
+      <div class="benefit-card bc-1">
+        <div class="benefit-icon">⚡</div>
+        <h3 class="benefit-title">Lightning Fast</h3>
+        <p class="benefit-desc">Get instant AI responses in seconds, not minutes</p>
+      </div>
+      
+      <div class="benefit-card bc-2">
+        <div class="benefit-icon">🎯</div>
+        <h3 class="benefit-title">Real-World Ready</h3>
+        <p class="benefit-desc">Practice with actual interview questions from top companies</p>
+      </div>
+      
+      <div class="benefit-card bc-3">
+        <div class="benefit-icon">🎮</div>
+        <h3 class="benefit-title">Learn By Playing</h3>
+        <p class="benefit-desc">Master complex concepts through interactive games</p>
+      </div>
+      
+      <div class="benefit-card bc-4">
+        <div class="benefit-icon">📊</div>
+        <h3 class="benefit-title">Track Progress</h3>
+        <p class="benefit-desc">Monitor your learning journey with detailed analytics</p>
+      </div>
+      
+      <div class="benefit-card bc-5">
+        <div class="benefit-icon">🌐</div>
+        <h3 class="benefit-title">Multi-Language</h3>
+        <p class="benefit-desc">Learn in English or Hindi, your choice</p>
+      </div>
+      
+      <div class="benefit-card bc-6">
+        <div class="benefit-icon">💾</div>
+        <h3 class="benefit-title">Save & Review</h3>
+        <p class="benefit-desc">Build your personal knowledge base for future reference</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saved Q&As Library Section -->
+  <div class="library-section" *ngIf="savedQAs.length > 0">
+    <div class="library-header">
+      <div class="header-left">
+        <span class="header-icon">📚</span>
+        <div>
+          <h2>AI-Powered Q&A Library</h2>
+          <p class="library-subtitle">{{ savedQAs.length }} saved answer{{ savedQAs.length !== 1 ? 's' : '' }} in your personal knowledge base</p>
+        </div>
+      </div>
+      <button class="btn btn-export" (click)="exportToJSON()">
+        <span class="btn-icon">📥</span>
+        <span>Export All</span>
+      </button>
+    </div>
+
+    <div class="library-grid">
+      <article class="library-card" *ngFor="let qa of savedQAs; let i = index" appRevealOnScroll>
+        <div class="card-number">#{{ savedQAs.length - i }}</div>
+        
+        <div class="card-header-section">
+          <div class="card-meta-top">
+            <span class="category-badge" [class]="'category-' + qa.category?.toLowerCase()">
+              {{ qa.category }}
+            </span>
+            <span class="timestamp">
+              <span class="time-icon">🕐</span>
+              {{ getFormattedDate(qa.timestamp) }}
+            </span>
+          </div>
+          <button class="btn-delete" (click)="deleteQA(qa.id)" title="Delete this Q&A">
+            <span class="delete-icon">🗑️</span>
+            <span class="delete-text">Delete</span>
+          </button>
+        </div>
+        
+        <div class="card-question">
+          <div class="question-badge">
+            <span class="badge-icon">Q</span>
+          </div>
+          <h3>{{ qa.question }}</h3>
+        </div>
+        
+        <div class="card-answer">
+          <div class="answer-badge">
+            <span class="badge-icon">A</span>
+          </div>
+          <div class="answer-preview" [innerHTML]="qa.answer | markdown"></div>
+        </div>
+
+        <div class="card-footer">
+          <button class="btn-view-full" (click)="expandCard(qa.id)">
+            <span class="view-icon">👁️</span>
+            <span>View Full Answer</span>
+          </button>
+        </div>
+      </article>
+    </div>
+  </div>
+  </div>
+  
+  <!-- Router outlet for child routes (Interview Questions, etc.) -->
+  <router-outlet></router-outlet>
+</div>
+

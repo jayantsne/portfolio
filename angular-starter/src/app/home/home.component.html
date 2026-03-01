@@ -1,98 +1,265 @@
-<header
-  class="hero"
-  id="home"
-  #hero
-  (mousemove)="onHeroMove($event)"
-  (mouseleave)="onHeroLeave()"
->
-  <div class="hero-wrap">
-    <!-- LEFT: coder visual -->
-    <div class="hero-left" #parallaxLeft>
-      <div class="code-orbit" aria-hidden="true">
-        <div class="code-card">
-          <div class="code-top">
-            <span class="dot dot-1" aria-hidden="true"></span>
-            <span class="dot dot-2" aria-hidden="true"></span>
-            <span class="dot dot-3" aria-hidden="true"></span>
-            <span class="label">~/portfolio</span>
+<div class="ai-learning-home" [class.split-mode]="showModal">
+  <!-- Hero Section / Left Topic Panel -->
+  <header class="hero-section" id="home" #hero [class.hero-left]="showModal">
+    <!-- Animated Background (always visible) -->
+    <div class="particle-bg">
+      <div class="particle" *ngFor="let p of particles" 
+           [style.left.%]="p.x" 
+           [style.top.%]="p.y" 
+           [style.animation-delay.s]="p.delay"></div>
+    </div>
+
+    <!-- Normal Hero Content (hidden in split mode) -->
+    <div class="hero-container" *ngIf="!showModal">
+      <div class="hero-content">
+        <div class="hero-badge" data-aos="fade-down">
+          <span class="badge-pulse"></span>
+          <span>🎓 Smart Learning Platform</span>
+        </div>
+        
+        <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
+          AI Interactive
+          <span class="gradient-text">Concept Explainer</span>
+        </h1>
+        
+        <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
+          Learn programming concepts step-by-step with AI-powered explanations,
+          interactive examples, and a personalized learning roadmap.
+        </p>
+
+        <!-- Smart AI Search -->
+        <div class="ai-search-container" data-aos="fade-up" data-aos-delay="300">
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input 
+              type="text" 
+              class="search-input" 
+              [(ngModel)]="searchQuery"
+              (input)="onSearchInput($event)"
+              (keydown.enter)="onSearchEnter()"
+              placeholder="Ask AI about any programming concept... (Press Enter or click AI button)"
+              autocomplete="off">
+            <span class="ai-badge">✨ AI</span>
           </div>
 
-          <pre class="code" aria-hidden="true"><code>
-<span class="line" style="--d: 0ms"><span class="k">const</span> <span class="v">profile</span> = {{ '{' }}</span>
-<span class="line" style="--d: 120ms">  <span class="p">name</span>: <span class="s">"{{ fullName }}"</span>,</span>
-<span class="line" style="--d: 220ms">  <span class="p">role</span>: <span class="s">"{{ jobTitle }}"</span>,</span>
-<span class="line" style="--d: 320ms">  <span class="p">company</span>: <span class="s">"{{ companyName }}"</span>,</span>
-<span class="line" style="--d: 420ms">  <span class="p">stack</span>: [<span class="s">"Angular"</span>, <span class="s">"Node"</span>, <span class="s">"Cloud"</span>]</span>
-<span class="line" style="--d: 520ms">{{ '}' }};</span>
-</code></pre>
+          <!-- Search Results Dropdown -->
+          <div class="search-results" *ngIf="showSearchResults && searchResults.length > 0">
+            <div class="results-header">
+              <span class="results-count">{{ searchResults.length }} concept{{ searchResults.length > 1 ? 's' : '' }} found</span>
+              <button class="ai-search-btn" (click)="askAIFromSearch()" *ngIf="searchQuery.trim().length > 0">
+                <span>✨ Ask AI</span>
+              </button>
+            </div>
+            <div class="result-item" 
+                 *ngFor="let concept of searchResults"
+                 (click)="selectFromSearch(concept)">
+              <span class="result-icon">{{ concept.icon }}</span>
+              <div class="result-info">
+                <div class="result-name">{{ concept.name }}</div>
+                <div class="result-difficulty">{{ concept.difficulty }}</div>
+              </div>
+              <div class="result-actions">
+                <button class="result-ai-btn" (click)="$event.stopPropagation(); askAI(concept.name)" title="Get AI explanation">
+                  <span>✨</span>
+                </button>
+                <span class="result-arrow">→</span>
+              </div>
+            </div>
+          </div>
 
-          <div class="scan" aria-hidden="true"></div>
+          <!-- AI Search Prompt (Always shown for AI-powered search) -->
+          <div class="search-results no-results" *ngIf="showSearchResults && searchQuery.trim().length > 0">
+            <div class="no-results-content">
+              <span class="no-results-icon">✨</span>
+              <p>Let AI explain "{{ searchQuery }}" for you!</p>
+              <button class="ai-explain-btn" (click)="askAIFromSearch()">
+                🚀 Get AI Explanation
+              </button>
+              <small style="margin-top: 0.5rem; color: #718096; font-size: 0.875rem;">or press Enter</small>
+            </div>
+          </div>
+
+          <!-- Quick Suggestions -->
+          <div class="quick-suggestions" *ngIf="!showSearchResults">
+            <span class="suggestion-label">Try asking AI about:</span>
+            <button class="suggestion-pill" (click)="searchQuery = 'Promises'; onSearchEnter()">
+              ⚡ Promises
+            </button>
+            <button class="suggestion-pill" (click)="searchQuery = 'Async/Await'; onSearchEnter()">
+              🚀 Async/Await
+            </button>
+            <button class="suggestion-pill" (click)="searchQuery = 'Closures'; onSearchEnter()">
+              🔄 Closures
+            </button>
+          </div>
+        </div>
+
+        <!-- CTA Buttons -->
+        <div class="hero-ctas" *ngIf="!showSearchResults" data-aos="fade-up" data-aos-delay="400">
+          <button (click)="focusSearch()" class="cta-btn cta-primary">
+            <span class="btn-icon">🚀</span>
+            <span>Start Learning</span>
+          </button>
+          <a routerLink="/questions" class="cta-btn cta-secondary">
+            <span class="btn-icon">📝</span>
+            <span>Practice Questions</span>
+          </a>
         </div>
       </div>
-
-      <img
-        src="/assets/images/illustrations/jdev2.gif"
-        alt="Developer illustration"
-        class="hero-img"
-        loading="eager"
-      />
     </div>
 
-    <!-- RIGHT: text -->
-    <div class="hero-right" #parallaxRight>
-      <div class="chip">{{ greetingMessage }} • <span class="chip-accent">Coder Mode</span></div>
+    <!-- Topic Panel (left side content in split mode) -->
+    <div class="topic-panel" *ngIf="showModal" [class.accordion-open]="isTopicAccordionOpen">
 
-      <h1 class="hero-title">
-        <span class="grad">{{ firstName }}</span>
-        <span class="last">{{ lastName }}</span>
-      </h1>
-
-      <p class="subtitle">
-        <span class="role">{{ jobTitle }}</span>
-        <span class="sub">{{ companyName }}</span><span class="sub-caret" aria-hidden="true"></span>
-      </p>
-
-      <div class="socials">
-        <a
-          href="https://www.facebook.com/jayant.bhardwaj.75"
-          target="_blank"
-          rel="noopener"
-          class="soc"
-          aria-label="Facebook"
-        >f</a>
-
-        <a
-          href="https://www.instagram.com/jayant.bhardwaj.75/"
-          target="_blank"
-          rel="noopener"
-          class="soc"
-          aria-label="Instagram"
-        >ig</a>
-
-        <a
-          href="https://www.linkedin.com/in/jayant-bhardwaj-8bb510145"
-          target="_blank"
-          rel="noopener"
-          class="soc"
-          aria-label="LinkedIn"
-        >in</a>
+      <!-- Accordion Header: always visible on all screen sizes -->
+      <div class="topic-accordion-header" (click)="toggleTopicAccordion()">
+        <button class="back-btn" (click)="$event.stopPropagation(); closeModal()">← Back</button>
+        <div class="topic-icon-large">✨</div>
+        <div class="topic-header-info">
+          <h2 class="topic-name">{{ currentTopicName }}</h2>
+          <p class="topic-tagline">AI Mentor Mode</p>
+        </div>
+        <button class="topic-chevron" (click)="$event.stopPropagation(); toggleTopicAccordion()" aria-label="Toggle topic details">
+          <span class="chevron-arrow">{{ isTopicAccordionOpen ? '▲' : '▼' }}</span>
+        </button>
       </div>
 
-      <div class="cta-row">
-        <a
-          (click)="scrollToSection('contact', $event)"
-          class="cta-btn"
-          #cta
-          (mousemove)="onCtaMove($event)"
-          (mouseleave)="onCtaLeave()"
-          style="cursor: pointer;"
-        >
-          Get In Touch →
-        </a>
-        <a class="ghost" (click)="scrollToSection('about', $event)" style="cursor: pointer;">Explore ↓</a>
+      <!-- Accordion Body: hidden on mobile, collapsible on tablet, always visible on desktop -->
+      <div class="topic-accordion-body">
+        <div class="topic-divider"></div>
+        <div class="topic-features">
+          <div class="topic-feature">
+            <span class="topic-feature-icon">📚</span>
+            <span>Step-by-step explanation</span>
+          </div>
+          <div class="topic-feature">
+            <span class="topic-feature-icon">💬</span>
+            <span>Ask follow-up questions</span>
+          </div>
+          <div class="topic-feature">
+            <span class="topic-feature-icon">💡</span>
+            <span>Real code examples</span>
+          </div>
+          <div class="topic-feature">
+            <span class="topic-feature-icon">🎯</span>
+            <span>Personalized learning</span>
+          </div>
+        </div>
+        <div class="related-questions-panel" *ngIf="followUpQuestions.length > 0">
+          <h4>Explore More:</h4>
+          <button class="related-pill"
+                  *ngFor="let q of followUpQuestions.slice(0, 3)"
+                  (click)="sendFollowUpQuestion(q)"
+                  [disabled]="isLoadingAI">
+            {{ q }}
+          </button>
+        </div>
       </div>
     </div>
-  </div>
+  </header>
 
-  <div class="cursor-accent" #accent aria-hidden="true"></div>
-</header>
+  <!-- AI Mentor Panel (right side in split mode) -->
+  <aside class="mentor-panel" *ngIf="showModal">
+    <!-- Bottom-sheet drag handle (mobile only, hidden on tablet/desktop) -->
+    <div class="sheet-handle"></div>
+    <!-- Mentor Header -->
+    <div class="mentor-header">
+      <div class="mentor-title-row">
+        <span class="mentor-avatar">🤖</span>
+        <div>
+          <h3>AI Mentor</h3>
+          <span class="mentor-topic-badge">{{ currentTopicName }}</span>
+        </div>
+      </div>
+      <button class="mentor-close" (click)="closeModal()" title="Close (ESC)">✕</button>
+    </div>
+
+    <!-- Mentor Body (scrollable content) -->
+    <div class="mentor-body">
+        
+        <!-- ============ AI MODE ============ -->
+        <div class="ai-chat-container" *ngIf="isAIMode">
+
+          <!-- AI Chat Messages (conversation history — always on top) -->
+          <div class="ai-messages" *ngIf="aiMessages.length > 0">
+            <div class="message" 
+                 *ngFor="let msg of aiMessages"
+                 [class]="'message-' + msg.role">
+              <div class="message-avatar">
+                {{ msg.role === 'user' ? '👤' : '🤖' }}
+              </div>
+              <div class="message-content">
+                <div class="message-text md-content" [innerHTML]="msg.content | markdown"></div>
+                <div class="message-time">{{ msg.timestamp | date: 'short' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Loading State -->
+          <div class="ai-thinking" *ngIf="isLoadingAI">
+            <div class="thinking-brain">🧠</div>
+            <div class="thinking-dots">
+              <span></span><span></span><span></span>
+            </div>
+            <p class="thinking-text">AI is thinking...</p>
+          </div>
+
+          <!-- Real-time Streaming Text -->
+          <div class="ai-streaming" *ngIf="streamingText && !isLoadingAI">
+            <div class="streaming-header">🤖 <strong>AI is responding...</strong></div>
+            <div class="streaming-body md-content" [innerHTML]="streamingText | markdown"></div>
+            <span class="streaming-cursor">▋</span>
+          </div>
+
+          <!-- Follow-up Questions -->
+          <div class="follow-up-questions" *ngIf="showFollowUps && followUpQuestions.length > 0 && !isLoadingAI && !streamingText">
+            <h4>🤔 Ask More:</h4>
+            <div class="question-pills">
+              <button class="question-pill" 
+                      *ngFor="let question of followUpQuestions"
+                      (click)="sendFollowUpQuestion(question)"
+                      [disabled]="isLoadingAI">
+                {{ question }}
+              </button>
+            </div>
+          </div>
+
+        </div><!-- end ai-chat-container -->
+
+    </div><!-- end mentor-body -->
+
+    <!-- Mentor Footer: question input always visible at bottom -->
+    <div class="mentor-footer">
+      <!-- Save to Notes bar (shown when AI has answered + user is signed in) -->
+      <div class="save-note-bar" *ngIf="(aiExplanation || streamingText) && googleAuth.isLoggedIn">
+        <button class="save-note-btn"
+                [class.saved]="noteSaved"
+                [disabled]="isSavingNote || noteSaved"
+                (click)="saveCurrentNote()">
+          <span *ngIf="!isSavingNote && !noteSaved">📌 Save to Notes</span>
+          <span *ngIf="isSavingNote">Saving…</span>
+          <span *ngIf="noteSaved">✅ Saved!</span>
+        </button>
+      </div>
+      <!-- Sign-in nudge when logged out and there's an answer -->
+      <div class="save-note-nudge" *ngIf="(aiExplanation || streamingText) && !googleAuth.isLoggedIn">
+        <span class="nudge-text">💡 Sign in with Google to save this explanation to your notes</span>
+      </div>
+      <div class="mentor-input-row">
+        <input 
+          type="text" 
+          class="mentor-input"
+          [(ngModel)]="currentQuestion"
+          (keyup.enter)="sendFollowUpQuestion(currentQuestion)"
+          placeholder="Ask a follow-up question..."
+          [disabled]="isLoadingAI">
+        <button 
+          class="mentor-send-btn" 
+          (click)="sendFollowUpQuestion(currentQuestion)"
+          [disabled]="isLoadingAI || !currentQuestion.trim()">
+          Send →
+        </button>
+      </div>
+    </div>
+  </aside>
+</div>

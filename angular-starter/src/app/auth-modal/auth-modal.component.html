@@ -1,0 +1,129 @@
+<!-- ── overlay ── -->
+<div class="auth-overlay" [class.active]="isOpen" (click)="onOverlayClick($event)">
+
+  <!-- ── sliding panel ── -->
+  <div class="auth-panel" [class.active]="isOpen" role="dialog" aria-modal="true">
+
+    <!-- close button -->
+    <button class="close-btn" (click)="close()" aria-label="Close">✕</button>
+
+    <!-- logo / brand -->
+    <div class="auth-brand">
+      <span class="auth-logo">🤖</span>
+      <span class="auth-brand-name">AI Learn</span>
+    </div>
+
+    <!-- tabs -->
+    <div class="auth-tabs">
+      <button [class.active]="mode === 'login'"  (click)="setMode('login')">Sign In</button>
+      <button [class.active]="mode === 'signup'" (click)="setMode('signup')">Sign Up</button>
+    </div>
+
+    <!-- success banner -->
+    <div class="success-banner" *ngIf="successMsg">{{ successMsg }}</div>
+
+    <!-- ── LOGIN form ── -->
+    <form *ngIf="mode === 'login'" [formGroup]="loginForm" (ngSubmit)="login()" novalidate>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input formControlName="email" type="email" placeholder="you@example.com"
+               [class.invalid]="f('login','email')?.touched && f('login','email')?.invalid" />
+        <span class="field-error"
+              *ngIf="f('login','email')?.touched && f('login','email')?.invalid">
+          Valid email required
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pwd-wrap">
+          <input formControlName="password" [type]="showPwd ? 'text' : 'password'"
+                 placeholder="••••••••"
+                 [class.invalid]="f('login','password')?.touched && f('login','password')?.invalid" />
+          <button type="button" class="pwd-toggle" (click)="showPwd = !showPwd">
+            {{ showPwd ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        <span class="field-error"
+              *ngIf="f('login','password')?.touched && f('login','password')?.invalid">
+          Min 6 characters
+        </span>
+      </div>
+
+      <div class="error-banner" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+      <button type="submit" class="submit-btn" [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner"></span>
+        <span *ngIf="!isLoading">Sign In</span>
+      </button>
+
+      <p class="switch-link">
+        No account? <a (click)="setMode('signup')">Create one</a>
+      </p>
+    </form>
+
+    <!-- ── SIGNUP form ── -->
+    <form *ngIf="mode === 'signup'" [formGroup]="signupForm" (ngSubmit)="signup()" novalidate>
+
+      <div class="form-group">
+        <label>Display Name <span class="optional">(optional)</span></label>
+        <input formControlName="username" type="text" placeholder="Your name" />
+      </div>
+
+      <div class="form-group">
+        <label>Email</label>
+        <input formControlName="email" type="email" placeholder="you@example.com"
+               [class.invalid]="f('signup','email')?.touched && f('signup','email')?.invalid" />
+        <span class="field-error"
+              *ngIf="f('signup','email')?.touched && f('signup','email')?.invalid">
+          Valid email required
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label>Password</label>
+        <div class="pwd-wrap">
+          <input formControlName="password" [type]="showPwd ? 'text' : 'password'"
+                 placeholder="Min 6 characters"
+                 [class.invalid]="f('signup','password')?.touched && f('signup','password')?.invalid" />
+          <button type="button" class="pwd-toggle" (click)="showPwd = !showPwd">
+            {{ showPwd ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        <span class="field-error"
+              *ngIf="f('signup','password')?.touched && f('signup','password')?.invalid">
+          Min 6 characters
+        </span>
+      </div>
+
+      <div class="form-group">
+        <label>Confirm Password</label>
+        <div class="pwd-wrap">
+          <input formControlName="confirmPassword" [type]="showConfPwd ? 'text' : 'password'"
+                 placeholder="••••••••"
+                 [class.invalid]="f('signup','confirmPassword')?.touched && signupForm.errors?.['mismatch']" />
+          <button type="button" class="pwd-toggle" (click)="showConfPwd = !showConfPwd">
+            {{ showConfPwd ? '🙈' : '👁️' }}
+          </button>
+        </div>
+        <span class="field-error"
+              *ngIf="f('signup','confirmPassword')?.touched && signupForm.errors?.['mismatch']">
+          Passwords do not match
+        </span>
+      </div>
+
+      <div class="error-banner" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+      <button type="submit" class="submit-btn" [disabled]="isLoading">
+        <span *ngIf="isLoading" class="spinner"></span>
+        <span *ngIf="!isLoading">Create Account</span>
+      </button>
+
+      <p class="switch-link">
+        Already have an account? <a (click)="setMode('login')">Sign in</a>
+      </p>
+    </form>
+
+  </div>
+</div>

@@ -1,4 +1,18 @@
 <div class="questions-page">
+  <!-- AI Loader Animation -->
+  <app-ai-loader *ngIf="isLoadingQuestions" [loadingMessage]="'Loading 364 AI-powered interview questions...'"></app-ai-loader>
+  
+  <!-- Prompt Selection Modal (NEW) -->
+  <app-prompt-selection-modal
+    [isVisible]="showPromptModal"
+    [promptData]="promptData"
+    [isGenerating]="isGeneratingAIResponse"
+    [aiResponse]="generatedAIResponse"
+    (promptSelected)="onPromptSelected($event)"
+    (closeModal)="onClosePromptModal()"
+    (startNewPrompt)="onStartNewPrompt()">
+  </app-prompt-selection-modal>
+  
   <!-- Premium Animated Background -->
   <div class="bg-decorations">
     <div class="decoration decoration-1"></div>
@@ -110,16 +124,33 @@
           <span class="label-icon">🔍</span>
           <span>Search</span>
         </label>
-        <div class="search-wrapper">
+        <div class="search-wrapper" style="position: relative;">
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/>
             <path d="m21 21-4.35-4.35"/>
           </svg>
           <input 
             type="text" 
-            [(ngModel)]="searchTerm" 
+            [(ngModel)]="searchTerm"
+            (input)="onSearchInput($any($event.target).value)"
+            (blur)="hideSuggestions()"
+            (focus)="onSearchInput(searchTerm)"
             placeholder="Type to search questions..." 
-            class="search-input">
+            class="search-input"
+            autocomplete="off">
+          <!-- AI Search Suggestions Dropdown -->
+          <div *ngIf="showSuggestions && searchSuggestions.length > 0"
+               class="search-suggestions" [@slideDown]>
+            <div *ngFor="let s of searchSuggestions"
+                 class="suggestion-item"
+                 (mousedown)="selectSuggestion(s)">
+              <span class="suggestion-icon">💡</span>
+              <div class="suggestion-content">
+                <span class="suggestion-question">{{ s.question.length > 65 ? (s.question | slice:0:65) + '…' : s.question }}</span>
+                <span class="suggestion-category">{{ s.category }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
       
@@ -276,8 +307,16 @@
         </div>
         
         <div class="answer-content">
-          <!-- AI-Generated Answer -->
-          <div class="ai-answer-content" [innerHTML]="modalAnswer"></div>
+          <!-- Streaming AI Answer (token by token) -->
+          <div *ngIf="isStreaming" class="streaming-answer-container" [@fadeIn]>
+            <div class="streaming-header">
+              <span class="streaming-dot-pulse"></span>
+              <span>{{ selectedModel === 'llama' ? '🦙 llama3.2:3b (tutor) generating...' : '⚡ qwen2.5:3b generating...' }}</span>
+            </div>
+            <pre class="streaming-text">{{ streamingText }}<span class="streaming-cursor">▊</span></pre>
+          </div>
+          <!-- Completed AI-Generated Answer -->
+          <div *ngIf="!isStreaming" class="ai-answer-content" [innerHTML]="modalAnswer"></div>
         </div>
       </div>
 
@@ -331,6 +370,17 @@
 
     <!-- Modal Footer with Buttons -->
     <div class="mobile-modal-footer" [@fadeInUp]>
+      <!-- Model Selector -->
+      <div class="model-selector">
+        <button class="model-btn" [class.active]="selectedModel === 'qwen'"
+                (click)="setModel('qwen')" title="qwen2.5:3b — Fast & Technical">
+          ⚡ Fast
+        </button>
+        <button class="model-btn" [class.active]="selectedModel === 'llama'"
+                (click)="setModel('llama')" title="llama3.2:3b — Tutor Style">
+          🦙 Tutor
+        </button>
+      </div>
       <button class="mobile-btn-icon mobile-btn-diagram" 
               (click)="generateAnimatedDiagram()"
               [disabled]="isLoadingDiagram"
@@ -398,8 +448,16 @@
         </div>
         
         <div class="answer-sections" *ngIf="!showAlternativeExplanation">
-          <!-- AI-Generated Answer -->
-          <div class="ai-answer-content" [innerHTML]="modalAnswer"></div>
+          <!-- Streaming AI Answer (token by token) -->
+          <div *ngIf="isStreaming" class="streaming-answer-container" [@fadeIn]>
+            <div class="streaming-header">
+              <span class="streaming-dot-pulse"></span>
+              <span>{{ selectedModel === 'llama' ? '🦙 llama3.2:3b (tutor style) generating...' : '⚡ qwen2.5:3b (fast tech) generating...' }}</span>
+            </div>
+            <pre class="streaming-text">{{ streamingText }}<span class="streaming-cursor">▊</span></pre>
+          </div>
+          <!-- Completed AI-Generated Answer -->
+          <div *ngIf="!isStreaming" class="ai-answer-content" [innerHTML]="modalAnswer"></div>
           
           <!-- AI Provider Badge -->
           <div class="ai-provider-badge" *ngIf="aiExplanation && !isLoadingAIExplanation" [@fadeIn]>
@@ -452,6 +510,17 @@
     </div>
     
     <div class="modal-footer">
+      <!-- Model Selector -->
+      <div class="model-selector">
+        <button class="model-btn" [class.active]="selectedModel === 'qwen'"
+                (click)="setModel('qwen')" title="qwen2.5:3b — Fast &amp; Technical">
+          ⚡ Fast
+        </button>
+        <button class="model-btn" [class.active]="selectedModel === 'llama'"
+                (click)="setModel('llama')" title="llama3.2:3b — Tutor Style">
+          🦙 Tutor
+        </button>
+      </div>
       <button class="btn-modal-diagram" 
               (click)="generateAnimatedDiagram()" 
               [disabled]="isLoadingDiagram"

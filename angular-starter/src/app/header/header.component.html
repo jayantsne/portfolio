@@ -59,14 +59,38 @@
           
           <!-- AI Learn Navigation - Only show on AI Learn pages -->
           <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" (click)="closeNavbar()">🏠 Home</a></li>
-          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn/questions" routerLinkActive="active" (click)="closeNavbar()">📚 Interview Q&A</a></li>
+          <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn/questions" routerLinkActive="active" (click)="closeNavbar()">📚 Interview Q&A</a></li> -->
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/learn-quest" routerLinkActive="active" (click)="closeNavbar()">🎫 Learn Quest</a></li> -->
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/dsa-game" routerLinkActive="active" (click)="closeNavbar()">🎮 DSA Game</a></li> -->
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/memory-game" routerLinkActive="active" (click)="closeNavbar()">🧠 Memory Game</a></li> -->
-          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link certification-link" routerLink="/azure-ai-102" routerLinkActive="active" (click)="closeNavbar()">☁️ Azure AI-102</a></li>
+          <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link certification-link" routerLink="/azure-ai-102" routerLinkActive="active" (click)="closeNavbar()">☁️ Azure AI-102</a></li> -->
           
           <!-- AI Learn Link - Show when NOT on AI Learn pages -->
           <li class="nav-item" *ngIf="!isAILearnPage"><a class="nav-link ai-link" href="https://learnwithai.tech/" target="_blank" rel="noopener noreferrer">🤖 AI Learn</a></li>
+
+          <!-- ── Custom Auth (all pages) ── -->
+          <!-- Notes link - visible when signed in -->
+          <li class="nav-item" *ngIf="customAuth.isLoggedIn">
+            <a class="nav-link notes-link" routerLink="/notes" routerLinkActive="active" (click)="closeNavbar()">
+              📓 My Notes
+            </a>
+          </li>
+
+          <!-- User avatar chip -->
+          <li class="nav-item" *ngIf="customAuth.isLoggedIn">
+            <div class="user-chip">
+              <div class="user-chip-avatar user-chip-avatar-letter">
+                {{ customAuth.currentUser?.username?.[0]?.toUpperCase() || '?' }}
+              </div>
+              <span class="user-chip-name">{{ customAuth.currentUser?.username }}</span>
+              <button class="user-chip-settings" (click)="openSettings()" title="Settings">⚙️</button>
+            </div>
+          </li>
+
+          <!-- Sign-in button - visible when not signed in -->
+          <li class="nav-item" *ngIf="!customAuth.isLoggedIn">
+            <button class="google-signin-nav-btn" (click)="openAuthModal('login')">🔐 Sign In</button>
+          </li>
           
           <!-- <li class="nav-item" *ngIf="!authService.isAuthenticated() && !isAILearnPage">
             <a class="nav-link login-btn" (click)="login()" style="cursor: pointer;">
@@ -96,6 +120,18 @@
     </div>
   </nav>
 </header>
+
+<!-- Auth modal (login / signup) -->
+<app-auth-modal #authModal (loggedIn)="onLoggedIn()"></app-auth-modal>
+
+<!-- User settings panel -->
+<app-user-settings #userSettings
+  (signedOut)="onSignedOut()"
+  (openMasterConfig)="openMasterConfig()">
+</app-user-settings>
+
+<!-- Admin master config panel -->
+<app-master-config #masterConfig></app-master-config>
 
 <!-- Put this spacer right after <app-header> in your app layout -->
 <!-- <div class="header-spacer"></div> -->

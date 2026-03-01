@@ -11,14 +11,17 @@
       <div class="floating-emoji emoji-3">💡</div>
       <div class="floating-emoji emoji-4">🎯</div>
       <div class="floating-emoji emoji-5">⚡</div>
+      <div class="floating-emoji emoji-6">🧠</div>
+      <div class="floating-emoji emoji-7">💻</div>
+      <div class="floating-emoji emoji-8">🎮</div>
     </div>
 
-    <!-- Hero Header -->
+    <!-- Hero Header with AI Chat Simulator -->
     <div class="hero-header">
       <div class="hero-content">
         <div class="hero-badge" data-aos="fade-down">
           <span class="badge-icon">🔥</span>
-          <span class="badge-text">Learn Smarter, Code Better</span>
+          <span class="badge-text">AI-Powered Smart Learning</span>
         </div>
         <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
           Master <span class="gradient-text">Programming</span><br>
@@ -26,11 +29,34 @@
         </h1>
         <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
           Get instant AI-powered answers, practice with games, and ace your interviews.<br>
-          <span class="subtitle-highlight">500+ questions • Interactive games • Real-time AI help</span>
+          <span class="subtitle-highlight">500+ questions • Interactive AI • Real-time Learning</span>
         </p>
         
+        <!-- Interactive AI Demo -->
+        <div class="ai-demo-card" data-aos="fade-up" data-aos-delay="300">
+          <div class="demo-header">
+            <span class="demo-icon">🤖</span>
+            <span class="demo-title">Try AI Assistant</span>
+            <span class="demo-badge">Live Demo</span>
+          </div>
+          <div class="chat-simulator">
+            <div class="chat-message user-message" [class.visible]="showDemoMessage >= 1">
+              <span class="message-icon">👤</span>
+              <span>What is closure in JavaScript?</span>
+            </div>
+            <div class="chat-message ai-message" [class.visible]="showDemoMessage >= 2">
+              <span class="message-icon">🤖</span>
+              <span>A closure is a function that has access to variables from its outer scope...</span>
+              <div class="typing-indicator" *ngIf="showDemoMessage === 2"></div>
+            </div>
+          </div>
+          <button class="demo-try-btn" (click)="restartDemo()">
+            <span>🔄</span> Try Again
+          </button>
+        </div>
+
         <!-- CTA Buttons -->
-        <div class="hero-ctas" data-aos="fade-up" data-aos-delay="300">
+        <div class="hero-ctas" data-aos="fade-up" data-aos-delay="400">
           <button class="cta-btn cta-primary cta-coming-soon" disabled title="Coming Soon!">
             <span class="btn-icon">🔜</span>
             <span>Ask AI - Coming Soon</span>
@@ -42,30 +68,135 @@
           </a>
         </div>
 
-        <!-- Stats Counter -->
-        <div class="hero-stats" data-aos="fade-up" data-aos-delay="400">
-          <div class="stat-item">
-            <div class="stat-number">500+</div>
+        <!-- Enhanced Stats Counter -->
+        <div class="hero-stats" data-aos="fade-up" data-aos-delay="500">
+          <div class="stat-item" (click)="animateStat(0)">
+            <div class="stat-number">{{ animatedStats[0] }}+</div>
             <div class="stat-label">Interview Questions</div>
+            <div class="stat-progress">
+              <div class="progress-bar" [style.width.%]="(animatedStats[0]/500)*100"></div>
+            </div>
           </div>
           <div class="stat-divider"></div>
-          <div class="stat-item">
-            <div class="stat-number">10+</div>
+          <div class="stat-item" (click)="animateStat(1)">
+            <div class="stat-number">{{ animatedStats[1] }}+</div>
             <div class="stat-label">Tech Categories</div>
+            <div class="stat-progress">
+              <div class="progress-bar" [style.width.%]="(animatedStats[1]/10)*100"></div>
+            </div>
           </div>
           <div class="stat-divider"></div>
-          <div class="stat-item">
-            <div class="stat-number">5</div>
+          <div class="stat-item" (click)="animateStat(2)">
+            <div class="stat-number">{{ animatedStats[2] }}</div>
             <div class="stat-label">Learning Games</div>
+            <div class="stat-progress">
+              <div class="progress-bar" [style.width.%]="(animatedStats[2]/5)*100"></div>
+            </div>
           </div>
           <div class="stat-divider"></div>
           <div class="stat-item" *ngIf="savedQAs.length > 0">
             <div class="stat-number">{{ savedQAs.length }}</div>
             <div class="stat-label">Your Saved Q&As</div>
+            <div class="stat-progress">
+              <div class="progress-bar" style="width: 75%"></div>
+            </div>
           </div>
         </div>
       </div>
     </div>
+
+  <!-- Interactive AI Tools Section -->
+  <div class="ai-tools-section">
+    <div class="section-header" data-aos="fade-up">
+      <h2 class="section-title">
+        <span class="title-icon">🤖</span>
+        Smart AI Learning Tools
+      </h2>
+      <p class="section-desc">Powered by advanced AI to accelerate your learning</p>
+    </div>
+    
+    <div class="ai-tools-grid">
+      <!-- AI Code Explainer -->
+      <div class="ai-tool-card" data-aos="fade-up" data-aos-delay="100" (mouseenter)="activeTool = 'explainer'" (mouseleave)="activeTool = null">
+        <div class="tool-icon">🔍</div>
+        <h3 class="tool-title">AI Code Explainer</h3>
+        <p class="tool-desc">Paste any code and get instant line-by-line explanations</p>
+        <div class="tool-preview" *ngIf="activeTool === 'explainer'">
+          <code class="preview-code">const x = arr.map(item => item * 2)</code>
+          <div class="preview-explain">Maps each array element, multiplying by 2</div>
+        </div>
+        <button class="tool-btn" disabled>
+          <span>🔜 Coming Soon</span>
+        </button>
+      </div>
+
+      <!-- Smart Interview Prep -->
+      <div class="ai-tool-card active" data-aos="fade-up" data-aos-delay="150" (mouseenter)="activeTool = 'interview'" (mouseleave)="activeTool = null">
+        <div class="tool-icon">💼</div>
+        <h3 class="tool-title">Smart Interview Prep</h3>
+        <p class="tool-desc">Practice with AI-generated questions based on your skill level</p>
+        <div class="tool-stats">
+          <span class="stat-badge">500+ Questions</span>
+          <span class="stat-badge">Active ✓</span>
+        </div>
+        <a routerLink="/ai-learn/questions" class="tool-btn primary">
+          <span>Start Learning →</span>
+        </a>
+      </div>
+
+      <!-- AI Tutor Chat -->
+      <div class="ai-tool-card" data-aos="fade-up" data-aos-delay="200" (mouseenter)="activeTool = 'tutor'" (mouseleave)="activeTool = null">
+        <div class="tool-icon">👨‍🏫</div>
+        <h3 class="tool-title">Personal AI Tutor</h3>
+        <p class="tool-desc">24/7 AI assistant for all your programming questions</p>
+        <div class="tool-preview-chat" *ngIf="activeTool === 'tutor'">
+          <div class="chat-bubble">How do I use async/await?</div>
+          <div class="chat-bubble ai">Let me explain with examples...</div>
+        </div>
+        <button class="tool-btn" disabled>
+          <span>🔜 Coming Soon</span>
+        </button>
+      </div>
+
+      <!-- Code Review AI -->
+      <div class="ai-tool-card" data-aos="fade-up" data-aos-delay="250" (mouseenter)="activeTool = 'review'" (mouseleave)="activeTool = null">
+        <div class="tool-icon">🎯</div>
+        <h3 class="tool-title">AI Code Reviewer</h3>
+        <p class="tool-desc">Get instant feedback on your code quality and best practices</p>
+        <div class="tool-metrics" *ngIf="activeTool === 'review'">
+          <div class="metric">
+            <span class="metric-label">Quality</span>
+            <div class="metric-bar">
+              <div class="metric-fill" style="width: 85%"></div>
+            </div>
+          </div>
+        </div>
+        <button class="tool-btn" disabled>
+          <span>🔜 Coming Soon</span>
+        </button>
+      </div>
+
+      <!-- Learning Path Generator -->
+      <div class="ai-tool-card" data-aos="fade-up" data-aos-delay="300" (mouseenter)="activeTool = 'path'" (mouseleave)="activeTool = null">
+        <div class="tool-icon">🗺️</div>
+        <h3 class="tool-title">Smart Learning Paths</h3>
+        <p class="tool-desc">Personalized curriculum based on your goals and experience</p>
+        <button class="tool-btn" disabled>
+          <span>🔜 Coming Soon</span>
+        </button>
+      </div>
+
+      <!-- Practice Playground -->
+      <div class="ai-tool-card" data-aos="fade-up" data-aos-delay="350" (mouseenter)="activeTool = 'playground'" (mouseleave)="activeTool = null">
+        <div class="tool-icon">⚡</div>
+        <h3 class="tool-title">Code Playground</h3>
+        <p class="tool-desc">Write, test, and debug code with AI assistance</p>
+        <button class="tool-btn" disabled>
+          <span>🔜 Coming Soon</span>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Features Grid - Bento Box Style -->
   <div class="features-section">

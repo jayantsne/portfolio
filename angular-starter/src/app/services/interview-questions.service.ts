@@ -18,6 +18,36 @@ export interface InterviewQuestion {
   isLearning?: boolean;
 }
 
+export interface QuestionPrompt {
+  id: string;
+  title: string;
+  description: string;
+  icon: string;
+}
+
+export interface QuestionPromptsResponse {
+  questionId: number;
+  question: string;
+  category: string;
+  difficulty: string;
+  prompts: QuestionPrompt[];
+}
+
+export interface LearnWithAIRequest {
+  questionId: number;
+  promptId: string;
+}
+
+export interface LearnWithAIResponse {
+  questionId: number;
+  promptId: string;
+  promptTitle: string;
+  response: string;  // Contains systemPrompt + userPromptTemplate
+  tokensUsed: number;
+  responseTimeMs: number;
+  model: string;
+}
+
 export interface QuestionsResponse {
   questions: InterviewQuestion[];
   total: number;
@@ -30,6 +60,7 @@ export interface QuestionsResponse {
 export class InterviewQuestionsService {
   // Update this to match your .NET API URL
   private apiUrl = environment.apiUrl || 'https://localhost:5001/api';
+  private apiKey = (environment as any).apiKey || '';  // API Key from environment
   
   // Cache for questions
   private questionsCache$ = new BehaviorSubject<InterviewQuestion[]>([]);
@@ -39,13 +70,25 @@ export class InterviewQuestionsService {
   constructor(private http: HttpClient) {}
 
   /**
+   * Get HTTP headers with API key
+   */
+  private getHeaders() {
+    return {
+      headers: {
+        'X-API-Key': this.apiKey,
+        'Content-Type': 'application/json'
+      }
+    };
+  }
+
+  /**
    * Get all interview questions from MongoDB
    */
   getAllQuestions(): Observable<QuestionsResponse> {
     this.isLoading$.next(true);
     this.error$.next(null);
 
-    return this.http.get<QuestionsResponse>(`${this.apiUrl}/questions`).pipe(
+    return this.http.get<QuestionsResponse>(`${this.apiUrl}/questions`, this.getHeaders()).pipe(
       tap(response => {
         // Add client-side properties
         const enrichedQuestions = response.questions.map(q => ({
@@ -213,6 +256,32 @@ export class InterviewQuestionsService {
           totalCategories: Object.keys(categories).length
         };
       })
+    );
+  }
+
+  /**
+   * Get available prompts for a question
+   */
+  getQuestionPrompts(questionId: number): Observable<QuestionPromptsResponse> {
+    return this.http.get<QuestionPromptsResponse>(
+      `${this.apiUrl}/questions/${questionId}/prompts`,
+      this.getHeaders()
+    ).pipe(
+      catchError(this.handleError.bind(this))
+    );
+  }
+
+  /**
+   * Get AI learning prompt details
+   */
+  getAIPromptDetails(questionId: number, promptId: string): Observable<LearnWithAIResponse> {
+    const request: LearnWithAIRequest = { questionId, promptId };
+    return this.http.post<LearnWithAIResponse>(
+      `${this.apiUrl}/questions/${questionId}/learn`,
+      request,
+      this.getHeaders()
+    ).pipe(
+      catchError(this.handleError.bind(this))
     );
   }
 

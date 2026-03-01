@@ -4,9 +4,9 @@ import { RouterModule, Routes } from '@angular/router';
 // import { AppComponent } from './app.component'; // Not needed in routing
 import { InterviewQuestionsComponent } from './interview-questions/interview-questions.component';
 import { AuthGuard } from './shared/auth.guard';
-import { MainPortfolioComponent } from './main-portfolio/main-portfolio.component';
+import { HomeComponent } from './home/home.component';
 // import { QuestionsPublicComponent } from './questions-public/questions-public.component'; // Temporarily disabled
-import { AiQaComponent } from './ai-qa/ai-qa.component';
+// import { AiQaComponent } from './ai-qa/ai-qa.component'; // Removed - replaced by HomeComponent
 // import { LoginComponent } from './login/login.component'; // Temporarily disabled
 // import { NamespaceManagementComponent } from './namespace-management/namespace-management.component'; // Temporarily disabled
 // import { AuthManagementComponent } from './auth-management/auth-management.component'; // Temporarily disabled
@@ -18,45 +18,32 @@ import { DsaGameComponent } from './dsa-game/dsa-game.component';
 import { AzureAiLearnComponent } from './azure-ai-learn/azure-ai-learn.component';
 import { MemoryGameComponent } from './memory-game/memory-game.component';
 import { TestPageComponent } from './test-page/test-page.component';
+import { AdminLoginComponent } from './admin/admin-login/admin-login.component';
+import { AdminDashboardComponent } from './admin/admin-dashboard/admin-dashboard.component';
+import { NotesComponent } from './notes/notes.component';
+import { DeploymentComponent } from './deployment/deployment.component';
 
 
 const routes: Routes = [
   // Test page for debugging reload issues
   { path: 'test', component: TestPageComponent },
   
-  // Portfolio as default
-  { path: 'folio', component: MainPortfolioComponent },
-  { path: 'home', component: MainPortfolioComponent },
-  { path: 'portfolio', component: MainPortfolioComponent },
-  
-  // Default redirect to AI Learn
-  { path: '', redirectTo: '/ai-learn', pathMatch: 'full' },
+  // Home page - AI Interactive Concept Explainer
+  { path: '', component: HomeComponent },
+  { path: 'home', component: HomeComponent },
+
+  // Saved Notes (requires Google Sign-In)
+  { path: 'notes', component: NotesComponent },
   
   // { path: 'login', component: LoginComponent }, // Temporarily disabled
   // { path: 'tools', component: FreeToolsComponent }, // Free Tools - Public (removed)
-  
-  // AI Learn App with nested routes
-  { 
-    path: 'ai-learn', 
-    component: AiQaComponent,
-    children: [
-      // No redirect - show landing page when on /ai-learn
-      // { path: 'ask-ai', component: AskAiComponent }, // Temporarily disabled - API method missing
-      { path: 'questions', component: QuestionsListComponent }, // Interview Questions List
-      { path: 'learn-quest', component: LearnQuestComponent }, // Gamified Learning within AI Learn
-      { path: 'dsa-game', component: DsaGameComponent }, // DSA Game-based Learning
-      { path: 'memory-game', component: MemoryGameComponent }, // Memory Types Learning Game (Hindi)
-      { path: 'azure-ai-102', component: AzureAiLearnComponent }, // Azure AI-102 Certification Learning
-      // DEV ONLY: Visual Designer route (hidden in production)
-      // { path: 'visual-designer', component: VisualDesignerComponent } // Visual UI Designer
-    ]
-  },
   
   // Direct access to games (outside ai-qa parent)
   { path: 'learn-quest', component: LearnQuestComponent },
   { path: 'dsa-game', component: DsaGameComponent },
   { path: 'memory-game', component: MemoryGameComponent },
   { path: 'azure-ai-102', component: AzureAiLearnComponent },
+  { path: 'questions', component: QuestionsListComponent }, // Practice questions
   
   // { path: 'questions', component: QuestionsPublicComponent }, // Public access - Temporarily disabled
   // { path: 'ai-tool', component: AiToolComponent }, // Unique AI Tool page (removed)
@@ -64,6 +51,12 @@ const routes: Routes = [
   // { path: 'auth-management', component: AuthManagementComponent, canActivate: [AuthGuard] }, // Temporarily disabled
   // { path: 'namespaces', component: NamespaceManagementComponent, canActivate: [AuthGuard] }, // Temporarily disabled
   //{ path: '', redirectTo: '/home', pathMatch: 'full' },
+  
+  // AI Provider Admin (standalone, not linked from main app)
+  { path: 'admin-login', component: AdminLoginComponent },
+  { path: 'admin-dashboard', component: AdminDashboardComponent },
+  // Deployment Manager — JWT ADMIN + localhost enforced at backend level
+  { path: 'admin-deploy', component: DeploymentComponent },
 ]
 
 @NgModule({

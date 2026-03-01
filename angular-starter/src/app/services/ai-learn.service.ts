@@ -4,6 +4,8 @@ import { Observable, of, from } from 'rxjs';
 import { catchError, map, switchMap } from 'rxjs/operators';
 import { RatedAnswer, AnswerRating } from '../models/rated-answer.model';
 import { environment } from '../../environments/environment';
+import { AI_BACKEND } from '../config/ai.config';
+import { AppConfigService } from '../shared/app-config.service';
 
 // Free AI Service with MULTI-PROVIDER FALLBACK
 // 🔥 STRATEGY: If one provider fails/limits, automatically try next!
@@ -101,13 +103,21 @@ export class AILearnService {
     'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 4 - ADD MORE
     'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 5 - ADD MORE
   ];
+
+  // 🏠 SERVER OLLAMA: Proxied through ASP.NET API (SECURE & UNLIMITED!)
+  // 🎯 Server: 76.13.244.113 (learnwithai.tech)
+  // 🎯 Ollama accessed via ASP.NET API at /api/ai/ollama
+  // 🎯 UNLIMITED requests - Backend handles Ollama internally
+  // ⚠️ NOT exposed directly to browser - security best practice!
+  // ── Loaded from ai.config.ts ─────────────────────────────────────────
+  private get OLLAMA_ENABLED()         { return this.appCfg.cfg.ollamaEnabled; }
+  private readonly OLLAMA_VIA_BACKEND  = true;
+  private get OLLAMA_MODELS()          { return this.appCfg.cfg.modelOllamaFallbacks; }
+  private currentOllamaModelIndex = 0;
+  private readonly USE_BACKEND_PROXY   = true;
+  private readonly ASPNET_API_BASE_URL = AI_BACKEND.BASE_URL;
   
-  // 🔒 BACKEND PROXY (Most secure - API keys hidden server-side)
-  // 🚀 MULTI-WORKER STRATEGY: Deploy to multiple Cloudflare accounts for 300K-500K FREE requests/day!
-  // Each free account = 100K req/day, so 3-5 accounts = 300K-500K total!
-  private readonly USE_BACKEND_PROXY = true; // ✅ ENABLED - Backend deployed successfully!
-  
-  // 💡 ADD MORE WORKERS HERE (same code, different Cloudflare accounts)
+  // 💡 Cloudflare Workers (Backup for API)
   // Create new free Cloudflare account → Deploy same worker → Add URL below
   private readonly BACKEND_WORKERS = [
     'https://jayant-portfolio-api.jayant-ai.workers.dev/api/ai',  // Worker 1 - Primary (100K/day)
@@ -126,8 +136,12 @@ export class AILearnService {
     return this.getNextAvailableWorker();
   }
   
-  private currentProvider: 'backend' | 'groq' | 'gemini' | 'huggingface' | 'together' | 'openrouter' = 'backend'; // Start with backend (most reliable)
-  private providerFailCount = { backend: 0, groq: 0, gemini: 0, huggingface: 0, together: 0, openrouter: 0 };
+  // 🎯 Start with Groq (fastest & most reliable free tier) → then try backend → then others
+  private currentProvider: 'backend' | 'groq' | 'gemini' | 'huggingface' | 'together' | 'openrouter' | 'ollama' = 'backend';
+  private providerFailCount = { backend: 0, groq: 0, gemini: 0, huggingface: 0, together: 0, openrouter: 0, ollama: 0 };
+
+  /** Track active streaming XHR so it can be aborted if user asks a new question */
+  private activeXhr: XMLHttpRequest | null = null;
   
   private currentKeyIndex = 0;
   private requestCount = 0;
@@ -143,29 +157,15 @@ export class AILearnService {
     isExhausted: boolean;
   }> = new Map();
   
-  // Cooldown periods for different providers (in milliseconds)
-  private readonly COOLDOWN_PERIODS = {
-    backend: 60 * 1000,           // 1 minute (Groq backend)
-    groq: 60 * 1000,              // 1 minute (resets every minute)
-    gemini: 24 * 60 * 60 * 1000,  // 24 hours (daily limit)
-    huggingface: 60 * 1000,       // 1 minute (be conservative)
-    together: 60 * 1000,          // 1 minute (API limits)
-    openrouter: 60 * 1000         // 1 minute (free tier resets)
-  };
+  // Cooldown periods — dynamically loaded from DB via AppConfigService
+  private get COOLDOWN_PERIODS() { return this.appCfg.cfg.cooldownMs as Record<string, number>; }
   
-  // Rate limits per provider (requests per minute)
-  private readonly RATE_LIMITS = {
-    backend: 30,      // Groq backend: 30 req/min
-    groq: 30,         // Groq direct: 30 req/min
-    gemini: 60,       // Gemini: 60 req/min
-    huggingface: 10,  // HF: Conservative limit
-    together: 60,     // Together: Generous
-    openrouter: 10    // OpenRouter free: 10 req/min
-  };
+  // Rate limits per provider — dynamically loaded from DB via AppConfigService
+  private get RATE_LIMITS() { return this.appCfg.cfg.perProviderLimits; }
   
   // 🧠 SMART AI FEATURES
   private questionHistory: Array<{question: string; category: string; timestamp: number}> = [];
-  private readonly MAX_HISTORY = 10; // Remember last 10 questions for context
+  private get MAX_HISTORY() { return this.appCfg.cfg.maxHistory; }
   
   // Provider strengths for smart routing
   private readonly PROVIDER_STRENGTHS = {
@@ -174,17 +174,18 @@ export class AILearnService {
     gemini: ['detailed', 'creative', 'explanation'],  // Best for detailed explanations
     huggingface: ['simple', 'quick'],  // Good for simple questions
     together: ['complex', 'reasoning'],  // Good for complex reasoning
-    openrouter: ['versatile', 'fallback']  // Versatile fallback
+    openrouter: ['versatile', 'fallback'],  // Versatile fallback
+    ollama: ['reliable', 'unlimited', 'local']  // Local server - always available
   };
   
-  // STRATEGY 2: RESPONSE CACHING
-  private readonly CACHE_KEY_PREFIX = 'ai_learn_cache_';
-  private readonly CACHE_DURATION_HOURS = 24; // Cache for 24 hours
-  private readonly CACHE_VERSION = 2; // Increment to invalidate old cache (v2: removed duplicate questions)
-  
-  // STRATEGY 3: RATE LIMITING
-  private readonly MAX_REQUESTS_PER_MINUTE = 50; // Stay under 60 limit
-  private readonly REQUEST_DELAY_MS = 1200; // 1.2 seconds between requests
+  // STRATEGY 2: RESPONSE CACHING — edit src/app/config/ai.config.ts → AI_CACHE
+  private get CACHE_KEY_PREFIX()     { return this.appCfg.cfg.cacheKeyPrefix; }
+  private get CACHE_DURATION_HOURS() { return this.appCfg.cfg.cacheDurationHours; }
+  private get CACHE_VERSION()        { return this.appCfg.cfg.cacheVersion; }
+
+  // STRATEGY 3: RATE LIMITING — edit src/app/config/ai.config.ts → AI_RATE_LIMITS
+  private get MAX_REQUESTS_PER_MINUTE() { return this.appCfg.cfg.maxRequestsPerMinute; }
+  private get REQUEST_DELAY_MS()        { return this.appCfg.cfg.requestDelayMs; }
   
   // DATABASE STORAGE FOR TOP-RATED ANSWERS
   private readonly RATED_ANSWERS_KEY = 'ai_rated_answers';
@@ -202,11 +203,12 @@ export class AILearnService {
     estimatedCostSaved: 0       // Rough estimate
   };
   
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private appCfg: AppConfigService) {
     this.loadRequestCount();
     this.loadApiStats();
     this.checkDailyReset();
     this.loadWorkerUsage(); // Load multi-worker usage tracking
+    this.checkApiKeysConfiguration(); // Validate API keys and show helpful setup message
   }
   
   /**
@@ -244,6 +246,83 @@ export class AILearnService {
       this.apiStats.todayApiCalls = 0;
       this.apiStats.lastResetDate = today;
       this.saveApiStats();
+    }
+  }
+  
+  /**
+   * Check API keys configuration and show helpful setup message
+   */
+  private checkApiKeysConfiguration(): void {
+    const groqKeys = this.getValidKeys(this.GROQ_API_KEYS);
+    const geminiKeys = this.getValidKeys(this.GEMINI_API_KEYS);
+    const hfKeys = this.getValidKeys(this.HF_API_KEYS);
+    const togetherKeys = this.getValidKeys(this.TOGETHER_API_KEYS);
+    const openrouterKeys = this.getValidKeys(this.OPENROUTER_API_KEYS);
+    
+    const totalConfiguredKeys = groqKeys.length + geminiKeys.length + hfKeys.length + 
+                                togetherKeys.length + openrouterKeys.length;
+    
+    if (totalConfiguredKeys === 0 && !this.OLLAMA_ENABLED) {
+      console.warn(`
+⚠️ ========================================================
+⚠️  NO API KEYS CONFIGURED!
+⚠️ ========================================================
+
+Your AI Learning Assistant needs at least 1 API key to work.
+
+🚀 QUICKEST SETUP (5 minutes):
+
+1. Get FREE Groq API key: https://console.groq.com/keys
+   - Click "Sign in with Google" (no password!)
+   - Click "Create API Key" → Copy it
+   
+2. Open: src/environments/environment.ts
+
+3. Paste your key in groqApiKeys array:
+   groqApiKeys: [
+     'gsk_YOUR_KEY_HERE',  // ← Replace with your actual key
+   ]
+
+4. Reload app - Done! 🎉
+
+💡 Why Groq?
+   ✅ FREE: 14,400 requests/day per key
+   ✅ FAST: 500 tokens/second (fastest AI)
+   ✅ NO CREDIT CARD: Just Google sign-in
+
+📖 Full guide: See QUICK_API_SETUP.md
+
+Current status:
+- Groq: ${groqKeys.length} keys configured
+- Gemini: ${geminiKeys.length} keys configured
+- HuggingFace: ${hfKeys.length} keys configured
+- Together: ${togetherKeys.length} keys configured
+- OpenRouter: ${openrouterKeys.length} keys configured
+- Ollama: ${this.OLLAMA_ENABLED ? 'Enabled (requires ASP.NET backend)' : 'Disabled'}
+
+⚠️ ========================================================
+      `);
+    } else if (totalConfiguredKeys === 0 && this.OLLAMA_ENABLED) {
+      console.warn(`
+⚠️ Only Ollama is enabled (requires ASP.NET backend implementation)
+
+Add a Groq key for instant results: https://console.groq.com/keys
+See QUICK_API_SETUP.md for details.
+      `);
+    } else {
+      console.log(`
+✅ AI Service Ready!
+
+Configured providers:
+- Groq: ${groqKeys.length} key(s) (14,400 req/day each)
+- Gemini: ${geminiKeys.length} key(s) (1,500 req/day each)
+- HuggingFace: ${hfKeys.length} key(s)
+- Together: ${togetherKeys.length} key(s)
+- OpenRouter: ${openrouterKeys.length} key(s)
+- Ollama: ${this.OLLAMA_ENABLED ? 'Enabled' : 'Disabled'}
+
+Total capacity: ${groqKeys.length * 14400 + geminiKeys.length * 1500}+ requests/day
+      `);
     }
   }
   
@@ -596,7 +675,9 @@ export class AILearnService {
    * Get cooldown status for all providers
    */
   private checkAllProvidersCooldown(): { provider: string; available: number; total: number; nextAvailable: number }[] {
-    const providers: Array<'backend' | 'groq' | 'gemini' | 'huggingface' | 'together' | 'openrouter'> = ['backend', 'groq', 'gemini', 'huggingface', 'together', 'openrouter'];
+    const providers: Array<'backend' | 'groq' | 'gemini' | 'huggingface' | 'together' | 'openrouter' | 'ollama'> = [
+      'backend', 'groq', 'gemini', 'huggingface', 'together', 'openrouter', 'ollama'
+    ];
     const status = [];
     
     for (const provider of providers) {
@@ -742,6 +823,7 @@ Backend proxy is enabled but all 9 keys are exhausted.
       case 'huggingface': return this.HF_API_KEYS;
       case 'together': return this.TOGETHER_API_KEYS;
       case 'openrouter': return this.OPENROUTER_API_KEYS;
+      case 'ollama': return this.OLLAMA_ENABLED ? ['ollama-local'] : []; // Local server - no keys needed
       default: return this.GROQ_API_KEYS;
     }
   }
@@ -846,59 +928,28 @@ Backend proxy is enabled but all 9 keys are exhausted.
    * Enhance prompt with smart instructions based on analysis
    */
   private buildSmartPrompt(question: string, category: string, existingAnswer: string | undefined, analysis: ReturnType<typeof this.analyzeQuestion>): string {
-    let basePrompt = `You are an expert technical interviewer and educator. `;
-    
-    // Adjust prompt based on question type
-    switch (analysis.type) {
-      case 'code':
-        basePrompt += `Provide clear code examples with comments. Focus on practical implementation.`;
-        break;
-      case 'concept':
-        basePrompt += `Explain concepts clearly with real-world analogies. Build from basics to advanced.`;
-        break;
-      case 'comparison':
-        basePrompt += `Compare options objectively. Show clear differences with pros/cons.`;
-        break;
-      case 'troubleshooting':
-        basePrompt += `Diagnose the issue step-by-step. Provide actionable solutions with explanations.`;
-        break;
-      default:
-        basePrompt += `Provide comprehensive, interview-ready explanations.`;
-    }
-    
+    // ── All text loaded dynamically from DB via AppConfigService ──
+    let basePrompt = this.appCfg.cfg.systemRole;
+
+    basePrompt += this.appCfg.promptForType(analysis.type);
+
     basePrompt += `\n\nQuestion: "${question}"\nCategory: ${category || 'Technical'}`;
-    
+
     if (existingAnswer) {
       basePrompt += `\n\nExisting context: ${existingAnswer}`;
     }
-    
+
     // Add context from recent questions if relevant
     const context = this.getRecentContext();
     if (context && this.questionHistory.length > 1) {
       basePrompt += context;
     }
-    
+
     // Adjust detail level based on complexity
-    if (analysis.complexity === 'simple') {
-      basePrompt += `\n\nProvide a concise, clear explanation (2-3 paragraphs).`;
-    } else if (analysis.complexity === 'complex') {
-      basePrompt += `\n\nProvide an in-depth, comprehensive explanation with:`;
-      basePrompt += `\n1. Core concepts and fundamentals`;
-      basePrompt += `\n2. Detailed examples with code (if applicable)`;
-      basePrompt += `\n3. Advanced patterns and best practices`;
-      basePrompt += `\n4. Common pitfalls and how to avoid them`;
-      basePrompt += `\n5. Real-world applications and interview tips`;
-    } else {
-      basePrompt += `\n\nProvide a thorough explanation with:`;
-      basePrompt += `\n1. Clear concept overview`;
-      basePrompt += `\n2. Practical examples`;
-      basePrompt += `\n3. Best practices`;
-      basePrompt += `\n4. Common mistakes`;
-      basePrompt += `\n5. Interview preparation tips`;
-    }
-    
-    basePrompt += `\n\nFormat: Use clear sections with headers. Include code examples when relevant. Make it interview-ready and easy to remember.`;
-    
+    basePrompt += this.appCfg.complexityInstruction(analysis.complexity);
+
+    basePrompt += this.appCfg.cfg.formatInstruction;
+
     return basePrompt;
   }
   
@@ -930,14 +981,15 @@ Backend proxy is enabled but all 9 keys are exhausted.
    * Switch to next available provider on failure
    */
   private switchToNextProvider(): boolean {
-    // Priority order: backend (if enabled) > groq > openrouter > gemini > huggingface > together
+    // Priority order: groq (fastest free) > backend (Cloudflare) > openrouter > gemini > huggingface > together > ollama (local fallback)
     const providers = [
-      ...(this.USE_BACKEND_PROXY ? ['backend' as const] : []),
       'groq' as const,
+      ...(this.USE_BACKEND_PROXY ? ['backend' as const] : []),
       'openrouter' as const,
       'gemini' as const,
       'huggingface' as const,
-      'together' as const
+      'together' as const,
+      ...(this.OLLAMA_ENABLED ? ['ollama' as const] : []) // Add Ollama as final fallback
     ];
     
     const currentIndex = providers.indexOf(this.currentProvider as any);
@@ -999,6 +1051,13 @@ Backend proxy is enabled but all 9 keys are exhausted.
         // OpenRouter - 100+ AI models with one API
         url = `https://openrouter.ai/api/v1/chat/completions`;
         break;
+      
+      case 'ollama':
+        // Ollama - Proxied through ASP.NET API (secure & unlimited!)
+        // Backend handles Ollama communication internally
+        url = `${this.ASPNET_API_BASE_URL}/ai/ollama`;
+        console.log(`🏠 Using Ollama via ASP.NET backend (secure proxy)`);
+        break;
     }
     
     console.log('📡 API Endpoint:', url.split('?')[0]);
@@ -1028,9 +1087,9 @@ Backend proxy is enabled but all 9 keys are exhausted.
       case 'together':
       case 'openrouter':
         // OpenAI-compatible format
-        const model = this.currentProvider === 'groq' ? 'llama-3.3-70b-versatile' : 
-                      this.currentProvider === 'together' ? 'mistralai/Mixtral-8x7B-Instruct-v0.1' :
-                      'meta-llama/llama-3.1-8b-instruct:free'; // OpenRouter free model
+        const model = this.currentProvider === 'groq' ? this.appCfg.cfg.modelGroq
+                    : this.currentProvider === 'together' ? this.appCfg.cfg.modelTogether
+                    : this.appCfg.cfg.modelOpenrouter;
         
         return {
           model: model,
@@ -1047,6 +1106,17 @@ Backend proxy is enabled but all 9 keys are exhausted.
             max_new_tokens: config.maxOutputTokens || 2048,
             return_full_text: false
           }
+        };
+      
+      case 'ollama':
+        // Ollama via ASP.NET backend - use standard format
+        // Backend will translate to Ollama format internally
+        return {
+          question: prompt,
+          provider: 'ollama',
+          model: this.OLLAMA_MODELS[this.currentOllamaModelIndex],
+          temperature: config.temperature || 0.7,
+          maxTokens: config.maxOutputTokens || 2048
         };
       
       default:
@@ -1074,6 +1144,10 @@ Backend proxy is enabled but all 9 keys are exhausted.
         
         case 'huggingface':
           return response?.[0]?.generated_text || response?.generated_text || '';
+        
+        case 'ollama':
+          // Ollama via backend - returns standardized format
+          return response?.explanation || response?.answer || response?.response || '';
         
         default:
           return '';
@@ -1253,11 +1327,12 @@ Backend proxy is enabled but all 9 keys are exhausted.
         // 🧠 Build smart prompt based on question analysis
         const prompt = this.buildSmartPrompt(question, category, existingAnswer, analysis);
 
+        // ── Loaded dynamically from DB via AppConfigService ──
         const generationConfig = {
-          temperature: 0.9, // Higher for creative analogies and memorable explanations
-          topK: 50,
-          topP: 0.98,
-          maxOutputTokens: 1536 // Increased for richer, more memorable content (400 words)
+          temperature:     this.appCfg.cfg.defaultTemperature,
+          topK:            this.appCfg.cfg.topK,
+          topP:            this.appCfg.cfg.topP,
+          maxOutputTokens: this.appCfg.cfg.maxOutputTokens,
         };
 
         const requestBody = this.buildRequestBody(prompt, generationConfig);
@@ -1552,6 +1627,87 @@ Backend proxy is enabled but all 9 keys are exhausted.
         );
       })
     );
+  }
+
+  /**
+   * Streams answer from backend SSE endpoint (/api/ai/stream).
+   * Emits partial text every 30 tokens so UI can show real-time streaming,
+   * then emits final complete text with done:true.
+   */
+  getOllamaExplanation(prompt: string): Observable<{ explanation: string; success: boolean; done?: boolean }> {
+    // Use relative /api path on localhost (proxied); full URL in production
+    const apiBase = window.location.hostname === 'localhost' ? '' : 'https://learnwithai.tech';
+    const apiKey = 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41';
+
+    // Abort any in-flight request before starting a new one (handles rapid re-asks)
+    if (this.activeXhr) {
+      this.activeXhr.abort();
+      this.activeXhr = null;
+    }
+
+    return new Observable(observer => {
+      const xhr = new XMLHttpRequest();
+      this.activeXhr = xhr;
+      xhr.open('POST', `${apiBase}/api/ai/stream`, true);
+      xhr.setRequestHeader('Content-Type', 'application/json');
+      if (apiBase) xhr.setRequestHeader('X-API-Key', apiKey);
+      xhr.responseType = 'text';
+
+      let cursor = 0;
+      let accumulated = '';
+      let lastEmitAt = 0;          // time-based throttle — emit at most every 60ms
+      const THROTTLE_MS = 60;
+
+      const parseChunks = (isFinal = false) => {
+        const newText = xhr.responseText.slice(cursor);
+        cursor = xhr.responseText.length;
+        for (const line of newText.split('\n')) {
+          if (!line.startsWith('data: ')) continue;
+          try {
+            const chunk = JSON.parse(line.slice(6));
+            if (chunk.done) {
+              observer.next({ success: true, explanation: accumulated || 'No response.', done: true });
+              observer.complete();
+              return;
+            }
+            accumulated += chunk.token || '';
+            const now = Date.now();
+            if (isFinal || now - lastEmitAt >= THROTTLE_MS) {
+              lastEmitAt = now;
+              observer.next({ success: true, explanation: accumulated, done: false });
+            }
+          } catch {}
+        }
+      };
+
+      xhr.onprogress = () => parseChunks();
+      xhr.onload = () => {
+        this.activeXhr = null;
+        if (xhr.status === 429) {
+          observer.next({ success: false, explanation: '⏳ The AI server is handling many requests right now. Please wait a moment and try again.', done: true });
+          observer.complete();
+          return;
+        }
+        if (xhr.status >= 500) {
+          observer.next({ success: false, explanation: '⚠️ AI server error. Please try again in a moment.', done: true });
+          observer.complete();
+          return;
+        }
+        parseChunks(true);
+        if (!observer.closed) {
+          observer.next({ success: true, explanation: accumulated || 'No response.', done: true });
+          observer.complete();
+        }
+      };
+      xhr.onerror = () => {
+        this.activeXhr = null;
+        observer.next({ success: false, explanation: '🔌 Connection error. Check your network and try again.', done: true });
+        observer.complete();
+      };
+
+      xhr.send(JSON.stringify({ question: prompt, maxTokens: this.appCfg.cfg.maxTokensStream }));
+      return () => { xhr.abort(); this.activeXhr = null; };
+    });
   }
 
   /**

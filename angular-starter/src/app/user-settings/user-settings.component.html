@@ -1,0 +1,96 @@
+<!-- ── overlay ── -->
+<div class="settings-overlay" [class.active]="isOpen" (click)="onOverlayClick($event)">
+
+  <div class="settings-panel" [class.active]="isOpen" role="dialog" aria-modal="true">
+
+    <!-- header bar -->
+    <div class="panel-header">
+      <div class="header-user">
+        <div class="avatar-circle">{{ (authSvc.currentUser?.username || 'U')[0].toUpperCase() }}</div>
+        <div class="user-info">
+          <span class="user-name">
+            {{ authSvc.currentUser?.username }}
+            <span class="role-badge" [class.admin]="authSvc.isAdmin">
+              {{ authSvc.isAdmin ? '👑 ADMIN' : 'USER' }}
+            </span>
+          </span>
+          <span class="user-email">{{ authSvc.currentUser?.email }}</span>
+        </div>
+      </div>
+      <button class="close-btn" (click)="close()" aria-label="Close">✕</button>
+    </div>
+
+    <!-- loading -->
+    <div class="loading-row" *ngIf="isLoading">
+      <span class="spinner"></span> Loading config…
+    </div>
+
+    <!-- config form -->
+    <ng-container *ngIf="!isLoading">
+
+      <!-- max tokens -->
+      <section class="config-section">
+        <label class="section-label">Max Token Limit</label>
+        <p class="section-desc">Maximum tokens the model generates per response.</p>
+        <input class="token-input"
+               type="number" min="64" max="8192" step="64"
+               [(ngModel)]="config.maxTokens" />
+        <div class="token-presets">
+          <button *ngFor="let v of [512, 1024, 2048, 4096]"
+                  [class.active]="config.maxTokens === v"
+                  (click)="config.maxTokens = v">{{ v }}</button>
+        </div>
+      </section>
+
+      <!-- system prompt -->
+      <section class="config-section">
+        <label class="section-label">System Prompt for Model</label>
+        <p class="section-desc">Custom instructions prepended to every AI request.</p>
+        <textarea class="prompt-textarea"
+                  rows="5"
+                  placeholder="e.g. You are a concise senior developer. Always include code examples."
+                  [(ngModel)]="config.systemPrompt">
+        </textarea>
+      </section>
+
+      <!-- provider toggles -->
+      <section class="config-section">
+        <label class="section-label">AI Service Providers</label>
+        <p class="section-desc">Enable or disable which providers the app can use.</p>
+        <div class="provider-list">
+          <div class="provider-row" *ngFor="let key of providerKeys">
+            <span class="provider-icon">{{ providerIcon(key) }}</span>
+            <span class="provider-name">{{ key | titlecase }}</span>
+            <button class="toggle-btn"
+                    [class.on]="config.providerToggles[key]"
+                    (click)="toggleProvider(key)"
+                    [attr.aria-label]="key + ' toggle'">
+              <span class="toggle-knob"></span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- messages -->
+      <div class="success-banner" *ngIf="saveSuccess">✅ Settings saved!</div>
+      <div class="error-banner"   *ngIf="errorMsg">{{ errorMsg }}</div>
+
+      <!-- save button -->
+      <button class="save-btn" [disabled]="isSaving" (click)="save()">
+        <span class="spinner" *ngIf="isSaving"></span>
+        <span *ngIf="!isSaving">💾 Save Settings</span>
+      </button>
+
+    </ng-container>
+
+    <!-- sign out -->
+    <div class="signout-row">
+      <!-- Admin: Master Config button -->
+      <button class="master-config-btn" *ngIf="authSvc.isAdmin" (click)="openMasterConfig.emit(); close()">
+        ⚙️ Master Configuration
+      </button>
+      <button class="signout-btn" (click)="logout()">Sign Out</button>
+    </div>
+
+  </div>
+</div>

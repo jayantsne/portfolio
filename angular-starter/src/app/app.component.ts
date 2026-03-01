@@ -3,6 +3,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AnalyticsService } from './shared/analytics.service';
 import { PwaInstallService } from './pwa-install.service';
+import { APP_CONFIG } from './config/app.config';
 
 @Component({
   selector: 'app-root',
@@ -19,7 +20,8 @@ export class AppComponent implements OnInit {
     return this.fullName;
   }
 
-  showSplash = true; // Re-enabled - reload issue fixed
+  showSplash = APP_CONFIG.splashScreen.enabled; // Controlled by config (default: disabled)
+  splashDuration = APP_CONFIG.splashScreen.minDurationMs;
   showInstallPrompt = false;
   isAppInstalled = false;
   showPortfolioHeader = true; // Always show header, but conditionally hide portfolio sections

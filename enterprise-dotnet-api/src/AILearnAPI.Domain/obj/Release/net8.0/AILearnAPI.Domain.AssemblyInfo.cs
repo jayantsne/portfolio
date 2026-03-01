@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AILearnAPI.Domain")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bf42f8dca350b8abe60f86fc5c6e064e0f04eedc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2e0af30990617cefd7c589dd19a712a97b20f359")]
 [assembly: System.Reflection.AssemblyProductAttribute("AILearnAPI.Domain")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AILearnAPI.Domain")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
