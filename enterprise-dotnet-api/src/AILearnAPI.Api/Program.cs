@@ -13,6 +13,9 @@ using AILearnAPI.Api.Models;
 using Polly;
 using Polly.Extensions.Http;
 using Serilog;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -130,6 +133,9 @@ builder.Services.AddScoped<IAiTopicPromptRepository, AiTopicPromptRepository>();
 builder.Services.Configure<OllamaSettings>(builder.Configuration.GetSection("OllamaSettings"));
 builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
 
+// In-memory cache for AI responses (instant repeat-question delivery)
+builder.Services.AddMemoryCache();
+
 // Configure HttpClient for Ollama
 builder.Services.AddHttpClient<IOllamaService, OllamaService>();
 
@@ -152,6 +158,29 @@ builder.Services.AddCors(options =>
     });
 });
 
+// Configure JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123456";
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["Issuer"],
+        ValidAudience = jwtSettings["Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey))
+    };
+});
+
 // Add Health Checks (MongoDB check commented out - not running locally)
 builder.Services.AddHealthChecks();
     // .AddMongoDb(sp => new MongoClient(mongoConnectionString), name: "mongodb", tags: new[] { "db", "mongodb" });
@@ -163,7 +192,8 @@ var app = builder.Build();
 /*
 using (var scope = app.Services.CreateScope())
 {
-    var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+    var autentication();
+app.UseAuthhService = scope.ServiceProvider.GetRequiredService<IAuthService>();
     await authService.InitializeDefaultUserAsync();
 }
 */

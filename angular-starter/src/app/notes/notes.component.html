@@ -1,0 +1,100 @@
+<div class="notes-page">
+
+  <!-- Header bar -->
+  <div class="notes-header">
+    <button class="back-home-btn" (click)="goHome()">← AI Mentor</button>
+    <div class="notes-title-row">
+      <span class="notes-icon">📓</span>
+      <h1 class="notes-title">My Saved Notes</h1>
+    </div>
+    <div class="notes-user" *ngIf="user">
+      <img class="user-avatar" [src]="user.photoURL || 'assets/default-avatar.png'" [alt]="user.displayName || 'User'" />
+      <span class="user-name">{{ user.displayName }}</span>
+    </div>
+  </div>
+
+  <!-- NOT SIGNED IN -->
+  <div class="notes-signin-prompt" *ngIf="!user && !isLoading">
+    <div class="signin-card">
+      <div class="signin-icon">🔐</div>
+      <h2>Sign in to view your notes</h2>
+      <p>Your saved AI explanations are tied to your Google account.</p>
+      <button class="google-signin-btn" (click)="signIn()">
+        <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="20" alt="Google" />
+        Sign in with Google
+      </button>
+      <p class="signin-error" *ngIf="signInError">{{ signInError }}</p>
+    </div>
+  </div>
+
+  <!-- LOADING -->
+  <div class="notes-loading" *ngIf="isLoading">
+    <div class="loading-dots"><span></span><span></span><span></span></div>
+    <p>Loading notes…</p>
+  </div>
+
+  <!-- MAIN CONTENT: list + preview -->
+  <div class="notes-content" *ngIf="user && !isLoading">
+
+    <!-- Empty state -->
+    <div class="notes-empty" *ngIf="notes.length === 0">
+      <div class="empty-icon">📭</div>
+      <h3>No notes yet</h3>
+      <p>Ask AI to explain a concept, then click <strong>"Save to Notes"</strong> in the mentor panel.</p>
+      <button class="go-learn-btn" (click)="goHome()">🚀 Start Learning</button>
+    </div>
+
+    <!-- Notes list + reader panel -->
+    <div class="notes-main" *ngIf="notes.length > 0">
+
+      <!-- Sidebar: note list -->
+      <aside class="notes-sidebar">
+        <p class="notes-count">{{ notes.length }} saved note{{ notes.length !== 1 ? 's' : '' }}</p>
+        <div class="note-card"
+             *ngFor="let note of notes"
+             [class.active]="activeNote?.id === note.id"
+             (click)="openNote(note)">
+          <div class="note-card-body">
+            <span class="note-topic-icon">✨</span>
+            <div class="note-card-info">
+              <div class="note-card-topic">{{ note.topic }}</div>
+              <div class="note-card-date">{{ formatDate(note.savedAtMs) }}</div>
+            </div>
+          </div>
+          <button class="note-delete-btn"
+                  [class.deleting]="deletingId === note.id"
+                  (click)="$event.stopPropagation(); deleteNote(note)"
+                  title="Delete note">
+            {{ deletingId === note.id ? '…' : '🗑' }}
+          </button>
+        </div>
+      </aside>
+
+      <!-- Reader panel: right side -->
+      <main class="notes-reader" [class.has-note]="activeNote">
+
+        <!-- Placeholder when none selected -->
+        <div class="reader-placeholder" *ngIf="!activeNote">
+          <div class="placeholder-icon">📖</div>
+          <p>Select a note to read it here</p>
+        </div>
+
+        <!-- Note content -->
+        <div class="reader-content" *ngIf="activeNote">
+          <div class="reader-header">
+            <div class="reader-topic-row">
+              <span class="reader-topic-icon">✨</span>
+              <h2 class="reader-topic">{{ activeNote.topic }}</h2>
+            </div>
+            <div class="reader-actions">
+              <span class="reader-date">Saved {{ formatDate(activeNote.savedAtMs) }}</span>
+              <button class="reader-delete-btn" (click)="deleteNote(activeNote!)">🗑 Delete</button>
+            </div>
+          </div>
+          <div class="reader-body md-content" [innerHTML]="activeNote.content | markdown"></div>
+        </div>
+      </main>
+    </div>
+
+  </div><!-- end notes-content -->
+</div>

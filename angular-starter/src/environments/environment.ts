@@ -4,14 +4,28 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'https://jayant-portfolio-api.jayant-ai.workers.dev/api',  // Cloudflare Workers API
+  apiUrl: 'https://learnwithai.tech/api',
+  apiKey: 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41',
   groqApiKeys: [
-    // Add your Groq API keys here for local development
-    // Get free keys at: https://console.groq.com/keys
-    'YOUR_GROQ_API_KEY_1',
-    'YOUR_GROQ_API_KEY_2',
-    'YOUR_GROQ_API_KEY_3'
-  ]
+    // 'gsk_YOUR_ACTUAL_KEY_HERE',
+  ],
+  // ─── Firebase ──────────────────────────────────────────────────────
+  // Google login will NOT work until you fill in the 3 values below.
+  // Steps:
+  //  1. Go to https://console.firebase.google.com
+  //  2. Select project "myportfolioadmin-d45bd"  (or create one)
+  //  3. Authentication → Sign-in method → Enable Google
+  //  4. Project Settings (gear icon) → Your apps → Web app
+  //  5. Click </> to register a web app if none exists
+  //  6. Copy the firebaseConfig object values into the fields below
+  firebase: {
+    apiKey: 'YOUR_FIREBASE_API_KEY',          // e.g. AIzaSy...
+    authDomain: 'myportfolioadmin-d45bd.firebaseapp.com',
+    projectId: 'myportfolioadmin-d45bd',
+    storageBucket: 'myportfolioadmin-d45bd.appspot.com',
+    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',  // numeric, e.g. 123456789
+    appId: 'YOUR_APP_ID'                      // e.g. 1:123:web:abc123
+  }
 };
 
 /*
