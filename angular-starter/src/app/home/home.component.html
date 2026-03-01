@@ -231,7 +231,7 @@
     <!-- Mentor Footer: question input always visible at bottom -->
     <div class="mentor-footer">
       <!-- Save to Notes bar (shown when AI has answered + user is signed in) -->
-      <div class="save-note-bar" *ngIf="(aiExplanation || streamingText) && googleAuth.isLoggedIn">
+      <div class="save-note-bar" *ngIf="(aiExplanation || streamingText) && customAuth.isLoggedIn">
         <button class="save-note-btn"
                 [class.saved]="noteSaved"
                 [disabled]="isSavingNote || noteSaved"
@@ -242,8 +242,8 @@
         </button>
       </div>
       <!-- Sign-in nudge when logged out and there's an answer -->
-      <div class="save-note-nudge" *ngIf="(aiExplanation || streamingText) && !googleAuth.isLoggedIn">
-        <span class="nudge-text">💡 Sign in with Google to save this explanation to your notes</span>
+      <div class="save-note-nudge" *ngIf="(aiExplanation || streamingText) && !customAuth.isLoggedIn">
+        <span class="nudge-text">💡 Sign in to save this explanation to your notes</span>
       </div>
       <div class="mentor-input-row">
         <input 

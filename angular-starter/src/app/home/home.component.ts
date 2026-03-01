@@ -1,6 +1,6 @@
 import { Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
 import { AILearnService } from '../services/ai-learn.service';
-import { GoogleAuthService } from '../shared/google-auth.service';
+import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService } from '../shared/notes.service';
 
 interface ConceptStep {
@@ -79,7 +79,7 @@ export class HomeComponent implements OnInit {
 
   constructor(
     private aiLearnService: AILearnService,
-    public googleAuth: GoogleAuthService,
+    public customAuth: CustomAuthService,
     private notesService: NotesService
   ) {}
 
