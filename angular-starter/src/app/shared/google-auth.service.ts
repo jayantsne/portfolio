@@ -28,6 +28,10 @@ export class GoogleAuthService {
   /** Emits the current signed-in user, or null when signed out. */
   user$: Observable<AppUser | null> = this._user.asObservable();
 
+  /** Emits true once Firebase has resolved the initial auth state (1 fire only). */
+  private _authReady = new BehaviorSubject<boolean>(false);
+  authReady$: Observable<boolean> = this._authReady.asObservable();
+
   constructor(private zone: NgZone) {
     // Initialise Firebase once (guards against hot-reload double-init)
     this.app = getApps().length
@@ -35,9 +39,23 @@ export class GoogleAuthService {
       : initializeApp(environment.firebase);
     this.auth = getAuth(this.app);
 
+    if (!this.isConfigured) {
+      // Credentials are placeholders — skip the Firebase auth check entirely
+      // so the sign-in button shows immediately instead of spinning forever.
+      this._authReady.next(true);
+      return;
+    }
+
     onAuthStateChanged(this.auth, (fbUser: FirebaseUser | null) => {
       this.zone.run(() => {
         this._user.next(fbUser ? this.toAppUser(fbUser) : null);
+        // Signal that Firebase has checked the cached session
+        if (!this._authReady.getValue()) this._authReady.next(true);
+      });
+    }, () => {
+      // Auth error (e.g. network failure) — still unblock the UI
+      this.zone.run(() => {
+        if (!this._authReady.getValue()) this._authReady.next(true);
       });
     });
   }

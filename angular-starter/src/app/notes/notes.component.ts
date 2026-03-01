@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subscription, combineLatest } from 'rxjs';
+import { filter, take } from 'rxjs/operators';
 import { GoogleAuthService, AppUser } from '../shared/google-auth.service';
 import { NotesService, SavedNote } from '../shared/notes.service';
 
@@ -13,8 +14,10 @@ export class NotesComponent implements OnInit, OnDestroy {
   user: AppUser | null = null;
   notes: SavedNote[] = [];
   activeNote: SavedNote | null = null;
-  isLoading = true;
+  isLoading = false;       // loading notes from Firestore
+  authChecking = true;     // waiting for Firebase to resolve login state
   deletingId: string | null = null;
+  signInError: string | null = null;
 
   private subs: Subscription[] = [];
 
@@ -25,20 +28,40 @@ export class NotesComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Phase 1: wait for Firebase to resolve the initial auth state.
+    // This prevents the sign-in form from flashing before auth is confirmed.
     this.subs.push(
-      this.googleAuth.user$.subscribe(user => {
-        this.user = user;
-        if (!user) {
-          this.isLoading = false;
-        }
+      this.googleAuth.authReady$.pipe(filter(ready => ready), take(1)).subscribe(() => {
+        this.authChecking = false;
+        this.user = this.googleAuth.currentUser;
+        if (this.user) this.startLoadingNotes();
       })
     );
 
+    // Phase 2: react to sign-in / sign-out after initial check
+    this.subs.push(
+      this.googleAuth.user$.subscribe(user => {
+        if (this.authChecking) return; // ignore pre-ready emissions
+        const wasNull = !this.user;
+        this.user = user;
+        if (user && wasNull) {
+          // Just signed in — load notes
+          this.startLoadingNotes();
+        } else if (!user) {
+          this.isLoading = false;
+          this.notes = [];
+          this.activeNote = null;
+        }
+      })
+    );
+  }
+
+  private startLoadingNotes(): void {
+    this.isLoading = true;
     this.subs.push(
       this.notesService.notes$.subscribe(notes => {
         this.notes = notes;
         this.isLoading = false;
-        // Keep active note in sync
         if (this.activeNote) {
           const refreshed = notes.find(n => n.id === this.activeNote!.id);
           this.activeNote = refreshed ?? null;
