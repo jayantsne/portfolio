@@ -338,5 +338,4 @@ public class AIController : ControllerBase
 
 Rules: Use proper markdown formatting. All code blocks must specify the language. Keep code examples concise but complete. Make the analogy creative and memorable. The comparison table MUST always be present.";
     }
-    }
 }
