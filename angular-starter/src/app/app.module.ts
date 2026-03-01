@@ -47,6 +47,7 @@ import { AuthModalComponent } from './auth-modal/auth-modal.component';
 import { UserSettingsComponent } from './user-settings/user-settings.component';
 import { MasterConfigComponent } from './master-config/master-config.component';
 import { DeploymentComponent } from './deployment/deployment.component';
+import { AnalyticsDashboardComponent } from './analytics-dashboard/analytics-dashboard.component';
 import { AppConfigService } from './shared/app-config.service';
 
 @NgModule({
@@ -90,6 +91,7 @@ import { AppConfigService } from './shared/app-config.service';
     UserSettingsComponent,  // User Settings Panel
     MasterConfigComponent,  // Admin Master Config
     DeploymentComponent,    // Admin Deployment Manager
+    AnalyticsDashboardComponent, // Admin Analytics Dashboard
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],

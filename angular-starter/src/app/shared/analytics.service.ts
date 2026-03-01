@@ -1,140 +1,173 @@
 import { Injectable } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { CustomAuthService } from './custom-auth.service';
 
-// Declare gtag function for TypeScript
-declare let gtag: Function;
+// ── DTO interfaces (mirrors backend) ────────────────────────────────────────
 
-@Injectable({
-  providedIn: 'root'
-})
+export interface DailyStatDto {
+  date:        string;   // "yyyy-MM-dd"
+  visits:      number;
+  clicks:      number;
+  uniqueUsers: number;
+}
+
+export interface PageStatDto  { page:      string; count: number; }
+export interface EventStatDto { eventName: string; count: number; }
+
+export interface RecentSessionDto {
+  sessionId:  string;
+  userId?:    string;
+  username?:  string;
+  isLoggedIn: boolean;
+  ipAddress:  string;
+  firstPage:  string;
+  lastSeen:   string;
+  pageViews:  number;
+}
+
+export interface AnalyticsDashboard {
+  uniqueVisitors:  number;
+  totalVisits:     number;
+  totalClicks:     number;
+  loggedInVisits:  number;
+  guestVisits:     number;
+  dailyStats:      DailyStatDto[];
+  topPages:        PageStatDto[];
+  topEvents:       EventStatDto[];
+  recentSessions:  RecentSessionDto[];
+}
+
+// ── Service ──────────────────────────────────────────────────────────────────
+
+@Injectable({ providedIn: 'root' })
 export class AnalyticsService {
-  constructor(private router: Router) {}
+
+  /** Browser-tab session id — constant for the lifetime of the tab. */
+  private readonly sessionId: string;
+  private currentPage: string = '/';
+
+  constructor(
+    private http:    HttpClient,
+    private router:  Router,
+    private auth:    CustomAuthService
+  ) {
+    // Reuse or mint a session id per browser tab
+    const stored = sessionStorage.getItem('_analytics_sid');
+    if (stored) {
+      this.sessionId = stored;
+    } else {
+      this.sessionId = this.generateId();
+      sessionStorage.setItem('_analytics_sid', this.sessionId);
+    }
+
+    // Auto-track every navigation (fires after Angular finishes routing)
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe((e: any) => {
+        this.currentPage = e.urlAfterRedirects ?? e.url;
+        this.trackVisit(this.currentPage);
+      });
+  }
+
+  // ── Public tracking API ──────────────────────────────────────────────────
+
+  /** Called automatically on NavigationEnd; can also be called manually. */
+  trackVisit(page: string): void {
+    const body = {
+      sessionId: this.sessionId,
+      page:      page || '/',
+      referrer:  document.referrer || ''
+    };
+    const headers = this.getOptionalAuthHeaders();
+    this.http.post('/api/analytics/visit', body, { headers }).toPromise()
+      .catch(() => { /* silent — never break UX for analytics */ });
+  }
 
   /**
-   * Initialize Google Analytics tracking
-   * Replace 'G-XXXXXXXXXX' with your actual Google Analytics ID
+   * Track a user interaction.
+   * @param eventName Semantic name e.g. "ask_question", "save_note"
+   * @param elementId Optional id of clicked element
+   * @param elementText Optional visible label (auto-truncated server-side)
    */
-  public init(): void {
-    // Track route changes
-    this.router.events.pipe(
-      filter(event => event instanceof NavigationEnd)
-    ).subscribe((event: any) => {
-      try {
-        if (typeof gtag !== 'undefined') {
-          gtag('config', 'G-XXXXXXXXXX', {
-            page_path: event.urlAfterRedirects
-          });
-        }
-      } catch (error) {
-        console.error('Error tracking page view:', error);
+  trackClick(eventName: string, elementId?: string, elementText?: string): void {
+    const body = {
+      sessionId:   this.sessionId,
+      eventName:   eventName,
+      pageName:    this.currentPage,
+      elementId:   elementId   || null,
+      elementText: elementText || null
+    };
+    const headers = this.getOptionalAuthHeaders();
+    this.http.post('/api/analytics/click', body, { headers }).toPromise()
+      .catch(() => { /* silent */ });
+  }
+
+  // Legacy Google Analytics shims — kept so callers don't break during migration
+  public init(): void { /* no-op — tracking starts automatically in constructor */ }
+  public trackEvent(eventName: string, _cat?: string, label?: string): void {
+    this.trackClick(eventName, undefined, label);
+  }
+  public trackButtonClick(buttonName: string, location: string): void {
+    this.trackClick('button_click', undefined, `${buttonName} - ${location}`);
+  }
+  public trackFormSubmit(formName: string, _success?: boolean): void {
+    this.trackClick('form_submit', undefined, formName);
+  }
+  public trackInteraction(type: string, details: string): void {
+    this.trackClick('interaction', undefined, `${type}: ${details}`);
+  }
+  public trackError(type: string, msg: string): void {
+    this.trackClick('error', undefined, `${type}: ${msg}`);
+  }
+  public trackTiming(_cat: string, _var: string, _val: number): void { /* no-op */ }
+  public trackQuestionView(id: string, cat: string): void {
+    this.trackClick('question_view', undefined, `${cat} - ${id}`);
+  }
+  public trackAIAnswerRequest(id: string, cat: string): void {
+    this.trackClick('ai_answer_request', undefined, `${cat} - ${id}`);
+  }
+  public trackDownload(file: string, type: string): void {
+    this.trackClick('file_download', undefined, `${type} - ${file}`);
+  }
+  public trackShare(platform: string, content: string): void {
+    this.trackClick('share', undefined, `${platform} - ${content}`);
+  }
+
+  // ── Admin dashboard API ──────────────────────────────────────────────────
+
+  getDashboard(days: number = 30): Promise<AnalyticsDashboard> {
+    return this.http
+      .get<AnalyticsDashboard>(`/api/analytics/dashboard?days=${days}`,
+        { headers: this.auth.getAuthHeaders() })
+      .toPromise()
+      .then(d => d ?? this.emptyDashboard());
+  }
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  private getOptionalAuthHeaders(): HttpHeaders {
+    try {
+      if (this.auth.isLoggedIn) {
+        return this.auth.getAuthHeaders();
       }
+    } catch (_) {}
+    return new HttpHeaders({ 'Content-Type': 'application/json' });
+  }
+
+  private generateId(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
     });
   }
 
-  /**
-   * Track custom events
-   */
-  public trackEvent(
-    eventName: string,
-    eventCategory: string,
-    eventLabel?: string,
-    eventValue?: number
-  ): void {
-    try {
-      if (typeof gtag !== 'undefined') {
-        gtag('event', eventName, {
-          event_category: eventCategory,
-          event_label: eventLabel,
-          value: eventValue
-        });
-      }
-    } catch (error) {
-      console.error('Error tracking event:', error);
-    }
-  }
-
-  /**
-   * Track button clicks
-   */
-  public trackButtonClick(buttonName: string, location: string): void {
-    this.trackEvent('button_click', 'engagement', `${buttonName} - ${location}`);
-  }
-
-  /**
-   * Track form submissions
-   */
-  public trackFormSubmit(formName: string, success: boolean): void {
-    this.trackEvent(
-      'form_submit',
-      'engagement',
-      formName,
-      success ? 1 : 0
-    );
-  }
-
-  /**
-   * Track user interactions
-   */
-  public trackInteraction(interactionType: string, details: string): void {
-    this.trackEvent('user_interaction', 'engagement', `${interactionType}: ${details}`);
-  }
-
-  /**
-   * Track errors
-   */
-  public trackError(errorType: string, errorMessage: string): void {
-    this.trackEvent('error', 'error_tracking', `${errorType}: ${errorMessage}`);
-  }
-
-  /**
-   * Track page timing
-   */
-  public trackTiming(
-    timingCategory: string,
-    timingVar: string,
-    timingValue: number,
-    timingLabel?: string
-  ): void {
-    try {
-      if (typeof gtag !== 'undefined') {
-        gtag('event', 'timing_complete', {
-          name: timingVar,
-          value: timingValue,
-          event_category: timingCategory,
-          event_label: timingLabel
-        });
-      }
-    } catch (error) {
-      console.error('Error tracking timing:', error);
-    }
-  }
-
-  /**
-   * Track AI question views
-   */
-  public trackQuestionView(questionId: string, category: string): void {
-    this.trackEvent('question_view', 'questions', `${category} - ${questionId}`);
-  }
-
-  /**
-   * Track AI answer requests
-   */
-  public trackAIAnswerRequest(questionId: string, category: string): void {
-    this.trackEvent('ai_answer_request', 'ai_interaction', `${category} - ${questionId}`);
-  }
-
-  /**
-   * Track downloads
-   */
-  public trackDownload(fileName: string, fileType: string): void {
-    this.trackEvent('file_download', 'downloads', `${fileType} - ${fileName}`);
-  }
-
-  /**
-   * Track social shares
-   */
-  public trackShare(platform: string, content: string): void {
-    this.trackEvent('share', 'social', `${platform} - ${content}`);
+  private emptyDashboard(): AnalyticsDashboard {
+    return {
+      uniqueVisitors: 0, totalVisits: 0, totalClicks: 0,
+      loggedInVisits: 0, guestVisits: 0,
+      dailyStats: [], topPages: [], topEvents: [], recentSessions: []
+    };
   }
 }

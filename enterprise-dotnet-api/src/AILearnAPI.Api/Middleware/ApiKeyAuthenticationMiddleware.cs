@@ -72,6 +72,14 @@ public class ApiKeyAuthenticationMiddleware
             return;
         }
 
+        // Skip for /api/analytics — visit/click endpoints are intentionally public;
+        // the dashboard endpoint is self-protected by [Authorize(Roles=ADMIN)].
+        if (path.StartsWith("/api/analytics"))
+        {
+            await _next(context);
+            return;
+        }
+
         // Skip authentication for Ollama AI endpoints (frontend integration)
         if (path.Contains("/api/ai/ollama"))
         {

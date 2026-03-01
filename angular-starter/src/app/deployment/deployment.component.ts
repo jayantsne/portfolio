@@ -121,6 +121,10 @@ export class DeploymentComponent implements OnInit, OnDestroy {
     this.router.navigate(['/admin-dashboard']);
   }
 
+  goToAnalytics(): void {
+    this.router.navigate(['/admin-analytics']);
+  }
+
   // ── Display helpers ───────────────────────────────────────────────────────
 
   formatDate(iso: string | undefined): string {

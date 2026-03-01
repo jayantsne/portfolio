@@ -133,6 +133,8 @@ builder.Services.AddScoped<IMasterConfigRepository, MasterConfigRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();
 // Deployment service — no repository layer needed (uses IMongoDatabase directly)
 builder.Services.AddScoped<IDeploymentService, DeploymentService>();
+// Analytics service — tracks visits + clicks, serves admin dashboard
+builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.Configure<OllamaSettings>(builder.Configuration.GetSection("OllamaSettings"));
 builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
 

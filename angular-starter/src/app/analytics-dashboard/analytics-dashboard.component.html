@@ -1,0 +1,191 @@
+<div class="analytics-container">
+
+  <!-- ── HEADER ────────────────────────────────────────────────────── -->
+  <header class="analytics-header">
+    <div class="header-left">
+      <h1>📊 Analytics Dashboard</h1>
+      <p>Real-time visitor &amp; interaction tracking</p>
+    </div>
+    <div class="header-right">
+      <button class="nav-btn" (click)="goToDashboard()">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+          <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+        </svg>
+        Dashboard
+      </button>
+      <button class="nav-btn" (click)="goToDeployment()">
+        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd"/>
+        </svg>
+        Deploy
+      </button>
+      <button class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+  </header>
+
+  <!-- ── DATE RANGE ─────────────────────────────────────────────────── -->
+  <div class="range-row">
+    <span class="range-label">Time range:</span>
+    <div class="range-tabs">
+      <button
+        *ngFor="let opt of dayOptions"
+        class="range-tab"
+        [class.active]="selectedDays === opt.value"
+        (click)="changeDays(opt.value)">
+        {{ opt.label }}
+      </button>
+    </div>
+    <button class="refresh-btn" (click)="load()" [disabled]="loading">
+      <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" [class.spin]="loading">
+        <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/>
+      </svg>
+      Refresh
+    </button>
+  </div>
+
+  <!-- ── LOADING ────────────────────────────────────────────────────── -->
+  <div *ngIf="loading && !dashboard" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading analytics…</p>
+  </div>
+
+  <!-- ── ERROR ──────────────────────────────────────────────────────── -->
+  <div *ngIf="error && !loading" class="error-state">
+    <span>⚠️ {{ error }}</span>
+    <button (click)="load()">Retry</button>
+  </div>
+
+  <!-- ── MAIN CONTENT ───────────────────────────────────────────────── -->
+  <ng-container *ngIf="dashboard && !loading">
+
+    <!-- Metric cards -->
+    <div class="metric-grid">
+      <div class="metric-card primary">
+        <div class="metric-icon">👁️</div>
+        <div class="metric-body">
+          <div class="metric-value">{{ dashboard.totalVisits | number }}</div>
+          <div class="metric-label">Total Page Views</div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">🧑‍💻</div>
+        <div class="metric-body">
+          <div class="metric-value">{{ dashboard.uniqueVisitors | number }}</div>
+          <div class="metric-label">Unique Sessions</div>
+        </div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-icon">🖱️</div>
+        <div class="metric-body">
+          <div class="metric-value">{{ dashboard.totalClicks | number }}</div>
+          <div class="metric-label">Total Clicks</div>
+        </div>
+      </div>
+      <div class="metric-card green">
+        <div class="metric-icon">🔐</div>
+        <div class="metric-body">
+          <div class="metric-value">{{ dashboard.loggedInVisits | number }}</div>
+          <div class="metric-label">Logged-in Visits</div>
+        </div>
+      </div>
+      <div class="metric-card muted">
+        <div class="metric-icon">👤</div>
+        <div class="metric-body">
+          <div class="metric-value">{{ dashboard.guestVisits | number }}</div>
+          <div class="metric-label">Guest Visits</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="chart-card" *ngIf="chartDays.length">
+      <h2 class="section-title">Daily Traffic (last {{ chartDays.length }} days)</h2>
+      <div class="bar-chart">
+        <div class="bar-group" *ngFor="let day of chartDays">
+          <div class="bars">
+            <div class="bar visits"   [style.height.%]="barHeight(day.visits)"
+                 [title]="day.date + ' — ' + day.visits + ' visits'"></div>
+            <div class="bar clicks"   [style.height.%]="barHeight(day.clicks)"
+                 [title]="day.date + ' — ' + day.clicks + ' clicks'"></div>
+          </div>
+          <div class="bar-label">{{ formatDate(day.date) }}</div>
+        </div>
+      </div>
+      <div class="chart-legend">
+        <span class="legend-dot visits"></span> Visits &nbsp;
+        <span class="legend-dot clicks"></span> Clicks
+      </div>
+    </div>
+
+    <!-- Top pages + Top events side by side -->
+    <div class="two-col">
+
+      <!-- Top pages -->
+      <div class="table-card">
+        <h2 class="section-title">📄 Top Pages</h2>
+        <div *ngIf="!dashboard.topPages.length" class="empty-msg">No data yet.</div>
+        <table *ngIf="dashboard.topPages.length" class="stat-table">
+          <thead>
+            <tr><th>Page</th><th>Views</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of dashboard.topPages; let i=index">
+              <td><span class="rank">{{ i+1 }}</span> {{ p.page }}</td>
+              <td class="count">{{ p.count | number }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Top click events -->
+      <div class="table-card">
+        <h2 class="section-title">🖱️ Top Click Events</h2>
+        <div *ngIf="!dashboard.topEvents.length" class="empty-msg">No data yet.</div>
+        <table *ngIf="dashboard.topEvents.length" class="stat-table">
+          <thead>
+            <tr><th>Event</th><th>Count</th></tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let e of dashboard.topEvents; let i=index">
+              <td><span class="rank">{{ i+1 }}</span> {{ e.eventName }}</td>
+              <td class="count">{{ e.count | number }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- Recent sessions -->
+    <div class="table-card full-width" *ngIf="dashboard.recentSessions.length">
+      <h2 class="section-title">🕒 Recent Sessions</h2>
+      <div class="sessions-scroll">
+        <table class="stat-table sessions-table">
+          <thead>
+            <tr>
+              <th>User</th>
+              <th>IP</th>
+              <th>First Page</th>
+              <th>Views</th>
+              <th>Last Seen</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of dashboard.recentSessions">
+              <td>
+                <span *ngIf="s.isLoggedIn" class="tag logged-in">🔐 {{ s.username || s.userId }}</span>
+                <span *ngIf="!s.isLoggedIn" class="tag guest">👤 Guest</span>
+              </td>
+              <td class="mono">{{ s.ipAddress }}</td>
+              <td>{{ s.firstPage }}</td>
+              <td class="count">{{ s.pageViews }}</td>
+              <td class="mono">{{ formatDateTime(s.lastSeen) }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

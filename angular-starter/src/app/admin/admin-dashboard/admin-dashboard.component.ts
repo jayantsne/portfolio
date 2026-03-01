@@ -123,6 +123,10 @@ export class AdminDashboardComponent implements OnInit {
     this.router.navigate(['/admin-deploy']);
   }
 
+  goToAnalytics(): void {
+    this.router.navigate(['/admin-analytics']);
+  }
+
   getProviderIcon(type: string): string {
     return type === 'local' ? '🖥️' : '☁️';
   }

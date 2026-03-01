@@ -22,6 +22,7 @@ import { AdminLoginComponent } from './admin/admin-login/admin-login.component';
 import { AdminDashboardComponent } from './admin/admin-dashboard/admin-dashboard.component';
 import { NotesComponent } from './notes/notes.component';
 import { DeploymentComponent } from './deployment/deployment.component';
+import { AnalyticsDashboardComponent } from './analytics-dashboard/analytics-dashboard.component';
 
 
 const routes: Routes = [
@@ -57,6 +58,8 @@ const routes: Routes = [
   { path: 'admin-dashboard', component: AdminDashboardComponent },
   // Deployment Manager — JWT ADMIN + localhost enforced at backend level
   { path: 'admin-deploy', component: DeploymentComponent },
+  // Analytics Dashboard — ADMIN only (guarded in component)
+  { path: 'admin-analytics', component: AnalyticsDashboardComponent },
 ]
 
 @NgModule({
