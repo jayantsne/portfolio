@@ -98,8 +98,6 @@ export class NotesComponent implements OnInit, OnDestroy {
     this.router.navigate(['/']);
   }
 
-  signInError: string | null = null;
-
   async signIn(): Promise<void> {
     this.signInError = null;
     try {
