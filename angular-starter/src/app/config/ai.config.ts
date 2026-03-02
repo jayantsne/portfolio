@@ -13,11 +13,15 @@
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1.  BACKEND ENDPOINT
-//     Switch between local dev and production by changing USE_LOCAL_BACKEND.
+//     In production the environment file sets apiUrl to the absolute VPS URL.
+//     In development the Angular proxy (proxy.conf.json) forwards /api to
+//     localhost:5000 and injects X-API-Key automatically.
 // ─────────────────────────────────────────────────────────────────────────────
+import { environment } from '../../environments/environment';
+
 export const AI_BACKEND = {
-  /** Set to true while running the ASP.NET backend on your machine */
-  USE_LOCAL_BACKEND: true,
+  /** true = use relative /api (dev proxy), false = use absolute production URL */
+  USE_LOCAL_BACKEND: !environment.production,
 
   // Relative path → Angular dev-server proxy forwards to localhost:5000 and adds X-API-Key
   LOCAL_URL:      '/api',

@@ -27,20 +27,27 @@ namespace AILearnAPI.Infrastructure.Repositories
             return count > 0;
         }
 
-        public async Task<string> GetNextUserIdAsync()
+        public Task<string> GetNextUserIdAsync()
         {
-            var count = await _collection.CountDocumentsAsync(_ => true);
-            return $"user_{count + 1}";
+            // Count-based IDs cause duplicates under concurrent registrations.
+            // Use a timestamp + 8-char guid fragment for guaranteed uniqueness.
+            var millis = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var suffix = Guid.NewGuid().ToString("N")[..8];
+            return Task.FromResult($"user_{millis}_{suffix}");
         }
 
         public async Task<Auth?> GetByEmailAsync(string email)
         {
-            return await _collection.Find(x => x.Email == email).FirstOrDefaultAsync();
+            // Always compare lowercase — email is stored lowercased at registration
+            var normalized = email.Trim().ToLowerInvariant();
+            return await _collection.Find(x => x.Email == normalized).FirstOrDefaultAsync();
         }
 
         public async Task<bool> EmailExistsAsync(string email)
         {
-            var count = await _collection.CountDocumentsAsync(x => x.Email == email);
+            // Normalize before checking so case-variants (User@X.com vs user@x.com) are caught
+            var normalized = email.Trim().ToLowerInvariant();
+            var count = await _collection.CountDocumentsAsync(x => x.Email == normalized);
             return count > 0;
         }
 

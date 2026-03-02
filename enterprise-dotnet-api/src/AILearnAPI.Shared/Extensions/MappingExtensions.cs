@@ -87,10 +87,12 @@ namespace AILearnAPI.Shared.Extensions
         {
             return new AuthDto
             {
-                userId = entity.UserId,
-                username = entity.Username,
+                userId          = entity.UserId,
+                username        = entity.Username,
+                email           = entity.Email,           // was missing
+                role            = entity.Role,            // was missing
                 isAuthenticated = entity.IsAuthenticated,
-                lastLogin = entity.LastLogin
+                lastLogin       = entity.LastLogin
             };
         }
 

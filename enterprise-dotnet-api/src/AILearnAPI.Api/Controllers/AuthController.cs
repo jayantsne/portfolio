@@ -49,7 +49,7 @@ namespace AILearnAPI.Api.Controllers
             try
             {
                 var result = await _authService.RegisterAsync(dto);
-                return Ok(result);
+                return StatusCode(201, result);   // 201 Created
             }
             catch (InvalidOperationException ex)
             {
@@ -58,7 +58,7 @@ namespace AILearnAPI.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error registering user");
-                return StatusCode(500, new { message = "Error registering user" });
+                return StatusCode(500, new { message = "Error registering user." });
             }
         }
 
@@ -71,14 +71,18 @@ namespace AILearnAPI.Api.Controllers
                 var result = await _authService.LoginAsync(dto);
                 return Ok(result);
             }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = ex.Message });      // 400 for missing input
+            }
             catch (UnauthorizedAccessException ex)
             {
-                return Unauthorized(new { message = ex.Message });
+                return Unauthorized(new { message = ex.Message });    // 401 for wrong credentials
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error logging in user");
-                return StatusCode(500, new { message = "Error logging in" });
+                return StatusCode(500, new { message = "Error logging in." });
             }
         }
 

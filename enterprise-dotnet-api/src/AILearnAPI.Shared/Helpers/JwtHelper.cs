@@ -29,6 +29,12 @@ namespace AILearnAPI.Shared.Helpers
                 new Claim(JwtRegisteredClaimNames.UniqueName, username),
                 new Claim(JwtRegisteredClaimNames.Email,      email),
                 new Claim(JwtRegisteredClaimNames.Jti,        Guid.NewGuid().ToString()),
+                // Explicit NameIdentifier so User.FindFirst(ClaimTypes.NameIdentifier) works
+                // alongside the standard Sub claim (ASP.NET Core auto-maps Sub → NameIdentifier
+                // but adding it explicitly avoids any middleware mapping differences)
+                new Claim(ClaimTypes.NameIdentifier, userId),
+                new Claim("userId",                  userId),    // convenient shortcut used in some controllers
+                new Claim("username",                username),  // convenient shortcut
                 // Role claim — recognised by ASP.NET Core's [Authorize(Roles="...")]
                 new Claim(ClaimTypes.Role, role),
             };

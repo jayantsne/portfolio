@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
-import { AI_BACKEND } from '../config/ai.config';
+import { environment } from '../../environments/environment';
 
 export interface AuthUser {
   userId:   string;
@@ -23,7 +23,7 @@ const TOKEN_KEY = 'auth_jwt';
 @Injectable({ providedIn: 'root' })
 export class CustomAuthService {
 
-  private readonly apiBase = AI_BACKEND.BASE_URL;
+  private readonly apiBase = environment.apiUrl;
 
   private _user = new BehaviorSubject<AuthUser | null>(this.loadFromStorage());
   /** Emits the current user or null when logged out. */

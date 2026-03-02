@@ -34,30 +34,40 @@ namespace AILearnAPI.Application.Services
 
         public async Task<LoginResponseDto> RegisterAsync(RegisterDto dto)
         {
-            // Validate email is provided
+            // ── Server-side input validation ─────────────────────────────────
             if (string.IsNullOrWhiteSpace(dto.email))
-                throw new InvalidOperationException("Email is required");
+                throw new InvalidOperationException("Email is required.");
 
-            // Check for duplicate email
-            if (await _authRepository.EmailExistsAsync(dto.email))
-                throw new InvalidOperationException("An account with this email already exists");
+            // Basic email format check (no external dependency needed)
+            var emailTrimmed = dto.email.Trim().ToLowerInvariant();
+            if (!emailTrimmed.Contains('@') || !emailTrimmed.Contains('.'))
+                throw new InvalidOperationException("Please enter a valid email address.");
 
-            // Optionally check username uniqueness
-            if (!string.IsNullOrWhiteSpace(dto.username) && await _authRepository.UsernameExistsAsync(dto.username))
-                throw new InvalidOperationException("Username already taken");
+            if (string.IsNullOrWhiteSpace(dto.password))
+                throw new InvalidOperationException("Password is required.");
+
+            if (dto.password.Length < 6)
+                throw new InvalidOperationException("Password must be at least 6 characters.");
+
+            // ── Duplicate checks (always use normalized email) ────────────────
+            if (await _authRepository.EmailExistsAsync(emailTrimmed))
+                throw new InvalidOperationException("An account with this email already exists.");
+
+            if (!string.IsNullOrWhiteSpace(dto.username) && await _authRepository.UsernameExistsAsync(dto.username.Trim()))
+                throw new InvalidOperationException("Username already taken.");
 
             var userCount      = await _authRepository.CountUsersAsync();
             // First user ever registered becomes ADMIN automatically
             var role           = userCount == 0 ? UserRoles.Admin : UserRoles.User;
             var userId         = await _authRepository.GetNextUserIdAsync();
             var hashedPassword = PasswordHelper.HashPassword(dto.password);
-            var displayName    = string.IsNullOrWhiteSpace(dto.username) ? dto.email.Split('@')[0] : dto.username;
+            var displayName    = string.IsNullOrWhiteSpace(dto.username) ? emailTrimmed.Split('@')[0] : dto.username.Trim();
 
             var auth = new Auth
             {
                 UserId          = userId,
                 Username        = displayName,
-                Email           = dto.email.ToLowerInvariant(),
+                Email           = emailTrimmed,      // always lowercase
                 Password        = hashedPassword,
                 Role            = role,
                 IsAuthenticated = true,
@@ -65,7 +75,7 @@ namespace AILearnAPI.Application.Services
             };
 
             await _authRepository.CreateAsync(auth);
-            _logger.LogInformation("Registered new user {Email} with ID {UserId} and role {Role}", dto.email, userId, role);
+            _logger.LogInformation("Registered new user {Email} with ID {UserId} and role {Role}", emailTrimmed, userId, role);
 
             var token = BuildToken(userId, displayName, auth.Email, role);
             return new LoginResponseDto
@@ -81,18 +91,26 @@ namespace AILearnAPI.Application.Services
 
         public async Task<LoginResponseDto> LoginAsync(LoginDto dto)
         {
-            // Look up by email
-            var auth = await _authRepository.GetByEmailAsync(dto.email.ToLowerInvariant());
+            // ── Server-side validation ────────────────────────────────────────
+            if (string.IsNullOrWhiteSpace(dto.email))
+                throw new ArgumentException("Email is required.");
+
+            if (string.IsNullOrWhiteSpace(dto.password))
+                throw new ArgumentException("Password is required.");
+
+            // Look up by normalized email
+            var emailNormalized = dto.email.Trim().ToLowerInvariant();
+            var auth = await _authRepository.GetByEmailAsync(emailNormalized);
 
             if (auth == null)
-                throw new UnauthorizedAccessException("Invalid email or password");
+                throw new UnauthorizedAccessException("Invalid email or password.");
 
             // Verify password using BCrypt
             if (!PasswordHelper.VerifyPassword(dto.password, auth.Password))
-                throw new UnauthorizedAccessException("Invalid email or password");
+                throw new UnauthorizedAccessException("Invalid email or password.");
 
             await _authRepository.UpdateAuthenticationStatusAsync(auth.UserId, true);
-            _logger.LogInformation("User {Email} logged in successfully", dto.email);
+            _logger.LogInformation("User {Email} logged in successfully", emailNormalized);
 
             var token = BuildToken(auth.UserId, auth.Username, auth.Email, auth.Role);
             return new LoginResponseDto
