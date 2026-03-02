@@ -8802,3 +8802,299 @@ app-questions-list .question-tags .tag {
   .questions-page.split-mode { padding-right: 0 !important; }
 }
 
+
+/* ========================================================================
+   VISUAL FLOW ANIMATION MODE
+   ======================================================================== */
+
+/* Flow toggle button in panel header */
+.split-flow-btn {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.split-flow-btn.active {
+  background: rgba(251,191,36,0.35);
+  border-color: rgba(251,191,36,0.6);
+  color: #fef3c7;
+}
+.split-flow-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* Flow container */
+.split-flow-container { display: flex; flex-direction: column; padding: 4px 0; }
+
+/* === Loading state === */
+.split-flow-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 36px 16px;
+  color: #6366f1;
+}
+.flow-loading-pulse {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  animation: flow-pulse 1.5s ease-in-out infinite;
+}
+@keyframes flow-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.18); opacity: 0.65; }
+}
+.flow-loading-bars {
+  display: flex;
+  gap: 5px;
+  align-items: flex-end;
+  height: 30px;
+}
+.flow-loading-bars span {
+  width: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to top, #6366f1, #c4b5fd);
+  animation: flow-bar 1.2s ease-in-out infinite;
+}
+.flow-loading-bars span:nth-child(1) { height: 55%; animation-delay: 0s; }
+.flow-loading-bars span:nth-child(2) { height: 100%; animation-delay: 0.1s; }
+.flow-loading-bars span:nth-child(3) { height: 45%; animation-delay: 0.2s; }
+.flow-loading-bars span:nth-child(4) { height: 80%; animation-delay: 0.3s; }
+.flow-loading-bars span:nth-child(5) { height: 55%; animation-delay: 0.4s; }
+@keyframes flow-bar {
+  0%, 100% { transform: scaleY(1); }
+  50%       { transform: scaleY(0.45); }
+}
+.split-flow-loading p { font-size: 0.85rem; font-weight: 600; color: #6366f1; margin: 0; }
+
+/* === Error state === */
+.split-flow-error-msg {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 20px; text-align: center;
+  color: #dc2626; font-size: 0.85rem;
+}
+
+/* === Diagram === */
+.split-flow-diagram { padding: 2px 0; }
+.flow-title-section { text-align: center; margin-bottom: 14px; padding: 0 4px; }
+.flow-title { font-size: 0.98rem; font-weight: 700; color: #4338ca; margin: 0 0 4px; }
+.flow-subtitle { font-size: 0.76rem; color: #64748b; margin: 0; line-height: 1.4; }
+
+/* === Steps list === */
+.flow-steps-list { display: flex; flex-direction: column; }
+
+/* Step card base */
+.flow-step-card {
+  border-radius: 12px;
+  padding: 11px 13px;
+  border-left: 4px solid;
+  opacity: 0;
+  transform: translateX(-18px);
+  animation: flow-step-in 0.4s ease-out forwards;
+}
+@keyframes flow-step-in {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Step color palette - 6 cycles */
+.flow-step-color-0 { background: linear-gradient(135deg,#fef3c7,#fde68a); border-color:#f59e0b; }
+.flow-step-color-1 { background: linear-gradient(135deg,#ede9fe,#ddd6fe); border-color:#8b5cf6; }
+.flow-step-color-2 { background: linear-gradient(135deg,#d1fae5,#a7f3d0); border-color:#10b981; }
+.flow-step-color-3 { background: linear-gradient(135deg,#dbeafe,#bfdbfe); border-color:#3b82f6; }
+.flow-step-color-4 { background: linear-gradient(135deg,#fce7f3,#fbcfe8); border-color:#ec4899; }
+.flow-step-color-5 { background: linear-gradient(135deg,#e0f2fe,#bae6fd); border-color:#0ea5e9; }
+
+/* Step internals */
+.flow-step-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+}
+.flow-step-number {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(0,0,0,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.67rem; font-weight: 800; flex-shrink: 0; color: rgba(0,0,0,0.5);
+}
+.flow-step-icon  { font-size: 1.25rem; line-height: 1; }
+.flow-step-title { font-size: 0.87rem; font-weight: 700; color: #1e293b; }
+.flow-step-desc  { font-size: 0.79rem; color: #334155; line-height: 1.5; margin: 0; }
+
+/* === Connector === */
+.flow-connector {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 3px 0; gap: 2px;
+}
+.flow-connector-arrow {
+  font-size: 1.15rem; color: #8b5cf6; line-height: 1;
+  animation: flow-arrow-bounce 1.8s ease-in-out infinite;
+}
+@keyframes flow-arrow-bounce {
+  0%, 100% { transform: translateY(0);  opacity: 0.65; }
+  50%       { transform: translateY(4px); opacity: 1; }
+}
+.flow-connector-label {
+  font-size: 0.63rem; font-weight: 600; color: #8b5cf6;
+  background: rgba(139,92,246,0.1); padding: 1px 7px;
+  border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* === Back to text button === */
+.flow-back-hint { text-align: center; padding: 10px 0 4px; }
+.flow-back-btn {
+  background: none; border: 1px solid rgba(99,102,241,0.3);
+  color: #6366f1; font-size: 0.76rem; font-weight: 600;
+  padding: 5px 12px; border-radius: 8px; cursor: pointer;
+  transition: all 0.2s;
+}
+.flow-back-btn:hover { background: rgba(99,102,241,0.08); }
+
+/* ========================================================================
+   VISUAL FLOW ANIMATION MODE
+   ======================================================================== */
+
+/* Flow toggle button in panel header */
+.split-flow-btn {
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.8);
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.split-flow-btn.active {
+  background: rgba(251,191,36,0.35);
+  border-color: rgba(251,191,36,0.6);
+  color: #fef3c7;
+}
+.split-flow-btn:hover { background: rgba(255,255,255,0.25); }
+
+/* Flow container */
+.split-flow-container { display: flex; flex-direction: column; padding: 4px 0; }
+
+/* === Loading state === */
+.split-flow-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 36px 16px;
+  color: #6366f1;
+}
+.flow-loading-pulse {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  animation: flow-pulse 1.5s ease-in-out infinite;
+}
+@keyframes flow-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.18); opacity: 0.65; }
+}
+.flow-loading-bars {
+  display: flex;
+  gap: 5px;
+  align-items: flex-end;
+  height: 30px;
+}
+.flow-loading-bars span {
+  width: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to top, #6366f1, #c4b5fd);
+  animation: flow-bar 1.2s ease-in-out infinite;
+}
+.flow-loading-bars span:nth-child(1) { height: 55%; animation-delay: 0s; }
+.flow-loading-bars span:nth-child(2) { height: 100%; animation-delay: 0.1s; }
+.flow-loading-bars span:nth-child(3) { height: 45%; animation-delay: 0.2s; }
+.flow-loading-bars span:nth-child(4) { height: 80%; animation-delay: 0.3s; }
+.flow-loading-bars span:nth-child(5) { height: 55%; animation-delay: 0.4s; }
+@keyframes flow-bar {
+  0%, 100% { transform: scaleY(1); }
+  50%       { transform: scaleY(0.45); }
+}
+.split-flow-loading p { font-size: 0.85rem; font-weight: 600; color: #6366f1; margin: 0; }
+
+/* === Error state === */
+.split-flow-error-msg {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 10px; padding: 20px; text-align: center;
+  color: #dc2626; font-size: 0.85rem;
+}
+
+/* === Diagram === */
+.split-flow-diagram { padding: 2px 0; }
+.flow-title-section { text-align: center; margin-bottom: 14px; padding: 0 4px; }
+.flow-title { font-size: 0.98rem; font-weight: 700; color: #4338ca; margin: 0 0 4px; }
+.flow-subtitle { font-size: 0.76rem; color: #64748b; margin: 0; line-height: 1.4; }
+
+/* === Steps list === */
+.flow-steps-list { display: flex; flex-direction: column; }
+
+/* Step card base */
+.flow-step-card {
+  border-radius: 12px;
+  padding: 11px 13px;
+  border-left: 4px solid;
+  opacity: 0;
+  transform: translateX(-18px);
+  animation: flow-step-in 0.4s ease-out forwards;
+}
+@keyframes flow-step-in {
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Step color palette - 6 cycles */
+.flow-step-color-0 { background: linear-gradient(135deg,#fef3c7,#fde68a); border-color:#f59e0b; }
+.flow-step-color-1 { background: linear-gradient(135deg,#ede9fe,#ddd6fe); border-color:#8b5cf6; }
+.flow-step-color-2 { background: linear-gradient(135deg,#d1fae5,#a7f3d0); border-color:#10b981; }
+.flow-step-color-3 { background: linear-gradient(135deg,#dbeafe,#bfdbfe); border-color:#3b82f6; }
+.flow-step-color-4 { background: linear-gradient(135deg,#fce7f3,#fbcfe8); border-color:#ec4899; }
+.flow-step-color-5 { background: linear-gradient(135deg,#e0f2fe,#bae6fd); border-color:#0ea5e9; }
+
+/* Step internals */
+.flow-step-header {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 5px;
+}
+.flow-step-number {
+  width: 20px; height: 20px; border-radius: 50%;
+  background: rgba(0,0,0,0.1);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.67rem; font-weight: 800; flex-shrink: 0; color: rgba(0,0,0,0.5);
+}
+.flow-step-icon  { font-size: 1.25rem; line-height: 1; }
+.flow-step-title { font-size: 0.87rem; font-weight: 700; color: #1e293b; }
+.flow-step-desc  { font-size: 0.79rem; color: #334155; line-height: 1.5; margin: 0; }
+
+/* === Connector === */
+.flow-connector {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 3px 0; gap: 2px;
+}
+.flow-connector-arrow {
+  font-size: 1.15rem; color: #8b5cf6; line-height: 1;
+  animation: flow-arrow-bounce 1.8s ease-in-out infinite;
+}
+@keyframes flow-arrow-bounce {
+  0%, 100% { transform: translateY(0);  opacity: 0.65; }
+  50%       { transform: translateY(4px); opacity: 1; }
+}
+.flow-connector-label {
+  font-size: 0.63rem; font-weight: 600; color: #8b5cf6;
+  background: rgba(139,92,246,0.1); padding: 1px 7px;
+  border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* === Back to text button === */
+.flow-back-hint { text-align: center; padding: 10px 0 4px; }
+.flow-back-btn {
+  background: none; border: 1px solid rgba(99,102,241,0.3);
+  color: #6366f1; font-size: 0.76rem; font-weight: 600;
+  padding: 5px 12px; border-radius: 8px; cursor: pointer;
+  transition: all 0.2s;
+}
+.flow-back-btn:hover { background: rgba(99,102,241,0.08); }

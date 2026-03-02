@@ -11,6 +11,19 @@ import { InterviewQuestionsService, QuestionPromptsResponse, QuestionPrompt } fr
 import { NotesService, SavedNote } from '../../shared/notes.service';
 import { CustomAuthService } from '../../shared/custom-auth.service';
 
+// ── Visual Flow Animation types ───────────────────────────────────────────────
+interface FlowStep {
+  icon: string;
+  title: string;
+  description: string;
+  connectorLabel?: string;
+}
+interface FlowDiagram {
+  title: string;
+  subtitle?: string;
+  steps: FlowStep[];
+}
+
 @Component({
   selector: 'app-questions-list',
   templateUrl: './questions-list.component.html',
@@ -207,6 +220,26 @@ export class QuestionsListComponent implements OnInit, OnDestroy {
   splitDuplicateDialogMode: 'exact' | 'similar' | null = null;
   splitDuplicateMatchedNote: SavedNote | null = null;
   private splitPendingSaveContent = '';
+
+  // Visual Flow Animation state
+  splitFlowMode = false;
+  splitIsFlowConcept = false;
+  splitFlowDiagram: FlowDiagram | null = null;
+  splitIsLoadingFlow = false;
+  splitFlowError = false;
+
+  private readonly flowKeywords = [
+    'lifecycle', 'life cycle', 'life-cycle', 'how does', 'how it works',
+    'how does it work', 'what happens when', 'when you', 'when a',
+    'steps', 'stages', 'phases', 'flow', 'pipeline', 'process', 'cycle',
+    'sequence', 'request', 'response', 'authentication', 'authorization',
+    'login flow', 'routing', 'navigation', 'change detection', 'interceptor',
+    'middleware', 'rendering', 'bootstrapping', 'bootstrap', 'startup',
+    'event loop', 'http request', 'dependency injection', 'compilation',
+    'data flow', 'component communication', 'digest', 'zone.js',
+    'order of', 'interaction', 'aot', 'jit', 'handshake',
+    'client-server', 'workflow', 'observable pipeline', 'three-way',
+  ];
 
   constructor(
     private aiLearnService: AILearnService,
@@ -1967,6 +2000,12 @@ Make every word count. Make it unforgettable!`;
     this.splitDuplicateDialogMode = null;
     this.splitDuplicateMatchedNote = null;
     this.splitPendingSaveContent = '';
+    // Flow diagram reset
+    this.splitFlowMode = false;
+    this.splitFlowDiagram = null;
+    this.splitIsLoadingFlow = false;
+    this.splitFlowError = false;
+    this.splitIsFlowConcept = this.detectFlowConcept(question.question);
     this.showSplitScreen = true;
     // Scroll to top of question list so mentor panel is visible
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1983,6 +2022,10 @@ Make every word count. Make it unforgettable!`;
     this.splitIsStreaming = false;
     this.splitFollowUpHistory = [];
     this.splitDuplicateDialogMode = null;
+    this.splitFlowMode = false;
+    this.splitIsFlowConcept = false;
+    this.splitFlowDiagram = null;
+    this.splitIsLoadingFlow = false;
     if (this.splitNoteSavedTimer) clearTimeout(this.splitNoteSavedTimer);
   }
 
@@ -2144,5 +2187,93 @@ Please answer concisely and clearly.`;
 
   navigateToNotes(): void {
     this.router.navigate(['/notes']);
+  }
+
+  // ========================================================================
+  // VISUAL FLOW ANIMATION MODE
+  // ========================================================================
+
+  /** Returns true when the question text contains flow/process keywords */
+  detectFlowConcept(question: string): boolean {
+    const q = (question || '').toLowerCase();
+    return this.flowKeywords.some(kw => q.includes(kw));
+  }
+
+  /** Toggle between text explanation and flow diagram */
+  toggleSplitFlowMode(): void {
+    if (this.splitFlowMode) {
+      this.splitFlowMode = false;
+      return;
+    }
+    if (this.splitFlowDiagram) {
+      // Already generated — just switch view
+      this.splitFlowMode = true;
+    } else {
+      this.generateSplitFlowDiagram();
+    }
+  }
+
+  /** Ask the AI to produce a JSON flow diagram and parse it */
+  generateSplitFlowDiagram(): void {
+    if (!this.splitQuestion) return;
+    this.splitIsLoadingFlow = true;
+    this.splitFlowError = false;
+    this.splitFlowMode = true;           // switch to flow view immediately (show loader)
+    this.splitFlowDiagram = null;
+    this.cdr.detectChanges();
+
+    const prompt =
+`You are a technical educator. Break down the following concept into a visual step-by-step flow.
+
+Concept: "${this.splitQuestion.question}"
+
+Respond with ONLY valid JSON — no markdown fences, no extra text. Schema:
+{
+  "title": "Short title (max 5 words)",
+  "subtitle": "One sentence describing this flow",
+  "steps": [
+    {
+      "icon": "single emoji",
+      "title": "Step name (2-4 words)",
+      "description": "What happens here (max 18 words)",
+      "connectorLabel": "optional transition word (e.g. triggers, returns, sends)"
+    }
+  ]
+}
+
+Rules:
+- 4 to 7 steps total
+- Each icon must be a single relevant emoji
+- connectorLabel is optional — only include when it adds clarity
+- Keep descriptions short, concrete, and jargon-free
+- Output ONLY the JSON object, nothing else`;
+
+    this.aiLearnService.getSimplifiedExplanation(prompt).subscribe({
+      next: (response) => {
+        this.splitIsLoadingFlow = false;
+        if (response.success && response.explanation) {
+          try {
+            const raw = response.explanation.trim();
+            // Extract JSON even if wrapped in stray text
+            const match = raw.match(/\{[\s\S]*\}/);
+            if (!match) throw new Error('No JSON found');
+            const parsed: FlowDiagram = JSON.parse(match[0]);
+            if (!parsed.steps || parsed.steps.length < 2) throw new Error('Too few steps');
+            this.splitFlowDiagram = parsed;
+          } catch (e) {
+            console.error('Flow parse error:', e);
+            this.splitFlowError = true;
+          }
+        } else {
+          this.splitFlowError = true;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.splitIsLoadingFlow = false;
+        this.splitFlowError = true;
+        this.cdr.detectChanges();
+      }
+    });
   }
 }

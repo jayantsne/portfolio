@@ -579,6 +579,7 @@
       <div class="split-header-actions">
         <button class="split-model-btn" [class.active]="selectedModel === 'qwen'" (click)="setModel('qwen')" title="Fast Technical">⚡ Fast</button>
         <button class="split-model-btn" [class.active]="selectedModel === 'llama'" (click)="setModel('llama')" title="Tutor Style">🦙 Tutor</button>
+        <button class="split-flow-btn" *ngIf="splitIsFlowConcept" [class.active]="splitFlowMode" (click)="toggleSplitFlowMode()" title="Toggle Visual Flow Diagram">🎦 Flow</button>
         <button class="split-close-btn" (click)="closeSplitScreen()" title="Close (Esc)">✕</button>
       </div>
     </div>
@@ -602,25 +603,76 @@
       </div>
 
       <!-- Loading / streaming indicator -->
-      <div class="split-thinking" *ngIf="splitIsStreaming && !splitStreamingText">
+      <div class="split-thinking" *ngIf="splitIsStreaming && !splitStreamingText && !splitFlowMode">
         <div class="split-thinking-dots"><span></span><span></span><span></span></div>
         <span>AI is thinking...</span>
       </div>
 
       <!-- Streaming live text -->
-      <div class="split-streaming" *ngIf="splitStreamingText && splitIsStreaming">
+      <div class="split-streaming" *ngIf="splitStreamingText && splitIsStreaming && !splitFlowMode">
         <div class="split-streaming-body md-content" [innerHTML]="splitStreamingText | markdown"></div>
         <span class="split-streaming-cursor">▋</span>
       </div>
 
       <!-- Completed explanation -->
-      <div class="split-explanation md-content" *ngIf="splitAiExplanation && !splitIsStreaming" [innerHTML]="splitAiExplanation | markdown" @fadeIn></div>
+      <div class="split-explanation md-content" *ngIf="splitAiExplanation && !splitIsStreaming && !splitFlowMode" [innerHTML]="splitAiExplanation | markdown" @fadeIn></div>
 
       <!-- Error state -->
-      <div class="split-error" *ngIf="splitAiError && !splitIsStreaming">
+      <div class="split-error" *ngIf="splitAiError && !splitIsStreaming && !splitFlowMode">
         <span>⚠️ Could not connect to AI. Check your internet or try again.</span>
         <button class="split-retry-btn" (click)="regenerateSplitAnswer()">Retry ↺</button>
       </div>
+
+      <!-- ============================================================
+           VISUAL FLOW ANIMATION MODE
+           ============================================================ -->
+      <div class="split-flow-container" *ngIf="splitFlowMode" @fadeIn>
+
+        <!-- Loading -->
+        <div class="split-flow-loading" *ngIf="splitIsLoadingFlow">
+          <div class="flow-loading-pulse"></div>
+          <div class="flow-loading-bars">
+            <span></span><span></span><span></span><span></span><span></span>
+          </div>
+          <p>Building visual flow…</p>
+        </div>
+
+        <!-- Flow generation error -->
+        <div class="split-flow-error-msg" *ngIf="splitFlowError && !splitIsLoadingFlow">
+          <span>⚠️ Couldn’t generate flow diagram</span>
+          <button class="split-retry-btn" (click)="generateSplitFlowDiagram()">Retry ↺</button>
+        </div>
+
+        <!-- Diagram -->
+        <div class="split-flow-diagram" *ngIf="splitFlowDiagram && !splitIsLoadingFlow && !splitFlowError">
+          <div class="flow-title-section">
+            <h3 class="flow-title">{{ splitFlowDiagram.title }}</h3>
+            <p class="flow-subtitle" *ngIf="splitFlowDiagram.subtitle">{{ splitFlowDiagram.subtitle }}</p>
+          </div>
+          <div class="flow-steps-list">
+            <ng-container *ngFor="let step of splitFlowDiagram.steps; let i = index; let last = last">
+              <div class="flow-step-card" [class]="'flow-step-color-' + (i % 6)" [style.animation-delay]="(i * 0.13) + 's'">
+                <div class="flow-step-header">
+                  <span class="flow-step-number">{{ i + 1 }}</span>
+                  <span class="flow-step-icon">{{ step.icon }}</span>
+                  <strong class="flow-step-title">{{ step.title }}</strong>
+                </div>
+                <p class="flow-step-desc">{{ step.description }}</p>
+              </div>
+              <div class="flow-connector" *ngIf="!last">
+                <span class="flow-connector-arrow">↓</span>
+                <span class="flow-connector-label" *ngIf="step.connectorLabel">{{ step.connectorLabel }}</span>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- Back-to-text link -->
+        <div class="flow-back-hint" *ngIf="!splitIsLoadingFlow">
+          <button class="flow-back-btn" (click)="toggleSplitFlowMode()">← Back to Text</button>
+        </div>
+
+      </div><!-- end split-flow-container -->
     </div>
 
     <!-- Footer -->
