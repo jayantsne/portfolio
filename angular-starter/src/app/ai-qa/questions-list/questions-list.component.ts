@@ -2019,7 +2019,7 @@ Question: ${prompt}`;
             this.cdr.detectChanges();
           } else {
             // Streaming complete
-            const raw = this.stripLeadingTitle(this.cleanMarkdownCodeFences(this.splitStreamingText));
+            const raw = this.stripLeadingTitle(this.cleanMarkdownCodeFences(this.splitStreamingText), this.splitQuestion?.question || '');
             this.splitAiExplanation = raw;
             this.splitStreamingText = '';
             this.splitIsStreaming = false;

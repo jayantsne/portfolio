@@ -556,7 +556,7 @@
         <p class="split-dup-msg">
           {{ splitDuplicateDialogMode === 'exact' ? 
             'An identical note already exists.' : 
-            'A similar note "' + splitDuplicateMatchedNote?.title + '" exists.' }}
+            'A similar note "' + splitDuplicateMatchedNote?.topic + '" exists.' }}
         </p>
         <div class="split-dup-actions">
           <button class="split-dup-btn update" (click)="onSplitDuplicateUpdate()">✏️ Update Existing</button>
