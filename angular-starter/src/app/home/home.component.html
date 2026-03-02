@@ -162,6 +162,58 @@
   <aside class="mentor-panel" *ngIf="showModal">
     <!-- Bottom-sheet drag handle (mobile only, hidden on tablet/desktop) -->
     <div class="sheet-handle"></div>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         Duplicate-Detection Dialog Overlay
+         Shown instead of the panel body when a duplicate is detected.
+    ═══════════════════════════════════════════════════════════════ -->
+    <div class="dup-overlay" *ngIf="duplicateDialogMode">
+
+      <!-- ── EXACT DUPLICATE ── -->
+      <div class="dup-card" *ngIf="duplicateDialogMode === 'exact'">
+        <div class="dup-icon">📌</div>
+        <h3 class="dup-title">Already Saved</h3>
+        <p class="dup-body">
+          This note is already saved under<br>
+          <strong>"{{ duplicateMatchedNote?.topic }}"</strong>.
+        </p>
+        <div class="dup-actions">
+          <button class="dup-btn dup-btn-primary" (click)="onDuplicateViewNote()">
+            📂 View Note
+          </button>
+          <button class="dup-btn dup-btn-ghost" (click)="onDuplicateCancel()">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+      <!-- ── SIMILAR / RELATED TOPIC ── -->
+      <div class="dup-card" *ngIf="duplicateDialogMode === 'similar'">
+        <div class="dup-icon">🔍</div>
+        <h3 class="dup-title">Related Note Found</h3>
+        <p class="dup-body">
+          A related note already exists:<br>
+          <strong>"{{ duplicateMatchedNote?.topic }}"</strong><br>
+          What would you like to do?
+        </p>
+        <div class="dup-actions dup-actions-col">
+          <button class="dup-btn dup-btn-primary" (click)="onDuplicateMerge()">
+            🔗 Merge with existing note
+          </button>
+          <button class="dup-btn dup-btn-secondary" (click)="onDuplicateSaveNew()">
+            ➕ Save as new note
+          </button>
+          <button class="dup-btn dup-btn-secondary" (click)="onDuplicateUpdate()">
+            ✏️ Update existing note
+          </button>
+          <button class="dup-btn dup-btn-ghost" (click)="onDuplicateCancel()">
+            Cancel
+          </button>
+        </div>
+      </div>
+
+    </div><!-- end dup-overlay -->
+
     <!-- Mentor Header -->
     <div class="mentor-header">
       <div class="mentor-title-row">
@@ -230,8 +282,8 @@
 
     <!-- Mentor Footer: question input always visible at bottom -->
     <div class="mentor-footer">
-      <!-- Save to Notes bar (shown when AI has answered + user is signed in) -->
-      <div class="save-note-bar" *ngIf="(aiExplanation || streamingText) && customAuth.isLoggedIn">
+      <!-- Save to Notes bar (shown only when AI has fully finished + user is signed in) -->
+      <div class="save-note-bar" *ngIf="aiExplanation && !isLoadingAI && !streamingText && customAuth.isLoggedIn">
         <button class="save-note-btn"
                 [class.saved]="noteSaved"
                 [disabled]="isSavingNote || noteSaved"
@@ -241,8 +293,8 @@
           <span *ngIf="noteSaved">✅ Saved!</span>
         </button>
       </div>
-      <!-- Sign-in nudge when logged out and there's an answer -->
-      <div class="save-note-nudge" *ngIf="(aiExplanation || streamingText) && !customAuth.isLoggedIn">
+      <!-- Sign-in nudge when logged out and there's a completed answer -->
+      <div class="save-note-nudge" *ngIf="aiExplanation && !isLoadingAI && !streamingText && !customAuth.isLoggedIn">
         <span class="nudge-text">💡 Sign in to save this explanation to your notes</span>
       </div>
       <div class="mentor-input-row">

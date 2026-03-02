@@ -74,6 +74,26 @@ namespace AILearnAPI.Api.Controllers
             return NoContent();
         }
 
+        // PUT /api/notes/{id}
+        /// <summary>Replaces the content of an existing note — only if it belongs to the authenticated user.</summary>
+        [HttpPut("{id}")]
+        public async Task<ActionResult<NoteDto>> Update(string id, [FromBody] UpdateNoteDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.content))
+                return BadRequest(new { message = "content is required" });
+
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token missing userId claim" });
+
+            var updated = await _svc.UpdateAsync(userId, id, dto.content);
+            if (updated == null)
+                return NotFound(new { message = "Note not found or not owned by you" });
+
+            _logger.LogInformation("Note {NoteId} updated by user {UserId}", id, userId);
+            return Ok(updated);
+        }
+
         // ── helpers ─────────────────────────────────────────────────────────
         private string GetUserId() =>
             User.FindFirstValue(JwtRegisteredClaimNames.Sub)

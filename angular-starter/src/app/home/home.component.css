@@ -2843,6 +2843,7 @@ html {
 /* ── RIGHT PANEL: Mentor Panel ── */
 .mentor-panel {
   flex: 1;
+  position: relative;            /* ← anchor for .dup-overlay */
   background: #f8fafc;
   display: flex;
   flex-direction: column;
@@ -3314,4 +3315,131 @@ html {
     padding: 0.6rem 1rem;
     font-size: 0.85rem;
   }
+}
+/* ══════════════════════════════════════════════════════════════
+   DUPLICATE-DETECTION DIALOG OVERLAY
+   ══════════════════════════════════════════════════════════════ */
+
+/* Full-panel frosted overlay that sits on top of the mentor body */
+.dup-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: rgba(15, 20, 40, 0.78);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: dupFadeIn 0.18s ease;
+}
+
+@keyframes dupFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+/* Card containing the dialog content */
+.dup-card {
+  background: #1a2035;
+  border: 1px solid rgba(99, 179, 237, 0.25);
+  border-radius: 14px;
+  padding: 1.75rem 1.5rem;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+}
+
+.dup-icon {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.dup-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: #e2e8f0;
+  margin: 0;
+}
+
+.dup-body {
+  font-size: 0.875rem;
+  color: #94a3b8;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.dup-body strong {
+  color: #63b3ed;
+}
+
+/* Button group — horizontal for exact, vertical for similar */
+.dup-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 0.6rem;
+  width: 100%;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+
+.dup-actions-col {
+  flex-direction: column;
+}
+
+/* Base button */
+.dup-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: filter 0.15s, transform 0.1s;
+  width: 100%;
+}
+
+.dup-btn:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+.dup-btn:active {
+  transform: translateY(0);
+}
+
+/* Primary action (blue) */
+.dup-btn-primary {
+  background: linear-gradient(135deg, #3182ce, #63b3ed);
+  color: #fff;
+}
+
+/* Secondary action (subtle purple) */
+.dup-btn-secondary {
+  background: rgba(99, 102, 241, 0.18);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
+}
+
+/* Ghost / cancel */
+.dup-btn-ghost {
+  background: transparent;
+  color: #64748b;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.dup-btn-ghost:hover {
+  background: rgba(100, 116, 139, 0.12);
+  filter: none;
 }

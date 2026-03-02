@@ -1,7 +1,8 @@
 import { Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
 import { AILearnService } from '../services/ai-learn.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
-import { NotesService } from '../shared/notes.service';
+import { NotesService, SavedNote } from '../shared/notes.service';
 
 interface ConceptStep {
   title: string;
@@ -77,10 +78,16 @@ export class HomeComponent implements OnInit {
   noteSaved = false;
   private noteSavedTimer: any;
 
+  // Duplicate-detection dialog state
+  duplicateDialogMode: 'exact' | 'similar' | null = null;
+  duplicateMatchedNote: SavedNote | null = null;
+  private pendingSaveContent: string = '';
+
   constructor(
     private aiLearnService: AILearnService,
     public customAuth: CustomAuthService,
-    private notesService: NotesService
+    private notesService: NotesService,
+    private router: Router
   ) {}
 
   // Input properties (for compatibility with main-portfolio component)
@@ -442,6 +449,86 @@ const pool = new ThreadPool(4);`,
     const content = this.aiExplanation?.explanation || this.streamingText;
     if (!content || !this.currentTopicName) return;
 
+    // ── Duplicate detection ───────────────────────────────────────────────
+    const exact = this.notesService.findExactDuplicate(this.currentTopicName, content);
+    if (exact) {
+      this.duplicateMatchedNote  = exact;
+      this.duplicateDialogMode   = 'exact';
+      this.pendingSaveContent    = content;
+      return;
+    }
+
+    const similar = this.notesService.findSimilarNotes(this.currentTopicName);
+    if (similar.length > 0) {
+      this.duplicateMatchedNote  = similar[0]; // surface the closest match
+      this.duplicateDialogMode   = 'similar';
+      this.pendingSaveContent    = content;
+      return;
+    }
+    // ─────────────────────────────────────────────────────────────────────
+
+    await this.performSave(content);
+  }
+
+  /** Called when user chooses "Save as new note" from the similar-note dialog */
+  async onDuplicateSaveNew(): Promise<void> {
+    this.closeDuplicateDialog();
+    await this.performSave(this.pendingSaveContent);
+  }
+
+  /** Called when user chooses "Update existing note" from the similar-note dialog */
+  async onDuplicateUpdate(): Promise<void> {
+    if (!this.duplicateMatchedNote?.id) return;
+    const id = this.duplicateMatchedNote.id;
+    this.closeDuplicateDialog();
+    this.isSavingNote = true;
+    try {
+      await this.notesService.updateNote(id, this.pendingSaveContent);
+      this.noteSaved = true;
+      clearTimeout(this.noteSavedTimer);
+      this.noteSavedTimer = setTimeout(() => { this.noteSaved = false; }, 4000);
+    } catch (e) {
+      console.error('[updateNote]', e);
+    } finally {
+      this.isSavingNote = false;
+    }
+  }
+
+  /** Called when user chooses "Merge with existing note" from the similar-note dialog */
+  async onDuplicateMerge(): Promise<void> {
+    if (!this.duplicateMatchedNote?.id) return;
+    const id = this.duplicateMatchedNote.id;
+    this.closeDuplicateDialog();
+    this.isSavingNote = true;
+    try {
+      await this.notesService.mergeNote(id, this.pendingSaveContent);
+      this.noteSaved = true;
+      clearTimeout(this.noteSavedTimer);
+      this.noteSavedTimer = setTimeout(() => { this.noteSaved = false; }, 4000);
+    } catch (e) {
+      console.error('[mergeNote]', e);
+    } finally {
+      this.isSavingNote = false;
+    }
+  }
+
+  /** Navigate to the Notes page to view the matched note */
+  onDuplicateViewNote(): void {
+    this.closeDuplicateDialog();
+    this.router.navigate(['/notes']);
+  }
+
+  onDuplicateCancel(): void {
+    this.closeDuplicateDialog();
+  }
+
+  private closeDuplicateDialog(): void {
+    this.duplicateDialogMode  = null;
+    this.duplicateMatchedNote = null;
+    this.pendingSaveContent   = '';
+  }
+
+  private async performSave(content: string): Promise<void> {
     this.isSavingNote = true;
     try {
       await this.notesService.saveNote(this.currentTopicName, content);

@@ -40,6 +40,16 @@ namespace AILearnAPI.Application.Services
             return await _repo.DeleteAsync(noteId);
         }
 
+        public async Task<NoteDto?> UpdateAsync(string userId, string noteId, string newContent)
+        {
+            var note = await _repo.GetByIdAndUserIdAsync(noteId, userId);
+            if (note == null) return null;
+
+            note.Content = newContent;
+            var updated = await _repo.UpdateAsync(noteId, note);
+            return ToDto(updated);
+        }
+
         // ── Mapping ──────────────────────────────────────────────────────────
         private static NoteDto ToDto(Note n) => new()
         {

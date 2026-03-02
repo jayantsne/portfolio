@@ -16,4 +16,10 @@ namespace AILearnAPI.Shared.DTOs.Notes
         public string topic   { get; set; } = string.Empty;
         public string content { get; set; } = string.Empty;
     }
+
+    /// <summary>Body expected when updating (replacing) the content of an existing note.</summary>
+    public class UpdateNoteDto
+    {
+        public string content { get; set; } = string.Empty;
+    }
 }

@@ -44,11 +44,77 @@ export class NotesService {
     else await this.loadNotes(); // fallback: refresh from server
   }
 
+  /** Replace the content of an existing note (PUT /api/notes/:id) */
+  async updateNote(noteId: string, content: string): Promise<void> {
+    const updated = await this.http
+      .put<SavedNote>(`${this.url}/${noteId}`, { content }, { headers: this.authSvc.getAuthHeaders() })
+      .toPromise();
+    const current = this._notes.getValue();
+    if (updated) {
+      this._notes.next(current.map(n => n.id === noteId ? this.normalize(updated) : n));
+    } else {
+      await this.loadNotes();
+    }
+  }
+
+  /** Append newContent to an existing note, separated by a divider */
+  async mergeNote(noteId: string, newContent: string): Promise<void> {
+    const existing = this._notes.getValue().find(n => n.id === noteId);
+    if (!existing) return;
+    const merged = `${existing.content}\n\n---\n\n**Updated explanation:**\n\n${newContent}`;
+    await this.updateNote(noteId, merged);
+  }
+
   async deleteNote(noteId: string): Promise<void> {
     await this.http
       .delete(`${this.url}/${noteId}`, { headers: this.authSvc.getAuthHeaders() })
       .toPromise();
     this._notes.next(this._notes.getValue().filter(n => n.id !== noteId));
+  }
+
+  // ── Duplicate Detection ────────────────────────────────────────────────────
+
+  /**
+   * Returns a note that matches both topic and content exactly (after normalisation).
+   */
+  findExactDuplicate(topic: string, content: string): SavedNote | null {
+    const normTopic   = this.normStr(topic);
+    const normContent = this.normStr(content);
+    return this._notes.getValue().find(n =>
+      this.normStr(n.topic) === normTopic &&
+      this.normStr(n.content) === normContent
+    ) ?? null;
+  }
+
+  /**
+   * Returns notes whose topic is similar to the given topic (Jaccard ≥ threshold).
+   * Default threshold = 0.35 (35 % token overlap).
+   */
+  findSimilarNotes(topic: string, threshold = 0.35): SavedNote[] {
+    const queryTokens = this.tokenize(topic);
+    if (queryTokens.size === 0) return [];
+
+    return this._notes.getValue().filter(n => {
+      const noteTokens = this.tokenize(n.topic);
+      const intersection = [...queryTokens].filter(t => noteTokens.has(t)).length;
+      const union = new Set([...queryTokens, ...noteTokens]).size;
+      return union > 0 && (intersection / union) >= threshold;
+    });
+  }
+
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  private normStr(s: string): string {
+    return s.trim().toLowerCase().replace(/\s+/g, ' ');
+  }
+
+  private tokenize(s: string): Set<string> {
+    return new Set(
+      s.toLowerCase()
+       .replace(/[^a-z0-9\s]/g, ' ')
+       .split(/\s+/)
+       .filter(t => t.length > 2)  // skip short stop-words
+    );
   }
 
   async loadNotes(): Promise<void> {
