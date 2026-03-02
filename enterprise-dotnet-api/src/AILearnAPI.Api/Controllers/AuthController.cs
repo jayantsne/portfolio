@@ -12,13 +12,16 @@ namespace AILearnAPI.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IMasterConfigService _masterConfig;
         private readonly ILogger<AuthController> _logger;
 
         public AuthController(
             IAuthService authService,
+            IMasterConfigService masterConfig,
             ILogger<AuthController> logger)
         {
             _authService = authService;
+            _masterConfig = masterConfig;
             _logger = logger;
         }
 
@@ -48,6 +51,11 @@ namespace AILearnAPI.Api.Controllers
         {
             try
             {
+                // Honour the DB-driven enableSignup feature flag
+                var cfg = await _masterConfig.GetAsync();
+                if (cfg != null && !cfg.enableSignup)
+                    return StatusCode(403, new { message = "Sign-up is currently disabled. Please contact the administrator." });
+
                 var result = await _authService.RegisterAsync(dto);
                 return StatusCode(201, result);   // 201 Created
             }

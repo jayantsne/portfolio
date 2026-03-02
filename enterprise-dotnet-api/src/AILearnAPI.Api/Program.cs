@@ -198,16 +198,20 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// Initialize default admin user (commented out temporarily to allow startup)
-// TODO: Fix MongoDB connection and re-enable
-/*
+// Initialize default admin user on first startup
 using (var scope = app.Services.CreateScope())
 {
-    var autentication();
-app.UseAuthhService = scope.ServiceProvider.GetRequiredService<IAuthService>();
-    await authService.InitializeDefaultUserAsync();
+    try
+    {
+        var authService = scope.ServiceProvider.GetRequiredService<IAuthService>();
+        await authService.InitializeDefaultUserAsync();
+        Log.Information("Default user initialization complete.");
+    }
+    catch (Exception ex)
+    {
+        Log.Warning(ex, "Default user initialization skipped — MongoDB may not be ready.");
+    }
 }
-*/
 
 // Configure the HTTP request pipeline
 app.UseSwagger();
