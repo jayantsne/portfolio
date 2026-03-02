@@ -81,7 +81,7 @@ public class ApiKeyAuthenticationMiddleware
         }
 
         // Skip authentication for Ollama AI endpoints (frontend integration)
-        if (path.Contains("/api/ai/ollama"))
+        if (path.Contains("/api/ai/ollama") || path.Contains("/api/ai/stream"))
         {
             await _next(context);
             return;

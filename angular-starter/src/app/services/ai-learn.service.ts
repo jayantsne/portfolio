@@ -1650,7 +1650,7 @@ Backend proxy is enabled but all 9 keys are exhausted.
       this.activeXhr = xhr;
       xhr.open('POST', `${apiBase}/api/ai/stream`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      if (apiBase) xhr.setRequestHeader('X-API-Key', apiKey);
+      xhr.setRequestHeader('X-API-Key', apiKey);  // Always send — middleware requires it on /api/ai/stream
       xhr.responseType = 'text';
 
       let cursor = 0;
