@@ -91,7 +91,11 @@ export class MasterConfigComponent implements OnInit {
       enableSignup:       [true],
       maintenanceMode:    [false],
       maintenanceMessage: ['Down for maintenance. Back soon!'],
-    });
+      // ── Device-based token limits ──────────────────────────────────────────────────
+      deviceTokenLimitsEnabled: [true],
+      mobileMaxTokens:          [250,  [Validators.required, Validators.min(50),  Validators.max(4096)]],
+      tabletMaxTokens:          [500,  [Validators.required, Validators.min(50),  Validators.max(4096)]],
+      desktopMaxTokens:         [1000, [Validators.required, Validators.min(50),  Validators.max(16384)]],    });
   }
 
   open(): void {
@@ -191,6 +195,12 @@ export class MasterConfigComponent implements OnInit {
       enableSignup:       cfg.enableSignup,
       maintenanceMode:    cfg.maintenanceMode,
       maintenanceMessage: cfg.maintenanceMessage,
+
+      // Device-based token limits
+      deviceTokenLimitsEnabled: cfg.deviceTokenLimitsEnabled ?? true,
+      mobileMaxTokens:          cfg.mobileMaxTokens  ?? 250,
+      tabletMaxTokens:          cfg.tabletMaxTokens  ?? 500,
+      desktopMaxTokens:         cfg.desktopMaxTokens ?? 1000,
     });
   }
 
@@ -267,6 +277,12 @@ export class MasterConfigComponent implements OnInit {
       enableSignup:       v.enableSignup,
       maintenanceMode:    v.maintenanceMode,
       maintenanceMessage: v.maintenanceMessage,
+
+      // Device-based token limits
+      deviceTokenLimitsEnabled: v.deviceTokenLimitsEnabled,
+      mobileMaxTokens:          +v.mobileMaxTokens,
+      tabletMaxTokens:          +v.tabletMaxTokens,
+      desktopMaxTokens:         +v.desktopMaxTokens,
     }).subscribe({
       next: () => {
         this.isSaving   = false;

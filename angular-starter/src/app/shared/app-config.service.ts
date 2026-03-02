@@ -78,6 +78,12 @@ const FALLBACK_CONFIG: MasterConfigDto = {
   maintenanceMode:    false,
   maintenanceMessage: 'Down for maintenance. Back soon!',
 
+  // Device-based token limits
+  deviceTokenLimitsEnabled: true,
+  mobileMaxTokens:          250,
+  tabletMaxTokens:          500,
+  desktopMaxTokens:         1000,
+
   // Audit
   lastUpdatedBy: '',
   lastUpdatedAt: null,

@@ -156,6 +156,23 @@ namespace AILearnAPI.Domain.Entities
             ["ollama"]      = 0,
         };
 
+        // ── Device-based token limits ─────────────────────────────────────
+        /// <summary>
+        /// When enabled, the backend enforces per-device maximum token caps.
+        /// Limits are applied server-side from the User-Agent header — users cannot bypass them.
+        /// </summary>
+        [BsonElement("deviceTokenLimitsEnabled")]
+        public bool DeviceTokenLimitsEnabled { get; set; } = true;
+
+        [BsonElement("mobileMaxTokens")]
+        public int MobileMaxTokens { get; set; } = 250;
+
+        [BsonElement("tabletMaxTokens")]
+        public int TabletMaxTokens { get; set; } = 500;
+
+        [BsonElement("desktopMaxTokens")]
+        public int DesktopMaxTokens { get; set; } = 1000;
+
         // ── Feature flags ────────────────────────────────────────────────
         [BsonElement("enableSignup")]
         public bool EnableSignup { get; set; } = true;

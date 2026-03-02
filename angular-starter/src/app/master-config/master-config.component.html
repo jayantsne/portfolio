@@ -291,6 +291,80 @@
         </div>
       </section>
 
+      <!-- ── Section: Device-Based Token Limits ──────────────────── -->
+      <section class="mc-section">
+        <h3 class="mc-section-title">📱 Device-Based Token Limits</h3>
+        <p class="mc-section-desc">
+          Max output tokens are enforced <strong>server-side</strong> from the User-Agent header.
+          Users cannot bypass these limits by modifying client requests.
+        </p>
+
+        <div class="mc-row">
+          <label class="mc-toggle">
+            <input type="checkbox" formControlName="deviceTokenLimitsEnabled" />
+            <span class="mc-toggle-track"></span>
+            <span class="mc-toggle-label">Enable device-based token limits</span>
+          </label>
+        </div>
+
+        <ng-container *ngIf="f('deviceTokenLimitsEnabled')?.value">
+          <div class="mc-device-grid">
+
+            <div class="mc-device-card">
+              <div class="mc-device-icon">📱</div>
+              <div class="mc-device-info">
+                <label class="mc-device-label">Mobile</label>
+                <span class="mc-hint">iPhone, Android phone</span>
+              </div>
+              <div class="mc-device-input">
+                <input type="number"
+                       formControlName="mobileMaxTokens"
+                       min="50" max="4096"
+                       class="mc-device-tokens" />
+                <span class="mc-hint">tokens</span>
+              </div>
+            </div>
+
+            <div class="mc-device-card">
+              <div class="mc-device-icon">💻</div>
+              <div class="mc-device-info">
+                <label class="mc-device-label">Tablet</label>
+                <span class="mc-hint">iPad, Android tablet</span>
+              </div>
+              <div class="mc-device-input">
+                <input type="number"
+                       formControlName="tabletMaxTokens"
+                       min="50" max="4096"
+                       class="mc-device-tokens" />
+                <span class="mc-hint">tokens</span>
+              </div>
+            </div>
+
+            <div class="mc-device-card">
+              <div class="mc-device-icon">🖥️</div>
+              <div class="mc-device-info">
+                <label class="mc-device-label">Web / Desktop</label>
+                <span class="mc-hint">Browser, macOS, Windows</span>
+              </div>
+              <div class="mc-device-input">
+                <input type="number"
+                       formControlName="desktopMaxTokens"
+                       min="50" max="16384"
+                       class="mc-device-tokens" />
+                <span class="mc-hint">tokens</span>
+              </div>
+            </div>
+
+          </div><!-- end mc-device-grid -->
+
+          <div class="mc-info-box">
+            ℹ️ Values are enforced on the backend. Any client-supplied <code>maxTokens</code>
+            value above the device cap is silently clamped down.
+            Unknown / spoofed User-Agents fall back to the Desktop limit.
+          </div>
+        </ng-container>
+      </section>
+
       <!-- Save -->
       <div class="mc-footer">
         <button type="button" class="mc-btn-cancel" (click)="close()">Cancel</button>

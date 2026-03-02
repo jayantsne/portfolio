@@ -155,6 +155,9 @@ builder.Services.AddScoped<IUserConfigService, UserConfigService>();
 builder.Services.AddScoped<IMasterConfigService, MasterConfigService>();
 builder.Services.AddScoped<INoteService, NoteService>();
 
+// Stateless UA classifier — registered as singleton (no state, no DB dependency)
+builder.Services.AddSingleton<IDeviceDetectionService, DeviceDetectionService>();
+
 // Configure CORS
 builder.Services.AddCors(options =>
 {

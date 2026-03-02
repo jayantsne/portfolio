@@ -77,7 +77,11 @@ namespace AILearnAPI.Application.Services
             if (dto.enableSignup       != null) config.EnableSignup       = dto.enableSignup.Value;
             if (dto.maintenanceMode    != null) config.MaintenanceMode    = dto.maintenanceMode.Value;
             if (dto.maintenanceMessage != null) config.MaintenanceMessage = dto.maintenanceMessage;
-
+            // ── Device token limits ──────────────────────────────────────────────
+            if (dto.deviceTokenLimitsEnabled != null) config.DeviceTokenLimitsEnabled = dto.deviceTokenLimitsEnabled.Value;
+            if (dto.mobileMaxTokens          != null) config.MobileMaxTokens          = dto.mobileMaxTokens.Value;
+            if (dto.tabletMaxTokens          != null) config.TabletMaxTokens          = dto.tabletMaxTokens.Value;
+            if (dto.desktopMaxTokens         != null) config.DesktopMaxTokens         = dto.desktopMaxTokens.Value;
             config.LastUpdatedBy = updatedByUserId;
             config.LastUpdatedAt = DateTime.UtcNow;
 
@@ -142,6 +146,12 @@ namespace AILearnAPI.Application.Services
             enableSignup       = c.EnableSignup,
             maintenanceMode    = c.MaintenanceMode,
             maintenanceMessage = c.MaintenanceMessage,
+
+            // Device token limits
+            deviceTokenLimitsEnabled = c.DeviceTokenLimitsEnabled,
+            mobileMaxTokens          = c.MobileMaxTokens,
+            tabletMaxTokens          = c.TabletMaxTokens,
+            desktopMaxTokens         = c.DesktopMaxTokens,
 
             // Audit
             lastUpdatedBy = c.LastUpdatedBy,

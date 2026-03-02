@@ -57,7 +57,11 @@ namespace AILearnAPI.Shared.DTOs.MasterConfig
         public bool         enableSignup         { get; set; }
         public bool         maintenanceMode      { get; set; }
         public string       maintenanceMessage   { get; set; } = string.Empty;
-
+        // ── Device-based token limits ────────────────────────────────────
+        public bool         deviceTokenLimitsEnabled { get; set; } = true;
+        public int          mobileMaxTokens          { get; set; } = 250;
+        public int          tabletMaxTokens          { get; set; } = 500;
+        public int          desktopMaxTokens         { get; set; } = 1000;
         // ── Audit ────────────────────────────────────────────────────────
         public string       lastUpdatedBy        { get; set; } = string.Empty;
         public DateTime?    lastUpdatedAt        { get; set; }
@@ -120,5 +124,9 @@ namespace AILearnAPI.Shared.DTOs.MasterConfig
         public bool?         enableSignup         { get; set; }
         public bool?         maintenanceMode      { get; set; }
         public string?       maintenanceMessage   { get; set; }
-    }
+        // ── Device-based token limits ────────────────────────────────────
+        public bool? deviceTokenLimitsEnabled { get; set; }
+        public int?  mobileMaxTokens          { get; set; }
+        public int?  tabletMaxTokens          { get; set; }
+        public int?  desktopMaxTokens         { get; set; }    }
 }

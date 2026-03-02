@@ -59,6 +59,12 @@ export interface MasterConfigDto {
   maintenanceMode:     boolean;
   maintenanceMessage:  string;
 
+  // Device-based token limits
+  deviceTokenLimitsEnabled: boolean;
+  mobileMaxTokens:          number;
+  tabletMaxTokens:          number;
+  desktopMaxTokens:         number;
+
   // Audit
   lastUpdatedBy:       string;
   lastUpdatedAt:       string | null;
@@ -119,6 +125,12 @@ export interface UpdateMasterConfigDto {
   enableSignup?:        boolean;
   maintenanceMode?:     boolean;
   maintenanceMessage?:  string;
+
+  // Device-based token limits
+  deviceTokenLimitsEnabled?: boolean;
+  mobileMaxTokens?:          number;
+  tabletMaxTokens?:          number;
+  desktopMaxTokens?:         number;
 }
 
 @Injectable({ providedIn: 'root' })

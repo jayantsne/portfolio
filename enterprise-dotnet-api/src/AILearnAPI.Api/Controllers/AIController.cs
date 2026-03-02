@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using AILearnAPI.Api.Services;
 using AILearnAPI.Api.Models.DTOs;
+using AILearnAPI.Application.Interfaces;
 using System.Diagnostics;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Cryptography;
@@ -19,15 +20,21 @@ public class AIController : ControllerBase
     private readonly IOllamaService _ollamaService;
     private readonly ILogger<AIController> _logger;
     private readonly IMemoryCache _cache;
+    private readonly IMasterConfigService _masterConfig;
+    private readonly IDeviceDetectionService _deviceDetection;
 
     public AIController(
         IOllamaService ollamaService,
         ILogger<AIController> logger,
-        IMemoryCache cache)
+        IMemoryCache cache,
+        IMasterConfigService masterConfig,
+        IDeviceDetectionService deviceDetection)
     {
-        _ollamaService = ollamaService;
-        _logger = logger;
-        _cache = cache;
+        _ollamaService    = ollamaService;
+        _logger           = logger;
+        _cache            = cache;
+        _masterConfig     = masterConfig;
+        _deviceDetection  = deviceDetection;
     }
 
     /// <summary>
@@ -82,11 +89,12 @@ public class AIController : ControllerBase
 
             // Call Ollama with optimized settings
             // Use smaller default maxTokens for faster responses
+            var deviceLimit = await GetDeviceTokenLimitAsync();
             var ollamaResponse = await _ollamaService.GenerateAsync(
                 claudePrompt,
                 request.Model,
                 temperature: request.Temperature ?? 0.7f,
-                maxTokens: request.MaxTokens ?? 1500,
+                maxTokens: Math.Min(request.MaxTokens ?? deviceLimit, deviceLimit),
                 cancellationToken);
 
             stopwatch.Stop();
@@ -176,11 +184,12 @@ public class AIController : ControllerBase
 
         try
         {
+            var streamDeviceLimit = await GetDeviceTokenLimitAsync();
             await foreach (var token in _ollamaService.StreamAsync(
                 prompt,
                 request.Model,
                 temperature: request.Temperature ?? 0.7f,
-                maxTokens: request.MaxTokens ?? 1500,
+                maxTokens: Math.Min(request.MaxTokens ?? streamDeviceLimit, streamDeviceLimit),
                 cancellationToken: cancellationToken))
             {
                 if (cancellationToken.IsCancellationRequested) break;
@@ -270,6 +279,50 @@ public class AIController : ControllerBase
     {
         var bytes = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(input.ToLowerInvariant().Trim()));
         return Convert.ToHexString(bytes)[..16];
+    }
+
+    // ── Device-based token limit ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Reads the request's User-Agent, classifies the device (Mobile/Tablet/Desktop),
+    /// then returns the admin-configured token cap for that device from MasterConfig.
+    /// Falls back to a hardcoded safe default when the config cannot be loaded.
+    /// This runs server-side — the value is NEVER taken from the client.
+    /// </summary>
+    private async Task<int> GetDeviceTokenLimitAsync()
+    {
+        const int FallbackDesktop = 1000;
+        try
+        {
+            var cfg = await _masterConfig.GetAsync();
+
+            // If the admin has disabled device-based limits, fall through to the full desktop cap.
+            if (!cfg.deviceTokenLimitsEnabled)
+                return cfg.desktopMaxTokens > 0 ? cfg.desktopMaxTokens : FallbackDesktop;
+
+            // Read User-Agent from the server's raw HTTP request headers (not a client header).
+            var ua     = Request.Headers["User-Agent"].ToString();
+            var device = _deviceDetection.Detect(ua);
+
+            var limit = device switch
+            {
+                DeviceType.Mobile  => cfg.mobileMaxTokens,
+                DeviceType.Tablet  => cfg.tabletMaxTokens,
+                DeviceType.Desktop => cfg.desktopMaxTokens,
+                _                  => cfg.desktopMaxTokens
+            };
+
+            _logger.LogInformation(
+                "🖥 Device={Device} UA={UA} → token limit={Limit}",
+                device, ua[..Math.Min(60, ua.Length)], limit);
+
+            return limit > 0 ? limit : FallbackDesktop;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Could not load MasterConfig for device token limit; using fallback {N}", FallbackDesktop);
+            return FallbackDesktop;
+        }
     }
 
     /// <summary>

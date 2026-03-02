@@ -276,3 +276,77 @@ select option { background: #1a1a2e; color: #e2e8f0; }
   color: rgba(226,232,240,0.4);
   margin-left: .3rem;
 }
+
+/* ── Device-based token limits ────────────────────────────────────────── */
+.mc-section-desc {
+  font-size: .8rem;
+  color: rgba(226,232,240,0.55);
+  margin: -.3rem 0 .8rem;
+  line-height: 1.5;
+}
+.mc-device-grid {
+  display: flex;
+  flex-direction: column;
+  gap: .6rem;
+  margin-bottom: .75rem;
+}
+.mc-device-card {
+  display: flex;
+  align-items: center;
+  gap: .9rem;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: .6rem .9rem;
+}
+.mc-device-icon {
+  font-size: 1.5rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.mc-device-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: .15rem;
+}
+.mc-device-label {
+  font-size: .85rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.mc-device-input {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.mc-device-tokens {
+  width: 90px;
+  padding: .4rem .6rem;
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 7px;
+  color: #e2e8f0;
+  font-size: .88rem;
+  text-align: right;
+}
+.mc-device-tokens:focus {
+  outline: none;
+  border-color: rgba(129,140,248,0.6);
+}
+.mc-info-box {
+  font-size: .78rem;
+  color: rgba(226,232,240,0.5);
+  background: rgba(129,140,248,0.08);
+  border: 1px solid rgba(129,140,248,0.2);
+  border-radius: 8px;
+  padding: .6rem .85rem;
+  line-height: 1.6;
+}
+.mc-info-box code {
+  font-family: 'Courier New', Courier, monospace;
+  background: rgba(255,255,255,0.08);
+  padding: 0 .3rem;
+  border-radius: 3px;
+  font-size: .77rem;
+}
