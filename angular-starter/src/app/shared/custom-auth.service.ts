@@ -92,9 +92,29 @@ export class CustomAuthService {
   private loadFromStorage(): AuthUser | null {
     try {
       const raw = localStorage.getItem(TOKEN_KEY);
-      return raw ? JSON.parse(raw) : null;
+      if (!raw) return null;
+      const user: AuthUser = JSON.parse(raw);
+      // Discard expired tokens so the app never starts in a broken auth state
+      if (this.isTokenExpired(user.token)) {
+        localStorage.removeItem(TOKEN_KEY);
+        console.warn('Auth: stored token expired — logged out.');
+        return null;
+      }
+      return user;
     } catch {
+      localStorage.removeItem(TOKEN_KEY);
       return null;
+    }
+  }
+
+  /** Decode JWT payload and compare exp claim against current time. */
+  private isTokenExpired(token: string): boolean {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      // exp is in seconds; Date.now() is in ms
+      return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
+    } catch {
+      return true; // unparseable token → treat as expired
     }
   }
 }

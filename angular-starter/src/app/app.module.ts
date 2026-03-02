@@ -1,11 +1,11 @@
 import { BrowserModule } from '@angular/platform-browser';
 import { CommonModule } from '@angular/common';
 import { NgModule, APP_INITIALIZER } from '@angular/core';
-
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { AuthInterceptor } from './shared/auth.interceptor';
 import { AppComponent } from './app.component';
 import { TestPageComponent } from './test-page/test-page.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { HttpClientModule } from '@angular/common/http';
 import { TranslocoRootModule } from './transloco-root.module';
 import { AppRoutingModule } from './app-routing.module';
 // import { PortfolioComponent } from './portfolio/portfolio.component'; // Temporarily disabled - FormsModule issues
@@ -112,6 +112,11 @@ import { AppConfigService } from './shared/app-config.service';
       useFactory: (appCfg: AppConfigService) => () => appCfg.load().toPromise(),
       deps:       [AppConfigService],
       multi:      true,
+    },
+    {
+      provide:  HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi:    true,
     }
   ],
   bootstrap: [AppComponent]

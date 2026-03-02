@@ -60,12 +60,15 @@ const routes: Routes = [
   { path: 'admin-deploy', component: DeploymentComponent },
   // Analytics Dashboard — ADMIN only (guarded in component)
   { path: 'admin-analytics', component: AnalyticsDashboardComponent },
+
+  // Fallback — any unknown path goes to home (fixes blank page on refresh)
+  { path: '**', redirectTo: '', pathMatch: 'full' },
 ]
 
 @NgModule({
   
   imports: [
-    RouterModule.forRoot(routes)
+    RouterModule.forRoot(routes, { useHash: true })
   ],
   declarations: [ ],
   exports: [RouterModule]

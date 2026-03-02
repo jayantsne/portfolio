@@ -1,45 +1,22 @@
 import { Injectable } from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
-import { AuthService } from './auth.service';
+import { CustomAuthService } from './custom-auth.service';
 
-@Injectable({
-  providedIn: 'root'
-})
+@Injectable({ providedIn: 'root' })
 export class AuthGuard implements CanActivate {
-  
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+
+  constructor(private auth: CustomAuthService, private router: Router) {}
 
   canActivate(
     route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): boolean {
-    if (this.authService.isAuthenticated()) {
+    // CustomAuthService reads from localStorage on construction,
+    // so this works correctly after a browser refresh.
+    if (this.auth.isLoggedIn && this.auth.isAdmin) {
       return true;
     }
-
-    // Prompt user for credentials
-    const username = prompt('Username:');
-    const password = prompt('Password:');
-    
-    if (username && password) {
-      this.authService.login(username, password);
-      // Wait a bit for the async call to complete
-      setTimeout(() => {
-        if (this.authService.isAuthenticated()) {
-          // Use router navigation instead of window.location.reload()
-          this.router.navigate([state.url]);
-        } else {
-          alert('Access denied. Incorrect credentials.');
-          this.router.navigate(['/']);
-        }
-      }, 1000);
-      return false; // Will navigate if successful
-    }
-
-    alert('Access denied. Credentials required.');
+    // Not logged in or not admin — redirect to home silently
     this.router.navigate(['/']);
     return false;
   }
