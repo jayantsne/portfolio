@@ -1,6 +1,6 @@
-<div class="questions-page">
+<div class="questions-page" [class.split-mode]="showSplitScreen">
   <!-- AI Loader Animation -->
-  <app-ai-loader *ngIf="isLoadingQuestions" [loadingMessage]="'Loading 364 AI-powered interview questions...'"></app-ai-loader>
+  <app-ai-loader *ngIf="isLoadingQuestions" [loadingMessage]="'Loading 450 AI-powered interview questions...'"></app-ai-loader>
   
   <!-- Prompt Selection Modal (NEW) -->
   <app-prompt-selection-modal
@@ -541,4 +541,120 @@
       </button>
     </div>
   </div>
+
+  <!-- ======================================================
+       SPLIT-SCREEN MENTOR PANEL (Desktop "Learn with AI")
+       ====================================================== -->
+  <aside class="split-mentor-panel" *ngIf="showSplitScreen && !isMobile" @slideAnimation>
+    <!-- Duplicate Detection Overlay -->
+    <div class="split-dup-overlay" *ngIf="splitDuplicateDialogMode" @fadeIn>
+      <div class="split-dup-card">
+        <div class="split-dup-icon">{{ splitDuplicateDialogMode === 'exact' ? '🎯' : '🔍' }}</div>
+        <h3 class="split-dup-title">
+          {{ splitDuplicateDialogMode === 'exact' ? 'Note Already Exists' : 'Similar Note Found' }}
+        </h3>
+        <p class="split-dup-msg">
+          {{ splitDuplicateDialogMode === 'exact' ? 
+            'An identical note already exists.' : 
+            'A similar note "' + splitDuplicateMatchedNote?.title + '" exists.' }}
+        </p>
+        <div class="split-dup-actions">
+          <button class="split-dup-btn update" (click)="onSplitDuplicateUpdate()">✏️ Update Existing</button>
+          <button class="split-dup-btn merge" (click)="onSplitDuplicateMerge()">🔗 Merge</button>
+          <button class="split-dup-btn new" (click)="onSplitDuplicateSaveNew()">➕ Save as New</button>
+          <button class="split-dup-btn cancel" (click)="closeSplitDuplicateDialog()">✕ Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Panel Header -->
+    <div class="split-panel-header">
+      <div class="split-header-left">
+        <div class="split-avatar">🤖</div>
+        <div class="split-header-info">
+          <span class="split-panel-title">AI Mentor</span>
+          <span class="split-category-badge">{{ splitQuestion?.category }}</span>
+        </div>
+      </div>
+      <div class="split-header-actions">
+        <button class="split-model-btn" [class.active]="selectedModel === 'qwen'" (click)="setModel('qwen')" title="Fast Technical">⚡ Fast</button>
+        <button class="split-model-btn" [class.active]="selectedModel === 'llama'" (click)="setModel('llama')" title="Tutor Style">🦙 Tutor</button>
+        <button class="split-close-btn" (click)="closeSplitScreen()" title="Close (Esc)">✕</button>
+      </div>
+    </div>
+
+    <!-- Question Preview -->
+    <div class="split-question-preview">
+      <div class="split-q-difficulty" [class]="'diff-badge diff-' + splitQuestion?.difficulty?.toLowerCase()">
+        {{ splitQuestion?.difficulty }}
+      </div>
+      <p class="split-q-text">{{ splitQuestion?.question }}</p>
+    </div>
+
+    <!-- Mentor Body -->
+    <div class="split-mentor-body">
+      <!-- Follow-up history -->
+      <div class="split-history" *ngIf="splitFollowUpHistory.length > 0">
+        <div *ngFor="let msg of splitFollowUpHistory" class="split-history-msg" [class.user]="msg.role === 'user'" [class.ai]="msg.role === 'assistant'">
+          <span class="split-msg-icon">{{ msg.role === 'user' ? '🙋' : '🤖' }}</span>
+          <span class="split-msg-text">{{ msg.content }}</span>
+        </div>
+      </div>
+
+      <!-- Loading / streaming indicator -->
+      <div class="split-thinking" *ngIf="splitIsStreaming && !splitStreamingText">
+        <div class="split-thinking-dots"><span></span><span></span><span></span></div>
+        <span>AI is thinking...</span>
+      </div>
+
+      <!-- Streaming live text -->
+      <div class="split-streaming" *ngIf="splitStreamingText && splitIsStreaming">
+        <div class="split-streaming-body md-content" [innerHTML]="splitStreamingText | markdown"></div>
+        <span class="split-streaming-cursor">▋</span>
+      </div>
+
+      <!-- Completed explanation -->
+      <div class="split-explanation md-content" *ngIf="splitAiExplanation && !splitIsStreaming" [innerHTML]="splitAiExplanation | markdown" @fadeIn></div>
+
+      <!-- Error state -->
+      <div class="split-error" *ngIf="splitAiError && !splitIsStreaming">
+        <span>⚠️ Could not connect to AI. Check your internet or try again.</span>
+        <button class="split-retry-btn" (click)="regenerateSplitAnswer()">Retry ↺</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="split-mentor-footer">
+      <!-- Save to notes bar -->
+      <div class="split-save-bar" *ngIf="splitAiExplanation && !splitIsStreaming && customAuth.isLoggedIn">
+        <button class="split-save-btn" (click)="saveSplitNote()" [disabled]="splitIsSavingNote" *ngIf="!splitNoteSaved">
+          <span>{{ splitIsSavingNote ? '⏳ Saving...' : '💾 Save to Notes' }}</span>
+        </button>
+        <span class="split-saved-confirm" *ngIf="splitNoteSaved">
+          ✅ Saved! <button class="split-view-notes-btn" (click)="navigateToNotes()">View Notes →</button>
+        </span>
+        <button class="split-regen-btn" (click)="regenerateSplitAnswer()" [disabled]="splitIsStreaming" title="Regenerate answer">↺ Regenerate</button>
+      </div>
+
+      <!-- Regenerate only (not logged in or no answer yet) -->
+      <div class="split-save-bar" *ngIf="splitAiExplanation && !splitIsStreaming && !customAuth.isLoggedIn">
+        <button class="split-regen-btn" (click)="regenerateSplitAnswer()" [disabled]="splitIsStreaming">↺ Regenerate</button>
+        <span class="split-login-hint">🔒 <a routerLink="/auth" class="split-login-link">Sign in</a> to save notes</span>
+      </div>
+
+      <!-- Follow-up input -->
+      <div class="split-input-row">
+        <input
+          class="split-followup-input"
+          type="text"
+          placeholder="Ask a follow-up question..."
+          [(ngModel)]="splitFollowUpQuestion"
+          (keyup.enter)="sendSplitFollowUp()"
+          [disabled]="splitIsStreaming" />
+        <button class="split-send-btn" (click)="sendSplitFollowUp()" [disabled]="splitIsStreaming || !splitFollowUpQuestion.trim()">
+          Send →
+        </button>
+      </div>
+    </div>
+  </aside>
 </div>

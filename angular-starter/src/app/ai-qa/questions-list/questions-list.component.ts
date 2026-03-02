@@ -1,12 +1,15 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { trigger, transition, style, animate, state } from '@angular/animations';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { INTERVIEW_QUESTIONS } from '../interview-questions-data'; // Fallback for offline mode
 import { AILearnService } from '../../services/ai-learn.service';
 import { AiStreamingService, OllamaModel } from '../../services/ai-streaming.service';
 import { InterviewQuestionsService, QuestionPromptsResponse, QuestionPrompt } from '../../services/interview-questions.service';
+import { NotesService, SavedNote } from '../../shared/notes.service';
+import { CustomAuthService } from '../../shared/custom-auth.service';
 
 @Component({
   selector: 'app-questions-list',
@@ -187,12 +190,33 @@ export class QuestionsListComponent implements OnInit, OnDestroy {
     'Design Patterns', 'C#', 'JavaScript', 'TypeScript', 'Fresher CS Fundamentals'
   ];
 
+  // Split-screen "Learn with AI" state (desktop)
+  showSplitScreen = false;
+  splitQuestion: any = null;
+  splitStreamingText = '';
+  splitAiExplanation = '';
+  splitIsStreaming = false;
+  private splitStreamSub?: Subscription;
+  splitFollowUpQuestion = '';
+  splitFollowUpHistory: Array<{ role: 'user' | 'assistant'; content: string }> = [];
+  splitCurrentTopicName = '';
+  splitAiError = false;
+  splitIsSavingNote = false;
+  splitNoteSaved = false;
+  private splitNoteSavedTimer: any;
+  splitDuplicateDialogMode: 'exact' | 'similar' | null = null;
+  splitDuplicateMatchedNote: SavedNote | null = null;
+  private splitPendingSaveContent = '';
+
   constructor(
     private aiLearnService: AILearnService,
     private aiStreamingService: AiStreamingService,
     private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef,
-    private interviewQuestionsService: InterviewQuestionsService
+    private interviewQuestionsService: InterviewQuestionsService,
+    private notesService: NotesService,
+    public customAuth: CustomAuthService,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
@@ -211,6 +235,8 @@ export class QuestionsListComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.searchSub?.unsubscribe();
     this.streamSub?.unsubscribe();
+    this.splitStreamSub?.unsubscribe();
+    if (this.splitNoteSavedTimer) clearTimeout(this.splitNoteSavedTimer);
   }
 
   loadInterviewQuestions(): void {
@@ -452,8 +478,14 @@ export class QuestionsListComponent implements OnInit, OnDestroy {
 
   learnQuestion(question: any): void {
     console.log('🎓 Learn with AI clicked for question:', question.id);
-    
-    // Fetch available prompts for this question
+
+    if (!this.isMobile) {
+      // Desktop: open split-screen mentor panel
+      this.openSplitScreen(question);
+      return;
+    }
+
+    // Mobile: fallback to mobile bottom-sheet with streaming
     this.showPromptModal = true;
     this.generatedAIResponse = null;
     this.currentSelectedPrompt = null;
@@ -465,20 +497,11 @@ export class QuestionsListComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('❌ Failed to fetch prompts:', error);
-        // Fallback: show default learning behavior
         this.showPromptModal = false;
-        if (this.isMobile) {
-          this.expandedQuestionId = question.id;
-          this.showAlternativeExplanation = false;
-          this.currentQuestionForAlternative = question;
-          this.getAIExplanation(question);
-        } else {
-          this.modalQuestion = question.question;
-          this.modalCategory = question.category;
-          this.currentQuestionForAlternative = question;
-          this.showModal = true;
-          this.getAIExplanation(question);
-        }
+        this.expandedQuestionId = question.id;
+        this.showAlternativeExplanation = false;
+        this.currentQuestionForAlternative = question;
+        this.getAIExplanation(question);
       }
     });
   }
@@ -1920,5 +1943,206 @@ Make every word count. Make it unforgettable!`;
       // Note: We keep the answer in database even when unliked
       // User can regenerate if they want a different version
     }
+  }
+
+  // ========================================================================
+  // SPLIT-SCREEN "LEARN WITH AI" (Desktop)
+  // ========================================================================
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this.showSplitScreen) this.closeSplitScreen();
+  }
+
+  openSplitScreen(question: any): void {
+    this.splitQuestion = question;
+    this.splitCurrentTopicName = `${question.category} — ${question.question.substring(0, 60)}`;
+    this.splitStreamingText = '';
+    this.splitAiExplanation = '';
+    this.splitIsStreaming = false;
+    this.splitAiError = false;
+    this.splitFollowUpHistory = [];
+    this.splitFollowUpQuestion = '';
+    this.splitNoteSaved = false;
+    this.splitDuplicateDialogMode = null;
+    this.splitDuplicateMatchedNote = null;
+    this.splitPendingSaveContent = '';
+    this.showSplitScreen = true;
+    // Scroll to top of question list so mentor panel is visible
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Start streaming immediately
+    this.streamForSplitScreen(question.question);
+  }
+
+  closeSplitScreen(): void {
+    this.splitStreamSub?.unsubscribe();
+    this.showSplitScreen = false;
+    this.splitQuestion = null;
+    this.splitStreamingText = '';
+    this.splitAiExplanation = '';
+    this.splitIsStreaming = false;
+    this.splitFollowUpHistory = [];
+    this.splitDuplicateDialogMode = null;
+    if (this.splitNoteSavedTimer) clearTimeout(this.splitNoteSavedTimer);
+  }
+
+  streamForSplitScreen(prompt: string): void {
+    this.splitStreamSub?.unsubscribe();
+    this.splitStreamingText = '';
+    this.splitAiExplanation = '';
+    this.splitIsStreaming = true;
+    this.splitAiError = false;
+    this.cdr.detectChanges();
+
+    const fullPrompt = `You are an expert software engineer and interview coach.
+Explain the following interview question in a structured way with:
+1. Core concept and definition
+2. Real-world example or analogy
+3. Code example (if applicable, in a fenced code block)
+4. Common pitfalls / best practices
+5. One follow-up interview question to test deeper understanding
+
+Question: ${prompt}`;
+
+    this.splitStreamSub = this.aiStreamingService
+      .streamExplanation(fullPrompt, this.selectedModel)
+      .subscribe({
+        next: (chunk) => {
+          if (chunk.error) {
+            this.splitAiError = true;
+            this.splitIsStreaming = false;
+            this.cdr.detectChanges();
+            return;
+          }
+          if (!chunk.done) {
+            this.splitStreamingText += chunk.token ?? '';
+            this.cdr.detectChanges();
+          } else {
+            // Streaming complete
+            const raw = this.stripLeadingTitle(this.cleanMarkdownCodeFences(this.splitStreamingText));
+            this.splitAiExplanation = raw;
+            this.splitStreamingText = '';
+            this.splitIsStreaming = false;
+            this.cdr.detectChanges();
+          }
+        },
+        error: () => {
+          this.splitAiError = true;
+          this.splitIsStreaming = false;
+          this.cdr.detectChanges();
+        }
+      });
+  }
+
+  regenerateSplitAnswer(): void {
+    if (!this.splitQuestion) return;
+    this.splitFollowUpHistory = [];
+    this.splitNoteSaved = false;
+    this.streamForSplitScreen(this.splitQuestion.question);
+  }
+
+  sendSplitFollowUp(): void {
+    const q = this.splitFollowUpQuestion.trim();
+    if (!q || this.splitIsStreaming) return;
+    this.splitFollowUpQuestion = '';
+    const context = `In context of "${this.splitQuestion?.question || ''}"`;
+    const followUpPrompt = `${context}:
+Previous explanation:
+${this.splitAiExplanation}
+
+Follow-up question: ${q}
+Please answer concisely and clearly.`;
+
+    this.splitFollowUpHistory.push({ role: 'user', content: q });
+    this.splitAiExplanation = '';
+    this.streamForSplitScreen(followUpPrompt);
+  }
+
+  saveSplitNote(): void {
+    const content = this.splitAiExplanation;
+    if (!content) return;
+    const topicTitle = this.splitQuestion?.question?.substring(0, 80) || 'Interview Q&A';
+
+    // Check exact duplicate
+    const exact = this.notesService.findExactDuplicate(topicTitle, content);
+    if (exact) {
+      this.splitDuplicateMatchedNote = exact;
+      this.splitDuplicateDialogMode = 'exact';
+      this.splitPendingSaveContent = content;
+      return;
+    }
+
+    // Check similar notes
+    const similar = this.notesService.findSimilarNotes(topicTitle);
+    if (similar.length > 0) {
+      this.splitDuplicateMatchedNote = similar[0];
+      this.splitDuplicateDialogMode = 'similar';
+      this.splitPendingSaveContent = content;
+      return;
+    }
+
+    this.performSplitSave(topicTitle, content);
+  }
+
+  private async performSplitSave(title: string, content: string): Promise<void> {
+    this.splitIsSavingNote = true;
+    this.cdr.detectChanges();
+    try {
+      await this.notesService.saveNote(title, content);
+      this.splitIsSavingNote = false;
+      this.splitNoteSaved = true;
+      this.splitDuplicateDialogMode = null;
+      if (this.splitNoteSavedTimer) clearTimeout(this.splitNoteSavedTimer);
+      this.splitNoteSavedTimer = setTimeout(() => { this.splitNoteSaved = false; this.cdr.detectChanges(); }, 3000);
+    } catch {
+      this.splitIsSavingNote = false;
+    }
+    this.cdr.detectChanges();
+  }
+
+  onSplitDuplicateSaveNew(): void {
+    const title = this.splitQuestion?.question?.substring(0, 80) || 'Interview Q&A';
+    this.performSplitSave(title, this.splitPendingSaveContent);
+  }
+
+  onSplitDuplicateUpdate(): void {
+    if (!this.splitDuplicateMatchedNote?.id) return;
+    const id = this.splitDuplicateMatchedNote.id;
+    const content = this.splitPendingSaveContent;
+    this.splitIsSavingNote = true;
+    this.cdr.detectChanges();
+    this.notesService.updateNote(id, content).then(() => {
+      this.splitIsSavingNote = false;
+      this.splitNoteSaved = true;
+      this.splitDuplicateDialogMode = null;
+      if (this.splitNoteSavedTimer) clearTimeout(this.splitNoteSavedTimer);
+      this.splitNoteSavedTimer = setTimeout(() => { this.splitNoteSaved = false; this.cdr.detectChanges(); }, 3000);
+      this.cdr.detectChanges();
+    }).catch(() => { this.splitIsSavingNote = false; this.cdr.detectChanges(); });
+  }
+
+  onSplitDuplicateMerge(): void {
+    if (!this.splitDuplicateMatchedNote?.id) return;
+    const id = this.splitDuplicateMatchedNote.id;
+    this.splitIsSavingNote = true;
+    this.cdr.detectChanges();
+    this.notesService.mergeNote(id, this.splitPendingSaveContent).then(() => {
+      this.splitIsSavingNote = false;
+      this.splitNoteSaved = true;
+      this.splitDuplicateDialogMode = null;
+      if (this.splitNoteSavedTimer) clearTimeout(this.splitNoteSavedTimer);
+      this.splitNoteSavedTimer = setTimeout(() => { this.splitNoteSaved = false; this.cdr.detectChanges(); }, 3000);
+      this.cdr.detectChanges();
+    }).catch(() => { this.splitIsSavingNote = false; this.cdr.detectChanges(); });
+  }
+
+  closeSplitDuplicateDialog(): void {
+    this.splitDuplicateDialogMode = null;
+    this.splitDuplicateMatchedNote = null;
+    this.splitPendingSaveContent = '';
+  }
+
+  navigateToNotes(): void {
+    this.router.navigate(['/notes']);
   }
 }
