@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using AILearnAPI.Api.Services;
 using AILearnAPI.Api.Models.DTOs;
 using AILearnAPI.Application.Interfaces;
+using AILearnAPI.Shared.DTOs.MasterConfig;
 using System.Diagnostics;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Cryptography;
@@ -76,8 +77,11 @@ public class AIController : ControllerBase
                 });
             }
 
-            // Build Claude-quality prompt
-            var claudePrompt = BuildClaudeQualityPrompt(request.Question);
+            // Load all AI config from DB once for this request
+            var cfg = await _masterConfig.GetAsync();
+
+            // Build prompt using DB-driven template (falls back to built-in if not configured)
+            var claudePrompt = BuildClaudeQualityPrompt(request.Question, cfg);
 
             // Check cache first (responses are deterministic for same question)
             var cacheKey = $"ai_explain_{ComputeHash(request.Question)}";
@@ -87,13 +91,12 @@ public class AIController : ControllerBase
                 return Ok(cachedResponse);
             }
 
-            // Call Ollama with optimized settings
-            // Use smaller default maxTokens for faster responses
-            var deviceLimit = await GetDeviceTokenLimitAsync();
+            // Call Ollama with DB-driven settings (model, temperature, token cap)
+            var deviceLimit = GetDeviceTokenLimitFromConfig(cfg);
             var ollamaResponse = await _ollamaService.GenerateAsync(
                 claudePrompt,
-                request.Model,
-                temperature: request.Temperature ?? 0.7f,
+                request.Model ?? cfg.modelOllamaStream,
+                temperature: request.Temperature ?? (float)cfg.defaultTemperature,
                 maxTokens: Math.Min(request.MaxTokens ?? deviceLimit, deviceLimit),
                 cancellationToken);
 
@@ -176,7 +179,9 @@ public class AIController : ControllerBase
         }
 
         // Pick model: default qwen2.5:3b (fast tech Q&A), backup llama3.2:3b (tutor style)
-        var prompt = BuildClaudeQualityPrompt(request.Question);
+        // Load all AI config from DB once for this streaming request
+        var cfg = await _masterConfig.GetAsync();
+        var prompt = BuildClaudeQualityPrompt(request.Question, cfg);
 
         _logger.LogInformation("⚡ SSE Stream request: '{Q}' model={M}",
             request.Question[..Math.Min(50, request.Question.Length)],
@@ -184,11 +189,11 @@ public class AIController : ControllerBase
 
         try
         {
-            var streamDeviceLimit = await GetDeviceTokenLimitAsync();
+            var streamDeviceLimit = GetDeviceTokenLimitFromConfig(cfg);
             await foreach (var token in _ollamaService.StreamAsync(
                 prompt,
-                request.Model,
-                temperature: request.Temperature ?? 0.7f,
+                request.Model ?? cfg.modelOllamaStream,
+                temperature: request.Temperature ?? (float)cfg.defaultTemperature,
                 maxTokens: Math.Min(request.MaxTokens ?? streamDeviceLimit, streamDeviceLimit),
                 cancellationToken: cancellationToken))
             {
@@ -284,23 +289,17 @@ public class AIController : ControllerBase
     // ── Device-based token limit ─────────────────────────────────────────────
 
     /// <summary>
-    /// Reads the request's User-Agent, classifies the device (Mobile/Tablet/Desktop),
-    /// then returns the admin-configured token cap for that device from MasterConfig.
-    /// Falls back to a hardcoded safe default when the config cannot be loaded.
-    /// This runs server-side — the value is NEVER taken from the client.
+    /// Synchronous helper — classifies device from User-Agent and returns the matching
+    /// token cap from an already-fetched MasterConfigDto. No extra DB round-trip.
     /// </summary>
-    private async Task<int> GetDeviceTokenLimitAsync()
+    private int GetDeviceTokenLimitFromConfig(MasterConfigDto cfg)
     {
         const int FallbackDesktop = 1000;
         try
         {
-            var cfg = await _masterConfig.GetAsync();
-
-            // If the admin has disabled device-based limits, fall through to the full desktop cap.
             if (!cfg.deviceTokenLimitsEnabled)
                 return cfg.desktopMaxTokens > 0 ? cfg.desktopMaxTokens : FallbackDesktop;
 
-            // Read User-Agent from the server's raw HTTP request headers (not a client header).
             var ua     = Request.Headers["User-Agent"].ToString();
             var device = _deviceDetection.Detect(ua);
 
@@ -320,18 +319,51 @@ public class AIController : ControllerBase
         }
         catch (Exception ex)
         {
+            _logger.LogWarning(ex, "Could not determine device token limit; using fallback {N}", FallbackDesktop);
+            return FallbackDesktop;
+        }
+    }
+
+    /// <summary>
+    /// Legacy async overload — fetches MasterConfig then delegates to GetDeviceTokenLimitFromConfig.
+    /// Use only when a cfg object is not already available in the calling scope.
+    /// </summary>
+    private async Task<int> GetDeviceTokenLimitAsync()
+    {
+        const int FallbackDesktop = 1000;
+        try
+        {
+            var cfg = await _masterConfig.GetAsync();
+            return GetDeviceTokenLimitFromConfig(cfg);
+        }
+        catch (Exception ex)
+        {
             _logger.LogWarning(ex, "Could not load MasterConfig for device token limit; using fallback {N}", FallbackDesktop);
             return FallbackDesktop;
         }
     }
 
     /// <summary>
-    /// Build Claude-quality teaching prompt
-    /// Ensures responses match Claude's depth and clarity
+    /// Build the AI prompt for a question.
+    /// Priority: DB <c>mainPromptTemplate</c> (with {question} placeholder)
+    ///         → built-in Claude-style teaching template using <c>defaultSystemPrompt</c> as the role.
     /// </summary>
-    private string BuildClaudeQualityPrompt(string question)
+    private string BuildClaudeQualityPrompt(string question, MasterConfigDto cfg)
     {
-        return $@"You are an expert programming tutor. Explain ""{question}"" with clarity, depth, and wow-factor. Follow this exact structure:
+        // ── DB-driven path ───────────────────────────────────────────────────
+        if (!string.IsNullOrWhiteSpace(cfg.mainPromptTemplate))
+        {
+            _logger.LogInformation("📋 Using DB mainPromptTemplate for question prompt");
+            return cfg.mainPromptTemplate.Replace("{question}", question);
+        }
+
+        // ── Built-in fallback template ─────────────────────────────────────
+        var systemRole = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
+            ? cfg.defaultSystemPrompt
+            : "You are an expert programming tutor.";
+
+        _logger.LogInformation("📋 Using built-in fallback template (no mainPromptTemplate in DB)");
+        return $@"{systemRole} Explain ""{question}"" with clarity, depth, and wow-factor. Follow this exact structure:
 
 ## 🎯 One-Line Essence
 [One punchy sentence + real-world analogy. Example: ""Promises are like restaurant buzzers — you get a token and go sit down; the kitchen calls you when your order is ready.""]

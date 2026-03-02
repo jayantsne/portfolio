@@ -2,18 +2,25 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using AILearnAPI.Api.Models.DTOs;
+using AILearnAPI.Application.Interfaces;
+using AILearnAPI.Shared.DTOs.MasterConfig;
 
 namespace AILearnAPI.Api.Services;
 
 public class LearningService : ILearningService
 {
     private readonly IOllamaService _ollamaService;
+    private readonly IMasterConfigService _masterConfig;
     private readonly ILogger<LearningService> _logger;
 
-    public LearningService(IOllamaService ollamaService, ILogger<LearningService> logger)
+    public LearningService(
+        IOllamaService ollamaService,
+        IMasterConfigService masterConfig,
+        ILogger<LearningService> logger)
     {
         _ollamaService = ollamaService;
-        _logger = logger;
+        _masterConfig  = masterConfig;
+        _logger        = logger;
     }
 
     public async Task<LearnResponseDto> GenerateLearningContentAsync(
@@ -24,11 +31,20 @@ public class LearningService : ILearningService
 
         try
         {
-            var prompt = BuildPrompt(request);
+            // Fetch AI config from DB (model, temperature, max tokens, system role)
+            var cfg = await _masterConfig.GetAsync();
 
-            _logger.LogInformation("Generating learning content for topic: {Topic}", request.Topic);
+            var prompt = BuildPrompt(request, cfg);
 
-            var ollamaResponse = await _ollamaService.GenerateAsync(prompt, cancellationToken);
+            _logger.LogInformation("Generating learning content for topic: {Topic} using model: {Model}",
+                request.Topic, cfg.modelOllamaStream);
+
+            var ollamaResponse = await _ollamaService.GenerateAsync(
+                prompt,
+                model:       cfg.modelOllamaStream,
+                temperature: (float)cfg.defaultTemperature,
+                maxTokens:   cfg.maxOutputTokens > 0 ? cfg.maxOutputTokens : 1500,
+                cancellationToken);
 
             var parsedResponse = ParseResponse(ollamaResponse.Response, request);
 
@@ -55,11 +71,15 @@ public class LearningService : ILearningService
         }
     }
 
-    private string BuildPrompt(LearnRequestDto request)
+    private string BuildPrompt(LearnRequestDto request, MasterConfigDto cfg)
     {
-        var promptBuilder = new System.Text.StringBuilder();
+        // Use DB system role if set, otherwise fall back to built-in instructor persona
+        var systemRole = !string.IsNullOrWhiteSpace(cfg.systemRole)
+            ? $"{cfg.systemRole.TrimEnd()} preparing students for the {request.ExamCode} exam."
+            : $"You are an expert Azure certification instructor preparing students for the {request.ExamCode} exam.";
 
-        promptBuilder.AppendLine($"You are an expert Azure certification instructor preparing students for the {request.ExamCode} exam.");
+        var promptBuilder = new System.Text.StringBuilder();
+        promptBuilder.AppendLine(systemRole);
         promptBuilder.AppendLine($"\nTopic: {request.Topic}");
         promptBuilder.AppendLine("\nProvide a comprehensive learning module with the following structure:");
         promptBuilder.AppendLine("\n## EXPLANATION");
@@ -94,6 +114,12 @@ public class LearningService : ILearningService
         }
 
         promptBuilder.AppendLine("\nMake the content exam-focused, practical, and Azure-specific.");
+
+        // Append DB-configured complexity and format guidance (if set by admin)
+        if (!string.IsNullOrWhiteSpace(cfg.complexityMedium))
+            promptBuilder.AppendLine(cfg.complexityMedium);
+        if (!string.IsNullOrWhiteSpace(cfg.formatInstruction))
+            promptBuilder.AppendLine(cfg.formatInstruction);
 
         return promptBuilder.ToString();
     }

@@ -25,6 +25,8 @@ namespace AILearnAPI.Shared.DTOs.MasterConfig
         public int          maxTokensStream      { get; set; }
         public int          maxTokensSimplified  { get; set; }
         public string       defaultSystemPrompt  { get; set; } = string.Empty;
+        /// <summary>Full prompt template for the main /api/ai/ollama endpoint. Use {question} as placeholder. Empty = built-in fallback.</summary>
+        public string       mainPromptTemplate   { get; set; } = string.Empty;
 
         // ── Prompts ──────────────────────────────────────────────────────
         public string       systemRole                 { get; set; } = string.Empty;
@@ -92,6 +94,7 @@ namespace AILearnAPI.Shared.DTOs.MasterConfig
         public int?          maxTokensStream      { get; set; }
         public int?          maxTokensSimplified  { get; set; }
         public string?       defaultSystemPrompt  { get; set; }
+        public string?       mainPromptTemplate   { get; set; }
 
         // ── Prompts ──────────────────────────────────────────────────────
         public string?       systemRole                { get; set; }

@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using AILearnAPI.Api.Models.DTOs;
 using AILearnAPI.Api.Repositories;
+using AILearnAPI.Application.Interfaces;
+using AILearnAPI.Shared.DTOs.MasterConfig;
 
 namespace AILearnAPI.Api.Services;
 
@@ -12,16 +14,19 @@ public class AiUnderstandService : IAiUnderstandService
 {
     private readonly IAiTopicPromptRepository _promptRepository;
     private readonly IOllamaService _ollamaService;
+    private readonly IMasterConfigService _masterConfig;
     private readonly ILogger<AiUnderstandService> _logger;
 
     public AiUnderstandService(
         IAiTopicPromptRepository promptRepository,
         IOllamaService ollamaService,
+        IMasterConfigService masterConfig,
         ILogger<AiUnderstandService> logger)
     {
         _promptRepository = promptRepository;
-        _ollamaService = ollamaService;
-        _logger = logger;
+        _ollamaService    = ollamaService;
+        _masterConfig     = masterConfig;
+        _logger           = logger;
     }
 
     public async Task<UnderstandResponseDto> GenerateUnderstandingAsync(
@@ -32,6 +37,9 @@ public class AiUnderstandService : IAiUnderstandService
 
         try
         {
+            // Fetch AI config from DB (model, temperature, max tokens, system prompt)
+            var cfg = await _masterConfig.GetAsync();
+
             _logger.LogInformation(
                 "Generating understanding for topic '{TopicName}' and exam '{ExamCode}'",
                 request.TopicName, request.ExamCode);
@@ -52,7 +60,7 @@ public class AiUnderstandService : IAiUnderstandService
                 {
                     TopicName = request.TopicName,
                     ExamCode = request.ExamCode,
-                    Explanation = await GenerateFallbackExplanationAsync(request, cancellationToken),
+                    Explanation = await GenerateFallbackExplanationAsync(request, cfg, cancellationToken),
                     PromptFound = false,
                     ProcessingTimeMs = stopwatch.ElapsedMilliseconds,
                     Timestamp = DateTime.UtcNow
@@ -66,8 +74,13 @@ public class AiUnderstandService : IAiUnderstandService
                 "Using prompt template ID {PromptId} for topic '{TopicName}'",
                 promptTemplate.Id, request.TopicName);
 
-            // 3. Call Ollama to generate explanation
-            var ollamaResponse = await _ollamaService.GenerateAsync(finalPrompt, cancellationToken);
+            // 3. Call Ollama using DB-driven settings (model, temperature, max tokens)
+            var ollamaResponse = await _ollamaService.GenerateAsync(
+                finalPrompt,
+                model:       cfg.modelOllamaStream,
+                temperature: (float)cfg.defaultTemperature,
+                maxTokens:   cfg.maxOutputTokens > 0 ? cfg.maxOutputTokens : 1500,
+                cancellationToken);
 
             stopwatch.Stop();
 
@@ -108,36 +121,51 @@ public class AiUnderstandService : IAiUnderstandService
     /// </summary>
     private async Task<string> GenerateFallbackExplanationAsync(
         UnderstandRequestDto request,
+        MasterConfigDto cfg,
         CancellationToken cancellationToken)
     {
-        var fallbackPrompt = $@"You are an Azure {request.ExamCode} expert trainer. 
-Explain ""{request.TopicName}"" in a clear, beginner-friendly way suitable for certification exam preparation.
+        // Build fallback prompt using DB system prompt + format instruction
+        var systemInstruction = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
+            ? cfg.defaultSystemPrompt
+            : $"You are an Azure {request.ExamCode} expert trainer.";
 
-Structure your response as follows:
+        var formatGuidance = !string.IsNullOrWhiteSpace(cfg.formatInstruction)
+            ? cfg.formatInstruction
+            : string.Empty;
 
-## 📚 Simple Explanation
-[Provide a concise 2-3 sentence explanation using analogies]
+        var fallbackPrompt = $"""
+            {systemInstruction}
+            Explain "{request.TopicName}" in a clear, beginner-friendly way suitable for {request.ExamCode} certification exam preparation.
 
-## 🏗️ Key Concepts
-[List 5-7 important concepts or components]
+            ## 📚 Simple Explanation
+            [Provide a concise 2-3 sentence explanation using analogies]
 
-## ☁️ Real-World Azure Example
-[Provide a practical implementation scenario with steps]
+            ## 🏗️ Key Concepts
+            [List 5-7 important concepts or components]
 
-## 🎯 Exam Tips
-[List critical points that appear in {request.ExamCode} exam]
+            ## ☁️ Real-World Azure Example
+            [Provide a practical implementation scenario with steps]
 
-## ⚠️ Common Mistakes
-[List 3-4 common mistakes to avoid]
+            ## 🎯 Exam Tips
+            [List critical points that appear in {request.ExamCode} exam]
 
-## 📝 Practice Questions
-[Provide 3 scenario-based multiple choice questions with answers and explanations]
+            ## ⚠️ Common Mistakes
+            [List 3-4 common mistakes to avoid]
 
-Keep it focused, clear, and exam-oriented.";
+            ## 📝 Practice Questions
+            [Provide 3 scenario-based multiple choice questions with answers and explanations]
+
+            Keep it focused, clear, and exam-oriented.{formatGuidance}
+            """;
 
         try
         {
-            var response = await _ollamaService.GenerateAsync(fallbackPrompt, cancellationToken);
+            var response = await _ollamaService.GenerateAsync(
+                fallbackPrompt,
+                model:       cfg.modelOllamaStream,
+                temperature: (float)cfg.defaultTemperature,
+                maxTokens:   cfg.maxOutputTokens > 0 ? cfg.maxOutputTokens : 1500,
+                cancellationToken);
             return response.Response;
         }
         catch

@@ -45,6 +45,7 @@ namespace AILearnAPI.Application.Services
             if (dto.maxTokensStream     != null) config.MaxTokensStream     = dto.maxTokensStream.Value;
             if (dto.maxTokensSimplified != null) config.MaxTokensSimplified = dto.maxTokensSimplified.Value;
             if (dto.defaultSystemPrompt != null) config.DefaultSystemPrompt = dto.defaultSystemPrompt;
+            if (dto.mainPromptTemplate  != null) config.MainPromptTemplate  = dto.mainPromptTemplate;
 
             // ── Prompts ──────────────────────────────────────────────────
             if (dto.systemRole                != null) config.SystemRole                = dto.systemRole;
@@ -114,6 +115,7 @@ namespace AILearnAPI.Application.Services
             maxTokensStream     = c.MaxTokensStream,
             maxTokensSimplified = c.MaxTokensSimplified,
             defaultSystemPrompt = c.DefaultSystemPrompt,
+            mainPromptTemplate  = c.MainPromptTemplate,
 
             // Prompts
             systemRole                = c.SystemRole,

@@ -70,6 +70,14 @@ namespace AILearnAPI.Domain.Entities
         public string DefaultSystemPrompt { get; set; } =
             "You are an expert software engineering mentor. Answer clearly and concisely.";
 
+        /// <summary>
+        /// Full prompt template for the main Q&amp;A explain endpoint.
+        /// Use {question} as the placeholder — it is replaced at request time.
+        /// When empty the built-in Claude-style template is used as fallback.
+        /// </summary>
+        [BsonElement("mainPromptTemplate")]
+        public string MainPromptTemplate { get; set; } = string.Empty;
+
         // ── AI Prompt templates ───────────────────────────────────────────
         [BsonElement("systemRole")]
         public string SystemRole { get; set; } = "You are an expert technical interviewer and educator. ";
