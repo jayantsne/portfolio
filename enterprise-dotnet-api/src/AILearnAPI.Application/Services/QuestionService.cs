@@ -93,6 +93,7 @@ namespace AILearnAPI.Application.Services
             if (dto.tags != null) existing.Tags = dto.tags;
             if (dto.difficulty != null) existing.Difficulty = dto.difficulty;
             if (dto.expanded.HasValue) existing.Expanded = dto.expanded.Value;
+            if (dto.prompts != null) existing.Prompts = dto.prompts.Select(p => p.ToQuestionPrompt()).ToList();
 
             var updated = await _questionRepository.UpdateAsync(existing.Id, existing);
             

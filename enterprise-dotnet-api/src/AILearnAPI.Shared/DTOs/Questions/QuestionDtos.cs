@@ -1,5 +1,19 @@
 namespace AILearnAPI.Shared.DTOs.Questions
 {
+    /// <summary>
+    /// Input DTO for creating or importing a prompt on a question.
+    /// Includes server-side fields (systemPrompt, userPromptTemplate) unlike the response-only PromptDto.
+    /// </summary>
+    public class CreatePromptDto
+    {
+        public string id { get; set; } = string.Empty;
+        public string title { get; set; } = string.Empty;
+        public string description { get; set; } = string.Empty;
+        public string systemPrompt { get; set; } = string.Empty;
+        public string userPromptTemplate { get; set; } = string.Empty;
+        public string icon { get; set; } = string.Empty;
+    }
+
     public class QuestionDto
     {
         public int id { get; set; }
@@ -10,6 +24,8 @@ namespace AILearnAPI.Shared.DTOs.Questions
         public string difficulty { get; set; } = string.Empty;
         public DateTime dateAdded { get; set; }
         public bool expanded { get; set; }
+        /// <summary>Used during bulk import to seed embedded prompts.</summary>
+        public List<CreatePromptDto>? prompts { get; set; }
     }
 
     public class CreateQuestionDto
@@ -20,6 +36,7 @@ namespace AILearnAPI.Shared.DTOs.Questions
         public List<string>? tags { get; set; }
         public string? difficulty { get; set; }
         public bool? expanded { get; set; }
+        public List<CreatePromptDto>? prompts { get; set; }
     }
 
     public class UpdateQuestionDto
@@ -30,6 +47,7 @@ namespace AILearnAPI.Shared.DTOs.Questions
         public List<string>? tags { get; set; }
         public string? difficulty { get; set; }
         public bool? expanded { get; set; }
+        public List<CreatePromptDto>? prompts { get; set; }
     }
 
     public class QuestionsResponseDto

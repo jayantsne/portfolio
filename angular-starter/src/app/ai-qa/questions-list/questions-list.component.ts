@@ -308,34 +308,6 @@ export class QuestionsListComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
-    
-    /* Original MongoDB API code (temporarily disabled):
-    this.interviewQuestionsService.getAllQuestions().subscribe({
-      next: (response) => {
-        console.log('✅ Loaded questions from MongoDB:', response.total, 'questions');
-        this.interviewQuestions = response.questions.map(q => ({
-          ...q,
-          timestamp: new Date(),
-          saved: false,
-          expanded: false,
-          isLearning: false
-        }));
-        this.cdr.detectChanges();
-      },
-      error: (error) => {
-        console.error('❌ Error loading questions from API, using fallback static data:', error);
-        // Fallback to static data if API fails
-        this.interviewQuestions = INTERVIEW_QUESTIONS.map(q => ({
-          ...q,
-          timestamp: new Date(),
-          saved: false,
-          expanded: false,
-          isLearning: false
-        }));
-        this.cdr.detectChanges();
-      }
-    });
-    */
   }
 
   get filteredInterviewQuestions(): any[] {

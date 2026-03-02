@@ -36,7 +36,8 @@ namespace AILearnAPI.Shared.Extensions
                 Tags = dto.tags ?? new List<string>(),
                 Difficulty = dto.difficulty ?? "medium",
                 DateAdded = DateTime.UtcNow,
-                Expanded = dto.expanded ?? false
+                Expanded = dto.expanded ?? false,
+                Prompts = dto.prompts?.Select(p => p.ToQuestionPrompt()).ToList() ?? new List<QuestionPrompt>()
             };
         }
 
@@ -51,7 +52,21 @@ namespace AILearnAPI.Shared.Extensions
                 Tags = dto.tags,
                 Difficulty = dto.difficulty,
                 DateAdded = dto.dateAdded,
-                Expanded = dto.expanded
+                Expanded = dto.expanded,
+                Prompts = dto.prompts?.Select(p => p.ToQuestionPrompt()).ToList() ?? new List<QuestionPrompt>()
+            };
+        }
+
+        public static QuestionPrompt ToQuestionPrompt(this CreatePromptDto dto)
+        {
+            return new QuestionPrompt
+            {
+                Id = dto.id,
+                Title = dto.title,
+                Description = dto.description,
+                SystemPrompt = dto.systemPrompt,
+                UserPromptTemplate = dto.userPromptTemplate,
+                Icon = dto.icon
             };
         }
 
