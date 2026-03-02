@@ -1666,7 +1666,13 @@ Backend proxy is enabled but all 9 keys are exhausted.
           try {
             const chunk = JSON.parse(line.slice(6));
             if (chunk.done) {
-              observer.next({ success: true, explanation: accumulated || 'No response.', done: true });
+              if (chunk.error) {
+                // Backend reported an error (e.g. Ollama unreachable / model not loaded)
+                console.error('[AILearnService] SSE stream error from backend:', chunk.error);
+                observer.next({ success: false, explanation: '⚠️ The AI model is currently unavailable. Please try again in a moment.', done: true });
+              } else {
+                observer.next({ success: accumulated.length > 0, explanation: accumulated || '⚠️ No response received. Please try again.', done: true });
+              }
               observer.complete();
               return;
             }
@@ -1695,7 +1701,7 @@ Backend proxy is enabled but all 9 keys are exhausted.
         }
         parseChunks(true);
         if (!observer.closed) {
-          observer.next({ success: true, explanation: accumulated || 'No response.', done: true });
+          observer.next({ success: accumulated.length > 0, explanation: accumulated || '⚠️ No response received. Please try again.', done: true });
           observer.complete();
         }
       };

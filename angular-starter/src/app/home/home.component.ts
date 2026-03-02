@@ -673,6 +673,14 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
           if (!responseText || !response.success) {
             console.warn('[HOME] no responseText or not success, using fallback');
             this.streamingText = '';
+            // Show the error message in chat so the user knows what happened
+            if (!response.success && responseText) {
+              this.aiMessages.push({
+                role: 'assistant',
+                content: responseText,
+                timestamp: new Date()
+              });
+            }
             this.useFallbackConcept(conceptName);
             return;
           }
@@ -788,11 +796,20 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
           this.streamingText = '';
 
           const responseText: string = response.explanation || '';
-          this.aiMessages.push({
-            role: 'assistant',
-            content: responseText,
-            timestamp: new Date()
-          });
+          if (!response.success || !responseText) {
+            // Backend error or empty stream — show a helpful message instead of blank/fallback
+            this.aiMessages.push({
+              role: 'assistant',
+              content: responseText || '⚠️ The AI is currently unavailable. Please try again in a moment.',
+              timestamp: new Date()
+            });
+          } else {
+            this.aiMessages.push({
+              role: 'assistant',
+              content: responseText,
+              timestamp: new Date()
+            });
+          }
 
           this.generateFollowUpQuestions();
         },
