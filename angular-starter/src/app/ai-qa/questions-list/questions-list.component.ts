@@ -827,7 +827,8 @@ export class QuestionsListComponent implements OnInit, OnDestroy {
     
     console.log('✅ Generating animated diagram for:', this.currentQuestionForAlternative.question);
     
-    // Show loading state
+    // Show loading state — must also show the alternative section that wraps the diagram
+    this.showAlternativeExplanation = true;
     this.showAnimatedDiagram = true;
     this.isLoadingDiagram = true;
     
