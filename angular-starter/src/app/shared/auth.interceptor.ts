@@ -34,8 +34,10 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(authReq).pipe(
       catchError((err: HttpErrorResponse) => {
-        if (err.status === 401) {
-          // Token expired or invalid — clear session and go home
+        if (err.status === 401 && !isAuthEndpoint) {
+          // Token expired or invalid on a protected endpoint — clear session and go home.
+          // Do NOT do this for /auth/login or /auth/register: a 401 there just means
+          // wrong credentials and should be handled by the calling component.
           console.warn('AuthInterceptor: 401 received — clearing session.');
           this.auth.logout();
           this.router.navigate(['/']);
