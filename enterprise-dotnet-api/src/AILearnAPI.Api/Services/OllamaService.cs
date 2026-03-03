@@ -197,7 +197,18 @@ public class OllamaService : IOllamaService
             HttpCompletionOption.ResponseHeadersRead,
             ollamaCts.Token);
 
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var hint = response.StatusCode == System.Net.HttpStatusCode.NotFound
+                ? $"Model '{selectedModel}' not found on server — run: ollama pull {selectedModel}"
+                : $"Ensure Ollama is running at {_settings.BaseUrl}";
+            _logger.LogError("\u274C Ollama HTTP {Status} ({Reason}) \u2014 {Hint}",
+                (int)response.StatusCode, response.ReasonPhrase, hint);
+            throw new HttpRequestException(
+                $"Ollama returned {(int)response.StatusCode} ({response.ReasonPhrase}). {hint}",
+                inner: null,
+                statusCode: response.StatusCode);
+        }
 
         await using var stream = await response.Content.ReadAsStreamAsync(ollamaCts.Token);
         using var reader = new StreamReader(stream);

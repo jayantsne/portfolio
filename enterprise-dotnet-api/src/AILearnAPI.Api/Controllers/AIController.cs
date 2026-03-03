@@ -212,6 +212,17 @@ public class AIController : ControllerBase
         {
             _logger.LogInformation("⚡ Stream cancelled by client");
         }
+        catch (HttpRequestException ex)
+        {
+            // Ollama not running, wrong model, or unreachable — write SSE error so frontend shows user message
+            _logger.LogError(ex, "🔌 Ollama connection failed during stream (HTTP {Status})", (int?)ex.StatusCode);
+            var msg = ex.StatusCode == System.Net.HttpStatusCode.NotFound
+                ? "The AI model is not loaded on the server. Please try again later."
+                : "Cannot reach the AI model server. Please check back in a moment.";
+            var errJson = System.Text.Json.JsonSerializer.Serialize(msg);
+            await Response.WriteAsync($"data: {{\"error\":{errJson},\"done\":true}}\n\n");
+            await Response.Body.FlushAsync();
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "❌ Streaming error");
