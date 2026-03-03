@@ -35,6 +35,20 @@ public class AIExplanationRequest
 }
 
 /// <summary>
+/// Request for simplified / visual-diagram generation.
+/// The <c>Prompt</c> field contains the full pre-built prompt from the frontend.
+/// </summary>
+public class AiSimplifiedRequest
+{
+    /// <summary>Full prompt string built by the Angular service (includes instructions + topic).</summary>
+    public string Prompt { get; set; } = string.Empty;
+
+    public string? Model       { get; set; }
+    public float?  Temperature { get; set; }
+    public int?    MaxTokens   { get; set; }
+}
+
+/// <summary>
 /// Response to Angular frontend with Claude-quality explanation
 /// Includes multiple format fields for backward compatibility
 /// </summary>

@@ -1738,7 +1738,7 @@ Backend proxy is enabled but all 9 keys are exhausted.
           
           const headers = new HttpHeaders({ 'Content-Type': 'application/json' });
           
-          return this.http.post(`${this.BACKEND_API_URL}/simplified`, backendPayload, { headers }).pipe(
+          return this.http.post(`${this.ASPNET_API_BASE_URL}/ai/simplified`, backendPayload, { headers }).pipe(
             switchMap((response: any) => {
               console.log('✅ BACKEND Visual Diagram response received:', response);
               

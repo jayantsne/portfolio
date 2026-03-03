@@ -290,6 +290,65 @@ public class AIController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Visual-diagram / simplified explanation endpoint.
+    /// Frontend calls POST /api/ai/simplified with { prompt } — the prompt is the full
+    /// pre-built string from the Angular service (includes diagram instructions + topic).
+    /// Returns { success, explanation } matching the Cloudflare Worker contract.
+    /// </summary>
+    [HttpPost("simplified")]
+    [ProducesResponseType(typeof(AIExplanationResponse), StatusCodes.Status200OK)]
+    public async Task<ActionResult<AIExplanationResponse>> GenerateSimplified(
+        [FromBody] AiSimplifiedRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Prompt))
+            return BadRequest(new ErrorResponseDto { Error = "Prompt is required", Details = "prompt field cannot be empty" });
+
+        try
+        {
+            var cfg        = await _masterConfig.GetAsync();
+            var tokenLimit = Math.Min(request.MaxTokens ?? cfg.maxTokensSimplified, cfg.maxTokensSimplified);
+            var model      = request.Model ?? cfg.modelOllamaStream;
+            var temp       = request.Temperature ?? (float)cfg.defaultTemperature;
+
+            _logger.LogInformation("🎨 Simplified/diagram request — model={Model} tokens={T}", model, tokenLimit);
+
+            var ollamaResponse = await _ollamaService.GenerateAsync(
+                request.Prompt, model, temp, tokenLimit, cancellationToken);
+
+            return Ok(new AIExplanationResponse
+            {
+                Success     = true,
+                Explanation = ollamaResponse.Response,
+                Answer      = ollamaResponse.Response,
+                RawText     = ollamaResponse.Response,
+                Text        = ollamaResponse.Response,
+                Provider    = "ollama",
+                Model       = model,
+                TokensUsed  = ollamaResponse.Eval_count,
+                Timestamp   = DateTime.UtcNow
+            });
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "❌ Ollama unreachable in /simplified");
+            return StatusCode(503, new AIExplanationResponse
+            {
+                Success     = false,
+                Explanation = ex.StatusCode == System.Net.HttpStatusCode.NotFound
+                    ? "Model not loaded on server."
+                    : "Cannot reach AI model server.",
+                Timestamp   = DateTime.UtcNow
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ Simplified endpoint error");
+            return StatusCode(500, new AIExplanationResponse { Success = false, Explanation = ex.Message, Timestamp = DateTime.UtcNow });
+        }
+    }
+
     // SHA256 hash of question for cache key (avoids key length/character issues)
     private static string ComputeHash(string input)
     {
