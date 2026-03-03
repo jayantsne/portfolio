@@ -584,6 +584,7 @@ export class QuestionsListComponent implements OnInit, OnDestroy {
     this.currentQuestionId = question.id?.toString() || '';
     this.answerIsFromDB = false;
     this.showRatingSection = false;
+    this.currentQuestionForAlternative = question; // needed by generateAnimatedDiagram()
 
     // Check for a cached/liked answer — load instantly without streaming
     const existingRating = this.aiLearnService.getAnswerRating(this.currentQuestionId);
