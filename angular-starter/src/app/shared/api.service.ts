@@ -118,7 +118,8 @@ export class ApiService {
   }
 
   login(username: string, password: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/auth/login`, { username, password });
+    // Backend LoginDto expects { email, password } — map the username field to email
+    return this.http.post(`${this.apiUrl}/auth/login`, { email: username, password });
   }
 
   logout(userId?: string): Observable<any> {

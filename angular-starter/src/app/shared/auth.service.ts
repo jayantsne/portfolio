@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { ApiService } from './api.service';
+import { CustomAuthService } from './custom-auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,10 +12,16 @@ export class AuthService {
   private userId = 'default-user';
   private username = '';
 
-  constructor(private apiService: ApiService) {
+  constructor(private apiService: ApiService, private customAuth: CustomAuthService) {
     this.isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
     this.isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
-    // KV-based check removed — auth is now handled by JWT (CustomAuthService)
+    // If there is already a stored JWT session (e.g. page refresh), reflect that
+    if (customAuth.isLoggedIn) {
+      const u = customAuth.currentUser!;
+      this.isAuthenticatedSubject.next(true);
+      this.userId   = u.userId;
+      this.username = u.username;
+    }
   }
 
   private checkAuthStatus(): void {
@@ -30,47 +37,35 @@ export class AuthService {
   }
 
   /**
-   * Login method - validates against Cloudflare KV backend with encrypted password
+   * Login method - delegates to CustomAuthService which sends the correct
+   * { email, password } payload, handles JWT storage, and uses the right API URL.
    */
   login(username: string, password: string): void {
     console.log('🔐 Attempting login for:', username);
-    this.apiService.login(username, password).subscribe(
-      (response) => {
-        console.log('📥 Login response:', response);
-        if (response.success) {
-          this.isAuthenticatedSubject.next(true);
-          this.userId = response.userId;
-          this.username = response.username;
-          this.apiService.setUserId(response.userId);
-          console.log('✅ Login successful:', response.username);
-        } else {
-          console.log('❌ Login failed:', response.error);
-          this.isAuthenticatedSubject.next(false);
-        }
+    // username field on the form contains the user's email address
+    this.customAuth.login(username, password).subscribe({
+      next: (response) => {
+        console.log('✅ Login successful:', response.username);
+        this.isAuthenticatedSubject.next(true);
+        this.userId   = response.userId;
+        this.username = response.username;
+        this.apiService.setUserId(response.userId);
       },
-      (error) => {
+      error: (error) => {
         console.error('❌ Login error:', error);
-        console.error('Error details:', error.error);
         this.isAuthenticatedSubject.next(false);
       }
-    );
+    });
   }
 
   /**
-   * Logout method
+   * Logout method - delegates to CustomAuthService to clear JWT and call backend.
    */
   logout(): void {
-    this.apiService.logout(this.userId).subscribe(
-      () => {
-        this.isAuthenticatedSubject.next(false);
-        this.userId = 'default-user';
-        this.username = '';
-      },
-      (error) => {
-        console.error('Logout error:', error);
-        this.isAuthenticatedSubject.next(false);
-      }
-    );
+    this.customAuth.logout();   // clears JWT from localStorage + calls POST /auth/logout
+    this.isAuthenticatedSubject.next(false);
+    this.userId   = 'default-user';
+    this.username = '';
   }
 
   /**
