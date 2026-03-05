@@ -4,7 +4,7 @@
 
 export const environment = {
   production: false,
-  apiUrl: 'http://localhost:5000/api',
+  apiUrl: '/api',
   apiKey: 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41',
   groqApiKeys: [
     // 'gsk_YOUR_ACTUAL_KEY_HERE',
