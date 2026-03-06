@@ -31,11 +31,11 @@ public class AIController : ControllerBase
         IMasterConfigService masterConfig,
         IDeviceDetectionService deviceDetection)
     {
-        _ollamaService    = ollamaService;
-        _logger           = logger;
-        _cache            = cache;
-        _masterConfig     = masterConfig;
-        _deviceDetection  = deviceDetection;
+        _ollamaService = ollamaService;
+        _logger = logger;
+        _cache = cache;
+        _masterConfig = masterConfig;
+        _deviceDetection = deviceDetection;
     }
 
     /// <summary>
@@ -181,7 +181,19 @@ public class AIController : ControllerBase
         // Pick model: default qwen2.5:3b (fast tech Q&A), backup llama3.2:3b (tutor style)
         // Load all AI config from DB once for this streaming request
         var cfg = await _masterConfig.GetAsync();
-        var prompt = BuildClaudeQualityPrompt(request.Question, cfg);
+        //var prompt = BuildClaudeQualityPrompt(request.Question, cfg);
+
+
+        var ua = Request.Headers["User-Agent"].ToString();
+        var device = _deviceDetection.Detect(ua);
+
+        var prompt = device switch
+        {
+            DeviceType.Mobile => BuildMobileLearningPrompt(request.Question),
+            DeviceType.Tablet => BuildMobileLearningPrompt(request.Question),
+            DeviceType.Desktop => BuildClaudeQualityPrompt(request.Question, cfg),
+            _ => BuildClaudeQualityPrompt(request.Question, cfg),
+        };
 
         _logger.LogInformation("⚡ SSE Stream request: '{Q}' model={M}",
             request.Question[..Math.Min(50, request.Question.Length)],
@@ -194,7 +206,7 @@ public class AIController : ControllerBase
                 prompt,
                 request.Model ?? cfg.modelOllamaStream,
                 temperature: request.Temperature ?? (float)cfg.defaultTemperature,
-                maxTokens: Math.Min(request.MaxTokens ?? streamDeviceLimit, streamDeviceLimit),
+                maxTokens: streamDeviceLimit,//Math.Min(request.MaxTokens ?? streamDeviceLimit, streamDeviceLimit),
                 cancellationToken: cancellationToken))
             {
                 if (cancellationToken.IsCancellationRequested) break;
@@ -307,10 +319,10 @@ public class AIController : ControllerBase
 
         try
         {
-            var cfg        = await _masterConfig.GetAsync();
+            var cfg = await _masterConfig.GetAsync();
             var tokenLimit = Math.Min(request.MaxTokens ?? cfg.maxTokensSimplified, cfg.maxTokensSimplified);
-            var model      = request.Model ?? cfg.modelOllamaStream;
-            var temp       = request.Temperature ?? (float)cfg.defaultTemperature;
+            var model = request.Model ?? cfg.modelOllamaStream;
+            var temp = request.Temperature ?? (float)cfg.defaultTemperature;
 
             _logger.LogInformation("🎨 Simplified/diagram request — model={Model} tokens={T}", model, tokenLimit);
 
@@ -319,15 +331,15 @@ public class AIController : ControllerBase
 
             return Ok(new AIExplanationResponse
             {
-                Success     = true,
+                Success = true,
                 Explanation = ollamaResponse.Response,
-                Answer      = ollamaResponse.Response,
-                RawText     = ollamaResponse.Response,
-                Text        = ollamaResponse.Response,
-                Provider    = "ollama",
-                Model       = model,
-                TokensUsed  = ollamaResponse.Eval_count,
-                Timestamp   = DateTime.UtcNow
+                Answer = ollamaResponse.Response,
+                RawText = ollamaResponse.Response,
+                Text = ollamaResponse.Response,
+                Provider = "ollama",
+                Model = model,
+                TokensUsed = ollamaResponse.Eval_count,
+                Timestamp = DateTime.UtcNow
             });
         }
         catch (HttpRequestException ex)
@@ -335,11 +347,11 @@ public class AIController : ControllerBase
             _logger.LogError(ex, "❌ Ollama unreachable in /simplified");
             return StatusCode(503, new AIExplanationResponse
             {
-                Success     = false,
+                Success = false,
                 Explanation = ex.StatusCode == System.Net.HttpStatusCode.NotFound
                     ? "Model not loaded on server."
                     : "Cannot reach AI model server.",
-                Timestamp   = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow
             });
         }
         catch (Exception ex)
@@ -370,15 +382,15 @@ public class AIController : ControllerBase
             if (!cfg.deviceTokenLimitsEnabled)
                 return cfg.desktopMaxTokens > 0 ? cfg.desktopMaxTokens : FallbackDesktop;
 
-            var ua     = Request.Headers["User-Agent"].ToString();
+            var ua = Request.Headers["User-Agent"].ToString();
             var device = _deviceDetection.Detect(ua);
 
             var limit = device switch
             {
-                DeviceType.Mobile  => cfg.mobileMaxTokens,
-                DeviceType.Tablet  => cfg.tabletMaxTokens,
+                DeviceType.Mobile => cfg.mobileMaxTokens,
+                DeviceType.Tablet => cfg.tabletMaxTokens,
                 DeviceType.Desktop => cfg.desktopMaxTokens,
-                _                  => cfg.desktopMaxTokens
+                _ => cfg.desktopMaxTokens
             };
 
             _logger.LogInformation(
@@ -420,77 +432,85 @@ public class AIController : ControllerBase
     /// </summary>
     private string BuildClaudeQualityPrompt(string question, MasterConfigDto cfg)
     {
-        // ── DB-driven path ───────────────────────────────────────────────────
+        // DB-driven prompt
         if (!string.IsNullOrWhiteSpace(cfg.mainPromptTemplate))
         {
             _logger.LogInformation("📋 Using DB mainPromptTemplate for question prompt");
             return cfg.mainPromptTemplate.Replace("{question}", question);
         }
 
-        // ── Built-in fallback template ─────────────────────────────────────
         var systemRole = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
             ? cfg.defaultSystemPrompt
-            : "You are an expert programming tutor.";
+            : "You are a friendly senior software engineer who explains concepts clearly.";
 
-        _logger.LogInformation("📋 Using built-in fallback template (no mainPromptTemplate in DB)");
-        return $@"{systemRole} Explain ""{question}"" with clarity, depth, and wow-factor. Follow this exact structure:
+        _logger.LogInformation("📋 Using simplified tutor prompt");
 
-## 🎯 One-Line Essence
-[One punchy sentence + real-world analogy. Example: ""Promises are like restaurant buzzers — you get a token and go sit down; the kitchen calls you when your order is ready.""]
+        return $@"
+{systemRole}
 
-## 🧩 The Problem It Solves
-[2-3 sentences: what pain existed before, what this concept fixes, concrete developer scenario]
+Teach the concept **""{question}""** in a way that is:
+• easy to understand  
+• enjoyable to read  
+• practical for developers  
 
-## 🔍 How It Works
-[Step-by-step explanation with concrete mental model. Use numbered steps. Explain each step's WHY, not just WHAT.]
+Use **clean Markdown formatting** and avoid long paragraphs.
 
-## 💻 Code Examples
+Follow this structure:
 
-**Basic:**
-```[language]
-// Annotated minimal example
-```
+# 🧠 {question}
 
-**Real-World:**
-```[language]
-// Practical use-case with context comments
-```
+## 🎯 Simple Idea
+Explain the concept in **one clear sentence**.
 
-**Advanced / Edge Case:**
-```[language]
-// Best-practice or gotcha example
-```
+## 🌍 Intuitive Analogy
+Give a **real-life analogy** that makes the concept easy to imagine.
 
-## ⚠️ Common Mistakes
-- **Mistake 1** — why it's wrong + correct alternative
-- **Mistake 2** — why it's wrong + correct alternative
-- **Mistake 3** — why it's wrong + correct alternative
+## ❓ Why This Exists
+Briefly explain:
+• the problem developers had before  
+• how this concept solves it
 
-## ✅ When To Use vs ❌ When To Avoid
-| Use ✅ | Avoid ❌ |
-|--------|---------|
-| [scenario 1] | [better alternative exists] |
-| [scenario 2] | [performance concern] |
+## ⚙️ How It Works
+Explain the idea in **4 simple steps**.
 
-## 📊 Comparison Table
-| Feature | {question} | Alternative 1 | Alternative 2 |
-|---------|-----------|--------------|--------------|
-| [aspect] | [value] | [value] | [value] |
-| [aspect] | [value] | [value] | [value] |
-| [aspect] | [value] | [value] | [value] |
+## 💻 Example Code
+Use the **most appropriate language for the concept**.";
+    }
 
-## 💡 Key Insight
-> 🎯 **Remember**: [One sentence that crystallizes everything — make it memorable]
+    private string BuildMobileLearningPrompt(string question)
+    {
+        return $@"
+You are a friendly programming tutor.
 
-## 🚀 What To Learn Next
-- [Related concept 1] — [why it matters]
-- [Related concept 2] — [why it matters]
+Explain ""{question}"" in **two layers** so it works well on mobile devices.
 
-## ❓ Follow-Up Questions
-1. ""[Question comparing this to a related concept]""
-2. ""[Question about a common use-case or pattern]""
-3. ""[Question about an advanced or tricky aspect]""
+Layer 1 = Quick Answer (very short)  
+Layer 2 = Deep Dive (optional detailed explanation)
 
-Rules: Use proper markdown formatting. All code blocks must specify the language. Keep code examples concise but complete. Make the analogy creative and memorable. The comparison table MUST always be present.";
+Rules:
+• Keep Quick Answer extremely short
+• Use bullet points
+• Avoid long paragraphs
+• Use simple language
+
+Follow this structure exactly.
+
+---
+
+# 🧠 {question}
+
+## ⚡ Quick Answer
+
+### 🎯 Simple Idea
+Explain in **one sentence**.
+
+### ⚙️ How It Works
+Explain in **3 short steps**.
+
+1. Step one
+2. Step two
+3. Step three
+
+### 💻 Tiny Example";
     }
 }
