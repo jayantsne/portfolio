@@ -58,8 +58,8 @@
           <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('contact', $event)" [class.active]="activeSection === 'contact'" style="cursor: pointer;">Contact</a></li>
                     <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" (click)="closeNavbar()">🏠 Home</a></li>
           <!-- AI Learn Navigation - Only show on AI Learn pages -->
-          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/roadmap" routerLinkActive="active" (click)="closeNavbar()">🗺️ My Roadmap</a></li>
-          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/interview-prep" routerLinkActive="active" (click)="closeNavbar()">🎯 Interview Prep</a></li>
+          <li class="nav-item" *ngIf="customAuth.isLoggedIn"><a class="nav-link" routerLink="/roadmap" routerLinkActive="active" (click)="closeNavbar()">🗺️ My Roadmap</a></li>
+          <li class="nav-item" *ngIf="customAuth.isLoggedIn"><a class="nav-link" routerLink="/interview-prep" routerLinkActive="active" (click)="closeNavbar()">🎯 Interview Prep</a></li>
 
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn/questions" routerLinkActive="active" (click)="closeNavbar()">📚 Interview Q&A</a></li> -->
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/learn-quest" routerLinkActive="active" (click)="closeNavbar()">🎫 Learn Quest</a></li> -->
