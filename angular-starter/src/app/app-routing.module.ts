@@ -64,10 +64,10 @@ const routes: Routes = [
   { path: 'admin-analytics', component: AnalyticsDashboardComponent },
 
   // Personalized Learning Roadmap
-  { path: 'roadmap', component: RoadmapComponent },
+  { path: 'roadmap', component: RoadmapComponent, canActivate: [AuthGuard] },
 
   // AI-powered Interview Practice (split-screen)
-  { path: 'interview-prep', component: InterviewPrepComponent },
+  { path: 'interview-prep', component: InterviewPrepComponent, canActivate: [AuthGuard] },
 
   // Fallback — any unknown path goes to home (fixes blank page on refresh)
   { path: '**', redirectTo: '', pathMatch: 'full' },
