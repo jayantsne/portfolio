@@ -80,6 +80,20 @@ public class ApiKeyAuthenticationMiddleware
             return;
         }
 
+        // Skip for /api/questions — public read access for Interview Prep
+        if (path.StartsWith("/api/questions"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Skip for /api/app-config — public config endpoint
+        if (path.StartsWith("/api/app-config"))
+        {
+            await _next(context);
+            return;
+        }
+
         // Skip authentication for Ollama AI endpoints (frontend integration)
         if (path.Contains("/api/ai/ollama") || path.Contains("/api/ai/stream"))
         {
