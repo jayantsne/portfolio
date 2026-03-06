@@ -25,6 +25,7 @@ import { DeploymentComponent } from './deployment/deployment.component';
 import { AnalyticsDashboardComponent } from './analytics-dashboard/analytics-dashboard.component';
 import { RoadmapComponent } from './roadmap/roadmap.component';
 import { InterviewPrepComponent } from './interview-prep/interview-prep.component';
+import { LoginGuard } from './shared/login.guard';
 
 
 const routes: Routes = [
@@ -64,10 +65,10 @@ const routes: Routes = [
   { path: 'admin-analytics', component: AnalyticsDashboardComponent },
 
   // Personalized Learning Roadmap
-  { path: 'roadmap', component: RoadmapComponent, canActivate: [AuthGuard] },
+  { path: 'roadmap', component: RoadmapComponent, canActivate: [LoginGuard] },
 
   // AI-powered Interview Practice (split-screen)
-  { path: 'interview-prep', component: InterviewPrepComponent, canActivate: [AuthGuard] },
+  { path: 'interview-prep', component: InterviewPrepComponent, canActivate: [LoginGuard] },
 
   // Fallback — any unknown path goes to home (fixes blank page on refresh)
   { path: '**', redirectTo: '', pathMatch: 'full' },
