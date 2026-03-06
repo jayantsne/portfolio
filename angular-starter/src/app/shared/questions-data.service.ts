@@ -178,8 +178,8 @@ export class QuestionsDataService {
         expanded: false
       }
     ];
-    
-    // Add sample questions to MongoDB
-    questions.forEach(q => this.addQuestion(q));
+
+    // Push directly to subject — do NOT try to re-save to MongoDB (would 401 again)
+    this.questionsSubject.next(questions);
   }
 }
