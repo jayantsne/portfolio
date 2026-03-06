@@ -59,6 +59,10 @@ export class HeaderComponent implements AfterViewInit {
       this.checkRoute(event.url);
       // Collapse navbar on route change (mobile)
       setTimeout(() => this.closeNavbar(), 100);
+      // Auto-open login modal when guard redirects with ?login=required
+      if (event.url.includes('login=required')) {
+        setTimeout(() => this.authModal?.open('login'), 300);
+      }
     });
   }
   
