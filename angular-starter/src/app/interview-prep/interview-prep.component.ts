@@ -188,12 +188,24 @@ What separates a good answer from a great answer — real-world insights or seni
 Keep your answer focused and interview-ready. Avoid generic filler.`;
 
     this.aiSub?.unsubscribe();
-    this.aiSub = this.aiLearnService.getSimplifiedExplanation(prompt).subscribe({
+    this.aiSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
       next: (res: any) => {
-        if (res && res.explanation) {
+        if (res.done) {
+          // Final chunk — move to messages
+          this.aiMessages.push({
+            role: 'ai',
+            text: res.explanation,
+            timestamp: new Date(),
+          });
+          this.streamingText = '';
+          this.isLoadingAI = false;
+          this.scrollToBottom();
+        } else {
+          // Streaming partial — show in bubble
           this.streamingText = res.explanation;
+          this.isLoadingAI = false;
+          this.scrollToBottom();
         }
-        this.isLoadingAI = false;
       },
       error: () => {
         this.streamingText = '';
@@ -203,18 +215,6 @@ Keep your answer focused and interview-ready. Avoid generic filler.`;
           text: '⚠️ Unable to generate AI explanation right now. Please try again in a moment.',
           timestamp: new Date(),
         });
-        this.scrollToBottom();
-      },
-      complete: () => {
-        if (this.streamingText) {
-          this.aiMessages.push({
-            role: 'ai',
-            text: this.streamingText,
-            timestamp: new Date(),
-          });
-          this.streamingText = '';
-        }
-        this.isLoadingAI = false;
         this.scrollToBottom();
       },
     });
@@ -241,12 +241,22 @@ The candidate asks a follow-up: "${text}"
 
 Please answer concisely and with interview-prep focus.`;
 
-    this.aiSub = this.aiLearnService.getSimplifiedExplanation(context).subscribe({
+    this.aiSub = this.aiLearnService.getOllamaExplanation(context).subscribe({
       next: (res: any) => {
-        if (res && res.explanation) {
+        if (res.done) {
+          this.aiMessages.push({
+            role: 'ai',
+            text: res.explanation,
+            timestamp: new Date(),
+          });
+          this.streamingText = '';
+          this.isFollowUpLoading = false;
+          this.scrollToBottom();
+        } else {
           this.streamingText = res.explanation;
+          this.isFollowUpLoading = false;
+          this.scrollToBottom();
         }
-        this.isFollowUpLoading = false;
       },
       error: () => {
         this.streamingText = '';
@@ -256,18 +266,6 @@ Please answer concisely and with interview-prep focus.`;
           text: '⚠️ Could not get an answer. Try again.',
           timestamp: new Date(),
         });
-        this.scrollToBottom();
-      },
-      complete: () => {
-        if (this.streamingText) {
-          this.aiMessages.push({
-            role: 'ai',
-            text: this.streamingText,
-            timestamp: new Date(),
-          });
-          this.streamingText = '';
-        }
-        this.isFollowUpLoading = false;
         this.scrollToBottom();
       },
     });
