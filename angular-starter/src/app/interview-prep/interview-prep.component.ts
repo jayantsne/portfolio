@@ -191,18 +191,18 @@ Keep your answer focused and interview-ready. Avoid generic filler.`;
     this.aiSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
       next: (res: any) => {
         if (res.done) {
-          // Final chunk — move to messages
+          // Final chunk — strip echoed preamble and move to messages
           this.aiMessages.push({
             role: 'ai',
-            text: res.explanation,
+            text: this.cleanResponse(res.explanation),
             timestamp: new Date(),
           });
           this.streamingText = '';
           this.isLoadingAI = false;
           this.scrollToBottom();
         } else {
-          // Streaming partial — show in bubble
-          this.streamingText = res.explanation;
+          // Streaming partial — strip echoed preamble and show in bubble
+          this.streamingText = this.cleanResponse(res.explanation);
           this.isLoadingAI = false;
           this.scrollToBottom();
         }
@@ -218,6 +218,15 @@ Keep your answer focused and interview-ready. Avoid generic filler.`;
         this.scrollToBottom();
       },
     });
+  }
+
+  /** Strip any echoed prompt/preamble — real answer begins at the first ## heading */
+  private cleanResponse(text: string): string {
+    const idx = text.indexOf('\n## ');
+    if (idx !== -1 && idx < 1200) {
+      return text.slice(idx + 1);
+    }
+    return text;
   }
 
   retryExplanation(): void {

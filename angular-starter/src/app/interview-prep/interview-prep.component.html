@@ -182,11 +182,11 @@
         </div>
       </div>
 
-      <div class="ip-msg ip-msg-ai" *ngIf="isLoadingAI || streamingText" [@msgFade]>
+      <div class="ip-msg ip-msg-ai" *ngIf="isLoadingAI || isFollowUpLoading || streamingText" [@msgFade]>
         <div class="ip-msg-avatar">🤖</div>
         <div class="ip-msg-bubble">
           <div class="ip-msg-body" *ngIf="streamingText" [innerHTML]="streamingText | markdown"></div>
-          <div class="ip-thinking" *ngIf="isLoadingAI && !streamingText">
+          <div class="ip-thinking" *ngIf="(isLoadingAI || isFollowUpLoading) && !streamingText">
             <span class="ip-dot"></span>
             <span class="ip-dot"></span>
             <span class="ip-dot"></span>
