@@ -23,6 +23,8 @@ import { AdminDashboardComponent } from './admin/admin-dashboard/admin-dashboard
 import { NotesComponent } from './notes/notes.component';
 import { DeploymentComponent } from './deployment/deployment.component';
 import { AnalyticsDashboardComponent } from './analytics-dashboard/analytics-dashboard.component';
+import { RoadmapComponent } from './roadmap/roadmap.component';
+import { InterviewPrepComponent } from './interview-prep/interview-prep.component';
 
 
 const routes: Routes = [
@@ -60,6 +62,12 @@ const routes: Routes = [
   { path: 'admin-deploy', component: DeploymentComponent },
   // Analytics Dashboard — ADMIN only (guarded in component)
   { path: 'admin-analytics', component: AnalyticsDashboardComponent },
+
+  // Personalized Learning Roadmap
+  { path: 'roadmap', component: RoadmapComponent },
+
+  // AI-powered Interview Practice (split-screen)
+  { path: 'interview-prep', component: InterviewPrepComponent },
 
   // Fallback — any unknown path goes to home (fixes blank page on refresh)
   { path: '**', redirectTo: '', pathMatch: 'full' },

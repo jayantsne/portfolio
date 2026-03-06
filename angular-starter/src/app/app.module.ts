@@ -49,6 +49,8 @@ import { MasterConfigComponent } from './master-config/master-config.component';
 import { DeploymentComponent } from './deployment/deployment.component';
 import { AnalyticsDashboardComponent } from './analytics-dashboard/analytics-dashboard.component';
 import { AppConfigService } from './shared/app-config.service';
+import { RoadmapComponent } from './roadmap/roadmap.component';
+import { InterviewPrepComponent } from './interview-prep/interview-prep.component';
 
 @NgModule({
   declarations: [
@@ -92,6 +94,8 @@ import { AppConfigService } from './shared/app-config.service';
     MasterConfigComponent,  // Admin Master Config
     DeploymentComponent,    // Admin Deployment Manager
     AnalyticsDashboardComponent, // Admin Analytics Dashboard
+    RoadmapComponent,  // Personalized Learning Roadmap
+    InterviewPrepComponent,  // AI-powered Interview Practice
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],

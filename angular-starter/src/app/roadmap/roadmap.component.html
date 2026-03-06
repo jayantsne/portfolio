@@ -1,0 +1,509 @@
+<div class="rm-page">
+
+  <!-- ══════════════════════════════════════════════════════
+       AUTH GATE
+  ══════════════════════════════════════════════════════ -->
+  <div *ngIf="view === 'auth-gate'" class="rm-auth-gate" @fadeUp>
+    <div class="rm-auth-card">
+      <div class="rm-auth-lock">🧠</div>
+      <h2 class="rm-auth-title">AI Learning Roadmap</h2>
+      <p class="rm-auth-body">
+        Create a personalized AI course path — tailored to your domain (ML, NLP, Vision, GenAI…),
+        skill level, and goals. Track progress step by step, unlock new topics as you advance.
+      </p>
+      <div class="rm-auth-preview">
+        <div class="rm-preview-path">
+          <div class="rm-preview-node completed">✔ ML Basics</div>
+          <div class="rm-preview-connector"></div>
+          <div class="rm-preview-node active">▶ Neural Nets</div>
+          <div class="rm-preview-connector locked"></div>
+          <div class="rm-preview-node locked">🔒 Transformers</div>
+        </div>
+      </div>
+      <p class="rm-auth-cta-label">Sign in to build your personalized AI course</p>
+      <div class="rm-auth-actions">
+        <button class="rm-btn rm-btn-primary" (click)="auth.isLoggedIn ? loadHome() : null"
+                *ngIf="auth.isLoggedIn" @fadeIn>
+          🚀 Go to My Roadmaps
+        </button>
+        <span *ngIf="!auth.isLoggedIn" class="rm-auth-hint">
+          Use the <strong>Sign In</strong> button in the top navigation bar to get started.
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       HOME — saved roadmaps dashboard
+  ══════════════════════════════════════════════════════ -->
+  <div *ngIf="view === 'home'" class="rm-home" @fadeUp>
+
+    <!-- Hero -->
+    <div class="rm-home-hero">
+      <div class="rm-home-hero-bg"></div>
+      <div class="rm-home-hero-content">
+        <h1 class="rm-home-title">🗺️ My Learning Roadmaps</h1>
+        <p class="rm-home-subtitle">Track your journey. Unlock knowledge. One step at a time.</p>
+        <button class="rm-btn rm-btn-primary rm-btn-create" (click)="openCreateWizard()">
+          <span>＋</span> Create New Roadmap
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="savedRoadmaps.length === 0" class="rm-empty" @fadeIn>
+      <div class="rm-empty-icon">🗺️</div>
+      <h3>No roadmaps yet</h3>
+      <p>Create your first personalized learning roadmap to get started.</p>
+      <button class="rm-btn rm-btn-primary" (click)="openCreateWizard()">＋ Create First Roadmap</button>
+    </div>
+
+    <!-- Roadmap cards grid -->
+    <div *ngIf="savedRoadmaps.length > 0" class="rm-cards-grid">
+      <div *ngFor="let roadmap of savedRoadmaps" class="rm-card" @fadeUp>
+
+        <!-- Rename mode -->
+        <div *ngIf="renamingId === roadmap.id" class="rm-card-rename" @expandPanel>
+          <input class="rm-rename-input" [(ngModel)]="renameValue"
+                 (keyup.enter)="confirmRename()" (keyup.escape)="renamingId = null"
+                 placeholder="Roadmap title..." autofocus />
+          <div class="rm-rename-actions">
+            <button class="rm-btn rm-btn-sm rm-btn-primary" (click)="confirmRename()">Save</button>
+            <button class="rm-btn rm-btn-sm rm-btn-ghost" (click)="renamingId = null">Cancel</button>
+          </div>
+        </div>
+
+        <!-- Card content -->
+        <ng-container *ngIf="renamingId !== roadmap.id">
+          <div class="rm-card-header">
+            <span class="rm-card-lang-icon">{{ getLanguageIcon(roadmap.language) }}</span>
+            <div class="rm-card-title-wrap">
+              <h3 class="rm-card-title">{{ roadmap.title }}</h3>
+              <div class="rm-card-meta">
+                <span class="rm-badge rm-badge-level">{{ getLevelIcon(roadmap.level) }} {{ getLevelLabel(roadmap.level) }}</span>
+                <span class="rm-badge">{{ getGoalLabel(roadmap.goal) }}</span>
+              </div>
+            </div>
+            <!-- Actions dropdown -->
+            <div class="rm-card-actions">
+              <button class="rm-icon-btn" title="Rename" (click)="startRename(roadmap)">✏️</button>
+              <button class="rm-icon-btn rm-icon-btn-danger" title="Delete"
+                      (click)="deleteConfirmId = roadmap.id">🗑️</button>
+            </div>
+          </div>
+
+          <!-- Delete confirm inline -->
+          <div *ngIf="deleteConfirmId === roadmap.id" class="rm-delete-confirm" @expandPanel>
+            <p>Delete <strong>{{ roadmap.title }}</strong>? This cannot be undone.</p>
+            <div class="rm-delete-actions">
+              <button class="rm-btn rm-btn-sm rm-btn-danger" (click)="deleteRoadmap(roadmap.id)">Delete</button>
+              <button class="rm-btn rm-btn-sm rm-btn-ghost" (click)="deleteConfirmId = null">Cancel</button>
+            </div>
+          </div>
+
+          <!-- Progress bar -->
+          <div class="rm-card-progress-wrap">
+            <div class="rm-card-progress-bar">
+              <div class="rm-card-progress-fill"
+                   [style.width.%]="getProgress(roadmap).percent"></div>
+            </div>
+            <span class="rm-card-progress-pct">{{ getProgress(roadmap).percent }}%</span>
+          </div>
+
+          <!-- Stats row -->
+          <div class="rm-card-stats">
+            <div class="rm-card-stat">
+              <span class="rm-card-stat-num">{{ getProgress(roadmap).completedCount }}</span>
+              <span class="rm-card-stat-lbl">/ {{ getProgress(roadmap).totalCount }} topics</span>
+            </div>
+            <div class="rm-card-stat" *ngIf="roadmap.streakDays > 0">
+              <span class="rm-card-stat-num">🔥 {{ roadmap.streakDays }}</span>
+              <span class="rm-card-stat-lbl">day streak</span>
+            </div>
+            <div class="rm-card-stat">
+              <span class="rm-card-stat-num">~{{ roadmap.estimatedWeeks }}w</span>
+              <span class="rm-card-stat-lbl">to complete</span>
+            </div>
+          </div>
+
+          <button class="rm-btn rm-btn-primary rm-btn-full rm-btn-continue"
+                  (click)="openRoadmap(roadmap)">
+            {{ getProgress(roadmap).percent === 0 ? '🚀 Start Learning' :
+               getProgress(roadmap).percent === 100 ? '🏆 Review Roadmap' :
+               '▶ Continue Learning' }}
+          </button>
+        </ng-container>
+      </div>
+
+      <!-- Add new card -->
+      <button class="rm-card rm-card-new" (click)="openCreateWizard()" @fadeUp>
+        <span class="rm-card-new-plus">＋</span>
+        <span>New Roadmap</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       CREATE WIZARD
+  ══════════════════════════════════════════════════════ -->
+  <div *ngIf="view === 'create'" class="rm-create" @fadeUp>
+
+    <!-- Header -->
+    <div class="rm-create-header">
+      <button class="rm-back-btn" (click)="wizardBack()">← Back</button>
+      <div class="rm-wizard-progress">
+        <div *ngFor="let s of [1,2,3,4,5]" class="rm-wizard-dot"
+             [class.active]="s === wizardStep"
+             [class.done]="s < wizardStep"></div>
+      </div>
+      <h2 class="rm-create-title">
+        {{ wizardStep === 1 ? '🤖 Choose AI Domain'   :
+           wizardStep === 2 ? '📊 Your Skill Level'   :
+           wizardStep === 3 ? '🎯 Learning Goal'      :
+           wizardStep === 4 ? '⏱️ Commitment Level'   :
+                              '✨ Your Roadmap Preview' }}
+      </h2>
+    </div>
+
+    <!-- Step 1: Language -->
+    <div *ngIf="wizardStep === 1" class="rm-wizard-step" @fadeUp>
+      <div class="rm-option-grid">
+        <button *ngFor="let lang of languages"
+                class="rm-option-card" [class.selected]="wizard.language === lang.value"
+                (click)="selectLanguage(lang.value)">
+          <span class="rm-option-icon">{{ lang.icon }}</span>
+          <span class="rm-option-label">{{ lang.label }}</span>
+          <span class="rm-option-check" *ngIf="wizard.language === lang.value">✔</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Skill Level -->
+    <div *ngIf="wizardStep === 2" class="rm-wizard-step" @fadeUp>
+      <div class="rm-option-list">
+        <button *ngFor="let level of skillLevels"
+                class="rm-option-row" [class.selected]="wizard.level === level.value"
+                (click)="selectLevel(level.value)">
+          <span class="rm-option-icon">{{ level.icon }}</span>
+          <div class="rm-option-text">
+            <span class="rm-option-label">{{ level.label }}</span>
+            <span class="rm-option-desc">{{ level.desc }}</span>
+          </div>
+          <span class="rm-option-check" *ngIf="wizard.level === level.value">✔</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Goal -->
+    <div *ngIf="wizardStep === 3" class="rm-wizard-step" @fadeUp>
+      <div class="rm-option-list">
+        <button *ngFor="let goal of goals"
+                class="rm-option-row" [class.selected]="wizard.goal === goal.value"
+                (click)="selectGoal(goal.value)">
+          <span class="rm-option-icon">{{ goal.icon }}</span>
+          <div class="rm-option-text">
+            <span class="rm-option-label">{{ goal.label }}</span>
+            <span class="rm-option-desc">{{ goal.desc }}</span>
+          </div>
+          <span class="rm-option-check" *ngIf="wizard.goal === goal.value">✔</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 4: Commitment -->
+    <div *ngIf="wizardStep === 4" class="rm-wizard-step" @fadeUp>
+      <div class="rm-option-list">
+        <button *ngFor="let c of commitments"
+                class="rm-option-row" [class.selected]="wizard.commitment === c.value"
+                (click)="selectCommitment(c.value)">
+          <span class="rm-option-icon">{{ c.icon }}</span>
+          <div class="rm-option-text">
+            <span class="rm-option-label">{{ c.label }}</span>
+            <span class="rm-option-desc">{{ c.hours }}</span>
+          </div>
+          <span class="rm-option-check" *ngIf="wizard.commitment === c.value">✔</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 5: Preview (AI generating / generated) -->
+    <div *ngIf="wizardStep === 5" class="rm-wizard-step rm-wizard-preview" @fadeUp>
+
+      <!-- Generating loader -->
+      <div *ngIf="isGenerating" class="rm-generating" @fadeIn>
+        <div class="rm-generating-orbs">
+          <div class="rm-orb rm-orb-1"></div>
+          <div class="rm-orb rm-orb-2"></div>
+          <div class="rm-orb rm-orb-3"></div>
+        </div>
+        <div class="rm-generating-brain">🧠</div>
+        <div class="rm-generating-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <p class="rm-generating-text">AI is building your personalized roadmap…</p>
+        <p class="rm-generating-sub">Analyzing {{ wizardLanguageLabel }} · {{ wizardLevelLabel }} · {{ wizardGoalLabel }}</p>
+      </div>
+
+      <!-- Error state -->
+      <div *ngIf="!isGenerating && generateError" class="rm-gen-error" @fadeIn>
+        <div class="rm-gen-error-icon">⚠️</div>
+        <p>Could not reach AI — showing a standard roadmap template instead.</p>
+        <button class="rm-btn rm-btn-ghost rm-btn-sm" (click)="retryGenerate()">🔄 Retry AI Generation</button>
+      </div>
+
+      <!-- Preview summary bar -->
+      <div *ngIf="!isGenerating && generatedNodes.length" class="rm-preview-summary" @fadeIn>
+        <span class="rm-preview-chip">{{ getLanguageIcon(wizard.language!) }} {{ wizardLanguageLabel }}</span>
+        <span class="rm-preview-chip">{{ wizardLevelLabel }}</span>
+        <span class="rm-preview-chip">{{ wizardGoalLabel }}</span>
+        <span class="rm-preview-chip">{{ wizardCommitLabel }} ({{ wizardCommitHours }})</span>
+      </div>
+
+      <!-- Nodes list -->
+      <div *ngIf="!isGenerating && generatedNodes.length" class="rm-preview-nodes" @fadeIn>
+        <div *ngFor="let node of generatedNodes; let i = index"
+             class="rm-preview-node-row">
+          <div class="rm-preview-node-badge" [class.first]="i===0">{{ node.icon }}</div>
+          <div class="rm-preview-node-info">
+            <span class="rm-preview-node-title">{{ node.order }}. {{ node.topic }}</span>
+            <span class="rm-preview-node-desc">{{ node.description }}</span>
+          </div>
+          <span class="rm-preview-est">~{{ node.estMinutes }}m</span>
+        </div>
+      </div>
+
+      <!-- Create button -->
+      <button *ngIf="!isGenerating && generatedNodes.length"
+              class="rm-btn rm-btn-primary rm-btn-full rm-btn-create-final"
+              (click)="saveGeneratedRoadmap()" @fadeIn>
+        🚀 Start This Roadmap
+      </button>
+    </div>
+
+    <!-- Wizard footer nav -->
+    <div class="rm-wizard-footer" *ngIf="wizardStep < 5">
+      <button class="rm-btn rm-btn-ghost" (click)="wizardBack()">Back</button>
+      <button class="rm-btn rm-btn-primary"
+              [disabled]="!canAdvanceWizard()"
+              (click)="wizardNext()">
+        {{ wizardStep === 4 ? '✨ Generate Roadmap' : 'Next →' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       ROADMAP VIEW — horizontal data flow
+  ══════════════════════════════════════════════════════ -->
+  <div *ngIf="view === 'view' && activeRoadmap" class="rm-view" @fadeUp>
+
+    <!-- Navigation -->
+    <div class="rm-view-nav">
+      <button class="rm-back-btn" (click)="goHome()">← My Roadmaps</button>
+      <div class="rm-view-nav-info">
+        <span class="rm-badge rm-badge-lang">{{ getLanguageIcon(activeRoadmap.language) }} {{ activeRoadmap.language }}</span>
+        <span *ngIf="activeRoadmap.streakDays > 0" class="rm-streak-badge">🔥 {{ activeRoadmap.streakDays }}-day streak</span>
+      </div>
+    </div>
+
+    <!-- Header card -->
+    <div class="rm-view-header">
+      <div class="rm-view-header-left">
+        <h2 class="rm-view-title">{{ activeRoadmap.title }}</h2>
+        <div class="rm-view-meta">
+          <span class="rm-badge">{{ getLevelIcon(activeRoadmap.level) }} {{ getLevelLabel(activeRoadmap.level) }}</span>
+          <span class="rm-badge">{{ getGoalLabel(activeRoadmap.goal) }}</span>
+          <span class="rm-badge">~{{ activeRoadmap.estimatedWeeks }} weeks</span>
+        </div>
+      </div>
+      <div class="rm-view-progress-ring-wrap">
+        <svg class="rm-progress-ring" viewBox="0 0 52 52">
+          <circle class="rm-progress-ring-track" cx="26" cy="26" r="22"/>
+          <circle class="rm-progress-ring-fill" cx="26" cy="26" r="22"
+                  [style.stroke-dashoffset]="138 - (138 * (progress?.percent ?? 0) / 100)"/>
+        </svg>
+        <span class="rm-progress-ring-pct">{{ progress?.percent ?? 0 }}%</span>
+      </div>
+    </div>
+
+    <!-- Vertical learning path -->
+    <div class="rm-vpath">
+
+      <!-- START cap -->
+      <div class="rm-vpath-cap rm-vpath-cap-start">
+        <div class="rm-vpath-cap-dot">🚀</div>
+        <div class="rm-vpath-cap-line"></div>
+      </div>
+
+      <ng-container *ngFor="let node of activeRoadmap.nodes; let last = last">
+        <div class="rm-vn-wrap">
+
+          <!-- Spine: dot + connecting line -->
+          <div class="rm-vn-spine">
+            <div class="rm-vn-dot"
+                 [class.rm-vn-dot-done]="node.status === 'completed'"
+                 [class.rm-vn-dot-active]="node.status === 'active'"
+                 [class.rm-vn-dot-locked]="node.status === 'locked'">
+              <span *ngIf="node.status === 'completed'">✓</span>
+              <span *ngIf="node.status === 'active'">{{ node.order }}</span>
+              <span *ngIf="node.status === 'locked'" class="rm-vn-lock">🔒</span>
+            </div>
+            <div *ngIf="!last" class="rm-vn-line"
+                 [class.rm-vn-line-done]="node.status === 'completed'"></div>
+          </div>
+
+          <!-- Card + inline expanded detail -->
+          <div class="rm-vn-right">
+            <button class="rm-vn-card"
+                    [class.rm-vn-card-done]="node.status === 'completed'"
+                    [class.rm-vn-card-active]="node.status === 'active'"
+                    [class.rm-vn-card-locked]="node.status === 'locked'"
+                    [class.rm-vn-card-sel]="expandedNodeId === node.id"
+                    [@nodeAnim]="node.status"
+                    [class.rm-node-burst]="isNodeJustCompleted(node)"
+                    (click)="toggleExpandNode(node.id)">
+              <span class="rm-vn-icon">{{ node.icon }}</span>
+              <div class="rm-vn-info">
+                <span class="rm-vn-topic">{{ node.topic }}</span>
+                <span class="rm-vn-est">~{{ node.estMinutes }} min</span>
+              </div>
+              <span class="rm-vn-status-icon">
+                <span *ngIf="node.status === 'completed'">✔</span>
+                <span *ngIf="node.status === 'active'">▶</span>
+                <span *ngIf="node.status === 'locked'">🔒</span>
+              </span>
+              <span class="rm-vn-chevron">{{ expandedNodeId === node.id ? '▲' : '▼' }}</span>
+            </button>
+
+            <!-- Inline detail panel -->
+            <div *ngIf="expandedNodeId === node.id" class="rm-vn-detail" @expandPanel>
+              <p class="rm-vn-desc">{{ node.description }}</p>
+              <div class="rm-vn-detail-meta">
+                <span class="rm-badge">~{{ node.estMinutes }} min</span>
+                <span *ngIf="node.completedAt" class="rm-badge">Done {{ node.completedAt | date:'MMM d' }}</span>
+                <span class="rm-status-pill"
+                      [class.rm-status-pill-completed]="node.status === 'completed'"
+                      [class.rm-status-pill-active]="node.status === 'active'"
+                      [class.rm-status-pill-locked]="node.status === 'locked'">
+                  {{ node.status === 'completed' ? '✔ Completed' :
+                     node.status === 'active'    ? '▶ In Progress' : '🔒 Locked' }}
+                </span>
+              </div>
+              <div class="rm-vn-detail-actions">
+                <button *ngIf="node.status !== 'locked'"
+                        class="rm-btn rm-btn-primary rm-btn-sm"
+                        (click)="openLesson(node)">
+                  {{ node.status === 'completed' ? '📖 Review Lesson' : '▶ Start Lesson' }}
+                </button>
+                <button *ngIf="node.status === 'active'"
+                        class="rm-btn rm-btn-success rm-btn-sm"
+                        (click)="markComplete(node)">
+                  ✔ Mark Complete
+                </button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </ng-container>
+
+      <!-- FINISH cap -->
+      <div class="rm-vpath-cap rm-vpath-cap-finish">
+        <div class="rm-vpath-cap-dot rm-vpath-cap-dot-finish">🏆</div>
+        <span class="rm-vpath-cap-label">Finish</span>
+      </div>
+
+    </div>
+
+    <!-- Completion banner -->
+    <div *ngIf="progress?.percent === 100" class="rm-completion-banner" @fadeIn>
+      <div class="rm-completion-icon">🏆</div>
+      <h3>Roadmap Complete!</h3>
+      <p>You've mastered all {{ activeRoadmap.nodes.length }} topics in this roadmap.</p>
+      <button class="rm-btn rm-btn-primary" (click)="openCreateWizard()">
+        Create Next Roadmap →
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════
+       LESSON PANEL
+  ══════════════════════════════════════════════════════ -->
+  <div *ngIf="view === 'lesson' && lessonNode && activeRoadmap" class="rm-lesson" @slideRight>
+
+    <!-- Lesson header -->
+    <div class="rm-lesson-header">
+      <button class="rm-back-btn" (click)="backToPath()">← Back to Path</button>
+      <div class="rm-lesson-title-row">
+        <span class="rm-lesson-icon">{{ lessonNode.icon }}</span>
+        <div>
+          <h2 class="rm-lesson-title">{{ lessonNode.topic }}</h2>
+          <span class="rm-lesson-meta">{{ activeRoadmap.language }} · {{ getLevelLabel(activeRoadmap.level) }} · ~{{ lessonNode.estMinutes }} min</span>
+        </div>
+      </div>
+      <button *ngIf="lessonNode.status === 'active'"
+              class="rm-btn rm-btn-success rm-btn-sm rm-lesson-complete-btn"
+              (click)="markComplete(lessonNode)">
+        ✔ Mark Complete
+      </button>
+    </div>
+
+    <!-- Lesson body (messages) -->
+    <div class="rm-lesson-body" #lessonBody>
+
+      <!-- Loading state -->
+      <div *ngIf="lessonLoading" class="rm-lesson-loading" @fadeIn>
+        <div class="rm-thinking-brain">🧠</div>
+        <div class="rm-thinking-dots">
+          <span></span><span></span><span></span>
+        </div>
+        <p>AI is preparing your lesson…</p>
+      </div>
+
+      <!-- Error state -->
+      <div *ngIf="lessonError && !lessonLoading" class="rm-lesson-error" @fadeIn>
+        <p>⚠️ Could not load lesson. Please check your connection and try again.</p>
+        <button class="rm-btn rm-btn-ghost rm-btn-sm" (click)="loadLesson(lessonNode)">🔄 Retry</button>
+      </div>
+
+      <!-- Messages -->
+      <div *ngFor="let msg of lessonMessages" class="rm-lesson-msg"
+           [class.rm-lesson-msg-user]="msg.role==='user'"
+           [class.rm-lesson-msg-ai]="msg.role==='ai'"
+           @fadeUp>
+        <div class="rm-lesson-msg-avatar">
+          {{ msg.role === 'user' ? '👤' : '🤖' }}
+        </div>
+        <div class="rm-lesson-msg-bubble md-content" [innerHTML]="msg.text | markdown"></div>
+      </div>
+
+      <!-- Follow-up loading -->
+      <div *ngIf="lessonFollowUpLoading" class="rm-lesson-loading rm-lesson-loading-sm" @fadeIn>
+        <div class="rm-thinking-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lesson footer input -->
+    <div class="rm-lesson-footer">
+      <div *ngIf="lessonNode.status === 'active'" class="rm-lesson-complete-bar">
+        <button class="rm-btn rm-btn-success rm-btn-full" (click)="markComplete(lessonNode)">
+          ✔ Mark as Complete & Unlock Next Topic
+        </button>
+      </div>
+      <div class="rm-lesson-input-row">
+        <input class="rm-lesson-input" type="text"
+               [(ngModel)]="lessonQuestion"
+               placeholder="Ask a follow-up question about {{ lessonNode.topic }}…"
+               (keyup.enter)="sendLessonQuestion()"
+               [disabled]="lessonFollowUpLoading || lessonLoading" />
+        <button class="rm-lesson-send-btn"
+                (click)="sendLessonQuestion()"
+                [disabled]="!lessonQuestion.trim() || lessonFollowUpLoading || lessonLoading">
+          Send →
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

@@ -56,9 +56,11 @@
           <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('skills', $event)" [class.active]="activeSection === 'skills'" style="cursor: pointer;">Skills</a></li>
           <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('experience', $event)" [class.active]="activeSection === 'experience'" style="cursor: pointer;">Experience</a></li>
           <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('contact', $event)" [class.active]="activeSection === 'contact'" style="cursor: pointer;">Contact</a></li>
-          
+                    <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" (click)="closeNavbar()">🏠 Home</a></li>
           <!-- AI Learn Navigation - Only show on AI Learn pages -->
-          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" (click)="closeNavbar()">🏠 Home</a></li>
+          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/roadmap" routerLinkActive="active" (click)="closeNavbar()">🗺️ My Roadmap</a></li>
+          <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/interview-prep" routerLinkActive="active" (click)="closeNavbar()">🎯 Interview Prep</a></li>
+
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn/questions" routerLinkActive="active" (click)="closeNavbar()">📚 Interview Q&A</a></li> -->
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/learn-quest" routerLinkActive="active" (click)="closeNavbar()">🎫 Learn Quest</a></li> -->
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/dsa-game" routerLinkActive="active" (click)="closeNavbar()">🎮 DSA Game</a></li> -->
@@ -97,7 +99,7 @@
               🔐 Login
             </a>
           </li> -->
-          <li class="nav-item" *ngIf="authService.isAuthenticated()"><a class="nav-link" routerLink="/questions">📚 Q&A</a></li>
+          <!-- <li class="nav-item" *ngIf="authService.isAuthenticated()"><a class="nav-link" routerLink="/questions">📚 Q&A</a></li>
           <li class="nav-item dropdown" *ngIf="authService.isAuthenticated()">
             <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
               🔒 Admin
@@ -114,7 +116,7 @@
             <a class="nav-link logout-btn" (click)="logout()" style="cursor: pointer;" title="Logout">
               🚪 Logout
             </a>
-          </li>
+          </li> -->
         </ul>
       </div>
     </div>

@@ -1,0 +1,288 @@
+<div class="ip-shell" [class.ip-split]="selectedQuestion">
+
+  <!-- ═══════════════════════════ LEFT PANEL ═══════════════════════════ -->
+  <section class="ip-left" aria-label="Interview questions list">
+
+    <!-- ── Hero header ── -->
+    <div class="ip-hero">
+      <div class="ip-hero-glow" aria-hidden="true"></div>
+      <div class="ip-hero-content">
+        <div class="ip-hero-icon">🎯</div>
+        <div>
+          <h1 class="ip-h1">Interview Prep</h1>
+          <p class="ip-sub">AI-powered answers · real interview questions</p>
+        </div>
+      </div>
+      <div class="ip-hero-badge" *ngIf="allQuestions.length">
+        <span class="ip-hero-count">{{ filteredQuestions.length }}</span>
+        <span class="ip-hero-label">questions</span>
+      </div>
+    </div>
+
+    <!-- ── Search bar ── -->
+    <div class="ip-search-row">
+      <div class="ip-search-wrap">
+        <span class="ip-search-icon">🔍</span>
+        <input
+          class="ip-search"
+          type="text"
+          placeholder="Search questions, categories, tags…"
+          [(ngModel)]="searchTerm"
+          (ngModelChange)="applyFilters()"
+          autocomplete="off"
+          aria-label="Search questions"
+        />
+        <button class="ip-search-clear" *ngIf="searchTerm" (click)="clearSearch()" aria-label="Clear search">✕</button>
+      </div>
+    </div>
+
+    <!-- ── Filters ── -->
+    <div class="ip-filters">
+      <div class="ip-filter-group">
+        <span class="ip-filter-label">Category</span>
+        <div class="ip-pill-track">
+          <button class="ip-pill" [class.ip-pill-active]="selectedCategory === 'all'"
+            (click)="selectedCategory = 'all'; applyFilters()">All</button>
+          <button class="ip-pill" *ngFor="let cat of categories"
+            [class.ip-pill-active]="selectedCategory === cat"
+            (click)="selectedCategory = cat; applyFilters()">{{ cat }}</button>
+        </div>
+      </div>
+      <div class="ip-filter-group">
+        <span class="ip-filter-label">Difficulty</span>
+        <div class="ip-pill-track">
+          <button class="ip-pill" [class.ip-pill-active]="selectedDifficulty === 'all'"
+            (click)="selectedDifficulty = 'all'; applyFilters()">All</button>
+          <button class="ip-pill" *ngFor="let diff of difficulties"
+            [ngClass]="{'ip-pill-active': selectedDifficulty === diff, 'ip-pill-diff-easy': diff === 'Easy', 'ip-pill-diff-medium': diff === 'Medium', 'ip-pill-diff-hard': diff === 'Hard'}"
+            (click)="selectedDifficulty = diff; applyFilters()">{{ diff }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Notes toggle bar ── -->
+    <div class="ip-notes-bar">
+      <button class="ip-notes-toggle" (click)="toggleNotesDrawer()" [class.ip-notes-toggle-open]="showNotesDrawer">
+        <span>📌</span>
+        <span>Saved Notes</span>
+        <span class="ip-notes-count" *ngIf="savedNotes.length">{{ savedNotes.length }}</span>
+        <span class="ip-notes-chevron">{{ showNotesDrawer ? '▲' : '▼' }}</span>
+      </button>
+    </div>
+
+    <!-- ── Notes drawer ── -->
+    <div class="ip-notes-drawer" [class.ip-notes-drawer-open]="showNotesDrawer">
+      <div class="ip-notes-empty" *ngIf="savedNotes.length === 0">
+        <span>📭</span>
+        <p>No saved notes yet.<br>Click 📌 Save Note on any AI answer.</p>
+      </div>
+      <div class="ip-note-item" *ngFor="let note of savedNotes">
+        <div class="ip-note-header">
+          <span class="ip-note-cat">{{ note.category }}</span>
+          <span class="ip-badge ip-note-diff" [ngClass]="difficultyClass(note.difficulty)">{{ note.difficulty }}</span>
+          <button class="ip-note-delete" (click)="deleteNote(note.questionId)" title="Delete note">🗑</button>
+        </div>
+        <p class="ip-note-q" (click)="openNoteQuestion(note)">{{ note.question }}</p>
+        <span class="ip-note-date">{{ note.savedAt | date:'MMM d, HH:mm' }}</span>
+      </div>
+    </div>
+
+    <!-- ── Scrollable question list ── -->
+    <div class="ip-left-scroll">
+    <div class="ip-empty" *ngIf="allQuestions.length === 0">
+      <div class="ip-empty-icon">⏳</div>
+      <p>Loading questions…</p>
+    </div>
+
+    <!-- ── No results ── -->
+    <div class="ip-empty" *ngIf="allQuestions.length > 0 && filteredQuestions.length === 0">
+      <div class="ip-empty-icon">🔎</div>
+      <p>No questions match your filters.</p>
+      <button class="ip-btn-ghost" (click)="selectedCategory='all'; selectedDifficulty='all'; clearSearch()">Clear filters</button>
+    </div>
+
+    <!-- ── Question list ── -->
+    <ul class="ip-qlist" role="list" *ngIf="filteredQuestions.length > 0">
+      <li
+        class="ip-qitem"
+        role="listitem"
+        *ngFor="let q of filteredQuestions; let i = index; trackBy: trackById"
+        [class.ip-qitem-active]="selectedQuestion?.id === q.id"
+        (click)="selectQuestion(q)"
+        [attr.aria-selected]="selectedQuestion?.id === q.id">
+
+        <div class="ip-qitem-accent" [ngClass]="difficultyClass(q.difficulty)"></div>
+
+        <div class="ip-qitem-body">
+          <div class="ip-qitem-top">
+            <span class="ip-qitem-num">#{{ i + 1 }}</span>
+            <span class="ip-qitem-cat">{{ q.category }}</span>
+            <span class="ip-badge" [ngClass]="difficultyClass(q.difficulty)">{{ q.difficulty || 'Medium' }}</span>
+          </div>
+          <p class="ip-qitem-text">{{ q.question }}</p>
+          <div class="ip-qitem-bottom" *ngIf="q.tags && q.tags.length">
+            <span class="ip-tag" *ngFor="let tag of q.tags.slice(0, 3)">#{{ tag }}</span>
+          </div>
+        </div>
+
+        <span class="ip-qitem-arrow" aria-hidden="true">›</span>
+      </li>
+    </ul>
+    </div><!-- /ip-left-scroll -->
+  </section><!-- /ip-left -->
+
+
+  <!-- ═══════════════════════════ RIGHT PANEL ══════════════════════════ -->
+  <aside class="ip-right" *ngIf="selectedQuestion" [@panelSlide] aria-label="AI explanation panel">
+
+    <!-- ── Panel header ── -->
+    <div class="ip-rh">
+      <div class="ip-rh-info">
+        <div class="ip-rh-title-row">
+          <span class="ip-badge" [ngClass]="difficultyClass(selectedQuestion.difficulty)">{{ selectedQuestion.difficulty || 'Medium' }}</span>
+          <span class="ip-rh-cat">{{ selectedQuestion.category }}</span>
+        </div>
+        <h2 class="ip-rh-q">{{ selectedQuestion.question }}</h2>
+      </div>
+      <div class="ip-rh-actions">
+        <button class="ip-back-btn" title="Back to questions" (click)="closeSidePanel()">
+          ← Back
+        </button>
+        <button class="ip-save-btn" title="Save note" (click)="saveCurrentNote()"
+          [class.ip-save-btn-saved]="isNoteSaved()"
+          [disabled]="isLoadingAI || (!aiMessages.length && !streamingText)">
+          <span *ngIf="!noteSaved && !isNoteSaved()">📌 Save Note</span>
+          <span *ngIf="isNoteSaved() && !noteSaved">✅ Saved</span>
+          <span *ngIf="noteSaved">✅ Saved!</span>
+        </button>
+        <button class="ip-icon-btn" title="Retry AI answer" (click)="retryExplanation()" [disabled]="isLoadingAI">
+          🔄
+        </button>
+        <button class="ip-icon-btn ip-icon-btn-close ip-desktop-only" title="Close panel" (click)="closeSidePanel()">
+          ✕
+        </button>
+      </div>
+    </div>
+
+    <!-- ── Messages ── -->
+    <div class="ip-messages" #msgContainer>
+      <div
+        class="ip-msg"
+        [class.ip-msg-user]="msg.role === 'user'"
+        [class.ip-msg-ai]="msg.role === 'ai'"
+        *ngFor="let msg of aiMessages"
+        [@msgFade]>
+        <div class="ip-msg-avatar">
+          <span *ngIf="msg.role === 'ai'">🤖</span>
+          <span *ngIf="msg.role === 'user'">🧑‍💻</span>
+        </div>
+        <div class="ip-msg-bubble">
+          <div class="ip-msg-body" [innerHTML]="msg.text | markdown"></div>
+          <div class="ip-msg-time">{{ msg.timestamp | date:'HH:mm' }}</div>
+        </div>
+      </div>
+
+      <div class="ip-msg ip-msg-ai" *ngIf="isLoadingAI || streamingText" [@msgFade]>
+        <div class="ip-msg-avatar">🤖</div>
+        <div class="ip-msg-bubble">
+          <div class="ip-msg-body" *ngIf="streamingText" [innerHTML]="streamingText | markdown"></div>
+          <div class="ip-thinking" *ngIf="isLoadingAI && !streamingText">
+            <span class="ip-dot"></span>
+            <span class="ip-dot"></span>
+            <span class="ip-dot"></span>
+            <span class="ip-thinking-label">AI is preparing your answer…</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Follow-up input ── -->
+    <div class="ip-footer">
+      <div class="ip-footer-input-wrap">
+        <textarea
+          class="ip-footer-input"
+          rows="1"
+          placeholder="Ask a follow-up question…"
+          [(ngModel)]="followUpText"
+          (keydown)="onFollowUpKeydown($event)"
+          [disabled]="isLoadingAI || isFollowUpLoading"
+          aria-label="Follow-up question"
+        ></textarea>
+        <button
+          class="ip-send-btn"
+          [disabled]="!followUpText.trim() || isLoadingAI || isFollowUpLoading"
+          (click)="sendFollowUp()"
+          aria-label="Send follow-up">
+          <span *ngIf="!isFollowUpLoading">➤</span>
+          <span *ngIf="isFollowUpLoading" class="ip-spin">⟳</span>
+        </button>
+      </div>
+      <p class="ip-footer-hint">Press <kbd>Enter</kbd> to send · <kbd>Shift+Enter</kbd> for new line</p>
+    </div>
+
+  </aside><!-- /ip-right -->
+
+
+  <!-- ─── Welcome state (no question selected) ─── -->
+  <aside class="ip-right ip-right-empty" *ngIf="!selectedQuestion" aria-hidden="true">
+    <div class="ip-welcome">
+      <div class="ip-welcome-glow" aria-hidden="true"></div>
+
+      <div class="ip-welcome-icon">
+        <span class="ip-welcome-emoji">🎯</span>
+      </div>
+      <h2 class="ip-welcome-title">Ready to ace your interview?</h2>
+      <p class="ip-welcome-sub">Pick any question on the left — get a structured AI answer instantly.</p>
+
+      <div class="ip-feature-grid">
+        <div class="ip-feat">
+          <span class="ip-feat-icon">🤖</span>
+          <div>
+            <strong>AI Answers</strong>
+            <span>Structured, interview-ready</span>
+          </div>
+        </div>
+        <div class="ip-feat">
+          <span class="ip-feat-icon">💡</span>
+          <div>
+            <strong>Key Concepts</strong>
+            <span>What interviewers look for</span>
+          </div>
+        </div>
+        <div class="ip-feat">
+          <span class="ip-feat-icon">💻</span>
+          <div>
+            <strong>Code Examples</strong>
+            <span>Where relevant</span>
+          </div>
+        </div>
+        <div class="ip-feat">
+          <span class="ip-feat-icon">🔁</span>
+          <div>
+            <strong>Follow-ups</strong>
+            <span>Keep drilling deeper</span>
+          </div>
+        </div>
+        <div class="ip-feat">
+          <span class="ip-feat-icon">⭐</span>
+          <div>
+            <strong>Pro Tips</strong>
+            <span>Senior-level nuance</span>
+          </div>
+        </div>
+        <div class="ip-feat">
+          <span class="ip-feat-icon">🎓</span>
+          <div>
+            <strong>All Categories</strong>
+            <span>Angular, .NET, Patterns…</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ip-welcome-arrow" aria-hidden="true">
+        ← Select a question to begin
+      </div>
+    </div>
+  </aside>
+
+</div>
