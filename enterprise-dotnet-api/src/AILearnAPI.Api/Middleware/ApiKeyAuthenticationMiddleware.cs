@@ -94,8 +94,8 @@ public class ApiKeyAuthenticationMiddleware
             return;
         }
 
-        // Skip authentication for Ollama AI endpoints (frontend integration)
-        if (path.Contains("/api/ai/ollama") || path.Contains("/api/ai/stream"))
+        // Skip authentication for all AI endpoints — protected by JWT Bearer token
+        if (path.StartsWith("/api/ai/"))
         {
             await _next(context);
             return;
