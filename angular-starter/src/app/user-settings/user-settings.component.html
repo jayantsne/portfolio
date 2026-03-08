@@ -42,8 +42,8 @@
         </div>
       </section>
 
-      <!-- LLM provider selector (only shown when user has access to ≥1 special provider) -->
-      <section class="config-section" *ngIf="availableProviders.length > 0">
+      <!-- LLM provider selector -->
+      <section class="config-section">
         <label class="section-label">Active AI Provider</label>
         <p class="section-desc">
           Select which AI provider handles your requests.
@@ -51,18 +51,112 @@
         </p>
         <div class="provider-select-wrap">
           <select class="provider-select"
-                  [value]="llmSvc.selectedProvider"
-                  (change)="selectLlmProvider($any($event.target).value)"
+                  [(ngModel)]="selectedProviderName"
+                  (ngModelChange)="selectLlmProvider($event)"
                   aria-label="Select AI provider">
             <option value="ollama">🦙 Ollama (default)</option>
             <option *ngFor="let p of availableProviders" [value]="p">
               {{ providerIcon(p) }} {{ p | titlecase }}
             </option>
+            <option *ngFor="let cp of config.customProviders" [value]="'custom:' + cp.id">
+              🔧 {{ cp.name }}
+            </option>
           </select>
           <span class="provider-active-badge">
-            Active: <strong>{{ llmSvc.selectedProvider | titlecase }}</strong>
+            Active: <strong>{{ displayName(selectedProviderName) }}</strong>
           </span>
         </div>
+      </section>
+
+      <!-- Custom providers management -->
+      <section class="config-section">
+        <div class="section-header-row">
+          <label class="section-label">Custom AI Providers</label>
+          <button class="add-custom-btn" (click)="openAddForm()" *ngIf="!showAddForm">
+            + Add Provider
+          </button>
+        </div>
+        <p class="section-desc">Add your own OpenAI-compatible endpoints with personal API keys.</p>
+
+        <!-- add form -->
+        <div class="custom-provider-form" *ngIf="showAddForm">
+          <div class="form-row">
+            <input class="form-input" type="text" placeholder="Name (e.g. My GPT-4)"
+                   [(ngModel)]="addForm.name" />
+            <input class="form-input" type="text" placeholder="Base URL (https://api.openai.com/v1)"
+                   [(ngModel)]="addForm.baseUrl" />
+          </div>
+          <div class="form-row">
+            <input class="form-input" type="password" placeholder="API Key"
+                   [(ngModel)]="addForm.apiKey" />
+            <input class="form-input" type="text" placeholder="Model (e.g. gpt-4o-mini)"
+                   [(ngModel)]="addForm.model" />
+          </div>
+          <div class="form-error" *ngIf="cpFormError">{{ cpFormError }}</div>
+          <div class="form-actions">
+            <button class="form-save-btn" (click)="submitAddForm()" [disabled]="cpFormSaving">
+              <span class="spinner" *ngIf="cpFormSaving"></span>
+              <span *ngIf="!cpFormSaving">💾 Save</span>
+            </button>
+            <button class="form-cancel-btn" (click)="cancelAddForm()">Cancel</button>
+          </div>
+        </div>
+
+        <!-- custom provider list -->
+        <div class="custom-provider-list" *ngIf="(config.customProviders ?? []).length > 0">
+          <div class="custom-provider-card"
+               *ngFor="let cp of config.customProviders"
+               [class.is-active]="isDefaultProvider(cp)">
+
+            <!-- view mode -->
+            <ng-container *ngIf="editingId !== cp.id">
+              <div class="cp-info">
+                <span class="cp-name">🔧 {{ cp.name }}</span>
+                <span class="cp-meta">{{ cp.baseUrl }}</span>
+                <span class="cp-meta cp-model" *ngIf="cp.model">Model: {{ cp.model }}</span>
+              </div>
+              <div class="cp-actions">
+                <span class="cp-default-badge" *ngIf="isDefaultProvider(cp)">✅ Active</span>
+                <button class="cp-btn cp-set-default"
+                        *ngIf="!isDefaultProvider(cp)"
+                        (click)="selectLlmProvider('custom:' + cp.id)">
+                  Set Default
+                </button>
+                <button class="cp-btn cp-edit" (click)="openEditForm(cp)">Edit</button>
+                <button class="cp-btn cp-delete" (click)="deleteCustomProvider(cp)">Delete</button>
+              </div>
+            </ng-container>
+
+            <!-- edit mode -->
+            <ng-container *ngIf="editingId === cp.id">
+              <div class="form-row">
+                <input class="form-input" type="text" placeholder="Name"
+                       [(ngModel)]="editForm.name" />
+                <input class="form-input" type="text" placeholder="Base URL"
+                       [(ngModel)]="editForm.baseUrl" />
+              </div>
+              <div class="form-row">
+                <input class="form-input" type="password" placeholder="New API Key (leave blank to keep)"
+                       [(ngModel)]="editForm.apiKey" />
+                <input class="form-input" type="text" placeholder="Model"
+                       [(ngModel)]="editForm.model" />
+              </div>
+              <div class="form-error" *ngIf="cpFormError">{{ cpFormError }}</div>
+              <div class="form-actions">
+                <button class="form-save-btn" (click)="submitEditForm(cp.id)" [disabled]="cpFormSaving">
+                  <span class="spinner" *ngIf="cpFormSaving"></span>
+                  <span *ngIf="!cpFormSaving">💾 Update</span>
+                </button>
+                <button class="form-cancel-btn" (click)="cancelEditForm()">Cancel</button>
+              </div>
+            </ng-container>
+          </div>
+        </div>
+
+        <p class="section-desc no-providers-hint"
+           *ngIf="(config.customProviders ?? []).length === 0 && !showAddForm">
+          No custom providers yet. Click "+ Add Provider" to get started.
+        </p>
       </section>
 
       <!-- system prompt -->

@@ -32,6 +32,12 @@ public class AIExplanationRequest
     /// Default: 2048
     /// </summary>
     public int? MaxTokens { get; set; }
+
+    /// <summary>
+    /// When true, <see cref="Question"/> is used as the verbatim prompt — no template wrapping.
+    /// Use for raw/custom prompts like note formatting.
+    /// </summary>
+    public bool RawMode { get; set; } = false;
 }
 
 /// <summary>

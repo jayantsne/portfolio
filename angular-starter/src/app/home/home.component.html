@@ -12,23 +12,23 @@
     <!-- Normal Hero Content (hidden in split mode) -->
     <div class="hero-container" *ngIf="!showModal">
       <div class="hero-content">
-        <div class="hero-badge" data-aos="fade-down">
+        <div class="hero-badge">
           <span class="badge-pulse"></span>
           <span>🎓 Smart Learning Platform</span>
         </div>
         
-        <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
+        <h1 class="hero-title">
           AI Interactive
           <span class="gradient-text">Concept Explainer</span>
         </h1>
         
-        <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
+        <p class="hero-subtitle">
           Learn programming concepts step-by-step with AI-powered explanations,
           interactive examples, and a personalized learning roadmap.
         </p>
 
         <!-- Smart AI Search -->
-        <div class="ai-search-container" data-aos="fade-up" data-aos-delay="300">
+        <div class="ai-search-container">
           <div class="search-box">
             <span class="search-icon">🔍</span>
             <input 
@@ -95,7 +95,7 @@
         </div>
 
         <!-- CTA Buttons -->
-        <div class="hero-ctas" *ngIf="!showSearchResults" data-aos="fade-up" data-aos-delay="400">
+        <!-- <div class="hero-ctas" *ngIf="!showSearchResults" data-aos="fade-up" data-aos-delay="400">
           <button (click)="focusSearch()" class="cta-btn cta-primary">
             <span class="btn-icon">🚀</span>
             <span>Start Learning</span>
@@ -104,7 +104,7 @@
             <span class="btn-icon">📝</span>
             <span>Practice Questions</span>
           </a>
-        </div>
+        </div> -->
       </div>
     </div>
 

@@ -483,7 +483,7 @@ const pool = new ThreadPool(4);`,
     this.closeDuplicateDialog();
     this.isSavingNote = true;
     try {
-      await this.notesService.updateNote(id, this.pendingSaveContent);
+      await this.notesService.updateNote(id, { content: this.pendingSaveContent });
       this.noteSaved = true;
       clearTimeout(this.noteSavedTimer);
       this.noteSavedTimer = setTimeout(() => { this.noteSaved = false; }, 4000);
@@ -531,7 +531,7 @@ const pool = new ThreadPool(4);`,
   private async performSave(content: string): Promise<void> {
     this.isSavingNote = true;
     try {
-      await this.notesService.saveNote(this.currentTopicName, content);
+      await this.notesService.saveNote(this.currentTopicName, 'Other', content);
       this.noteSaved = true;
       clearTimeout(this.noteSavedTimer);
       this.noteSavedTimer = setTimeout(() => { this.noteSaved = false; }, 4000);

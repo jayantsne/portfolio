@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, BehaviorSubject } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { filter, switchMap, distinctUntilChanged } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 import { CustomAuthService } from './custom-auth.service';
+import { UserConfigService } from './user-config.service';
 
 const SELECTED_PROVIDER_KEY = 'selected_llm_provider';
 
@@ -40,8 +41,30 @@ export class LlmProviderService {
 
   constructor(
     private http: HttpClient,
-    private authSvc: CustomAuthService
-  ) {}
+    private authSvc: CustomAuthService,
+    private userConfigSvc: UserConfigService
+  ) {
+    // Whenever the user logs in, pull their saved defaultProvider from the DB
+    // and sync it to localStorage + the BehaviorSubject.
+    this.authSvc.currentUser$
+      .pipe(
+        // emit only when login state changes (null → user or user → null)
+        distinctUntilChanged((a, b) => !!a === !!b),
+        // only care about login events, not logout
+        filter(user => !!user),
+        switchMap(() => this.userConfigSvc.getConfig())
+      )
+      .subscribe({
+        next: config => {
+          const saved = config.defaultProvider ?? 'ollama';
+          if (saved !== this._selectedProvider.value) {
+            localStorage.setItem(SELECTED_PROVIDER_KEY, saved);
+            this._selectedProvider.next(saved);
+          }
+        },
+        error: () => { /* silently ignore — keep whatever is in localStorage */ }
+      });
+  }
 
   get selectedProvider(): string { return this._selectedProvider.value; }
 

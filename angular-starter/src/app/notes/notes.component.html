@@ -1,95 +1,505 @@
-<div class="notes-page">
+﻿<div class="notes-page">
 
   <!-- Header bar -->
   <div class="notes-header">
-    <button class="back-home-btn" (click)="goHome()">← AI Mentor</button>
+    <button class="back-home-btn" (click)="goHome()"> AI Mentor</button>
     <div class="notes-title-row">
-      <span class="notes-icon">📓</span>
+      <span class="notes-icon"></span>
       <h1 class="notes-title">My Saved Notes</h1>
     </div>
-    <div class="notes-user" *ngIf="user">
-      <div class="user-avatar-initial">{{ (user.username || 'U') | slice:0:1 | uppercase }}</div>
-      <span class="user-name">{{ user.username }}</span>
+    <div class="header-right">
+      <button class="create-note-header-btn" *ngIf="user && !createMode" (click)="openCreateNote()">
+        ✏️ New Note
+      </button>
+      <div class="notes-user" *ngIf="user">
+        <div class="user-avatar-initial">{{ (user.username || 'U') | slice:0:1 | uppercase }}</div>
+        <span class="user-name">{{ user.username }}</span>
+      </div>
     </div>
   </div>
 
   <!-- NOT SIGNED IN -->
   <div class="notes-signin-prompt" *ngIf="!user && !isLoading">
     <div class="signin-card">
-      <div class="signin-icon">🔐</div>
+      <div class="signin-icon"></div>
       <h2>Sign in to view your notes</h2>
-      <p>Your saved AI explanations are tied to your account. Please log in using the button in the top-right corner.</p>
+      <p>Your saved AI explanations are tied to your account.</p>
     </div>
   </div>
 
-  <!-- LOADING (notes fetch) -->
+  <!-- LOADING -->
   <div class="notes-loading" *ngIf="isLoading">
     <div class="loading-dots"><span></span><span></span><span></span></div>
-    <p>Loading notes…</p>
+    <p>Loading notes&hellip;</p>
   </div>
 
-  <!-- MAIN CONTENT: list + preview -->
-  <div class="notes-content" *ngIf="user && !isLoading">
+  <!-- MAIN CONTENT — IP-style split layout -->
+  <div class="notes-shell" *ngIf="user && !isLoading && !createMode">
 
-    <!-- Empty state -->
-    <div class="notes-empty" *ngIf="notes.length === 0">
-      <div class="empty-icon">📭</div>
-      <h3>No notes yet</h3>
-      <p>Ask AI to explain a concept, then click <strong>"Save to Notes"</strong> in the mentor panel.</p>
-      <button class="go-learn-btn" (click)="goHome()">🚀 Start Learning</button>
-    </div>
+    <!-- ═══════════════════ LEFT PANEL (30%) ═══════════════════ -->
+    <section class="notes-left">
 
-    <!-- Notes list + reader panel -->
-    <div class="notes-main" *ngIf="notes.length > 0">
-
-      <!-- Sidebar: note list -->
-      <aside class="notes-sidebar">
-        <p class="notes-count">{{ notes.length }} saved note{{ notes.length !== 1 ? 's' : '' }}</p>
-        <div class="note-card"
-             *ngFor="let note of notes"
-             [class.active]="activeNote?.id === note.id"
-             (click)="openNote(note)">
-          <div class="note-card-body">
-            <span class="note-topic-icon">✨</span>
-            <div class="note-card-info">
-              <div class="note-card-topic">{{ note.topic }}</div>
-              <div class="note-card-date">{{ formatDate(note.savedAtMs) }}</div>
-            </div>
+      <!-- Hero header -->
+      <div class="notes-hero">
+        <div class="notes-hero-glow" aria-hidden="true"></div>
+        <div class="notes-hero-content">
+          <div class="notes-hero-icon">📝</div>
+          <div>
+            <h1 class="notes-hero-title">My Notes</h1>
+            <p class="notes-hero-sub">AI-saved explanations &amp; custom notes</p>
           </div>
-          <button class="note-delete-btn"
-                  [class.deleting]="deletingId === note.id"
-                  (click)="$event.stopPropagation(); deleteNote(note)"
-                  title="Delete note">
-            {{ deletingId === note.id ? '…' : '🗑' }}
+        </div>
+        <div class="notes-hero-badge" *ngIf="notes.length > 0">
+          <span class="notes-hero-count">{{ filteredNotes.length }}</span>
+          <span class="notes-hero-label">notes</span>
+        </div>
+      </div>
+
+      <!-- Search -->
+      <div class="notes-search-row">
+        <div class="notes-search-wrap">
+          <span class="notes-search-icon">🔍</span>
+          <input class="notes-search" type="text" [(ngModel)]="searchQuery"
+            placeholder="Search notes, categories, tags…" autocomplete="off" />
+          <button class="notes-search-clear" *ngIf="searchQuery" (click)="searchQuery = ''">✕</button>
+        </div>
+      </div>
+
+      <!-- Category filter -->
+      <div class="notes-filters">
+        <div class="notes-filter-group">
+          <span class="notes-filter-label">Category</span>
+          <div class="notes-pill-track">
+            <button class="notes-pill" [class.notes-pill-active]="filterCategory === 'All'"
+              (click)="filterCategory = 'All'">All</button>
+            <button class="notes-pill" *ngFor="let cat of categories"
+              [class.notes-pill-active]="filterCategory === cat"
+              (click)="filterCategory = cat">{{ cat }}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- New note + count row -->
+      <div class="notes-new-row">
+        <button class="notes-new-btn" (click)="openCreateNote()">✏️ New Note</button>
+        <span class="notes-count-lbl" *ngIf="filteredNotes.length > 0">
+          {{ filteredNotes.length }} note{{ filteredNotes.length !== 1 ? 's' : '' }}
+        </span>
+      </div>
+
+      <!-- Scrollable list -->
+      <div class="notes-left-scroll">
+
+        <!-- Empty: no notes at all -->
+        <div class="notes-list-empty" *ngIf="notes.length === 0">
+          <div class="notes-empty-icon">📭</div>
+          <p>No notes yet.<br>Create your first note or chat with AI.</p>
+          <button class="notes-empty-cta" (click)="openCreateNote()">✏️ Create Note</button>
+          <button class="ip-btn-ghost" (click)="goHome()">→ Go to AI Chat</button>
+        </div>
+
+        <!-- Empty: filters hide everything -->
+        <div class="notes-list-empty" *ngIf="notes.length > 0 && filteredNotes.length === 0">
+          <div class="notes-empty-icon">🔎</div>
+          <p>No notes match your filters.</p>
+          <button class="ip-btn-ghost" (click)="filterCategory = 'All'; searchQuery = ''; filterTag = ''">Clear filters</button>
+        </div>
+
+        <!-- Note cards -->
+        <ul class="notes-qlist" *ngIf="filteredNotes.length > 0">
+          <li class="notes-qitem"
+              *ngFor="let note of filteredNotes; let i = index"
+              [class.notes-qitem-active]="activeNote?.id === note.id"
+              (click)="openNote(note)">
+            <div class="notes-qitem-accent"></div>
+            <div class="notes-qitem-body">
+              <div class="notes-qitem-top">
+                <span class="notes-qitem-num">#{{ i + 1 }}</span>
+                <span class="notes-qitem-cat">{{ note.category }}</span>
+              </div>
+              <p class="notes-qitem-text">{{ note.topic }}</p>
+              <div class="notes-qitem-bottom" *ngIf="(note.tags ?? []).length > 0">
+                <span class="notes-tag" *ngFor="let t of (note.tags ?? []) | slice:0:3">#{{ t }}</span>
+              </div>
+              <span class="notes-qitem-date">{{ formatDate(note.savedAtMs) }}</span>
+            </div>
+            <button class="notes-qitem-del" [class.deleting]="deletingId === note.id"
+                    (click)="$event.stopPropagation(); deleteNote(note)" title="Delete">
+              {{ deletingId === note.id ? '…' : '🗑' }}
+            </button>
+          </li>
+        </ul>
+
+      </div><!-- /notes-left-scroll -->
+    </section><!-- /notes-left -->
+
+    <!-- ═══════════════════ RIGHT PANEL (70%) ══════════════════ -->
+    <main class="notes-right">
+
+      <!-- Welcome / placeholder -->
+      <div class="notes-welcome" *ngIf="!activeNote">
+        <div class="notes-welcome-glow" aria-hidden="true"></div>
+
+        <div class="notes-welcome-icon"><span>📝</span></div>
+        <h2 class="notes-welcome-title">Your personal knowledge base</h2>
+        <p class="notes-welcome-sub">Pick any note on the left — read, edit, or export instantly.</p>
+
+        <div class="notes-feat-grid">
+          <div class="notes-feat">
+            <span class="notes-feat-icon">📖</span>
+            <div><strong>Read Notes</strong><span>Full markdown rendering</span></div>
+          </div>
+          <div class="notes-feat">
+            <span class="notes-feat-icon">✏️</span>
+            <div><strong>Edit &amp; Update</strong><span>Keep notes fresh</span></div>
+          </div>
+          <div class="notes-feat">
+            <span class="notes-feat-icon">🤖</span>
+            <div><strong>AI Formatting</strong><span>Clean up raw text</span></div>
+          </div>
+          <div class="notes-feat">
+            <span class="notes-feat-icon">🔍</span>
+            <div><strong>Search</strong><span>Find anything fast</span></div>
+          </div>
+          <div class="notes-feat">
+            <span class="notes-feat-icon">🏷️</span>
+            <div><strong>Tags &amp; Categories</strong><span>Stay organised</span></div>
+          </div>
+          <div class="notes-feat">
+            <span class="notes-feat-icon">💾</span>
+            <div><strong>Export</strong><span>TXT, MD, PDF</span></div>
+          </div>
+        </div>
+
+        <div class="notes-welcome-arrow" *ngIf="notes.length > 0">
+          ← Select a note to begin
+        </div>
+        <button class="notes-welcome-cta" *ngIf="notes.length === 0" (click)="openCreateNote()">
+          ✏️ Create your first note
+        </button>
+      </div>
+
+      <!-- READ MODE -->
+      <div class="reader-content" *ngIf="activeNote && !editMode">
+        <div class="reader-header">
+          <div class="reader-topic-row">
+            <span class="reader-topic-icon"></span>
+            <h2 class="reader-topic">{{ activeNote.topic }}</h2>
+            <span class="reader-cat-badge" *ngIf="activeNote.category">{{ activeNote.category }}</span>
+          </div>
+          <div class="reader-tags-row" *ngIf="(activeNote.tags ?? []).length > 0">
+            <span class="reader-tag" *ngFor="let t of (activeNote.tags ?? [])">#{{ t }}</span>
+          </div>
+          <div class="reader-actions">
+            <span class="reader-date">Saved {{ formatDate(activeNote.savedAtMs) }}</span>
+            <div class="export-group">
+              <span class="export-label">Export:</span>
+              <button class="export-btn" title="Download as TXT" (click)="exportAsTxt()">TXT</button>
+              <button class="export-btn" title="Download as Markdown" (click)="exportAsMd()">MD</button>
+              <button class="export-btn" title="Print / Save as PDF" (click)="exportAsPdf()">PDF</button>
+            </div>
+            <button class="reader-edit-btn" (click)="startEdit()"> Edit</button>
+            <button class="reader-delete-btn" (click)="deleteNote(activeNote!)"> Delete</button>
+          </div>
+        </div>
+        <div class="reader-body md-content" [innerHTML]="activeNote.content | markdown"></div>
+      </div>
+
+      <!-- EDIT MODE -->
+      <div class="editor-panel" *ngIf="activeNote && editMode">
+        <div class="editor-header">
+          <h3 class="editor-title"> Edit Note</h3>
+          <button class="editor-close-btn" (click)="cancelEdit()"></button>
+        </div>
+        <div class="editor-field">
+          <label class="editor-label">Title</label>
+          <input class="editor-input" type="text" [(ngModel)]="editTopic" placeholder="Note title" maxlength="120" />
+        </div>
+        <div class="editor-field">
+          <label class="editor-label">Category</label>
+          <div class="editor-cat-grid">
+            <button *ngFor="let cat of categories" class="editor-cat-chip" type="button"
+              [class.active]="editCategory === cat" (click)="editCategory = cat">{{ cat }}</button>
+          </div>
+        </div>
+        <div class="editor-field">
+          <label class="editor-label">Tags</label>
+          <div class="editor-tags-wrap">
+            <span class="editor-tag-chip" *ngFor="let tag of editTags">
+              #{{ tag }}<button class="editor-tag-rm" type="button" (click)="removeEditTag(tag)"></button>
+            </span>
+            <input class="editor-tag-input" type="text" [(ngModel)]="editTagInput"
+              (keydown)="addEditTagOnKey($event)" (blur)="addEditTag()"
+              [placeholder]="editTags.length === 0 ? 'Add tags…' : ''" />
+          </div>
+        </div>
+        <div class="editor-field">
+          <label class="editor-label">Content</label>
+          <textarea class="editor-textarea" rows="10" [(ngModel)]="editContent"></textarea>
+        </div>
+        <div class="editor-field append-section">
+          <label class="editor-label">
+            Append extra note
+            <span class="label-hint">(added after a divider)</span>
+          </label>
+          <textarea class="editor-textarea editor-append" rows="4" [(ngModel)]="appendText"
+            placeholder="Add extra thoughts, corrections, or updates&hellip;"></textarea>
+        </div>
+        <div class="editor-error" *ngIf="updateError">{{ updateError }}</div>
+        <div class="editor-footer">
+          <button class="editor-cancel-btn" type="button" (click)="cancelEdit()" [disabled]="isUpdating">Cancel</button>
+          <button class="editor-save-btn" type="button" (click)="saveEdit()"
+            [disabled]="isUpdating || !editTopic.trim()">
+            {{ isUpdating ? 'Saving…' : '💾 Save Changes' }}
           </button>
         </div>
-      </aside>
+      </div>
 
-      <!-- Reader panel: right side -->
-      <main class="notes-reader" [class.has-note]="activeNote">
+    </main><!-- /notes-right -->
 
-        <!-- Placeholder when none selected -->
-        <div class="reader-placeholder" *ngIf="!activeNote">
-          <div class="placeholder-icon">📖</div>
-          <p>Select a note to read it here</p>
-        </div>
+    <!-- ══════════════════ MOBILE READER OVERLAY ══════════════════ -->
+    <div class="mobile-reader" *ngIf="mobileReaderOpen && activeNote && !editMode">
 
-        <!-- Note content -->
-        <div class="reader-content" *ngIf="activeNote">
-          <div class="reader-header">
-            <div class="reader-topic-row">
-              <span class="reader-topic-icon">✨</span>
-              <h2 class="reader-topic">{{ activeNote.topic }}</h2>
-            </div>
-            <div class="reader-actions">
-              <span class="reader-date">Saved {{ formatDate(activeNote.savedAtMs) }}</span>
-              <button class="reader-delete-btn" (click)="deleteNote(activeNote!)">🗑 Delete</button>
-            </div>
+      <!-- Top bar -->
+      <div class="mr-topbar">
+        <button class="mr-back-btn" (click)="closeMobileReader()">
+          <span class="mr-back-arrow">‹</span> Back
+        </button>
+        <span class="mr-topbar-title">{{ activeNote.topic }}</span>
+        <div class="mr-more-wrap">
+          <button class="mr-more-btn" (click)="showMoreMenu = !showMoreMenu" aria-label="More options">⋮</button>
+          <div class="mr-more-menu" *ngIf="showMoreMenu">
+            <button (click)="openMobileEditor(); showMoreMenu = false">✏️ Edit</button>
+            <button class="danger" (click)="deleteNote(activeNote!); showMoreMenu = false">🗑 Delete</button>
           </div>
-          <div class="reader-body md-content" [innerHTML]="activeNote.content | markdown"></div>
         </div>
-      </main>
+      </div>
+
+      <!-- Scrollable content area -->
+      <div class="mr-scroll">
+
+        <!-- Note title -->
+        <h1 class="mr-note-title">{{ activeNote.topic }}</h1>
+
+        <!-- Metadata row -->
+        <div class="mr-meta">
+          <div class="mr-meta-top">
+            <span class="mr-date">📅 {{ formatDate(activeNote.savedAtMs) }}</span>
+            <span class="mr-cat-badge" *ngIf="activeNote.category">{{ activeNote.category }}</span>
+          </div>
+          <div class="mr-tags" *ngIf="(activeNote.tags ?? []).length > 0">
+            <span class="mr-tag" *ngFor="let t of (activeNote.tags ?? [])">#{{ t }}</span>
+          </div>
+          <div class="mr-export-row">
+            <span class="mr-export-label">Export:</span>
+            <button class="mr-export-btn" (click)="exportAsTxt()">📄 TXT</button>
+            <button class="mr-export-btn" (click)="exportAsMd()">📝 MD</button>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <div class="mr-divider"></div>
+
+        <!-- Markdown body -->
+        <div class="mr-body md-content" [innerHTML]="activeNote.content | markdown"></div>
+
+        <!-- Spacer so content isn't hidden behind bottom bar / AI drawer -->
+        <div class="mr-scroll-spacer"></div>
+      </div><!-- /mr-scroll -->
+
+      <!-- AI Actions drawer (slides up above bottom bar) -->
+      <div class="mr-ai-drawer" [class.open]="showAiActions">
+        <div class="mr-ai-header">
+          <span class="mr-ai-title">🤖 AI Actions</span>
+          <button class="mr-ai-close" (click)="showAiActions = false; aiActionResult = ''; aiActionError = ''">✕</button>
+        </div>
+        <div class="mr-ai-btns">
+          <button class="mr-ai-btn" (click)="runAiAction('summarize')" [disabled]="aiActionLoading">
+            📋 Summarize
+          </button>
+          <button class="mr-ai-btn" (click)="runAiAction('explain')" [disabled]="aiActionLoading">
+            💡 Explain
+          </button>
+          <button class="mr-ai-btn" (click)="runAiAction('quiz')" [disabled]="aiActionLoading">
+            📝 Generate Quiz
+          </button>
+        </div>
+        <div class="mr-ai-result" *ngIf="aiActionResult || aiActionLoading || aiActionError">
+          <div class="mr-ai-loading" *ngIf="aiActionLoading && !aiActionResult">
+            <span class="mr-ai-spinner"></span> Thinking…
+          </div>
+          <pre class="mr-ai-text" *ngIf="aiActionResult">{{ aiActionResult }}</pre>
+          <div class="mr-ai-error" *ngIf="aiActionError">⚠️ {{ aiActionError }}</div>
+        </div>
+      </div>
+
+      <!-- Bottom action bar -->
+      <div class="mr-bottombar">
+        <button class="mr-action-btn" (click)="openMobileEditor()">
+          <span class="mr-action-icon">✏️</span>
+          <span class="mr-action-label">Edit</span>
+        </button>
+        <button class="mr-action-btn" (click)="shareNote()">
+          <span class="mr-action-icon">🔗</span>
+          <span class="mr-action-label">Share</span>
+        </button>
+        <button class="mr-action-btn" [class.mr-action-active]="showAiActions"
+                (click)="showAiActions = !showAiActions">
+          <span class="mr-action-icon">🤖</span>
+          <span class="mr-action-label">AI Actions</span>
+        </button>
+      </div>
+
+    </div><!-- /mobile-reader -->
+
+    <!-- ════════════════════ MOBILE EDITOR OVERLAY ════════════════════ -->
+    <div class="mobile-editor" *ngIf="mobileEditorOpen && activeNote">
+
+      <!-- Top bar -->
+      <div class="me-topbar">
+        <button class="me-back-btn" (click)="closeMobileEditor()">
+          <span class="me-back-arrow">‹</span> Back
+        </button>
+        <input class="me-title-input" type="text" [(ngModel)]="editTopic"
+               placeholder="Note title…" maxlength="120" />
+        <button class="me-save-btn" (click)="saveEdit()"
+                [disabled]="isUpdating || !editTopic.trim() || meFormatLoading">
+          {{ isUpdating ? '…' : 'Save' }}
+        </button>
+      </div>
+
+      <!-- Formatting toolbar -->
+      <div class="me-toolbar">
+        <button class="me-tb-btn me-tb-ai" (click)="formatMobileWithAI()"
+                [disabled]="meFormatLoading || !editContent.trim()" [class.loading]="meFormatLoading">
+          <span class="me-tb-spinner" *ngIf="meFormatLoading"></span>
+          <span *ngIf="!meFormatLoading">✨ Format with AI</span>
+          <span *ngIf="meFormatLoading">Formatting…</span>
+        </button>
+        <button class="me-tb-btn me-tb-undo" *ngIf="mePreFormatContent !== null && !meFormatLoading"
+                (click)="undoMeFormat()">↩ Undo</button>
+        <div class="me-tb-sep"></div>
+        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'heading')" title="Heading">H1</button>
+        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'bold')" title="Bold"><strong>B</strong></button>
+        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'bullet')" title="Bullet list">•≡</button>
+        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'checklist')" title="Checklist">☑</button>
+      </div>
+
+      <!-- Error banner -->
+      <div class="me-error" *ngIf="updateError">⚠️ {{ updateError }}</div>
+
+      <!-- Textarea fills remaining height -->
+      <div class="me-body">
+        <textarea class="me-textarea" #meTextarea
+                  [(ngModel)]="editContent"
+                  [class.me-streaming]="meFormatLoading"
+                  placeholder="Type or paste your note here…&#10;&#10;✨ Tip: Tap ‘Format with AI’ to clean up messy text instantly.">
+        </textarea>
+      </div>
+
+    </div><!-- /mobile-editor -->
+
+  </div><!-- /notes-shell -->
+
+  <!-- ─────────────────────── CREATE NOTE PANEL ─────────────────────── -->
+  <div class="create-note-fullpage" *ngIf="user && !isLoading && createMode">
+
+    <!-- Success toast -->
+    <div class="create-success-toast" *ngIf="createSaveSuccess">
+      ✅ Note saved successfully!
     </div>
 
-  </div><!-- end notes-content -->
+    <!-- ── Top navigation bar ─────────────────────────────────────────── -->
+    <div class="cn-topbar">
+      <button class="cn-back-btn" (click)="closeCreateNote()" [disabled]="isFormatting || isSavingNew">
+        ‹ Back
+      </button>
+      <span class="cn-page-title">New Note</span>
+      <button class="cn-save-btn" (click)="saveNewNote()"
+              [disabled]="isSavingNew || isFormatting || !createTopic.trim() || !createContent.trim()">
+        {{ isSavingNew ? '…' : 'Save' }}
+      </button>
+    </div>
+
+    <!-- ── Metadata fields ────────────────────────────────────────────── -->
+    <div class="cn-fields">
+
+      <!-- Title -->
+      <input class="cn-title-input" type="text" [(ngModel)]="createTopic"
+             placeholder="Note title…" maxlength="120" />
+
+      <!-- Category — horizontal scrollable chips -->
+      <div class="cn-cats-scroll">
+        <button *ngFor="let cat of categories" class="cn-cat-chip" type="button"
+          [class.active]="createCategory === cat" (click)="createCategory = cat">{{ cat }}</button>
+      </div>
+
+      <!-- Tags -->
+      <div class="cn-tags-wrap">
+        <span class="cn-tag-chip" *ngFor="let tag of createTags">
+          #{{ tag }}<button class="cn-tag-rm" type="button" (click)="removeCreateTag(tag)">×</button>
+        </span>
+        <input class="cn-tag-input" type="text" [(ngModel)]="createTagInput"
+          (keydown)="addCreateTagOnKey($event)" (blur)="addCreateTag()"
+          [placeholder]="createTags.length === 0 ? '+ Add tags (optional)' : ''" />
+      </div>
+
+    </div>
+
+    <!-- ── Editor bar: Edit/Preview tabs + Format AI ─────────────────── -->
+    <div class="cn-editor-bar">
+      <div class="cn-tabs">
+        <button class="cn-tab" [class.active]="!createPreviewMode" (click)="createPreviewMode = false">
+          ✏️ Edit
+        </button>
+        <button class="cn-tab" [class.active]="createPreviewMode"
+                (click)="createPreviewMode = true" [disabled]="!createContent.trim()">
+          👁 Preview
+        </button>
+      </div>
+      <div class="cn-ai-row">
+        <button class="cn-undo-btn" *ngIf="preAIContent !== null && !isFormatting" (click)="undoAIFormat()">
+          ↩ Undo
+        </button>
+        <button class="cn-format-btn" (click)="formatNoteWithAI()"
+                [disabled]="isFormatting || isSavingNew || !createContent.trim()"
+                [class.cn-formatting]="isFormatting">
+          <span class="cn-ai-spinner" *ngIf="isFormatting"></span>
+          <span *ngIf="!isFormatting">✨ Format with AI</span>
+          <span *ngIf="isFormatting">Formatting…</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div class="cn-error" *ngIf="createError">⚠️ {{ createError }}</div>
+
+    <!-- ── Textarea / Preview ─────────────────────────────────────────── -->
+    <div class="cn-content-area">
+
+      <textarea [hidden]="createPreviewMode" class="cn-textarea" #cnTextarea
+                [(ngModel)]="createContent" [class.cn-streaming]="isFormatting"
+                placeholder="Type or paste your raw notes here…&#10;&#10;✨ Tip: Paste messy text and tap 'Format with AI' to get clean structured notes instantly.">
+      </textarea>
+
+      <div *ngIf="createPreviewMode && createContent.trim()"
+           class="cn-preview md-content" [innerHTML]="createContent | markdown">
+      </div>
+      <div class="cn-preview-empty" *ngIf="createPreviewMode && !createContent.trim()">
+        Nothing to preview yet.
+      </div>
+
+    </div>
+
+    <!-- ── Bottom markdown toolbar ────────────────────────────────────── -->
+    <div class="cn-md-bar" *ngIf="!createPreviewMode">
+      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'heading')" title="Heading">H1</button>
+      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'bold')" title="Bold"><strong>B</strong></button>
+      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'bullet')" title="Bullet list">•≡</button>
+      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'checklist')" title="Checklist">☑</button>
+      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'code')" title="Code block">&lt;/&gt;</button>
+    </div>
+
+  </div>
+
 </div>

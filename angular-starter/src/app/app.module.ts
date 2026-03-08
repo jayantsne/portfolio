@@ -51,6 +51,7 @@ import { AnalyticsDashboardComponent } from './analytics-dashboard/analytics-das
 import { AppConfigService } from './shared/app-config.service';
 import { RoadmapComponent } from './roadmap/roadmap.component';
 import { InterviewPrepComponent } from './interview-prep/interview-prep.component';
+import { SaveNotesModalComponent } from './shared/save-notes-modal/save-notes-modal.component';
 
 @NgModule({
   declarations: [
@@ -96,6 +97,7 @@ import { InterviewPrepComponent } from './interview-prep/interview-prep.componen
     AnalyticsDashboardComponent, // Admin Analytics Dashboard
     RoadmapComponent,  // Personalized Learning Roadmap
     InterviewPrepComponent,  // AI-powered Interview Practice
+    SaveNotesModalComponent,    // Save conversation to Notes modal
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],

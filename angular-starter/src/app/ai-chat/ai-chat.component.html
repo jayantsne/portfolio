@@ -10,20 +10,69 @@
 >
   <!-- Header -->
   <div class="chat-header">
-    <span>Ask AI about my work</span>
+    <div class="chat-header-info">
+      <div class="chat-avatar">🤖</div>
+      <div class="chat-title-group">
+        <span class="chat-title">Ask AI about my work</span>
+        <span class="chat-status"><span class="status-dot"></span>Online</span>
+      </div>
+    </div>
     <div class="chat-actions">
-      <button class="icon-btn" (click)="toggleChat()">✕</button>
+      <button
+        class="icon-btn select-btn"
+        [class.active]="selectionMode"
+        title="Select messages to save"
+        *ngIf="authSvc.currentUser && messages.length > 1"
+        (click)="toggleSelectMode()">☑</button>
+      <button
+        class="icon-btn save-notes-btn"
+        title="Save whole conversation as notes"
+        *ngIf="authSvc.currentUser && hasConversation && !selectionMode"
+        (click)="openSaveModal()">📓</button>
+      <button class="icon-btn close-btn" title="Close" (click)="toggleChat()">✕</button>
     </div>
   </div>
+
+  <!-- Saved toast -->
+  <div class="save-toast" *ngIf="savedToast">✅ Conversation saved to notes!</div>
 
   <!-- Body -->
   <div class="chat-body" #chatBody>
     <div
-      *ngFor="let msg of messages"
-      class="message"
-      [ngClass]="msg.role"
+      *ngFor="let msg of messages; let i = index"
+      class="message-wrap"
+      [class.selecting]="selectionMode"
     >
-      {{ msg.text }}
+      <!-- Selection checkbox -->
+      <div class="msg-checkbox" *ngIf="selectionMode && i > 0" (click)="toggleMsgSelection(i)">
+        <span class="checkbox-icon">{{ selectedIndices.has(i) ? '✅' : '⬜' }}</span>
+      </div>
+
+      <div
+        class="message"
+        [ngClass]="msg.role"
+        [class.selected]="selectedIndices.has(i)"
+      >
+        {{ msg.text }}
+
+        <!-- Per-message save icon (shown on hover when logged in, not in select mode, not first welcome) -->
+        <button
+          class="msg-save-btn"
+          title="Save this message as a note"
+          *ngIf="authSvc.currentUser && i > 0 && !selectionMode"
+          (click)="saveMessageAsNote(i)">
+          📓
+        </button>
+      </div>
+    </div>
+
+    <!-- Save Selection bar -->
+    <div class="selection-bar" *ngIf="selectionMode">
+      <span class="selection-count">{{ selectedIndices.size }} message{{ selectedIndices.size !== 1 ? 's' : '' }} selected</span>
+      <button class="btn-save-sel" [disabled]="selectedIndices.size === 0" (click)="saveSelection()">
+        💾 Save Selection
+      </button>
+      <button class="btn-cancel-sel" (click)="toggleSelectMode()">Cancel</button>
     </div>
 
     <!-- Typing dots -->
@@ -43,9 +92,18 @@
   <div class="chat-footer">
     <input
       [(ngModel)]="input"
-      placeholder="Ask about my work..."
+      placeholder="Ask about my work…"
       (keydown.enter)="send()"
     />
-    <button (click)="send()">Send</button>
+    <button (click)="send()">Send ↑</button>
   </div>
 </div>
+
+<!-- Save as Notes modal -->
+<app-save-notes-modal
+  [isVisible]="showSaveModal"
+  [topic]="saveNoteTopic"
+  [content]="saveNoteContent"
+  (closed)="showSaveModal = false"
+  (saved)="onNoteSaved()">
+</app-save-notes-modal>

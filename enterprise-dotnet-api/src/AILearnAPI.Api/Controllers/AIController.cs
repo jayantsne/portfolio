@@ -6,6 +6,9 @@ using AILearnAPI.Shared.DTOs.MasterConfig;
 using System.Diagnostics;
 using Microsoft.Extensions.Caching.Memory;
 using System.Security.Cryptography;
+using System.Linq;
+using System.IdentityModel.Tokens.Jwt;
+using AILearnAPI.Domain.Constants;
 
 namespace AILearnAPI.Api.Controllers;
 
@@ -23,19 +26,28 @@ public class AIController : ControllerBase
     private readonly IMemoryCache _cache;
     private readonly IMasterConfigService _masterConfig;
     private readonly IDeviceDetectionService _deviceDetection;
+    private readonly IOpenAIStreamingService _openAIStreaming;
+    private readonly ILlmProviderService _llmProviderSvc;
+    private readonly IUserConfigService _userConfigSvc;
 
     public AIController(
         IOllamaService ollamaService,
         ILogger<AIController> logger,
         IMemoryCache cache,
         IMasterConfigService masterConfig,
-        IDeviceDetectionService deviceDetection)
+        IDeviceDetectionService deviceDetection,
+        IOpenAIStreamingService openAIStreaming,
+        ILlmProviderService llmProviderSvc,
+        IUserConfigService userConfigSvc)
     {
-        _ollamaService = ollamaService;
-        _logger = logger;
-        _cache = cache;
-        _masterConfig = masterConfig;
-        _deviceDetection = deviceDetection;
+        _ollamaService    = ollamaService;
+        _logger           = logger;
+        _cache            = cache;
+        _masterConfig     = masterConfig;
+        _deviceDetection  = deviceDetection;
+        _openAIStreaming   = openAIStreaming;
+        _llmProviderSvc   = llmProviderSvc;
+        _userConfigSvc    = userConfigSvc;
     }
 
     /// <summary>
@@ -187,13 +199,15 @@ public class AIController : ControllerBase
         var ua = Request.Headers["User-Agent"].ToString();
         var device = _deviceDetection.Detect(ua);
 
-        var prompt = device switch
-        {
-            DeviceType.Mobile => BuildMobileLearningPrompt(request.Question),
-            DeviceType.Tablet => BuildMobileLearningPrompt(request.Question),
-            DeviceType.Desktop => BuildClaudeQualityPrompt(request.Question, cfg),
-            _ => BuildClaudeQualityPrompt(request.Question, cfg),
-        };
+        var prompt = request.RawMode
+            ? request.Question   // raw verbatim prompt (e.g. note formatter)
+            : device switch
+            {
+                DeviceType.Mobile  => BuildMobileLearningPrompt(request.Question),
+                DeviceType.Tablet  => BuildMobileLearningPrompt(request.Question),
+                DeviceType.Desktop => BuildClaudeQualityPrompt(request.Question, cfg),
+                _                  => BuildClaudeQualityPrompt(request.Question, cfg),
+            };
 
         _logger.LogInformation("⚡ SSE Stream request: '{Q}' model={M}",
             request.Question[..Math.Min(50, request.Question.Length)],
@@ -202,19 +216,137 @@ public class AIController : ControllerBase
         try
         {
             var streamDeviceLimit = GetDeviceTokenLimitFromConfig(cfg);
-            await foreach (var token in _ollamaService.StreamAsync(
-                prompt,
-                request.Model ?? cfg.modelOllamaStream,
-                temperature: request.Temperature ?? (float)cfg.defaultTemperature,
-                maxTokens: streamDeviceLimit,//Math.Min(request.MaxTokens ?? streamDeviceLimit, streamDeviceLimit),
-                cancellationToken: cancellationToken))
+            var providerName = (request.Provider ?? "ollama").ToLowerInvariant();
+
+            IAsyncEnumerable<string> tokenStream;
+
+            if (providerName == "openai")
+            {
+                // ── Route to OpenAI (or any OpenAI-compatible provider) ──────────
+                var providers = await _llmProviderSvc.GetAllForAdminAsync();
+                var prov = providers.FirstOrDefault(p =>
+                    p.ProviderName.Equals("openai", StringComparison.OrdinalIgnoreCase) && p.Enabled);
+
+                if (prov == null)
+                {
+                    await Response.WriteAsync("data: {\"error\":\"OpenAI provider is not configured or disabled.\",\"done\":true}\n\n", cancellationToken);
+                    await Response.Body.FlushAsync(cancellationToken);
+                    return;
+                }
+
+                // Decrypt the API key (admin resolution — key is stored encrypted in DB)
+                var apiKey = await _llmProviderSvc.ResolveApiKeyAsync(prov.ProviderName, "system", UserRoles.Admin);
+                if (string.IsNullOrEmpty(apiKey))
+                {
+                    await Response.WriteAsync("data: {\"error\":\"OpenAI API key could not be resolved.\",\"done\":true}\n\n", cancellationToken);
+                    await Response.Body.FlushAsync(cancellationToken);
+                    return;
+                }
+
+                _logger.LogInformation("⚡ SSE Stream → OpenAI model={M}", prov.Model);
+                tokenStream = _openAIStreaming.StreamAsync(
+                    apiKey,
+                    prov.BaseUrl,
+                    request.Model ?? prov.Model,
+                    prompt,
+                    streamDeviceLimit,
+                    cancellationToken);
+            }
+            else if (providerName.StartsWith("custom:"))
+            {
+                // ── Route to user-custom provider ────────────────────────────────
+                var customId = providerName["custom:".Length..];
+                var userId   = ExtractUserIdFromBearer();
+
+                if (string.IsNullOrEmpty(userId))
+                {
+                    await Response.WriteAsync("data: {\"error\":\"Authentication required for custom providers.\",\"done\":true}\n\n", cancellationToken);
+                    await Response.Body.FlushAsync(cancellationToken);
+                    return;
+                }
+
+                var info = await _userConfigSvc.GetCustomProviderStreamInfoAsync(userId, customId);
+                if (info == null)
+                {
+                    await Response.WriteAsync("data: {\"error\":\"Custom provider not found.\",\"done\":true}\n\n", cancellationToken);
+                    await Response.Body.FlushAsync(cancellationToken);
+                    return;
+                }
+
+                _logger.LogInformation("⚡ SSE Stream → Custom provider id={Id} model={M}", customId, info.Model);
+                tokenStream = _openAIStreaming.StreamAsync(
+                    info.ApiKey,
+                    info.BaseUrl,
+                    request.Model ?? info.Model,
+                    prompt,
+                    streamDeviceLimit,
+                    cancellationToken);
+            }
+            else
+            {
+                // ── Default: Ollama ──────────────────────────────────────────────
+                tokenStream = _ollamaService.StreamAsync(
+                    prompt,
+                    request.Model ?? cfg.modelOllamaStream,
+                    temperature: request.Temperature ?? (float)cfg.defaultTemperature,
+                    maxTokens: streamDeviceLimit,
+                    cancellationToken: cancellationToken);
+            }
+
+            var tokensWritten = 0;
+
+            await foreach (var token in tokenStream)
             {
                 if (cancellationToken.IsCancellationRequested) break;
 
-                // Escape for JSON
+                // If the service yielded an [ERROR] sentinel ─────────────────
+                if (token.StartsWith("[ERROR]"))
+                {
+                    var errMsg = token["[ERROR]".Length..].Trim();
+
+                    // If no tokens were emitted yet and we're not already on Ollama,
+                    // silently retry with Ollama rather than surfacing the error.
+                    if (tokensWritten == 0 && providerName != "ollama")
+                    {
+                        _logger.LogWarning(
+                            "⚡ Provider '{P}' failed before first token — falling back to Ollama. Reason: {E}",
+                            providerName, errMsg);
+
+                        tokenStream = _ollamaService.StreamAsync(
+                            prompt,
+                            request.Model ?? cfg.modelOllamaStream,
+                            temperature: request.Temperature ?? (float)cfg.defaultTemperature,
+                            maxTokens: streamDeviceLimit,
+                            cancellationToken: cancellationToken);
+
+                        // Restart the loop over the new stream
+                        await foreach (var fallbackToken in tokenStream)
+                        {
+                            if (cancellationToken.IsCancellationRequested) break;
+                            if (fallbackToken.StartsWith("[ERROR]")) break; // give up
+                            var fe = System.Text.Json.JsonSerializer.Serialize(fallbackToken);
+                            await Response.WriteAsync($"data: {{\"token\":{fe},\"done\":false}}\n\n", cancellationToken);
+                            await Response.Body.FlushAsync(cancellationToken);
+                            tokensWritten++;
+                        }
+
+                        await Response.WriteAsync("data: {\"token\":\"\",\"done\":true}\n\n", cancellationToken);
+                        await Response.Body.FlushAsync(cancellationToken);
+                        return;
+                    }
+
+                    // Already mid-stream or already on Ollama — surface the error
+                    var escapedErr = System.Text.Json.JsonSerializer.Serialize(errMsg);
+                    await Response.WriteAsync($"data: {{\"error\":{escapedErr},\"done\":true}}\n\n", cancellationToken);
+                    await Response.Body.FlushAsync(cancellationToken);
+                    return;
+                }
+
+                // Normal token ────────────────────────────────────────────────
                 var escaped = System.Text.Json.JsonSerializer.Serialize(token);
                 await Response.WriteAsync($"data: {{\"token\":{escaped},\"done\":false}}\n\n", cancellationToken);
                 await Response.Body.FlushAsync(cancellationToken);
+                tokensWritten++;
             }
 
             await Response.WriteAsync("data: {\"token\":\"\",\"done\":true}\n\n", cancellationToken);
@@ -512,5 +644,31 @@ Explain in **3 short steps**.
 3. Step three
 
 ### 💻 Tiny Example";
+    }
+
+    // ── helpers ──────────────────────────────────────────────────────────────
+    /// <summary>
+    /// Extracts userId (sub claim) from  Authorization: Bearer {jwt}  header.
+    /// Returns null when the header is absent or the token is malformed.
+    /// </summary>
+    private string? ExtractUserIdFromBearer()
+    {
+        var auth = Request.Headers["Authorization"].FirstOrDefault();
+        if (string.IsNullOrEmpty(auth) || !auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var raw = auth["Bearer ".Length..].Trim();
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(raw)) return null;
+            var jwt = handler.ReadJwtToken(raw);
+            return jwt.Subject
+                ?? jwt.Claims.FirstOrDefault(c => c.Type is "sub" or "nameid")?.Value;
+        }
+        catch
+        {
+            return null;
+        }
     }
 }

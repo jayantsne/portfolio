@@ -80,7 +80,15 @@ namespace AILearnAPI.Api.Services
             {
                 var body = await response.Content.ReadAsStringAsync(cancellationToken);
                 _logger.LogError("OpenAI returned {Status}: {Body}", (int)response.StatusCode, body);
-                yield return $"[ERROR] OpenAI returned {(int)response.StatusCode}.";
+                var friendlyMsg = (int)response.StatusCode switch
+                {
+                    429 => "The AI provider is rate-limited right now. Please wait a moment and try again.",
+                    401 => "The AI provider API key is invalid or expired. Please update it in Settings.",
+                    403 => "Access to this AI provider was denied. Check your API key permissions.",
+                    500 or 502 or 503 => "The AI provider is temporarily unavailable. Please try again shortly.",
+                    _   => $"The AI provider returned an unexpected error ({(int)response.StatusCode}). Please try again."
+                };
+                yield return $"[ERROR] {friendlyMsg}";
                 yield break;
             }
 

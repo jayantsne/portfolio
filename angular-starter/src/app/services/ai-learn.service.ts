@@ -6,6 +6,8 @@ import { RatedAnswer, AnswerRating } from '../models/rated-answer.model';
 import { environment } from '../../environments/environment';
 import { AI_BACKEND } from '../config/ai.config';
 import { AppConfigService } from '../shared/app-config.service';
+import { CustomAuthService } from '../shared/custom-auth.service';
+import { LlmProviderService } from '../shared/llm-provider.service';
 
 // Free AI Service with MULTI-PROVIDER FALLBACK
 // 🔥 STRATEGY: If one provider fails/limits, automatically try next!
@@ -203,7 +205,7 @@ export class AILearnService {
     estimatedCostSaved: 0       // Rough estimate
   };
   
-  constructor(private http: HttpClient, private appCfg: AppConfigService) {
+  constructor(private http: HttpClient, private appCfg: AppConfigService, private authSvc?: CustomAuthService, private llmSvc?: LlmProviderService) {
     this.loadRequestCount();
     this.loadApiStats();
     this.checkDailyReset();
@@ -1651,12 +1653,19 @@ Backend proxy is enabled but all 9 keys are exhausted.
       xhr.open('POST', `${apiBase}/api/ai/stream`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.setRequestHeader('X-API-Key', apiKey);  // Always send — middleware requires it on /api/ai/stream
+      // Forward JWT when logged in so the backend can route to custom providers
+      const jwtToken = this.authSvc?.getToken?.();
+      if (jwtToken) xhr.setRequestHeader('Authorization', `Bearer ${jwtToken}`);
       xhr.responseType = 'text';
 
       let cursor = 0;
       let accumulated = '';
       let lastEmitAt = 0;          // time-based throttle — emit at most every 60ms
       const THROTTLE_MS = 60;
+
+      // Always read from the live service value — localStorage may be stale
+      const selectedProvider = this.llmSvc?.selectedProvider ?? localStorage.getItem('selected_llm_provider') ?? 'ollama';
+      console.log('[AI] Sending request with provider:', selectedProvider);
 
       const parseChunks = (isFinal = false) => {
         const newText = xhr.responseText.slice(cursor);
@@ -1667,9 +1676,9 @@ Backend proxy is enabled but all 9 keys are exhausted.
             const chunk = JSON.parse(line.slice(6));
             if (chunk.done) {
               if (chunk.error) {
-                // Backend reported an error (e.g. Ollama unreachable / model not loaded)
+                // Backend reported an error — surface the actual message to the user
                 console.error('[AILearnService] SSE stream error from backend:', chunk.error);
-                observer.next({ success: false, explanation: '⚠️ The AI model is currently unavailable. Please try again in a moment.', done: true });
+                observer.next({ success: false, explanation: `⚠️ ${chunk.error}`, done: true });
               } else {
                 observer.next({ success: accumulated.length > 0, explanation: accumulated || '⚠️ No response received. Please try again.', done: true });
               }
@@ -1711,7 +1720,7 @@ Backend proxy is enabled but all 9 keys are exhausted.
         observer.complete();
       };
 
-      xhr.send(JSON.stringify({ question: prompt, maxTokens: this.appCfg.cfg.maxTokensStream }));
+      xhr.send(JSON.stringify({ question: prompt, maxTokens: this.appCfg.cfg.maxTokensStream, provider: selectedProvider }));
       return () => { xhr.abort(); this.activeXhr = null; };
     });
   }

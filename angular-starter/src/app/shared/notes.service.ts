@@ -6,6 +6,8 @@ import { CustomAuthService } from './custom-auth.service';
 export interface SavedNote {
   id?:        string;   // MongoDB _id
   topic:      string;
+  category:   string;   // e.g. Frontend, Backend, AI, DevOps
+  tags:       string[];  // user-defined tags
   content:    string;
   savedAt?:   string;   // ISO date string from backend
   savedAtMs?: number;   // epoch ms for display/sorting
@@ -35,8 +37,8 @@ export class NotesService {
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
-  async saveNote(topic: string, content: string): Promise<void> {
-    const dto = { topic, content };
+  async saveNote(topic: string, category: string, content: string, tags: string[] = []): Promise<void> {
+    const dto = { topic, category, tags, content };
     const note = await this.http
       .post<SavedNote>(this.url, dto, { headers: this.authSvc.getAuthHeaders() })
       .toPromise();
@@ -44,10 +46,10 @@ export class NotesService {
     else await this.loadNotes(); // fallback: refresh from server
   }
 
-  /** Replace the content of an existing note (PUT /api/notes/:id) */
-  async updateNote(noteId: string, content: string): Promise<void> {
+  /** Full update of a note (topic, category, tags, content). */
+  async updateNote(noteId: string, patch: { topic?: string; category?: string; tags?: string[]; content: string }): Promise<void> {
     const updated = await this.http
-      .put<SavedNote>(`${this.url}/${noteId}`, { content }, { headers: this.authSvc.getAuthHeaders() })
+      .put<SavedNote>(`${this.url}/${noteId}`, patch, { headers: this.authSvc.getAuthHeaders() })
       .toPromise();
     const current = this._notes.getValue();
     if (updated) {
@@ -62,7 +64,7 @@ export class NotesService {
     const existing = this._notes.getValue().find(n => n.id === noteId);
     if (!existing) return;
     const merged = `${existing.content}\n\n---\n\n**Updated explanation:**\n\n${newContent}`;
-    await this.updateNote(noteId, merged);
+    await this.updateNote(noteId, { content: merged });
   }
 
   async deleteNote(noteId: string): Promise<void> {
@@ -138,6 +140,7 @@ export class NotesService {
   private normalize(n: SavedNote): SavedNote {
     return {
       ...n,
+      tags:     n.tags ?? [],
       savedAtMs: n.savedAtMs ?? (n.savedAt ? new Date(n.savedAt).getTime() : Date.now())
     };
   }

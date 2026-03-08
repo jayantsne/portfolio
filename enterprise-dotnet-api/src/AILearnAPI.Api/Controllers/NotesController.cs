@@ -86,7 +86,7 @@ namespace AILearnAPI.Api.Controllers
             if (string.IsNullOrEmpty(userId))
                 return Unauthorized(new { message = "Token missing userId claim" });
 
-            var updated = await _svc.UpdateAsync(userId, id, dto.content);
+            var updated = await _svc.UpdateAsync(userId, id, dto);
             if (updated == null)
                 return NotFound(new { message = "Note not found or not owned by you" });
 

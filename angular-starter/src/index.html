@@ -55,6 +55,8 @@
   <link href="/assets/css/aos.css" rel="stylesheet">
   <link href="/assets/css/main.css" rel="stylesheet">
 
+  <!-- Prevent AOS from hiding elements before JS fires (fixes refresh flicker/stuck) -->
+  <style>[data-aos] { opacity: 1 !important; transform: translate(0) scale(1) !important; }</style>
   <noscript>
     <style>[data-aos] { opacity: 1 !important; transform: translate(0) scale(1) !important; }</style>
   </noscript>
@@ -71,7 +73,7 @@
   <script src="/assets/scripts/aos.min.js"></script>
   <script>
     if (typeof AOS !== 'undefined') {
-      AOS.init({ duration: 900, easing: 'ease-out-cubic', once: true });
+      AOS.init({ duration: 900, easing: 'ease-out-cubic', once: false });
     }
   </script>
   <script src="/assets/scripts/main.js"></script>

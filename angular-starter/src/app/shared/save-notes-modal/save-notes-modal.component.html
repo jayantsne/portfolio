@@ -1,0 +1,76 @@
+<div class="modal-overlay" *ngIf="isVisible" (click)="close()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+
+    <div class="modal-header">
+      <h3>📓 Save as Notes</h3>
+      <button class="close-btn" (click)="close()" aria-label="Close">&#10005;</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Topic -->
+      <div class="form-group">
+        <label for="noteTopic">Topic / Title</label>
+        <input
+          id="noteTopic"
+          type="text"
+          class="topic-input"
+          [(ngModel)]="editableTopic"
+          placeholder="e.g. JavaScript Promises"
+          maxlength="120"
+        />
+      </div>
+
+      <!-- Category -->
+      <div class="form-group">
+        <label for="noteCategory">Category</label>
+        <div class="category-grid">
+          <button
+            *ngFor="let cat of categories"
+            class="cat-chip"
+            [class.active]="selectedCategory === cat"
+            type="button"
+            (click)="selectedCategory = cat">
+            {{ cat }}
+          </button>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      <div class="form-group">
+        <label>Tags <span class="label-hint">(press Enter or comma to add)</span></label>
+        <div class="tags-input-wrap">
+          <span class="tag-chip" *ngFor="let tag of tags">
+            #{{ tag }}
+            <button class="tag-remove" (click)="removeTag(tag)" type="button">×</button>
+          </span>
+          <input
+            class="tag-text-input"
+            type="text"
+            [(ngModel)]="tagInput"
+            (keydown)="addTagOnEnter($event)"
+            (blur)="addTag()"
+            placeholder="{{ tags.length === 0 ? 'e.g. promises, async' : '' }}"
+          />
+        </div>
+      </div>
+
+      <!-- Content preview -->
+      <div class="content-preview">
+        <label>Conversation Preview</label>
+        <div class="preview-box">{{ content }}</div>
+      </div>
+
+      <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" (click)="close()" [disabled]="isSaving">Cancel</button>
+      <button class="btn-save"   (click)="save()"  [disabled]="isSaving">
+        <span *ngIf="isSaving">Saving…</span>
+        <span *ngIf="!isSaving">💾 Save Note</span>
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -2105,7 +2105,7 @@ Please answer concisely and clearly.`;
     this.splitIsSavingNote = true;
     this.cdr.detectChanges();
     try {
-      await this.notesService.saveNote(title, content);
+      await this.notesService.saveNote(title, 'Other', content);
       this.splitIsSavingNote = false;
       this.splitNoteSaved = true;
       this.splitDuplicateDialogMode = null;
@@ -2128,7 +2128,7 @@ Please answer concisely and clearly.`;
     const content = this.splitPendingSaveContent;
     this.splitIsSavingNote = true;
     this.cdr.detectChanges();
-    this.notesService.updateNote(id, content).then(() => {
+    this.notesService.updateNote(id, { content }).then(() => {
       this.splitIsSavingNote = false;
       this.splitNoteSaved = true;
       this.splitDuplicateDialogMode = null;
