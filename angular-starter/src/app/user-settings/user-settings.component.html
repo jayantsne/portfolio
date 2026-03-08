@@ -42,6 +42,29 @@
         </div>
       </section>
 
+      <!-- LLM provider selector (only shown when user has access to ≥1 special provider) -->
+      <section class="config-section" *ngIf="availableProviders.length > 0">
+        <label class="section-label">Active AI Provider</label>
+        <p class="section-desc">
+          Select which AI provider handles your requests.
+          Only providers you're authorised to use are shown.
+        </p>
+        <div class="provider-select-wrap">
+          <select class="provider-select"
+                  [value]="llmSvc.selectedProvider"
+                  (change)="selectLlmProvider($any($event.target).value)"
+                  aria-label="Select AI provider">
+            <option value="ollama">🦙 Ollama (default)</option>
+            <option *ngFor="let p of availableProviders" [value]="p">
+              {{ providerIcon(p) }} {{ p | titlecase }}
+            </option>
+          </select>
+          <span class="provider-active-badge">
+            Active: <strong>{{ llmSvc.selectedProvider | titlecase }}</strong>
+          </span>
+        </div>
+      </section>
+
       <!-- system prompt -->
       <section class="config-section">
         <label class="section-label">System Prompt for Model</label>

@@ -1,6 +1,7 @@
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { UserConfigService, UserConfigDto } from '../shared/user-config.service';
+import { LlmProviderService } from '../shared/llm-provider.service';
 
 @Component({
   selector: 'app-user-settings',
@@ -19,6 +20,9 @@ export class UserSettingsComponent implements OnInit {
   saveSuccess = false;
   errorMsg    = '';
 
+  /** Available providers this user is allowed to select. */
+  availableProviders: string[] = [];
+
   config: UserConfigDto = {
     userId:          '',
     maxTokens:       2048,
@@ -28,7 +32,8 @@ export class UserSettingsComponent implements OnInit {
 
   constructor(
     public  authSvc:       CustomAuthService,
-    private configSvc:     UserConfigService
+    private configSvc:     UserConfigService,
+    public  llmSvc:        LlmProviderService
   ) {}
 
   ngOnInit(): void {}
@@ -61,6 +66,12 @@ export class UserSettingsComponent implements OnInit {
     this.configSvc.getConfig().subscribe({
       next:  c => { this.config = c; this.isLoading = false; },
       error: () => { this.isLoading = false; }
+    });
+
+    // Load available LLM providers for this user
+    this.llmSvc.getAvailableProviders().subscribe({
+      next:  r => this.availableProviders = r.providers,
+      error: () => this.availableProviders = []
     });
   }
 
@@ -101,6 +112,10 @@ export class UserSettingsComponent implements OnInit {
 
   toggleProvider(key: string): void {
     this.config.providerToggles[key] = !this.config.providerToggles[key];
+  }
+
+  selectLlmProvider(name: string): void {
+    this.llmSvc.selectProvider(name);
   }
 
   providerIcon(key: string): string {

@@ -57,4 +57,14 @@ namespace AILearnAPI.Domain.Interfaces
         /// <summary>Fetches a note only when it belongs to the given userId (prevents cross-user access).</summary>
         Task<Note?> GetByIdAndUserIdAsync(string noteId, string userId);
     }
+
+    public interface ILlmProviderRepository : IBaseRepository<LlmProvider>
+    {
+        Task<LlmProvider?> GetByNameAsync(string providerName);
+        Task<List<LlmProvider>> GetEnabledAsync();
+        Task<bool> AddAllowedUserAsync(string providerName, string userId);
+        Task<bool> RemoveAllowedUserAsync(string providerName, string userId);
+        Task<bool> SetEnabledAsync(string providerName, bool enabled);
+        Task<bool> UpdateApiKeyAsync(string providerName, string encryptedKey);
+    }
 }

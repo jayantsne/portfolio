@@ -101,6 +101,13 @@ public class ApiKeyAuthenticationMiddleware
             return;
         }
 
+        // Skip for /api/llm-providers — protected by JWT Bearer + RBAC (role checks in controller)
+        if (path.StartsWith("/api/llm-providers"))
+        {
+            await _next(context);
+            return;
+        }
+
         if (!context.Request.Headers.TryGetValue("X-API-Key", out var extractedApiKey))
         {
             context.Response.StatusCode = 401;

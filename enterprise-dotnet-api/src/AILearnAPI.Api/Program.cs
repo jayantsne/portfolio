@@ -131,6 +131,7 @@ builder.Services.AddScoped<IAiTopicPromptRepository, AiTopicPromptRepository>();
 builder.Services.AddScoped<IUserConfigRepository, UserConfigRepository>();
 builder.Services.AddScoped<IMasterConfigRepository, MasterConfigRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();
+builder.Services.AddScoped<ILlmProviderRepository, LlmProviderRepository>();
 // Deployment service — no repository layer needed (uses IMongoDatabase directly)
 builder.Services.AddScoped<IDeploymentService, DeploymentService>();
 // Analytics service — tracks visits + clicks, serves admin dashboard
@@ -154,6 +155,14 @@ builder.Services.AddScoped<IAiUnderstandService, AiUnderstandService>();
 builder.Services.AddScoped<IUserConfigService, UserConfigService>();
 builder.Services.AddScoped<IMasterConfigService, MasterConfigService>();
 builder.Services.AddScoped<INoteService, NoteService>();
+builder.Services.AddScoped<ILlmProviderService, LlmProviderService>();
+
+// OpenAI streaming — dedicated HttpClient with 5-minute timeout for long completions
+builder.Services.AddHttpClient("OpenAI", c =>
+{
+    c.Timeout = TimeSpan.FromMinutes(5);
+});
+builder.Services.AddScoped<IOpenAIStreamingService, OpenAIStreamingService>();
 
 // Stateless UA classifier — registered as singleton (no state, no DB dependency)
 builder.Services.AddSingleton<IDeviceDetectionService, DeviceDetectionService>();
