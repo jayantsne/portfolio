@@ -146,7 +146,16 @@ namespace AILearnAPI.Shared.Extensions
                 userId          = entity.UserId,
                 maxTokens       = entity.MaxTokens,
                 systemPrompt    = entity.SystemPrompt,
-                providerToggles = entity.ProviderToggles
+                providerToggles = entity.ProviderToggles,
+                defaultProvider = entity.DefaultProvider,
+                customProviders = entity.CustomProviders.Select(cp => new UserCustomProviderDto
+                {
+                    id        = cp.Id,
+                    name      = cp.Name,
+                    baseUrl   = cp.BaseUrl,
+                    model     = cp.Model,
+                    createdAt = cp.CreatedAt.ToString("o")
+                }).ToList()
             };
         }
     }

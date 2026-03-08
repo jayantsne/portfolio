@@ -1,7 +1,33 @@
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
 namespace AILearnAPI.Domain.Entities
 {
+    /// <summary>Embedded custom provider entry stored inside a user's config document.</summary>
+    [BsonIgnoreExtraElements]
+    public class UserCustomProvider
+    {
+        /// <summary>Stable slug — used in defaultProvider value (e.g. "custom:abc123")</summary>
+        [BsonElement("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [BsonElement("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [BsonElement("baseUrl")]
+        public string BaseUrl { get; set; } = string.Empty;
+
+        [BsonElement("model")]
+        public string Model { get; set; } = "gpt-4o-mini";
+
+        /// <summary>AES-256-GCM encrypted — never returned to frontend.</summary>
+        [BsonElement("apiKeyEncrypted")]
+        public string ApiKeyEncrypted { get; set; } = string.Empty;
+
+        [BsonElement("createdAt")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+
     [BsonIgnoreExtraElements]
     public class UserConfig : BaseEntity
     {
@@ -26,5 +52,13 @@ namespace AILearnAPI.Domain.Entities
             { "groq",      true  },
             { "ollama",    true  }
         };
+
+        /// <summary>Active provider slug: "ollama" | "openai" | "custom:{id}"</summary>
+        [BsonElement("defaultProvider")]
+        public string DefaultProvider { get; set; } = "ollama";
+
+        /// <summary>User-owned custom provider entries (API keys encrypted).</summary>
+        [BsonElement("customProviders")]
+        public List<UserCustomProvider> CustomProviders { get; set; } = new();
     }
 }

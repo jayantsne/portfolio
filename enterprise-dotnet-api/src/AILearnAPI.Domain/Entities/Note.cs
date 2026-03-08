@@ -17,9 +17,17 @@ namespace AILearnAPI.Domain.Entities
         [BsonElement("topic")]
         public string Topic { get; set; } = string.Empty;
 
+        /// <summary>Category / subject area (e.g. Frontend, Backend, AI).</summary>
+        [BsonElement("category")]
+        public string Category { get; set; } = string.Empty;
+
         /// <summary>The full AI-generated explanation (markdown).</summary>
         [BsonElement("content")]
         public string Content { get; set; } = string.Empty;
+
+        /// <summary>User-defined tags for organisation.</summary>
+        [BsonElement("tags")]
+        public List<string> Tags { get; set; } = new();
 
         [BsonElement("savedAt")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]

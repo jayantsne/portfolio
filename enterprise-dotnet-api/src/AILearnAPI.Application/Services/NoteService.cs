@@ -24,10 +24,12 @@ namespace AILearnAPI.Application.Services
         {
             var note = new Note
             {
-                UserId  = userId,
-                Topic   = dto.topic.Trim(),
-                Content = dto.content,
-                SavedAt = DateTime.UtcNow
+                UserId   = userId,
+                Topic    = dto.topic.Trim(),
+                Category = dto.category?.Trim() ?? string.Empty,
+                Tags     = dto.tags ?? new(),
+                Content  = dto.content,
+                SavedAt  = DateTime.UtcNow
             };
             var saved = await _repo.CreateAsync(note);
             return ToDto(saved);
@@ -40,12 +42,16 @@ namespace AILearnAPI.Application.Services
             return await _repo.DeleteAsync(noteId);
         }
 
-        public async Task<NoteDto?> UpdateAsync(string userId, string noteId, string newContent)
+        public async Task<NoteDto?> UpdateAsync(string userId, string noteId, UpdateNoteDto dto)
         {
             var note = await _repo.GetByIdAndUserIdAsync(noteId, userId);
             if (note == null) return null;
 
-            note.Content = newContent;
+            if (!string.IsNullOrWhiteSpace(dto.topic))    note.Topic    = dto.topic.Trim();
+            if (!string.IsNullOrWhiteSpace(dto.category)) note.Category = dto.category.Trim();
+            if (dto.tags != null)                         note.Tags     = dto.tags;
+            note.Content = dto.content;
+
             var updated = await _repo.UpdateAsync(noteId, note);
             return ToDto(updated);
         }
@@ -55,6 +61,8 @@ namespace AILearnAPI.Application.Services
         {
             id        = n.Id,
             topic     = n.Topic,
+            category  = n.Category,
+            tags      = n.Tags,
             content   = n.Content,
             savedAt   = n.SavedAt,
             savedAtMs = new DateTimeOffset(n.SavedAt, TimeSpan.Zero).ToUnixTimeMilliseconds()

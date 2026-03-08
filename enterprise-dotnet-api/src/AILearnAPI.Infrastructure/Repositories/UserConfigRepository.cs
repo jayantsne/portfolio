@@ -32,12 +32,16 @@ namespace AILearnAPI.Infrastructure.Repositories
                 .Set(x => x.MaxTokens,       config.MaxTokens)
                 .Set(x => x.SystemPrompt,    config.SystemPrompt)
                 .Set(x => x.ProviderToggles, config.ProviderToggles)
+                .Set(x => x.DefaultProvider, config.DefaultProvider)
+                .Set(x => x.CustomProviders, config.CustomProviders)
                 .Set(x => x.UpdatedAt,       DateTime.UtcNow);
 
             await _collection.UpdateOneAsync(filter, update);
             existing.MaxTokens       = config.MaxTokens;
             existing.SystemPrompt    = config.SystemPrompt;
             existing.ProviderToggles = config.ProviderToggles;
+            existing.DefaultProvider = config.DefaultProvider;
+            existing.CustomProviders = config.CustomProviders;
             return existing;
         }
     }
