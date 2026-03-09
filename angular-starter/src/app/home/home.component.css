@@ -3725,13 +3725,17 @@ html {
   background: #f4f6fb;
 }
 
-/* Fixed-height hero in scroll mode */
+/* Fixed-height hero in scroll mode — own gradient so #f4f6fb parent doesn't wash it out */
 .ai-learning-home.home-scroll .hero-section {
   height: 300px;
   min-height: 300px;
   max-height: 300px;
   align-items: center;
   padding: 0 2rem;
+  background:
+    radial-gradient(ellipse 70% 55% at 15% 25%, rgba(120,60,255,.55), transparent 50%),
+    radial-gradient(ellipse 55% 45% at 80% 70%, rgba(99,38,230,.4), transparent 50%),
+    linear-gradient(145deg, #4338ca 0%, #6d28d9 45%, #7c3aed 80%, #5b21b6 100%);
 }
 
 /* ── Popular Concepts section ── */
