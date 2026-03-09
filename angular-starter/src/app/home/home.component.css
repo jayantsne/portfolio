@@ -1,7 +1,7 @@
 /* AI Learning Home - Modern Design */
 .ai-learning-home {
-  height: calc(100vh - 64px);
-  max-height: calc(100vh - 64px);
+  height: calc(100vh - var(--header-h, 72px));
+  max-height: calc(100vh - var(--header-h, 72px));
   background:
     radial-gradient(ellipse 70% 55% at 15% 25%, rgba(120,60,255,.55), transparent 50%),
     radial-gradient(ellipse 55% 45% at 80% 70%, rgba(99,38,230,.4), transparent 50%),
@@ -2960,17 +2960,19 @@ html {
 .ai-learning-home.split-mode {
   display: flex !important;
   flex-direction: row;
-  height: 100vh;
+  /* Account for the fixed 72px app header so panel never overflows the viewport */
+  height: calc(100vh - var(--header-h, 72px));
+  max-height: calc(100vh - var(--header-h, 72px));
   overflow: hidden;
   min-height: unset;
   background: none;
 }
 
-/* ── LEFT PANEL: Hero → Topic Panel ── */
+/* ── LEFT PANEL: Hero → Topic Panel — fill parent height, not full viewport ── */
 .hero-section.hero-left {
   width: 38%;
   min-height: unset !important;
-  height: 100vh;
+  height: 100%;
   flex-shrink: 0;
   overflow: hidden;
   display: flex;
@@ -3117,14 +3119,14 @@ html {
   cursor: not-allowed;
 }
 
-/* ── RIGHT PANEL: Mentor Panel ── */
+/* ── RIGHT PANEL: Mentor Panel — fill parent height via flex, not full viewport ── */
 .mentor-panel {
   flex: 1;
   position: relative;
   background: #ffffff;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100%;   /* inherit from .split-mode container */
   overflow: hidden;
   border-left: 1px solid #e5e9f5;
   box-shadow: -4px 0 24px rgba(0,0,0,0.06);
@@ -3437,7 +3439,7 @@ html {
 @media (min-width: 640px) and (max-width: 1023px) {
   .ai-learning-home.split-mode {
     flex-direction: column !important;
-    height: 100vh;
+    height: calc(100vh - var(--header-h, 72px));
     overflow: hidden;
     background: none;
   }
@@ -3531,7 +3533,7 @@ html {
 @media (max-width: 639px) {
   .ai-learning-home.split-mode {
     display: block !important;
-    height: 100vh;
+    height: calc(100vh - var(--header-h, 72px));
     overflow: hidden;
     position: relative;
   }
