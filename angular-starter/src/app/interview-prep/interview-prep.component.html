@@ -137,30 +137,35 @@
 
     <!-- ── Panel header ── -->
     <div class="ip-rh">
-      <div class="ip-rh-info">
-        <div class="ip-rh-title-row">
-          <span class="ip-badge" [ngClass]="difficultyClass(selectedQuestion.difficulty)">{{ selectedQuestion.difficulty || 'Medium' }}</span>
-          <span class="ip-rh-cat">{{ selectedQuestion.category }}</span>
-        </div>
-        <h2 class="ip-rh-q">{{ selectedQuestion.question }}</h2>
-      </div>
-      <div class="ip-rh-actions">
+      <div class="ip-rh-glow" aria-hidden="true"></div>
+
+      <!-- Top action bar: back | spacer | save + retry + close -->
+      <div class="ip-rh-topbar">
         <button class="ip-back-btn" title="Back to questions" (click)="closeSidePanel()">
           ← Back
         </button>
-        <button class="ip-save-btn" title="Save note" (click)="saveCurrentNote()"
-          [class.ip-save-btn-saved]="isNoteSaved()"
-          [disabled]="isLoadingAI || (!aiMessages.length && !streamingText)">
-          <span *ngIf="!noteSaved && !isNoteSaved()">📌 Save Note</span>
-          <span *ngIf="isNoteSaved() && !noteSaved">✅ Saved</span>
-          <span *ngIf="noteSaved">✅ Saved!</span>
-        </button>
+        <span class="ip-rh-topbar-spacer"></span>
         <button class="ip-icon-btn" title="Retry AI answer" (click)="retryExplanation()" [disabled]="isLoadingAI">
           🔄
+        </button>
+        <button class="ip-icon-btn ip-icon-btn-save" title="Save note" (click)="saveCurrentNote()"
+          [class.ip-icon-btn-saved]="isNoteSaved()"
+          [disabled]="isLoadingAI || (!aiMessages.length && !streamingText)">
+          <span *ngIf="!isNoteSaved() && !noteSaved">📌</span>
+          <span *ngIf="isNoteSaved() || noteSaved">✅</span>
         </button>
         <button class="ip-icon-btn ip-icon-btn-close ip-desktop-only" title="Close panel" (click)="closeSidePanel()">
           ✕
         </button>
+      </div>
+
+      <!-- Question body: chips then title -->
+      <div class="ip-rh-body">
+        <div class="ip-rh-chips">
+          <span class="ip-rh-chip-diff" [ngClass]="difficultyClass(selectedQuestion.difficulty)">{{ selectedQuestion.difficulty || 'Medium' }}</span>
+          <span class="ip-rh-chip-cat">{{ selectedQuestion.category }}</span>
+        </div>
+        <h2 class="ip-rh-q">{{ selectedQuestion.question }}</h2>
       </div>
     </div>
 
