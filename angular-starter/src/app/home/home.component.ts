@@ -77,6 +77,7 @@ export class HomeComponent implements OnInit {
   isSavingNote = false;
   noteSaved = false;
   private noteSavedTimer: any;
+  savedMessageIds = new Set<string>();
 
   // Duplicate-detection dialog state
   duplicateDialogMode: 'exact' | 'similar' | null = null;
@@ -454,6 +455,21 @@ const pool = new ThreadPool(4);`,
   }
 
   /** Save the current AI explanation as a note (requires Google sign-in) */
+  async saveMessageNote(msg: AIMessage): Promise<void> {
+    const key = msg.timestamp.getTime().toString();
+    if (this.savedMessageIds.has(key)) return;
+    this.isSavingNote = true;
+    try {
+      const topic = this.currentTopicName || 'AI Mentor';
+      await this.notesService.saveNote(topic, 'Other', msg.content);
+      this.savedMessageIds.add(key);
+    } catch (e) {
+      console.error('[saveMessageNote]', e);
+    } finally {
+      this.isSavingNote = false;
+    }
+  }
+
   async saveCurrentNote(): Promise<void> {
     if (this.isSavingNote || this.noteSaved) return;
     const content = this.aiExplanation?.explanation || this.streamingText;

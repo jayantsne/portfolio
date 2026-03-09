@@ -1848,11 +1848,63 @@ html {
   box-shadow: 0 4px 16px rgba(99,102,241,0.35);
 }
 
+.msg-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 5px;
+  padding: 0 0.25rem;
+  gap: 0.5rem;
+}
+
+.message-user .msg-meta {
+  flex-direction: row-reverse;
+}
+
 .message-time {
   font-size: 0.68rem;
   color: #c0c8da;
-  padding: 0 0.25rem;
   font-variant-numeric: tabular-nums;
+}
+
+.msg-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #a0a8c0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  opacity: 0;
+  transition: opacity 180ms, color 180ms, background 180ms;
+}
+
+.msg-save-btn svg {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+}
+
+.message:hover .msg-save-btn {
+  opacity: 1;
+}
+
+.msg-save-btn:hover {
+  color: #6366f1;
+  background: rgba(99,102,241,0.08);
+}
+
+.msg-save-btn.saved {
+  color: #10b981;
+  opacity: 1;
+}
+
+.msg-save-btn:disabled {
+  cursor: default;
 }
 
 /* AI Explanation View */
@@ -2822,7 +2874,7 @@ html {
 
 /* Code blocks */
 .md-content .md-code-block {
-  margin: 1rem 0;
+  margin: 0.6rem 0;
   border-radius: 10px;
   overflow: hidden;
   border: 1px solid #e5e7eb;
@@ -2858,12 +2910,14 @@ html {
 }
 .md-content .md-pre {
   margin: 0;
-  padding: 1rem 1.1rem;
+  padding: 0.7rem 0.95rem;
   background: #0f172a;
   overflow-x: auto;
+  overflow-y: auto;
+  max-height: 340px;
   font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.84rem;
-  line-height: 1.65;
+  font-size: 0.82rem;
+  line-height: 1.6;
   color: #e2e8f0;
   white-space: pre;
   tab-size: 2;
