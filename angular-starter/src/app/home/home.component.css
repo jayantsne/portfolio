@@ -411,25 +411,29 @@
   font-size: 0.9375rem;
 }
 
-/* Quick Suggestions */
+/* Quick Suggestions — single row, horizontally scrollable on small screens */
 .quick-suggestions {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 12px;
-  margin-top: 20px;
-  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.quick-suggestions::-webkit-scrollbar { display: none; }
 
 .suggestion-label {
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.65);
+  font-size: 0.75rem;
+  color: rgba(255,255,255,0.6);
   font-weight: 600;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.5px;
   text-transform: uppercase;
-  width: 100%;
-  text-align: center;
-  margin-bottom: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .suggestion-pill {
@@ -3715,11 +3719,11 @@ html {
    HOME: SCROLLABLE MODE + POPULAR CONCEPTS
    ══════════════════════════════════════════════════════════════ */
 
-/* Scrollable container — flex column so hero + concepts fill the full viewport */
+/* Scrollable container — flex column, height driven by content not viewport */
 .ai-learning-home.home-scroll {
   height: auto;
-  min-height: calc(100vh - 64px);
-  overflow-y: auto;
+  min-height: 0;
+  overflow-y: visible;
   overflow-x: hidden;
   background: #f4f6fb;
   display: flex;
@@ -3826,11 +3830,12 @@ html {
 }
 
 @media (max-width: 700px) {
-  .hc-inner { padding: 24px 16px 36px; }
+  .hc-inner { padding: 24px 16px 40px; }
   .hc-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
   .ai-learning-home.home-scroll .hero-section { height: clamp(240px, 45vh, 300px); min-height: clamp(240px, 45vh, 300px); max-height: clamp(240px, 45vh, 300px); }
-  .hero-fade-divider { height: 40px; }
+  .hero-fade-divider { height: 48px; }
   .hero-title { font-size: clamp(1.4rem, 6vw, 2rem); }
+  .quick-suggestions { justify-content: flex-start; padding-left: 12px; padding-right: 12px; }
 }
 @media (max-width: 400px) {
   .hc-grid { grid-template-columns: 1fr; }
