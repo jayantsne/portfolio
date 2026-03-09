@@ -41,7 +41,7 @@ namespace AILearnAPI.Domain.Interfaces
     public interface IUserConfigRepository : IBaseRepository<UserConfig>
     {
         Task<UserConfig?> GetByUserIdAsync(string userId);
-        Task<UserConfig> UpsertAsync(string userId, UserConfig config);
+        Task<UserConfig>  UpsertAsync(string userId, UserConfig config);
     }
 
     public interface IMasterConfigRepository

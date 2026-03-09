@@ -24,7 +24,7 @@ StandardError=journal
 # Environment Variables
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=ASPNETCORE_URLS=http://localhost:5000
-Environment="ConnectionStrings__MongoDB=mongodb://localhost:27017/AILearnDB"
+Environment="ConnectionStrings__MongoDB=mongodb://jbadmin:PwC$$Grow88!Track@localhost:27017/AILearnDB?authSource=admin"
 Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
 
 # Security hardening

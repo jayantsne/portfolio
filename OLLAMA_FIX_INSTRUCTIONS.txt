@@ -1,0 +1,99 @@
+====================================================================
+🔧 OLLAMA FIX - MANUAL INSTRUCTIONS
+====================================================================
+
+PROBLEM: Ollama model isn't loaded in memory, causing 60-second timeout
+
+SOLUTION: Restart Ollama and preload the model
+
+====================================================================
+STEP-BY-STEP INSTRUCTIONS
+====================================================================
+
+STEP 1: Open a NEW terminal/PowerShell window
+
+STEP 2: Connect to your server
+--------
+ssh root@76.13.244.113
+
+(Enter your password when prompted)
+
+
+STEP 3: Run these commands ONE BY ONE
+--------
+
+# Restart Ollama service
+systemctl restart ollama && sleep 3
+
+# Check it's running
+systemctl status ollama --no-pager | head -5
+
+# Preload model into memory (THIS IS THE KEY STEP - takes 30-60 seconds)
+curl -X POST http://localhost:11434/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen2.5:7b-instruct-q4_K_M","prompt":"Hello","stream":false}' \
+  --max-time 120
+
+# Configure model to stay loaded for 30 minutes
+curl -X POST http://localhost:11434/api/generate \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen2.5:7b-instruct-q4_K_M","prompt":"","keep_alive":"30m"}'
+
+# Test the full API endpoint
+curl -sk -X POST https://learnwithai.tech/api/ai/ollama \
+  -H "Content-Type: application/json" \
+  -d '{"question":"What are JavaScript Promises?"}' \
+  --max-time 60
+
+
+STEP 4: Test your site
+--------
+Open https://learnwithai.tech in browser
+Search for: "Explain JavaScript Promises"
+You should get a response in 5-10 seconds!
+
+====================================================================
+WHAT EACH COMMAND DOES
+====================================================================
+
+1. systemctl restart ollama
+   → Restarts the Ollama service
+
+2. curl... /api/generate with "Hello"
+   → Loads the 7B model into memory (first load is slow)
+   → After this, the model stays in RAM for fast responses
+
+3. curl... keep_alive:"30m"
+   → Tells Ollama to keep model loaded for 30 minutes
+   → Prevents auto-unload after inactivity
+
+4. curl... /api/ai/ollama
+   → Tests the full API endpoint through your ASP.NET backend
+   → Should return a response in ~5 seconds
+
+====================================================================
+EXPECTED RESULTS
+====================================================================
+
+✅ First API call (model loading): 30-60 seconds
+✅ Subsequent calls: 2-5 seconds
+✅ Model stays loaded: 30 minutes of inactivity
+✅ Unlimited requests (local server)
+
+====================================================================
+TROUBLESHOOTING
+====================================================================
+
+If still slow:
+- Check: systemctl status ollama
+- Check: ps aux | grep ollama
+- Check logs: journalctl -u ollama -n 50
+
+If still not working:
+- Option: Switch to Groq API (instant responses)
+- Get key: https://console.groq.com/keys
+- Add to environment.ts: groqApiKeys: ['gsk_YOUR_KEY']
+- Rebuild frontend: ng build --configuration production
+- Redeploy
+
+====================================================================

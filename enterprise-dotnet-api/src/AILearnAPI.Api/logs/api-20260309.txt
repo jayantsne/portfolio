@@ -1,0 +1,325 @@
+2026-03-09 10:51:30.419 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 10:51:30.555 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 10:51:30.639 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 10:51:31.572 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 10:51:31.584 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 10:51:31.633 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 10:52:31.784 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 11:58:59.102 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 11:58:59.119 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 11:58:59.201 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 11:58:59.966 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 11:58:59.971 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 11:58:59.987 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 11:59:07.806 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 11:59:07.811 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 11:59:07.879 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 11:59:08.561 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 11:59:08.566 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 11:59:08.569 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 12:01:19.629 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 12:01:30.747 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 12:06:39.843 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 12:06:39.859 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 12:06:39.938 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 12:06:40.349 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 12:06:40.355 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 12:06:40.360 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 12:06:46.140 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 12:06:46.145 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 12:06:46.205 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 12:06:46.885 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 12:06:46.890 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 12:06:46.896 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 12:07:37.440 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 12:07:45.041 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 12:44:06.748 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 12:44:06.768 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 12:44:07.098 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 12:44:07.510 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 12:44:07.516 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 12:44:07.538 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 12:45:18.460 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 12:52:25.092 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 12:52:25.108 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 12:52:25.189 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 12:52:25.632 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 12:52:25.637 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 12:52:25.645 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 12:52:31.756 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 12:52:31.761 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 12:52:31.825 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 12:52:32.965 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 12:52:32.969 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 12:52:32.973 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 12:52:48.716 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 12:52:48.721 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 12:52:48.791 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 12:52:49.528 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 12:52:49.533 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 12:52:49.536 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 12:53:44.398 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 12:54:18.160 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 12:54:23.739 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 12:55:48.919 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 12:55:48.924 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 12:55:48.997 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 12:55:49.389 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 12:55:49.397 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 12:55:49.400 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 12:56:13.474 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 13:00:57.893 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 13:00:57.918 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 13:00:57.999 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 13:00:58.426 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 13:00:58.432 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 13:00:58.442 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 13:01:24.370 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 13:09:27.936 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 13:09:27.952 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 13:09:28.050 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 13:09:28.464 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 13:09:28.474 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 13:09:28.482 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 13:09:38.698 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 13:09:38.705 +05:30 [INF] 🖥 Device="Mobile" UA=Mozilla/5.0 (Linux; Android 7.0; SM-G950U Build/NRD90M) Appl → token limit=250
+2026-03-09 13:09:38.781 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 13:09:39.454 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 13:09:39.462 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 13:09:39.474 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=250
+2026-03-09 13:10:15.052 +05:30 [INF] 📋 Using simplified tutor prompt
+2026-03-09 13:10:15.061 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 13:10:15.067 +05:30 [INF] 🖥 Device="Desktop" UA=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 → token limit=500
+2026-03-09 13:10:15.149 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 13:10:15.798 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 13:10:15.806 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 13:10:15.812 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=500
+2026-03-09 13:10:24.633 +05:30 [INF] 📋 Using simplified tutor prompt
+2026-03-09 13:10:24.636 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 13:10:24.641 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert software engineer and technical ' model=default
+2026-03-09 13:10:24.656 +05:30 [INF] 🖥 Device="Desktop" UA=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 → token limit=500
+2026-03-09 13:10:25.036 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 13:10:25.709 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 13:10:25.722 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 13:10:25.732 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=500
+2026-03-09 13:12:34.750 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 13:13:23.896 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 13:14:11.767 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 13:27:53.128 +05:30 [INF] User user_1 logged out
+2026-03-09 13:28:08.446 +05:30 [INF] 📋 Using simplified tutor prompt
+2026-03-09 13:28:08.455 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert programming teacher. Explain "Pr' model=default
+2026-03-09 13:28:08.468 +05:30 [INF] 🖥 Device="Desktop" UA=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 → token limit=500
+2026-03-09 13:28:08.548 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 13:28:08.972 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 13:28:08.985 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 13:28:08.994 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=500
+2026-03-09 13:30:34.362 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 14:47:20.800 +05:30 [INF] 📋 Using simplified tutor prompt
+2026-03-09 14:47:20.816 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert programming teacher. Explain "Pr' model=default
+2026-03-09 14:47:20.821 +05:30 [INF] 🖥 Device="Desktop" UA=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 → token limit=500
+2026-03-09 14:47:20.905 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 14:47:21.638 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 14:47:21.645 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 14:47:21.662 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=500
+2026-03-09 14:49:00.192 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 15:41:13.992 +05:30 [INF] 📋 Using simplified tutor prompt
+2026-03-09 15:41:14.012 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert programming teacher. Explain "Pr' model=default
+2026-03-09 15:41:14.019 +05:30 [INF] 🖥 Device="Desktop" UA=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 → token limit=500
+2026-03-09 15:41:14.127 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 15:41:14.956 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 15:41:14.964 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 15:41:14.969 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=500
+2026-03-09 15:43:53.096 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 15:44:58.124 +05:30 [INF] User admin@learnwithai.tech logged in successfully
+2026-03-09 16:05:11.244 +05:30 [INF] 📋 Using simplified tutor prompt
+2026-03-09 16:05:11.250 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert programming teacher. Explain "As' model=default
+2026-03-09 16:05:11.254 +05:30 [INF] 🖥 Device="Desktop" UA=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 → token limit=500
+2026-03-09 16:05:11.397 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 16:05:12.234 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 16:05:12.241 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 16:05:12.248 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=500
+2026-03-09 16:06:22.862 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 16:15:11.610 +05:30 [INF] 📋 Using simplified tutor prompt
+2026-03-09 16:15:11.626 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert programming teacher. Explain "Pr' model=default
+2026-03-09 16:15:11.630 +05:30 [INF] 🖥 Device="Desktop" UA=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 → token limit=500
+2026-03-09 16:15:11.712 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 16:15:12.138 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 16:15:12.143 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 16:15:12.147 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=500
+2026-03-09 16:17:48.686 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0
+2026-03-09 16:59:04.113 +05:30 [INF] 📋 Using simplified tutor prompt
+2026-03-09 16:59:04.128 +05:30 [INF] ⚡ SSE Stream request: 'You are an expert programming teacher. Explain "Pr' model=default
+2026-03-09 16:59:04.135 +05:30 [INF] 🖥 Device="Desktop" UA=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 → token limit=500
+2026-03-09 16:59:04.216 +05:30 [INF] ⚡ SSE Stream → OpenAI model=gpt-4o-mini
+2026-03-09 16:59:05.045 +05:30 [ERR] OpenAI returned 429: {
+    "error": {
+        "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, read the docs: https://platform.openai.com/docs/guides/error-codes/api-errors.",
+        "type": "insufficient_quota",
+        "param": null,
+        "code": "insufficient_quota"
+    }
+}
+
+2026-03-09 16:59:05.051 +05:30 [WRN] ⚡ Provider 'openai' failed before first token — falling back to Ollama. Reason: The AI provider is rate-limited right now. Please wait a moment and try again.
+2026-03-09 16:59:05.056 +05:30 [INF] ⚡ Streaming Ollama: model=qwen2.5:3b-instruct-q4_0, maxTokens=500
+2026-03-09 17:01:25.785 +05:30 [INF] ✅ Stream complete for model: qwen2.5:3b-instruct-q4_0

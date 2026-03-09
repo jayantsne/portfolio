@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AILearnAPI.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bf42f8dca350b8abe60f86fc5c6e064e0f04eedc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+520030ad066f6d8c0c8d0a31b5c61dc5a7e46872")]
 [assembly: System.Reflection.AssemblyProductAttribute("AILearnAPI.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AILearnAPI.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

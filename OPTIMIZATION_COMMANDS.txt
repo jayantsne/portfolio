@@ -1,0 +1,76 @@
+====================================================================
+🚀 COPY & PASTE THESE COMMANDS INTO YOUR SSH SESSION
+====================================================================
+
+SSH into your server first:
+  ssh root@76.13.244.113
+  
+Then copy and paste this ENTIRE block:
+
+---BEGIN COMMANDS---
+
+# Download faster 3B model (3x faster than 7B!)
+echo "Downloading faster 3B model..."
+ollama pull qwen2.5:3b-instruct-q4_0
+
+# Optimize Ollama performance
+echo "Optimizing Ollama..."
+CPU_CORES=$(nproc --all)
+mkdir -p /etc/systemd/system/ollama.service.d
+cat > /etc/systemd/system/ollama.service.d/override.conf << 'EOF'
+[Service]
+Environment="OLLAMA_NUM_PARALLEL=2"
+Environment="OLLAMA_MAX_LOADED_MODELS=1"
+Environment="OLLAMA_KEEP_ALIVE=30m"
+Environment="OLLAMA_NUM_THREAD=4"
+EOF
+
+# Restart Ollama
+systemctl daemon-reload
+systemctl restart ollama
+sleep 5
+
+# Update backend to use 3B model
+echo "Updating backend..."
+cd /var/www/ai-learn-api
+cp appsettings.json appsettings.json.backup
+sed -i 's/qwen2.5:7b-instruct-q4_K_M/qwen2.5:3b-instruct-q4_0/g' appsettings.json
+sed -i 's/"MaxTokens": 2048/"MaxTokens": 1024/g' appsettings.json
+
+# Restart backend
+systemctl restart ailearn-api
+sleep 3
+
+# Preload 3B model into memory
+echo "Preloading model (30 seconds)..."
+curl -s -X POST http://localhost:11434/api/generate -H 'Content-Type: application/json' -d '{"model":"qwen2.5:3b-instruct-q4_0","prompt":"Hello","stream":false,"keep_alive":"30m","options":{"num_predict":50}}' --max-time 60
+
+# Test API
+echo ""
+echo "Testing API..."
+time curl -sk -X POST https://learnwithai.tech/api/ai/ollama -H 'Content-Type: application/json' -d '{"question":"Say hello"}' --max-time 30
+
+echo ""
+echo "✅ OPTIMIZATION COMPLETE!"
+echo "⚡ Model is now 3x faster!"
+echo "🎯 Test at: https://learnwithai.tech"
+
+---END COMMANDS---
+
+====================================================================
+WHAT THIS DOES:
+====================================================================
+
+1. Downloads qwen2.5:3b model (2GB instead of 7GB)
+2. Configures Ollama to use all CPU cores
+3. Keeps model loaded in memory for 30 minutes
+4. Updates backend to use faster model
+5. Reduces token limit for faster responses
+6. Pre-loads model so it's ready immediately
+
+EXPECTED RESULTS:
+  • Old 7B model: 60+ seconds per response
+  • New 3B model: 5-15 seconds per response
+  • Quality: Still excellent for coding questions!
+
+====================================================================

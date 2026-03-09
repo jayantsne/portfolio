@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AILearnAPI.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bf42f8dca350b8abe60f86fc5c6e064e0f04eedc")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+e8b77cf204ab1ff8f7858e03e1476d6695e240c5")]
 [assembly: System.Reflection.AssemblyProductAttribute("AILearnAPI.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AILearnAPI.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "AEnNFxfKN3I=",
+  "dgSpecHash": "dgoFspcqCDM=",
   "success": true,
   "projectFilePath": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\AILearnAPI.Application\\AILearnAPI.Application.csproj",
   "expectedPackageFiles": [
@@ -18,9 +18,8 @@
     "C:\\Users\\jayan\\.nuget\\packages\\microsoft.identitymodel.tokens\\8.16.0\\microsoft.identitymodel.tokens.8.16.0.nupkg.sha512",
     "C:\\Users\\jayan\\.nuget\\packages\\mongodb.bson\\2.22.0\\mongodb.bson.2.22.0.nupkg.sha512",
     "C:\\Users\\jayan\\.nuget\\packages\\system.identitymodel.tokens.jwt\\8.16.0\\system.identitymodel.tokens.jwt.8.16.0.nupkg.sha512",
-    "C:\\Users\\jayan\\.nuget\\packages\\microsoft.netcore.app.ref\\8.0.15\\microsoft.netcore.app.ref.8.0.15.nupkg.sha512",
-    "C:\\Users\\jayan\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.15\\microsoft.windowsdesktop.app.ref.8.0.15.nupkg.sha512",
-    "C:\\Users\\jayan\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.15\\microsoft.aspnetcore.app.ref.8.0.15.nupkg.sha512"
+    "C:\\Users\\jayan\\.nuget\\packages\\system.memory\\4.5.5\\system.memory.4.5.5.nupkg.sha512",
+    "C:\\Users\\jayan\\.nuget\\packages\\system.runtime.compilerservices.unsafe\\5.0.0\\system.runtime.compilerservices.unsafe.5.0.0.nupkg.sha512"
   ],
   "logs": []
 }
