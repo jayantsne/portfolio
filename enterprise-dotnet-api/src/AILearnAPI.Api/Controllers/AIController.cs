@@ -235,7 +235,9 @@ public class AIController : ControllerBase
                 }
 
                 // Decrypt the API key (admin resolution — key is stored encrypted in DB)
-                var apiKey = await _llmProviderSvc.ResolveApiKeyAsync(prov.ProviderName, "system", UserRoles.Admin);
+                //var apiKey = await _llmProviderSvc.ResolveApiKeyAsync(prov.ProviderName, "system", UserRoles.Admin);
+
+                var apiKey =  Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.User);
                 if (string.IsNullOrEmpty(apiKey))
                 {
                     await Response.WriteAsync("data: {\"error\":\"OpenAI API key could not be resolved.\",\"done\":true}\n\n", cancellationToken);
@@ -573,40 +575,33 @@ public class AIController : ControllerBase
 
         var systemRole = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
             ? cfg.defaultSystemPrompt
-            : "You are a friendly senior software engineer who explains concepts clearly.";
+            : "You are a senior software engineer who explains concepts clearly and simply.";
 
-        _logger.LogInformation("📋 Using simplified tutor prompt");
+        _logger.LogInformation("📋 Using optimized tutor prompt");
 
         return $@"
 {systemRole}
 
-Teach the concept **""{question}""** in a way that is:
-• easy to understand  
-• enjoyable to read  
-• practical for developers  
+Explain **{question}** for developers.
 
-Use **clean Markdown formatting** and avoid long paragraphs.
+Use short sections and simple language.
 
-Follow this structure:
+Format:
 
-# 🧠 {question}
+# {question}
 
-## 🎯 Simple Idea
-Explain the concept in **one clear sentence**.
+Idea: one clear sentence.
 
-## 🌍 Intuitive Analogy
-Give a **real-life analogy** that makes the concept easy to imagine.
+Analogy: simple real-world comparison.
 
-## ❓ Why This Exists
-Briefly explain:
-• the problem developers had before  
-• how this concept solves it
+Why: what problem it solves.
 
-## ⚙️ How It Works
-Explain the idea in **4 simple steps**.
+How:
+1. step
+2. step
+3. step
 
-## 💻 Example Code
-Use the **most appropriate language for the concept**.";
+Example: short code snippet.";
     }
 
     private string BuildMobileLearningPrompt(string question)
