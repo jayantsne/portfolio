@@ -1,4 +1,4 @@
-<div class="ai-learning-home" [class.split-mode]="showModal">
+<div class="ai-learning-home" [class.split-mode]="showModal" [class.home-scroll]="!showModal">
   <!-- Hero Section / Left Topic Panel -->
   <header class="hero-section" id="home" #hero [class.hero-left]="showModal">
     <!-- Animated Background (always visible) -->
@@ -23,8 +23,7 @@
         </h1>
         
         <p class="hero-subtitle">
-          Learn programming concepts step-by-step with AI-powered explanations,
-          interactive examples, and a personalized learning roadmap.
+          Learn programming concepts step-by-step with AI-powered explanations.
         </p>
 
         <!-- Smart AI Search -->
@@ -82,15 +81,12 @@
           <!-- Quick Suggestions -->
           <div class="quick-suggestions" *ngIf="!showSearchResults">
             <span class="suggestion-label">Try asking AI about:</span>
-            <button class="suggestion-pill" (click)="searchQuery = 'Promises'; onSearchEnter()">
-              ⚡ Promises
-            </button>
-            <button class="suggestion-pill" (click)="searchQuery = 'Async/Await'; onSearchEnter()">
-              🚀 Async/Await
-            </button>
-            <button class="suggestion-pill" (click)="searchQuery = 'Closures'; onSearchEnter()">
-              🔄 Closures
-            </button>
+            <button class="suggestion-pill" (click)="searchQuery = 'Promises'; onSearchEnter()">Promises</button>
+            <button class="suggestion-pill" (click)="searchQuery = 'Async/Await'; onSearchEnter()">Async/Await</button>
+            <button class="suggestion-pill" (click)="searchQuery = 'Closures'; onSearchEnter()">Closures</button>
+            <button class="suggestion-pill" (click)="searchQuery = 'Dependency Injection'; onSearchEnter()">Dependency Injection</button>
+            <button class="suggestion-pill" (click)="searchQuery = 'SOLID Principles'; onSearchEnter()">SOLID Principles</button>
+            <button class="suggestion-pill" (click)="searchQuery = 'Design Patterns'; onSearchEnter()">Design Patterns</button>
           </div>
         </div>
 
@@ -153,10 +149,27 @@
                   [disabled]="isLoadingAI">
             {{ q }}
           </button>
-        </div>
+    </div>
       </div>
     </div>
   </header>
+
+
+  <!-- Popular Concepts (non-split mode) -->
+  <main class="home-concepts" *ngIf="!showModal">
+    <div class="hc-inner">
+      <h2 class="hc-title">Popular Concepts</h2>
+      <div class="hc-grid">
+        <button class="hc-card" *ngFor="let c of popularConcepts" (click)="searchQuery = c.name; onSearchEnter()">
+          <div class="hc-icon">{{ c.icon }}</div>
+          <div class="hc-body">
+            <div class="hc-name">{{ c.name }}</div>
+            <div class="hc-desc">{{ c.desc }}</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </main>
 
   <!-- AI Mentor Panel (right side in split mode) -->
   <aside class="mentor-panel" *ngIf="showModal">

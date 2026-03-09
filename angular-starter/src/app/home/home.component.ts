@@ -352,6 +352,16 @@ const pool = new ThreadPool(4);`,
   selectedConcept: QuickConcept | null = null;
   currentStep = 0;
 
+  // ── Popular Concepts ──────────────────────────────────────────────────────
+  popularConcepts = [
+    { icon: '⚡', name: 'Async Programming', desc: 'Understand async and await' },
+    { icon: '💉', name: 'Dependency Injection', desc: 'Learn DI principles' },
+    { icon: '🎨', name: 'Design Patterns', desc: 'Explore common patterns' },
+    { icon: '🔒', name: 'SOLID Principles', desc: 'Write maintainable code' },
+    { icon: '🔄', name: 'Closures', desc: 'Master scope and closures' },
+    { icon: '🧪', name: 'Testing Strategies', desc: 'Unit and integration tests' },
+  ];
+
   ngOnInit(): void {
     // Generate particles for background animation
     this.particles = Array.from({ length: 30 }, () => ({
