@@ -162,7 +162,7 @@ namespace AILearnAPI.Api.Controllers
             try
             {
                 await foreach (var token in _openAI.StreamAsync(
-                    apiKey, baseUrl, model, req.Question,
+                    apiKey, baseUrl, model, string.Empty, req.Question,
                     req.MaxTokens ?? 1500, cancellationToken))
                 {
                     if (cancellationToken.IsCancellationRequested) break;

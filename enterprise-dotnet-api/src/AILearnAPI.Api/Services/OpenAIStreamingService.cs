@@ -15,6 +15,7 @@ namespace AILearnAPI.Api.Services
             string apiKey,
             string baseUrl,
             string model,
+            string systemPrompt,
             string userPrompt,
             int maxTokens,
             CancellationToken cancellationToken);
@@ -35,16 +36,22 @@ namespace AILearnAPI.Api.Services
             string apiKey,
             string baseUrl,
             string model,
+            string systemPrompt,
             string userPrompt,
             int maxTokens,
             [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
         {
             var client = _httpFactory.CreateClient("OpenAI");
 
+            // Use proper system + user roles so the model never echoes the system prompt
+            object[] messages = string.IsNullOrWhiteSpace(systemPrompt)
+                ? new object[] { new { role = "user", content = userPrompt } }
+                : new object[] { new { role = "system", content = systemPrompt }, new { role = "user", content = userPrompt } };
+
             var requestBody = new
             {
                 model,
-                messages = new[] { new { role = "user", content = userPrompt } },
+                messages,
                 max_tokens = maxTokens,
                 stream = true,
                 temperature = 0.7

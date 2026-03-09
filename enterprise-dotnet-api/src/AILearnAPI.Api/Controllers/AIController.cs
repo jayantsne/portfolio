@@ -250,11 +250,15 @@ public class AIController : ControllerBase
                 }
 
                 _logger.LogInformation("⚡ SSE Stream → OpenAI model={M}", prov.Model);
+                var (oaiSystem, oaiUser) = request.RawMode
+                    ? ("", request.Question)
+                    : BuildOpenAIMessages(request.Question, cfg);
                 tokenStream = _openAIStreaming.StreamAsync(
                     apiKey,
                     prov.BaseUrl,
                     request.Model ?? prov.Model,
-                    prompt,
+                    oaiSystem,
+                    oaiUser,
                     streamDeviceLimit,
                     cancellationToken);
             }
@@ -280,11 +284,15 @@ public class AIController : ControllerBase
                 }
 
                 _logger.LogInformation("⚡ SSE Stream → Custom provider id={Id} model={M}", customId, info.Model);
+                var (custSystem, custUser) = request.RawMode
+                    ? ("", request.Question)
+                    : BuildOpenAIMessages(request.Question, cfg);
                 tokenStream = _openAIStreaming.StreamAsync(
                     info.ApiKey,
                     info.BaseUrl,
                     request.Model ?? info.Model,
-                    prompt,
+                    custSystem,
+                    custUser,
                     streamDeviceLimit,
                     cancellationToken);
             }
@@ -568,6 +576,53 @@ public class AIController : ControllerBase
     /// Priority: DB <c>mainPromptTemplate</c> (with {question} placeholder)
     ///         → built-in Claude-style teaching template using <c>defaultSystemPrompt</c> as the role.
     /// </summary>
+    /// <summary>
+    /// Builds separate system-prompt and user-message for OpenAI chat completions.
+    /// Keeps the model persona in the system role so it is never echoed back.
+    /// </summary>
+    private (string systemPrompt, string userMessage) BuildOpenAIMessages(string question, MasterConfigDto cfg)
+    {
+        // DB-driven template: treat full template as system instructions
+        if (!string.IsNullOrWhiteSpace(cfg.mainPromptTemplate))
+        {
+            // Strip the {question} placeholder and any surrounding whitespace for the system part
+            var sysTemplate = cfg.mainPromptTemplate
+                .Replace("Explain **{question}** for developers.", "")
+                .Replace("Explain \"{question}\" for developers.", "")
+                .Replace("{question}", "")
+                .Trim();
+            return (sysTemplate, $"Explain \"{question}\" for developers.");
+        }
+
+        var systemRole = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
+            ? cfg.defaultSystemPrompt
+            : "You are a senior software engineer who explains concepts clearly and simply.";
+
+        var systemInstructions = $"""
+            {systemRole}
+
+            When explaining a concept, use short sections and simple language.
+            Format your response as:
+
+            # [concept name]
+
+            Idea: one clear sentence.
+
+            Analogy: simple real-world comparison.
+
+            Why: what problem it solves.
+
+            How:
+            1. step
+            2. step
+            3. step
+
+            Example: short code snippet.
+            """;
+
+        return (systemInstructions, $"Explain \"{question}\" for developers.");
+    }
+
     private string BuildClaudeQualityPrompt(string question, MasterConfigDto cfg)
     {
         // DB-driven prompt
