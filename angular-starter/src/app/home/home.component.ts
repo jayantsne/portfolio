@@ -918,27 +918,28 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
     if (!text) return text;
     const t = text.replace(/^\s+/, '');
 
-    // Detect echoed system prompt — model may wrap it in **bold** markdown
-    // Matches: "You are an expert..." OR "**You are an expert...**"
-    if (/^\*{0,2}You are an expert/i.test(t)) {
-      // Strip up to the first blank line or first # header — whichever comes first
-      const blankLine = t.indexOf('\n\n');
-      const firstHeader = t.search(/^#{1,3}\s/m);
-      if (blankLine !== -1 || firstHeader !== -1) {
-        const cutAt = (blankLine !== -1 && firstHeader !== -1)
-          ? Math.min(blankLine, firstHeader)
-          : (blankLine !== -1 ? blankLine : firstHeader);
-        return t.substring(cutAt).replace(/^\s+/, '');
-      }
+    // ── Case 1: Full prompt echoed (has "Rules:" line) ───────────────────────
+    const rulesIdx = t.indexOf('Rules:');
+    if (rulesIdx !== -1 && /You are an expert/i.test(t.substring(0, rulesIdx))) {
+      const afterRules = t.indexOf('\n', rulesIdx);
+      return afterRules !== -1 ? t.substring(afterRules + 1).replace(/^\s+/, '') : '';
     }
 
-    // Full prompt echo: has "Rules:" marker somewhere after the preamble
-    const rulesIdx = t.indexOf('Rules:');
-    if (rulesIdx !== -1 && t.indexOf('You are an expert') !== -1 && t.indexOf('You are an expert') < rulesIdx) {
-      const afterRules = t.indexOf('\n', rulesIdx);
-      if (afterRules !== -1) {
-        return t.substring(afterRules + 1).replace(/^\s+/, '');
+    // ── Case 2: Model echoes only the opening line (plain or **bold**) ────────
+    // Matches: "You are an expert..." OR "**You are an expert...**"
+    if (/^\*{0,2}You are an expert/i.test(t)) {
+      const blankLine   = t.indexOf('\n\n');
+      const firstHeader = t.search(/^#{1,3}\s/m);
+
+      if (blankLine === -1 && firstHeader === -1) {
+        // Still mid-echo with no real content yet — hide it entirely
+        return '';
       }
+
+      const cutAt = (blankLine !== -1 && firstHeader !== -1)
+        ? Math.min(blankLine, firstHeader)
+        : (blankLine !== -1 ? blankLine : firstHeader);
+      return t.substring(cutAt).replace(/^\s+/, '');
     }
 
     return text;
