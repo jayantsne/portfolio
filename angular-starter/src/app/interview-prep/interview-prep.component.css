@@ -1047,6 +1047,16 @@
   text-overflow: ellipsis;
 }
 
+.ip-rh-cat-label {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.6);
+  margin-bottom: 3px;
+  display: block;
+}
+
 .ip-rh-q {
   margin: 0;
   font-size: 0.92rem;
@@ -1060,7 +1070,6 @@
   overflow: hidden;
 }
 
-.ip-icon-btn-save  { font-size: 0.9rem; }
 .ip-icon-btn-saved { background: rgba(52,211,153,0.25); border-color: rgba(52,211,153,0.5); }
 
 .ip-icon-btn {

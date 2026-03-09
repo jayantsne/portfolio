@@ -139,29 +139,29 @@
     <div class="ip-rh">
       <div class="ip-rh-glow" aria-hidden="true"></div>
 
-      <!-- Single row: back | chips | spacer | actions -->
+      <!-- Single row: back | spacer | refresh | save | close -->
       <div class="ip-rh-topbar">
         <button class="ip-back-btn ip-back-btn-always" title="Back to questions" (click)="closeSidePanel()" aria-label="Back">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
-        <span class="ip-rh-chip-cat">{{ selectedQuestion.category }}</span>
         <span class="ip-rh-topbar-spacer"></span>
         <button class="ip-icon-btn" title="Retry AI answer" (click)="retryExplanation()" [disabled]="isLoadingAI">
-          🔄
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
         </button>
         <button class="ip-icon-btn ip-icon-btn-save" title="Save note" (click)="saveCurrentNote()"
           [class.ip-icon-btn-saved]="isNoteSaved()"
           [disabled]="isLoadingAI || (!aiMessages.length && !streamingText)">
-          <span *ngIf="!isNoteSaved() && !noteSaved">📌</span>
-          <span *ngIf="isNoteSaved() || noteSaved">✅</span>
+          <svg *ngIf="!isNoteSaved() && !noteSaved" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+          <svg *ngIf="isNoteSaved() || noteSaved" width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,0.9)" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
         </button>
         <button class="ip-icon-btn ip-icon-btn-close ip-desktop-only" title="Close panel" (click)="closeSidePanel()">
-          ✕
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
       </div>
 
-      <!-- Question title only -->
+      <!-- Category label + question title -->
       <div class="ip-rh-body">
+        <span class="ip-rh-cat-label">{{ selectedQuestion.category }}</span>
         <h2 class="ip-rh-q">{{ selectedQuestion.question }}</h2>
       </div>
     </div>
