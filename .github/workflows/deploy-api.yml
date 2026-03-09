@@ -157,6 +157,8 @@ jobs:
             if [ -z "$SERVICE" ]; then echo "❌ Service file not found!"; exit 1; fi
             DOTNET_PATH=$(command -v dotnet)
             echo "🔍 dotnet path: $DOTNET_PATH"
+            # Read OPENAI_API_KEY from .bashrc so it survives redeployments
+            OPENAI_KEY=$(grep -h 'OPENAI_API_KEY' /root/.bashrc /etc/environment 2>/dev/null | head -1 | sed 's/.*=//;s/^"//;s/"$//' || true)
             sed \
               -e 's/User=deployuser/User=root/g' \
               -e 's/Group=deployuser/Group=root/g' \
@@ -165,6 +167,13 @@ jobs:
               -e '/After=network.target mongod.service/c\After=network.target' \
               -e "s|ExecStart=/usr/bin/dotnet|ExecStart=$DOTNET_PATH|g" \
               "$SERVICE" > /etc/systemd/system/ailearnapi.service
+            # Inject OPENAI_API_KEY into service file if found
+            if [ -n "$OPENAI_KEY" ]; then
+              sed -i "/Environment=DOTNET_PRINT_TELEMETRY_MESSAGE/a Environment=OPENAI_API_KEY=$OPENAI_KEY" /etc/systemd/system/ailearnapi.service
+              echo "🔑 OPENAI_API_KEY injected into service file"
+            else
+              echo "⚠️  OPENAI_API_KEY not found in .bashrc or /etc/environment — set it with: echo 'export OPENAI_API_KEY=sk-...' >> /root/.bashrc"
+            fi
             rm "$SERVICE"
             echo "📄 Installed service file:"
             cat /etc/systemd/system/ailearnapi.service
