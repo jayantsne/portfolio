@@ -3715,20 +3715,22 @@ html {
    HOME: SCROLLABLE MODE + POPULAR CONCEPTS
    ══════════════════════════════════════════════════════════════ */
 
-/* Scrollable container */
+/* Scrollable container — flex column so hero + concepts fill the full viewport */
 .ai-learning-home.home-scroll {
   height: auto;
   min-height: calc(100vh - 64px);
   overflow-y: auto;
   overflow-x: hidden;
   background: #f4f6fb;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Fixed-height hero in scroll mode — own gradient so #f4f6fb parent doesn't wash it out */
 .ai-learning-home.home-scroll .hero-section {
-  height: 300px;
-  min-height: 300px;
-  max-height: 300px;
+  height: clamp(280px, 52vh, 380px);
+  min-height: clamp(280px, 52vh, 380px);
+  max-height: clamp(280px, 52vh, 380px);
   align-items: center;
   padding: 0 2rem;
   background:
@@ -3744,14 +3746,19 @@ html {
   flex-shrink: 0;
 }
 
-/* ── Popular Concepts section ── */
+/* ── Popular Concepts section — fills remaining viewport height ── */
 .home-concepts {
   background: #f4f6fb;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 .hc-inner {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 32px 32px 48px;
+  padding: 36px 40px 48px;
+  width: 100%;
+  flex: 1;
 }
 .hc-title {
   font-size: 1.05rem;
@@ -3759,11 +3766,19 @@ html {
   color: #1a1d2e;
   margin: 0 0 20px;
   letter-spacing: -0.2px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  font-size: 0.78rem;
+  color: #64748b;
 }
 .hc-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+}
+/* 2-col on tablet */
+@media (min-width: 480px) and (max-width: 860px) {
+  .hc-grid { grid-template-columns: repeat(2, 1fr); }
 }
 .hc-card {
   display: flex;
@@ -3813,8 +3828,9 @@ html {
 @media (max-width: 700px) {
   .hc-inner { padding: 24px 16px 36px; }
   .hc-grid { grid-template-columns: 1fr 1fr; gap: 14px; }
-  .ai-learning-home.home-scroll .hero-section { height: 300px; min-height: 300px; max-height: 300px; }
+  .ai-learning-home.home-scroll .hero-section { height: clamp(240px, 45vh, 300px); min-height: clamp(240px, 45vh, 300px); max-height: clamp(240px, 45vh, 300px); }
   .hero-fade-divider { height: 40px; }
+  .hero-title { font-size: clamp(1.4rem, 6vw, 2rem); }
 }
 @media (max-width: 400px) {
   .hc-grid { grid-template-columns: 1fr; }
