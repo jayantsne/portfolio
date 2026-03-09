@@ -1881,6 +1881,8 @@ html {
   border-radius: 6px;
   opacity: 0;
   transition: opacity 180ms, color 180ms, background 180ms;
+  min-width: 78px; /* prevent width jitter between Save note / Saving… / Saved ✓ */
+  white-space: nowrap;
 }
 
 .msg-save-btn svg {
@@ -1901,6 +1903,12 @@ html {
 .msg-save-btn.saved {
   color: #10b981;
   opacity: 1;
+}
+
+.msg-save-btn.saving {
+  color: #6366f1;
+  opacity: 1;
+  cursor: wait;
 }
 
 .msg-save-btn:disabled {
@@ -3347,7 +3355,13 @@ html {
   color: #16a34a;
   cursor: default;
 }
-.save-note-btn:disabled:not(.saved) {
+.save-note-btn.error {
+  background: linear-gradient(135deg, #fff5f5, #fee2e2);
+  border-color: #fca5a5;
+  color: #dc2626;
+  cursor: pointer;
+}
+.save-note-btn:disabled:not(.saved):not(.error) {
   opacity: 0.6;
   cursor: wait;
 }

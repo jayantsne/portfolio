@@ -1,5 +1,6 @@
-import { Component, ElementRef, HostListener, Input, OnInit, ViewChild } from '@angular/core';
+import { AfterViewChecked, Component, ElementRef, HostListener, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { AILearnService } from '../services/ai-learn.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService, SavedNote } from '../shared/notes.service';
@@ -52,7 +53,7 @@ interface AIExplanation {
   templateUrl: './home.component.html',
   styleUrls: ['./home.component.css']
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
   // AI Features
   isAIMode: boolean = false;
   isLoadingAI: boolean = false;
@@ -76,8 +77,16 @@ export class HomeComponent implements OnInit {
   // Notes save state
   isSavingNote = false;
   noteSaved = false;
+  saveError = false;                        // shows brief error feedback on failure
   private noteSavedTimer: any;
-  savedMessageIds = new Set<string>();
+  savedMessageIds  = new Set<string>();    // message keys already saved
+  savingMessageIds = new Set<string>();    // message keys currently being saved
+
+  // Active follow-up subscription — cancelled before starting a new one
+  private followUpSub: Subscription | null = null;
+
+  // Sentinel that tells ngAfterViewChecked to scroll to bottom
+  private shouldScrollToBottom = false;
 
   // Duplicate-detection dialog state
   duplicateDialogMode: 'exact' | 'similar' | null = null;
@@ -95,6 +104,9 @@ export class HomeComponent implements OnInit {
   @Input() fullName: string = '';
   @Input() jobTitle: string = '';
   @Input() companyName: string = '';
+
+  // Scroll container reference for auto-scroll-to-bottom
+  @ViewChild('mentorBody') private mentorBodyRef!: ElementRef<HTMLElement>;
 
   // Current topic being explained in split-screen mentor mode
   currentTopicName: string = '';
@@ -375,6 +387,25 @@ const pool = new ThreadPool(4);`,
     // User will search and use AI dynamically
   }
 
+  ngAfterViewChecked(): void {
+    if (this.shouldScrollToBottom) {
+      this.scrollToBottom();
+      this.shouldScrollToBottom = false;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.followUpSub?.unsubscribe();
+    clearTimeout(this.noteSavedTimer);
+  }
+
+  private scrollToBottom(): void {
+    try {
+      const el = this.mentorBodyRef?.nativeElement;
+      if (el) el.scrollTop = el.scrollHeight;
+    } catch { /* no-op */ }
+  }
+
   selectConcept(concept: QuickConcept): void {
     this.selectedConcept = concept;
     this.currentStep = 0;
@@ -454,11 +485,11 @@ const pool = new ThreadPool(4);`,
     this.isTopicAccordionOpen = !this.isTopicAccordionOpen;
   }
 
-  /** Save the current AI explanation as a note (requires Google sign-in) */
+  /** Save a single assistant message as a note (per-message saving state) */
   async saveMessageNote(msg: AIMessage): Promise<void> {
     const key = msg.timestamp.getTime().toString();
-    if (this.savedMessageIds.has(key)) return;
-    this.isSavingNote = true;
+    if (this.savedMessageIds.has(key) || this.savingMessageIds.has(key)) return;
+    this.savingMessageIds.add(key);
     try {
       const topic = this.currentTopicName || 'AI Mentor';
       await this.notesService.saveNote(topic, 'Other', msg.content);
@@ -466,7 +497,7 @@ const pool = new ThreadPool(4);`,
     } catch (e) {
       console.error('[saveMessageNote]', e);
     } finally {
-      this.isSavingNote = false;
+      this.savingMessageIds.delete(key);
     }
   }
 
@@ -556,6 +587,7 @@ const pool = new ThreadPool(4);`,
 
   private async performSave(content: string): Promise<void> {
     this.isSavingNote = true;
+    this.saveError = false;
     try {
       await this.notesService.saveNote(this.currentTopicName, 'Other', content);
       this.noteSaved = true;
@@ -563,6 +595,8 @@ const pool = new ThreadPool(4);`,
       this.noteSavedTimer = setTimeout(() => { this.noteSaved = false; }, 4000);
     } catch (e) {
       console.error('[saveNote]', e);
+      this.saveError = true;
+      setTimeout(() => { this.saveError = false; }, 4000);
     } finally {
       this.isSavingNote = false;
     }
@@ -630,7 +664,13 @@ const pool = new ThreadPool(4);`,
       this.aiRenderMode = cached.explanation.renderMode || 'continuous';
       this.followUpQuestions = cached.explanation.followUpQuestions || [];
       this.showFollowUps = this.followUpQuestions.length > 0;
+      // Reset save state for this new topic
       this.noteSaved = false;
+      this.isSavingNote = false;
+      this.saveError = false;
+      this.savedMessageIds.clear();
+      this.savingMessageIds.clear();
+      this.shouldScrollToBottom = true;
       return;
     }
 
@@ -642,6 +682,14 @@ const pool = new ThreadPool(4);`,
     this.aiMessages = [];
     this.aiExplanation = null;
     this.followUpQuestions = [];
+    // Reset save state for this new topic
+    this.noteSaved = false;
+    this.isSavingNote = false;
+    this.saveError = false;
+    this.savedMessageIds.clear();
+    this.savingMessageIds.clear();
+    this.streamingText = '';
+    this.shouldScrollToBottom = true;
 
     // Add user message
     this.aiMessages.push({
@@ -685,15 +733,16 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
           console.log('[HOME] next: done=', response.done, 'success=', response.success, 'len=', response.explanation?.length);
           if (!response.done) {
             // Partial token update — show streaming text immediately
-            this.streamingText = response.explanation || '';
+            this.streamingText = this.stripSystemPrompt(response.explanation || '');
             this.isLoadingAI = false; // hide spinner, show streaming text
+            this.shouldScrollToBottom = true;
             return;
           }
 
           // Final complete response
           this.isLoadingAI = false;
 
-          const responseText: string = response.explanation || response.rawText || response.answer || response.text || '';
+          const responseText: string = this.stripSystemPrompt(response.explanation || response.rawText || response.answer || response.text || '');
           console.log('[HOME] final responseText len=', responseText.length, 'success=', response.success);
 
           if (!responseText || !response.success) {
@@ -754,6 +803,7 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
           this.streamingText = '';
           this.showFollowUps = true;
           this.noteSaved = false;
+          this.shouldScrollToBottom = true;
 
           // Store in session cache so repeat asks are instant
           if (this.aiExplanation) {
@@ -786,10 +836,16 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
    * Send a follow-up question to AI for deeper understanding
    */
   async sendFollowUpQuestion(question: string): Promise<void> {
-    if (this.isLoadingAI) return;
+    if (this.isLoadingAI || !question.trim()) return;
+
+    // Cancel any in-flight follow-up subscription
+    this.followUpSub?.unsubscribe();
+    this.followUpSub = null;
 
     this.isLoadingAI = true;
-    this.currentQuestion = question;
+    // Clear input immediately so the user can't re-send the same question
+    this.currentQuestion = '';
+    this.streamingText = '';
 
     // Add user message
     this.aiMessages.push({
@@ -797,23 +853,23 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
       content: question,
       timestamp: new Date()
     });
+    this.shouldScrollToBottom = true;
 
     try {
-      // Build context from previous conversation
+      // Build context from previous conversation (exclude current user msg we just pushed)
       const context = this.aiMessages
-        .slice(-4) // Last 4 messages for context
+        .slice(-6) // Last 6 messages for richer context
         .map(m => `${m.role}: ${m.content}`)
         .join('\n\n');
 
-      const prompt = `${context}\n\nuser: ${question}\n\nProvide a clear, concise answer with code examples if relevant.`;
+      const prompt = `${context}\n\nProvide a clear, concise answer with code examples if relevant.`;
 
-      this.streamingText = '';
-      this.aiLearnService.getOllamaExplanation(prompt).subscribe({
+      this.followUpSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
         next: (response: any) => {
           if (!response.done) {
-            // Show streaming text in real-time
-            this.streamingText = response.explanation || '';
-            this.isLoadingAI = false;
+            // Show streaming text in real-time — keep isLoadingAI true to block double-sends
+            this.streamingText = this.stripSystemPrompt(response.explanation || '');
+            this.shouldScrollToBottom = true;
             return;
           }
 
@@ -821,9 +877,8 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
           this.isLoadingAI = false;
           this.streamingText = '';
 
-          const responseText: string = response.explanation || '';
+          const responseText: string = this.stripSystemPrompt(response.explanation || '');
           if (!response.success || !responseText) {
-            // Backend error or empty stream — show a helpful message instead of blank/fallback
             this.aiMessages.push({
               role: 'assistant',
               content: responseText || '⚠️ The AI is currently unavailable. Please try again in a moment.',
@@ -837,6 +892,7 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
             });
           }
 
+          this.shouldScrollToBottom = true;
           this.generateFollowUpQuestions();
         },
         error: (error) => {
@@ -848,6 +904,7 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
             content: '⚠️ Unable to process your question right now. Please try again.',
             timestamp: new Date()
           });
+          this.shouldScrollToBottom = true;
         }
       });
     } catch (error) {
@@ -856,9 +913,28 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
     }
   }
 
-  /**
-   * Parse AI response into structured format with dynamic rendering detection
-   */
+  /** Strip echoed system prompt from AI response if the model repeated it back */
+  private stripSystemPrompt(text: string): string {
+    if (!text) return text;
+    // Remove echoed system prompt if the model repeated it back
+    // Pattern: starts with "You are an expert..." up to the Rules line or first ## header
+    const rulesIdx = text.indexOf('Rules:');
+    if (rulesIdx !== -1 && text.indexOf('You are an expert') !== -1 && text.indexOf('You are an expert') < rulesIdx) {
+      const afterRules = text.indexOf('\n', rulesIdx);
+      if (afterRules !== -1) {
+        return text.substring(afterRules + 1).replace(/^\s+/, '');
+      }
+    }
+    // Fallback: strip up to first ## section header if prompt preamble is present
+    if (text.replace(/^\s+/, '').startsWith('You are an expert')) {
+      const firstHeader = text.search(/^##\s/m);
+      if (firstHeader !== -1) {
+        return text.substring(firstHeader).replace(/^\s+/, '');
+      }
+    }
+    return text;
+  }
+
   private parseAIResponse(conceptName: string, rawResponse: string): AIExplanation {
     console.log('🔍 Parsing AI response for concept:', conceptName);
     
