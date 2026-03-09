@@ -29,6 +29,7 @@ public class AIController : ControllerBase
     private readonly IOpenAIStreamingService _openAIStreaming;
     private readonly ILlmProviderService _llmProviderSvc;
     private readonly IUserConfigService _userConfigSvc;
+    private readonly IConfiguration _configuration;
 
     public AIController(
         IOllamaService ollamaService,
@@ -38,7 +39,8 @@ public class AIController : ControllerBase
         IDeviceDetectionService deviceDetection,
         IOpenAIStreamingService openAIStreaming,
         ILlmProviderService llmProviderSvc,
-        IUserConfigService userConfigSvc)
+        IUserConfigService userConfigSvc,
+        IConfiguration configuration)
     {
         _ollamaService    = ollamaService;
         _logger           = logger;
@@ -48,6 +50,7 @@ public class AIController : ControllerBase
         _openAIStreaming   = openAIStreaming;
         _llmProviderSvc   = llmProviderSvc;
         _userConfigSvc    = userConfigSvc;
+        _configuration    = configuration;
     }
 
     /// <summary>
@@ -234,10 +237,11 @@ public class AIController : ControllerBase
                     return;
                 }
 
-                // Decrypt the API key (admin resolution — key is stored encrypted in DB)
-                //var apiKey = await _llmProviderSvc.ResolveApiKeyAsync(prov.ProviderName, "system", UserRoles.Admin);
-
-                var apiKey =  Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.User);
+                // Resolve API key: process env → machine env → appsettings
+                var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")  // Process (Linux systemd / shell export)
+                          ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.Machine)
+                          ?? _configuration["LlmProviders:OpenAI:ApiKey"]
+                          ?? _configuration["OpenAI:ApiKey"];
                 if (string.IsNullOrEmpty(apiKey))
                 {
                     await Response.WriteAsync("data: {\"error\":\"OpenAI API key could not be resolved.\",\"done\":true}\n\n", cancellationToken);
