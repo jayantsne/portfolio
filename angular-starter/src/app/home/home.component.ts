@@ -916,22 +916,31 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
   /** Strip echoed system prompt from AI response if the model repeated it back */
   private stripSystemPrompt(text: string): string {
     if (!text) return text;
-    // Remove echoed system prompt if the model repeated it back
-    // Pattern: starts with "You are an expert..." up to the Rules line or first ## header
-    const rulesIdx = text.indexOf('Rules:');
-    if (rulesIdx !== -1 && text.indexOf('You are an expert') !== -1 && text.indexOf('You are an expert') < rulesIdx) {
-      const afterRules = text.indexOf('\n', rulesIdx);
+    const t = text.replace(/^\s+/, '');
+
+    // Detect echoed system prompt — model may wrap it in **bold** markdown
+    // Matches: "You are an expert..." OR "**You are an expert...**"
+    if (/^\*{0,2}You are an expert/i.test(t)) {
+      // Strip up to the first blank line or first # header — whichever comes first
+      const blankLine = t.indexOf('\n\n');
+      const firstHeader = t.search(/^#{1,3}\s/m);
+      if (blankLine !== -1 || firstHeader !== -1) {
+        const cutAt = (blankLine !== -1 && firstHeader !== -1)
+          ? Math.min(blankLine, firstHeader)
+          : (blankLine !== -1 ? blankLine : firstHeader);
+        return t.substring(cutAt).replace(/^\s+/, '');
+      }
+    }
+
+    // Full prompt echo: has "Rules:" marker somewhere after the preamble
+    const rulesIdx = t.indexOf('Rules:');
+    if (rulesIdx !== -1 && t.indexOf('You are an expert') !== -1 && t.indexOf('You are an expert') < rulesIdx) {
+      const afterRules = t.indexOf('\n', rulesIdx);
       if (afterRules !== -1) {
-        return text.substring(afterRules + 1).replace(/^\s+/, '');
+        return t.substring(afterRules + 1).replace(/^\s+/, '');
       }
     }
-    // Fallback: strip up to first ## section header if prompt preamble is present
-    if (text.replace(/^\s+/, '').startsWith('You are an expert')) {
-      const firstHeader = text.search(/^##\s/m);
-      if (firstHeader !== -1) {
-        return text.substring(firstHeader).replace(/^\s+/, '');
-      }
-    }
+
     return text;
   }
 
