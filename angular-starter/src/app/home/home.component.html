@@ -147,6 +147,7 @@
   <!-- Popular Concepts (non-split mode) -->
   <main class="home-concepts" *ngIf="!showModal">
     <div class="hc-inner">
+      <p class="hc-eyebrow">EXPLORE TOPICS</p>
       <h2 class="hc-title">Popular Concepts</h2>
       <div class="hc-grid">
         <button class="hc-card" *ngFor="let c of popularConcepts" (click)="searchQuery = c.name; onSearchEnter()">
@@ -155,10 +156,66 @@
             <div class="hc-name">{{ c.name }}</div>
             <div class="hc-desc">{{ c.desc }}</div>
           </div>
+          <span class="hc-arrow">→</span>
         </button>
       </div>
     </div>
   </main>
+
+  <!-- How it Works Section -->
+  <section class="hiw-section" *ngIf="!showModal">
+    <div class="hiw-inner">
+      <p class="hiw-eyebrow">HOW IT WORKS</p>
+      <h2 class="hiw-title">Learn anything in 3 steps</h2>
+      <div class="hiw-grid">
+        <div class="hiw-step">
+          <div class="hiw-step-num">01</div>
+          <div class="hiw-step-icon">💬</div>
+          <h3 class="hiw-step-title">Ask a Concept</h3>
+          <p class="hiw-step-desc">Type any programming concept, pattern, or technology you want to understand.</p>
+        </div>
+        <div class="hiw-connector"></div>
+        <div class="hiw-step">
+          <div class="hiw-step-num">02</div>
+          <div class="hiw-step-icon">🤖</div>
+          <h3 class="hiw-step-title">AI Explains Step-by-Step</h3>
+          <p class="hiw-step-desc">Your personal AI mentor breaks it down clearly with examples and real code.</p>
+        </div>
+        <div class="hiw-connector"></div>
+        <div class="hiw-step">
+          <div class="hiw-step-num">03</div>
+          <div class="hiw-step-icon">🚀</div>
+          <h3 class="hiw-step-title">Learn Faster</h3>
+          <p class="hiw-step-desc">Ask follow-up questions, save notes, and build deep understanding at your own pace.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section" *ngIf="!showModal">
+    <div class="cta-inner">
+      <h2 class="cta-title">Ready to learn smarter?</h2>
+      <p class="cta-sub">Join thousands of developers using AI to master programming faster.</p>
+      <button class="cta-main-btn" (click)="focusSearch()">Start Learning Free →</button>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="page-footer" *ngIf="!showModal">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <span class="footer-logo">🤖</span>
+        <span class="footer-name">AI Learn</span>
+      </div>
+      <p class="footer-copy">© 2025 AI Learn. Built for developers who love learning.</p>
+      <div class="footer-links">
+        <a routerLink="/notes">Notes</a>
+        <a routerLink="/roadmap">Roadmap</a>
+        <a routerLink="/interview-prep">Interview Prep</a>
+      </div>
+    </div>
+  </footer>
 
   <!-- AI Mentor Panel (right side in split mode) -->
   <aside class="mentor-panel" *ngIf="showModal">
