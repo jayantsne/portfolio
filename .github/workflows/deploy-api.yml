@@ -132,9 +132,14 @@ jobs:
             # ── Create backend directory ──
             mkdir -p /var/www/learnwithai.tech/backend
 
-            # ── Stop service if running ──
+            # ── Stop service and ensure port 5000 is free ──
             systemctl stop ailearnapi 2>/dev/null || true
-            echo "⏸️  Service stopped"
+            sleep 2
+            # Force-kill any process still holding port 5000 (prevents "address already in use" crash)
+            fuser -k 5000/tcp 2>/dev/null || true
+            pkill -9 -f AILearnAPI.Api 2>/dev/null || true
+            sleep 1
+            echo "⏸️  Service stopped, port 5000 cleared"
 
             # ── Deploy API files ──
             rm -rf /var/www/learnwithai.tech/backend/*
