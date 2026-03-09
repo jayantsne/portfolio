@@ -9,6 +9,7 @@ Type=notify
 User=deployuser
 Group=deployuser
 WorkingDirectory=/var/www/learnwithai.tech/backend
+ExecStartPre=-/bin/bash -c 'fuser -k 5000/tcp 2>/dev/null; pkill -9 -f AILearnAPI.Api 2>/dev/null; sleep 1'
 ExecStart=/usr/bin/dotnet /var/www/learnwithai.tech/backend/AILearnAPI.Api.dll
 
 # Restart policy
@@ -24,7 +25,6 @@ StandardError=journal
 # Environment Variables
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=ASPNETCORE_URLS=http://localhost:5000
-Environment="ConnectionStrings__MongoDB=mongodb://jbadmin:PwC$$Grow88!Track@localhost:27017/AILearnDB?authSource=admin"
 Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
 
 # Security hardening
