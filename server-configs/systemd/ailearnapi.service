@@ -9,7 +9,7 @@ Type=notify
 User=deployuser
 Group=deployuser
 WorkingDirectory=/var/www/learnwithai.tech/backend
-ExecStartPre=-/bin/bash -c 'fuser -k 5000/tcp 2>/dev/null; pkill -9 -f AILearnAPI.Api 2>/dev/null; sleep 1'
+ExecStartPre=-/bin/bash -c 'fuser -k 5000/tcp 2>/dev/null; sleep 1'
 ExecStart=/usr/bin/dotnet /var/www/learnwithai.tech/backend/AILearnAPI.Api.dll
 
 # Restart policy

@@ -135,10 +135,9 @@ jobs:
             # ── Stop service and ensure port 5000 is free ──
             systemctl stop ailearnapi 2>/dev/null || true
             sleep 2
-            # Aggressively kill anything still on port 5000 (Restart=always can race with us)
-            for pid in $(fuser 5000/tcp 2>/dev/null); do kill -9 $pid 2>/dev/null; done
-            pkill -9 -f AILearnAPI.Api 2>/dev/null || true
-            sleep 2
+            # Kill by port only (pkill -f would self-kill the script)
+            fuser -k 5000/tcp 2>/dev/null || true
+            sleep 1
             ss -tlnp | grep 5000 && (echo "❌ Port 5000 still occupied!"; exit 1) || echo "✅ Port 5000 free"
             echo "⏸️  Service stopped, port 5000 cleared"
 
