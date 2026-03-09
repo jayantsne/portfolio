@@ -1762,7 +1762,7 @@ html {
   display: flex;
   gap: 0.75rem;
   animation: slideIn 0.3s cubic-bezier(0.22,0.61,0.36,1);
-  align-items: flex-end;
+  align-items: flex-start; /* avatar pins to top of bubble, not bottom */
 }
 
 .message-user {
@@ -1804,7 +1804,12 @@ html {
   flex-direction: column;
   gap: 0.25rem;
   min-width: 0;
-  max-width: 84%;
+  max-width: 92%; /* narrower only for user bubbles — see override below */
+}
+
+/* Assistant messages can use more horizontal space (long-form content) */
+.message-assistant .message-content {
+  max-width: 96%;
 }
 
 .message-user .message-content {
@@ -3220,12 +3225,12 @@ html {
   transform: rotate(90deg);
 }
 
-/* Mentor Body — clean white, messages pin to bottom for short conversations */
+/* Mentor Body — clean white, scrollable, extra bottom padding so last msg clears the footer */
 .mentor-body {
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding: 1.25rem 1.25rem 0.5rem;
+  padding: 1.25rem 1.25rem 5rem; /* 5rem clears the sticky footer */
   display: flex;
   flex-direction: column;
   background: #fafbff;
@@ -3239,12 +3244,11 @@ html {
 }
 .mentor-body::-webkit-scrollbar-track { background: transparent; }
 
-/* Remove extra wrapper container padding */
+/* Chat message container — natural top-to-bottom flow */
 .mentor-body .ai-chat-container {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  margin-top: auto;
+  gap: 12px; /* space between messages, streaming block, and follow-up pills */
   width: 100%;
 }
 
