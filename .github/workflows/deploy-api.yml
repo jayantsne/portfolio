@@ -26,23 +26,43 @@ jobs:
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: 📥 Checkout code
+      - name: � Check VPS SSH connectivity
+        id: check_vps
         if: steps.check_secrets.outputs.skip == 'false'
+        run: |
+          echo "Testing TCP connectivity to 76.13.244.113:22 (10s timeout)..."
+          if nc -z -w 10 76.13.244.113 22; then
+            echo "✅ VPS port 22 is reachable"
+            echo "reachable=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ VPS port 22 is NOT reachable (firewall or server down)"
+            echo "reachable=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: ⏭️ Skip — VPS unreachable
+        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'false'
+        run: |
+          echo "::warning::VPS 76.13.244.113:22 is unreachable. Deployment skipped."
+          echo "Fix: ensure port 22 is open in the VPS firewall (ufw allow 22 / iptables -A INPUT -p tcp --dport 22 -j ACCEPT)"
+          exit 1
+
+      - name: 📥 Checkout code
+        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
         uses: actions/checkout@v4
 
       - name: 🟣 Setup .NET 8
-        if: steps.check_secrets.outputs.skip == 'false'
+        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
 
       - name: 📦 Restore dependencies
-        if: steps.check_secrets.outputs.skip == 'false'
+        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
         working-directory: ./enterprise-dotnet-api
         run: dotnet restore src/AILearnAPI.Api/AILearnAPI.Api.csproj
 
       - name: 🏗️ Publish API (linux-x64)
-        if: steps.check_secrets.outputs.skip == 'false'
+        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
         working-directory: ./enterprise-dotnet-api
         run: |
           dotnet publish src/AILearnAPI.Api/AILearnAPI.Api.csproj \
@@ -54,13 +74,13 @@ jobs:
           ls -lh publish/
 
       - name: 📦 Create deployment archive
-        if: steps.check_secrets.outputs.skip == 'false'
+        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
         run: |
           tar -czf api-deploy.tar.gz -C enterprise-dotnet-api/publish .
           echo "Archive: $(du -h api-deploy.tar.gz | cut -f1)"
 
       - name: 📤 Upload API archive to VPS
-        if: steps.check_secrets.outputs.skip == 'false'
+        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: 76.13.244.113
@@ -68,9 +88,11 @@ jobs:
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           source: api-deploy.tar.gz
           target: /tmp/
+          timeout: 30s
+          command_timeout: 5m
 
       - name: 📤 Upload systemd service to VPS
-        if: steps.check_secrets.outputs.skip == 'false'
+        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
         uses: appleboy/scp-action@v0.1.7
         with:
           host: 76.13.244.113
@@ -79,14 +101,18 @@ jobs:
           source: server-configs/systemd/ailearnapi.service
           target: /tmp/
           strip_components: 2
+          timeout: 30s
+          command_timeout: 5m
 
       - name: 🚀 Deploy & Start API on VPS
-        if: steps.check_secrets.outputs.skip == 'false'
+        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 76.13.244.113
           username: root
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          connect_timeout: 30s
+          command_timeout: 10m
           script: |
             set -e
 
