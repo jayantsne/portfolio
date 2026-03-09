@@ -3225,14 +3225,12 @@ html {
   transform: rotate(90deg);
 }
 
-/* Mentor Body — clean white, scrollable, extra bottom padding so last msg clears the footer */
+/* Mentor Body — scroll container, height driven by flex sibling layout in .mentor-panel */
 .mentor-body {
   flex: 1;
   overflow-y: auto;
-  min-height: 0;
-  padding: 1.25rem 1.25rem 5rem; /* 5rem clears the sticky footer */
-  display: flex;
-  flex-direction: column;
+  min-height: 0;        /* required so flex child can shrink below content height */
+  padding: 1.25rem 1.25rem 1.5rem;
   background: #fafbff;
   scrollbar-width: thin;
   scrollbar-color: rgba(99, 102, 241, 0.2) transparent;
@@ -3248,8 +3246,9 @@ html {
 .mentor-body .ai-chat-container {
   display: flex;
   flex-direction: column;
-  gap: 12px; /* space between messages, streaming block, and follow-up pills */
+  gap: 12px;
   width: 100%;
+  padding-bottom: 0.5rem; /* small bottom breath so last pill doesn't touch padding edge */
 }
 
 /* Mentor Footer (sticky question input) */
