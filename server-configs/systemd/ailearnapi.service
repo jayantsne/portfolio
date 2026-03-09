@@ -9,7 +9,7 @@ Type=notify
 User=deployuser
 Group=deployuser
 WorkingDirectory=/var/www/learnwithai.tech/backend
-ExecStartPre=-/bin/bash -c 'fuser -k 5000/tcp 2>/dev/null; sleep 1'
+ExecStartPre=-/bin/bash -c 'fuser -k -KILL 5000/tcp 2>/dev/null; for i in 1 2 3 4 5 6 7 8 9 10; do ss -tlnp | grep -q ":5000" || break; sleep 1; done'
 ExecStart=/usr/bin/dotnet /var/www/learnwithai.tech/backend/AILearnAPI.Api.dll
 
 # Restart policy
