@@ -139,11 +139,13 @@
     <div class="ip-rh">
       <div class="ip-rh-glow" aria-hidden="true"></div>
 
-      <!-- Top action bar: back | spacer | save + retry + close -->
+      <!-- Single row: back | chips | spacer | actions -->
       <div class="ip-rh-topbar">
         <button class="ip-back-btn ip-back-btn-always" title="Back to questions" (click)="closeSidePanel()">
           ← Back
         </button>
+        <span class="ip-rh-chip-diff" [ngClass]="difficultyClass(selectedQuestion.difficulty)">{{ selectedQuestion.difficulty || 'Medium' }}</span>
+        <span class="ip-rh-chip-cat">{{ selectedQuestion.category }}</span>
         <span class="ip-rh-topbar-spacer"></span>
         <button class="ip-icon-btn" title="Retry AI answer" (click)="retryExplanation()" [disabled]="isLoadingAI">
           🔄
@@ -159,12 +161,8 @@
         </button>
       </div>
 
-      <!-- Question body: chips then title -->
+      <!-- Question title only -->
       <div class="ip-rh-body">
-        <div class="ip-rh-chips">
-          <span class="ip-rh-chip-diff" [ngClass]="difficultyClass(selectedQuestion.difficulty)">{{ selectedQuestion.difficulty || 'Medium' }}</span>
-          <span class="ip-rh-chip-cat">{{ selectedQuestion.category }}</span>
-        </div>
         <h2 class="ip-rh-q">{{ selectedQuestion.question }}</h2>
       </div>
     </div>

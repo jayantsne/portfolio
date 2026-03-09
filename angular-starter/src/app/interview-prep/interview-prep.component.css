@@ -972,8 +972,8 @@
 .ip-rh {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 10px 14px 14px;
+  gap: 4px;
+  padding: 8px 12px 10px;
   background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #a855f7 100%);
   flex-shrink: 0;
   position: relative;
@@ -987,74 +987,72 @@
   pointer-events: none;
 }
 
-/* Top action bar */
+/* Single row: back + chips + spacer + actions */
 .ip-rh-topbar {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   position: relative;
   z-index: 1;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
-.ip-rh-topbar-spacer { flex: 1; }
+.ip-rh-topbar-spacer { flex: 1; min-width: 4px; }
 
-/* Question + chips */
+/* Question title row */
 .ip-rh-body {
   display: flex;
   flex-direction: column;
-  gap: 6px;
   position: relative;
   z-index: 1;
   min-height: 0;
   overflow: hidden;
 }
 
-.ip-rh-chips {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-/* Difficulty chip inherits .badge-* color via ngClass, but styled white-on-transparent here */
+/* Difficulty chip */
 .ip-rh-chip-diff {
   display: inline-flex;
   align-items: center;
-  padding: 1px 9px;
+  padding: 1px 8px;
   border-radius: 999px;
   border: 1.5px solid rgba(255,255,255,0.4);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  flex-shrink: 0;
+  white-space: nowrap;
 }
 .ip-rh-chip-diff.badge-easy   { background: rgba(16,185,129,0.28); color: #a7f3d0; border-color: rgba(52,211,153,0.4); }
 .ip-rh-chip-diff.badge-medium { background: rgba(245,158,11,0.28);  color: #fde68a; border-color: rgba(251,191,36,0.4); }
 .ip-rh-chip-diff.badge-hard   { background: rgba(239,68,68,0.28);   color: #fecaca; border-color: rgba(248,113,113,0.4); }
 
+/* Category chip */
 .ip-rh-chip-cat {
   display: inline-flex;
   align-items: center;
-  padding: 1px 9px;
+  padding: 1px 8px;
   border-radius: 999px;
   background: rgba(255,255,255,0.18);
   border: 1.5px solid rgba(255,255,255,0.3);
-  font-size: 0.66rem;
+  font-size: 0.64rem;
   font-weight: 700;
   color: rgba(255,255,255,0.9);
   text-transform: uppercase;
   letter-spacing: 0.06em;
   white-space: nowrap;
-  max-width: 150px;
+  flex-shrink: 0;
+  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .ip-rh-q {
   margin: 0;
-  font-size: 0.97rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #fff;
-  line-height: 1.4;
+  line-height: 1.35;
   word-break: break-word;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -1473,7 +1471,7 @@
   .ip-desktop-only { display: none; }
 
   .ip-rh {
-    padding: 12px 14px 14px;
+    padding: 7px 12px 9px;
     border-radius: 18px 18px 0 0;
   }
 
@@ -1497,8 +1495,8 @@
   .ip-qitem-body    { padding: 9px 9px 9px 10px; }
   .ip-filter-label  { min-width: auto; font-size: 0.65rem; }
 
-  .ip-rh-q          { font-size: 0.92rem; }
-  .ip-rh-chip-cat   { max-width: 120px; }
+  .ip-rh-q          { font-size: 0.88rem; }
+  .ip-rh-chip-cat   { max-width: 80px; }
   .ip-rh            { max-height: 28vh; min-height: 0; }
   .ip-rh-body       { min-height: 0; overflow: hidden; }
 
