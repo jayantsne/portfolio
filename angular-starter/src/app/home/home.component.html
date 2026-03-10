@@ -473,21 +473,6 @@
 
       <!-- Input Bar -->
       <div class="am-input-bar">
-        <div class="am-save-row" *ngIf="aiExplanation && !isLoadingAI && !streamingText && customAuth.isLoggedIn">
-          <button class="am-save-btn"
-                  [class.saved]="noteSaved"
-                  [class.error]="saveError"
-                  [disabled]="isSavingNote || noteSaved"
-                  (click)="saveCurrentNote()">
-            <span *ngIf="!isSavingNote && !noteSaved && !saveError">📌 Save to Notes</span>
-            <span *ngIf="isSavingNote">Saving…</span>
-            <span *ngIf="noteSaved">✅ Saved!</span>
-            <span *ngIf="saveError && !isSavingNote">⚠️ Retry</span>
-          </button>
-        </div>
-        <div class="am-nudge" *ngIf="aiExplanation && !isLoadingAI && !streamingText && !customAuth.isLoggedIn">
-          💡 Sign in to save this explanation to your notes
-        </div>
         <div class="am-input-row">
           <input class="am-input" type="text"
                  [(ngModel)]="currentQuestion"

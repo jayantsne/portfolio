@@ -10,6 +10,13 @@
   position: relative;
 }
 
+/* AI Mentor mode — lock outer scroll, fill viewport */
+.ai-learning-home:not(.home-scroll) {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
 /* Subtle decorative orbs - no heavy blur */
 .ai-learning-home::before {
   content: '';
@@ -4765,8 +4772,8 @@ html {
 .am-chat-body {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem 1.5rem 1rem;
-  background: var(--am-bg);
+  padding: 1.25rem 1.5rem 2rem;
+  background: #F6F7FB;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -5044,10 +5051,11 @@ html {
 
 /* ── Input bar (sticky bottom) ── */
 .am-input-bar {
-  padding: 0.75rem 1.25rem 1rem;
+  padding: 0.7rem 1.25rem 0.85rem;
   background: var(--am-surface);
   border-top: 1.5px solid var(--am-border);
   flex-shrink: 0;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
 }
 
 .am-save-row {
@@ -5422,8 +5430,8 @@ html {
 
 /* ≤ 480 px — compact padding for mobile */
 @media (max-width: 480px) {
-  .am-chat-body { padding: 1rem 0.875rem 0.75rem; }
-  .am-input-bar { padding: 0.625rem 0.875rem 0.875rem; }
+  .am-chat-body { padding: 1rem 0.875rem 1.5rem; }
+  .am-input-bar { padding: 0.6rem 0.875rem 0.8rem; }
   .am-chat-header { padding: 0.65rem 0.875rem; }
   .am-topic-chip { display: none; }
   .am-msg-bubble { max-width: 92%; }
@@ -5441,7 +5449,7 @@ html {
   display: flex;
   flex-direction: column;
   gap: 0;
-  padding-bottom: 1.5rem;
+  padding-bottom: 2.5rem;
 }
 
 /* Override old messages container to remove conflicting constraints */
