@@ -316,6 +316,22 @@
                     </div>
                     <!-- Main card -->
                     <div class="am-msg-card">
+
+                      <!-- Mentor card header -->
+                      <div class="am-mentor-card-hd">
+                        <span class="am-mentor-card-hd-avatar">🤖</span>
+                        <div class="am-mentor-card-hd-text">
+                          <span class="am-mentor-card-hd-name">AI Mentor</span>
+                          <span class="am-mentor-card-hd-topic">{{ currentTopicName }}</span>
+                        </div>
+                        <div class="am-mentor-card-hd-sections">
+                          <span class="am-section-tag am-section-concept">📘 Concept</span>
+                          <span class="am-section-tag am-section-example">💻 Example</span>
+                          <span class="am-section-tag am-section-mistake">⚠️ Mistake</span>
+                          <span class="am-section-tag am-section-tip">🎯 Tip</span>
+                        </div>
+                      </div>
+
                       <div class="am-msg-text md-content" [innerHTML]="msg.content | markdown"></div>
 
                       <!-- Action buttons -->
@@ -364,23 +380,29 @@
                                 [disabled]="isLoadingAI || !!streamingText">
                           🎯 Interview answer
                         </button>
+                        <button class="am-msg-chip"
+                                (click)="sendFollowUpQuestion('Ask me a short quiz question about ' + currentTopicName + ' to test if I understood the concept')"
+                                [disabled]="isLoadingAI || !!streamingText">
+                          🧪 Test me
+                        </button>
+                      </div>
+
+                      <!-- Card footer — Save to Notes -->
+                      <div class="am-card-footer">
+                        <button class="am-msg-save-btn"
+                                [class.saved]="savedMessageIds.has(msg.timestamp.getTime().toString())"
+                                [class.saving]="savingMessageIds.has(msg.timestamp.getTime().toString())"
+                                (click)="saveMessageNote(msg)"
+                                [disabled]="savedMessageIds.has(msg.timestamp.getTime().toString()) || savingMessageIds.has(msg.timestamp.getTime().toString())"
+                                title="Save as note">
+                          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10a1 1 0 0 1 1 1v10.5l-6-2.5-6 2.5V3a1 1 0 0 1 1-1z"/></svg>
+                          <span *ngIf="!savingMessageIds.has(msg.timestamp.getTime().toString()) && !savedMessageIds.has(msg.timestamp.getTime().toString())">📌 Save to Notes</span>
+                          <span *ngIf="savingMessageIds.has(msg.timestamp.getTime().toString())">Saving…</span>
+                          <span *ngIf="savedMessageIds.has(msg.timestamp.getTime().toString())">✓ Saved</span>
+                        </button>
+                        <span class="am-card-footer-time">{{ msg.timestamp | date:'shortTime' }}</span>
                       </div>
                     </div><!-- end am-msg-card -->
-
-                    <!-- Meta row -->
-                    <div class="am-msg-meta">
-                      <button class="am-msg-save-btn"
-                              [class.saved]="savedMessageIds.has(msg.timestamp.getTime().toString())"
-                              [class.saving]="savingMessageIds.has(msg.timestamp.getTime().toString())"
-                              (click)="saveMessageNote(msg)"
-                              [disabled]="savedMessageIds.has(msg.timestamp.getTime().toString()) || savingMessageIds.has(msg.timestamp.getTime().toString())"
-                              title="Save as note">
-                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10a1 1 0 0 1 1 1v10.5l-6-2.5-6 2.5V3a1 1 0 0 1 1-1z"/></svg>
-                        <span *ngIf="!savingMessageIds.has(msg.timestamp.getTime().toString()) && !savedMessageIds.has(msg.timestamp.getTime().toString())">Save note</span>
-                        <span *ngIf="savingMessageIds.has(msg.timestamp.getTime().toString())">Saving…</span>
-                        <span *ngIf="savedMessageIds.has(msg.timestamp.getTime().toString())">✓ Saved</span>
-                      </button>
-                    </div>
                   </div>
                 </div>
               </ng-container>
@@ -399,14 +421,30 @@
             </div>
           </div>
 
-          <!-- Typing / Thinking indicator -->
+          <!-- Practice Reinforcement Block (after conversation, before typing) -->
+          <div class="am-practice-block"
+               *ngIf="aiMessages.length > 0 && !isLoadingAI && !streamingText">
+            <div class="am-practice-block-left">
+              <span class="am-practice-block-icon">🧪</span>
+              <div>
+                <div class="am-practice-block-title">Test Your Understanding</div>
+                <div class="am-practice-block-sub">Ask the mentor to quiz you on <strong>{{ currentTopicName }}</strong></div>
+              </div>
+            </div>
+            <button class="am-practice-block-btn"
+                    (click)="sendFollowUpQuestion('Give me a short practice question about ' + currentTopicName + ' — a coding challenge or concept quiz — then explain the answer step by step')">
+              Start Quiz →
+            </button>
+          </div>
+
+          <!-- Typing indicator -->
           <div class="am-typing-row" *ngIf="isLoadingAI && !streamingText">
             <div class="am-msg-avatar">🤖</div>
             <div class="am-typing-card">
               <div class="am-typing-dots">
                 <span></span><span></span><span></span>
               </div>
-              <span class="am-typing-label">AI Mentor is thinking…</span>
+              <span class="am-typing-label">AI Mentor is typing…</span>
             </div>
           </div>
 
