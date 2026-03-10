@@ -99,10 +99,12 @@
       <!-- Accordion Header: always visible on all screen sizes -->
       <div class="topic-accordion-header" (click)="toggleTopicAccordion()">
         <button class="back-btn" (click)="$event.stopPropagation(); closeModal()">← Back</button>
-        <div class="topic-icon-large">✨</div>
-        <div class="topic-header-info">
-          <h2 class="topic-name">{{ currentTopicName }}</h2>
-          <p class="topic-tagline">AI Mentor Mode</p>
+        <div class="topic-brand-row">
+          <div class="topic-icon-large">✨</div>
+          <div class="topic-header-info">
+            <h2 class="topic-name">{{ currentTopicName }}</h2>
+            <p class="topic-tagline">AI Mentor Mode</p>
+          </div>
         </div>
         <button class="topic-chevron" (click)="$event.stopPropagation(); toggleTopicAccordion()" aria-label="Toggle topic details">
           <span class="chevron-arrow">{{ isTopicAccordionOpen ? '▲' : '▼' }}</span>
@@ -131,14 +133,14 @@
           </div>
         </div>
         <div class="related-questions-panel" *ngIf="followUpQuestions.length > 0">
-          <h4>Explore More:</h4>
+          <h4>Suggested follow-ups</h4>
           <button class="related-pill"
-                  *ngFor="let q of followUpQuestions.slice(0, 3)"
+                  *ngFor="let q of followUpQuestions.slice(0, 4)"
                   (click)="sendFollowUpQuestion(q)"
                   [disabled]="isLoadingAI">
             {{ q }}
           </button>
-    </div>
+        </div>
       </div>
     </div>
   </header>
