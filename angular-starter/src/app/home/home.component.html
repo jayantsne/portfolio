@@ -1,16 +1,15 @@
-<div class="ai-learning-home" [class.split-mode]="showModal" [class.home-scroll]="!showModal">
-  <!-- Hero Section / Left Topic Panel -->
-  <header class="hero-section" id="home" #hero [class.hero-left]="showModal">
-    <!-- Animated Background (always visible) -->
-    <div class="particle-bg">
-      <div class="particle" *ngFor="let p of particles" 
-           [style.left.%]="p.x" 
-           [style.top.%]="p.y" 
-           [style.animation-delay.s]="p.delay"></div>
-    </div>
+<div class="ai-learning-home" [class.home-scroll]="!showModal">
 
-    <!-- Normal Hero Content (hidden in split mode) -->
-    <div class="hero-container" *ngIf="!showModal">
+  <!-- ══ LANDING VIEW (no topic selected) ══ -->
+  <ng-container *ngIf="!showModal">
+    <header class="hero-section" id="home">
+      <div class="particle-bg">
+        <div class="particle" *ngFor="let p of particles"
+             [style.left.%]="p.x"
+             [style.top.%]="p.y"
+             [style.animation-delay.s]="p.delay"></div>
+      </div>
+      <div class="hero-container">
       <div class="hero-content">
         <h1 class="hero-title">Learn Programming Concepts<span class="gradient-text">with AI</span></h1>
         <p class="hero-subtitle">Ask AI to explain programming concepts step-by-step.</p>
@@ -93,57 +92,8 @@
       </div>
     </div>
 
-    <!-- Topic Panel (left side content in split mode) -->
-    <div class="topic-panel" *ngIf="showModal" [class.accordion-open]="isTopicAccordionOpen">
-
-      <!-- Accordion Header: always visible on all screen sizes -->
-      <div class="topic-accordion-header" (click)="toggleTopicAccordion()">
-        <button class="back-btn" (click)="$event.stopPropagation(); closeModal()">← Back</button>
-        <div class="topic-brand-row">
-          <div class="topic-icon-large">✨</div>
-          <div class="topic-header-info">
-            <h2 class="topic-name">{{ currentTopicName }}</h2>
-            <p class="topic-tagline">AI Mentor Mode</p>
-          </div>
-        </div>
-        <button class="topic-chevron" (click)="$event.stopPropagation(); toggleTopicAccordion()" aria-label="Toggle topic details">
-          <span class="chevron-arrow">{{ isTopicAccordionOpen ? '▲' : '▼' }}</span>
-        </button>
-      </div>
-
-      <!-- Accordion Body: hidden on mobile, collapsible on tablet, always visible on desktop -->
-      <div class="topic-accordion-body">
-        <div class="topic-divider"></div>
-        <div class="topic-features">
-          <div class="topic-feature">
-            <span class="topic-feature-icon">📚</span>
-            <span>Step-by-step explanation</span>
-          </div>
-          <div class="topic-feature">
-            <span class="topic-feature-icon">💬</span>
-            <span>Ask follow-up questions</span>
-          </div>
-          <div class="topic-feature">
-            <span class="topic-feature-icon">💡</span>
-            <span>Real code examples</span>
-          </div>
-          <div class="topic-feature">
-            <span class="topic-feature-icon">🎯</span>
-            <span>Personalized learning</span>
-          </div>
-        </div>
-        <div class="related-questions-panel" *ngIf="followUpQuestions.length > 0">
-          <h4>Suggested follow-ups</h4>
-          <button class="related-pill"
-                  *ngFor="let q of followUpQuestions.slice(0, 4)"
-                  (click)="sendFollowUpQuestion(q)"
-                  [disabled]="isLoadingAI">
-            {{ q }}
-          </button>
-        </div>
-      </div>
-    </div>
-  </header>
+      </header>
+  </ng-container><!-- end landing view -->
 
 
   <!-- Popular Concepts (non-split mode) -->
@@ -203,195 +153,309 @@
     </div>
   </section>
 
-  <!-- Footer -->
-  <!-- <footer class="page-footer" *ngIf="!showModal">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <span class="footer-logo">🤖</span>
-        <span class="footer-name">AI Learn</span>
+
+  <!-- ══════════════════════════════════════════════
+       3-COLUMN AI MENTOR VIEW  (shown when topic selected)
+  ══════════════════════════════════════════════ -->
+  <div class="am-shell" *ngIf="showModal">
+
+    <!-- ── Col 1: Topics Navigation ── -->
+    <aside class="am-nav">
+      <div class="am-nav-header">
+        <button class="am-back-btn" (click)="closeModal()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          Back
+        </button>
+        <div class="am-brand">
+          <div class="am-brand-icon">🤖</div>
+          <div class="am-brand-info">
+            <div class="am-brand-title">AI Mentor</div>
+            <div class="am-brand-sub">
+              <span class="am-brand-dot" [class.am-brand-dot-busy]="isLoadingAI"></span>
+              {{ isLoadingAI ? 'Thinking…' : 'Online' }}
+            </div>
+          </div>
+        </div>
       </div>
-      <p class="footer-copy">© 2025 AI Learn. Built for developers who love learning.</p>
-      <div class="footer-links">
-        <a routerLink="/notes">Notes</a>
-        <a routerLink="/roadmap">Roadmap</a>
-        <a routerLink="/interview-prep">Interview Prep</a>
-      </div>
-    </div>
-  </footer> -->
 
-  <!-- AI Mentor Panel (right side in split mode) -->
-  <aside class="mentor-panel" *ngIf="showModal">
-    <!-- Bottom-sheet drag handle (mobile only, hidden on tablet/desktop) -->
-    <div class="sheet-handle"></div>
+      <div class="am-nav-body">
+        <div class="am-nav-section">
+          <div class="am-nav-label">Current Topic</div>
+          <div class="am-nav-current-item">
+            <span class="am-nav-active-dot"></span>
+            <span class="am-nav-current-name">{{ currentTopicName }}</span>
+          </div>
+        </div>
 
-    <!-- ══════════════════════════════════════════════════════════════
-         Duplicate-Detection Dialog Overlay
-         Shown instead of the panel body when a duplicate is detected.
-    ═══════════════════════════════════════════════════════════════ -->
-    <div class="dup-overlay" *ngIf="duplicateDialogMode">
-
-      <!-- ── EXACT DUPLICATE ── -->
-      <div class="dup-card" *ngIf="duplicateDialogMode === 'exact'">
-        <div class="dup-icon">📌</div>
-        <h3 class="dup-title">Already Saved</h3>
-        <p class="dup-body">
-          This note is already saved under<br>
-          <strong>"{{ duplicateMatchedNote?.topic }}"</strong>.
-        </p>
-        <div class="dup-actions">
-          <button class="dup-btn dup-btn-primary" (click)="onDuplicateViewNote()">
-            📂 View Note
-          </button>
-          <button class="dup-btn dup-btn-ghost" (click)="onDuplicateCancel()">
-            Cancel
+        <div class="am-nav-section am-nav-topics-section">
+          <div class="am-nav-label">Explore More</div>
+          <button class="am-nav-topic"
+                  *ngFor="let c of popularConcepts"
+                  [class.am-nav-topic-active]="c.name === currentTopicName"
+                  (click)="searchQuery = c.name; onSearchEnter()">
+            <span class="am-nav-topic-icon">{{ c.icon }}</span>
+            <span class="am-nav-topic-name">{{ c.name }}</span>
           </button>
         </div>
       </div>
 
-      <!-- ── SIMILAR / RELATED TOPIC ── -->
-      <div class="dup-card" *ngIf="duplicateDialogMode === 'similar'">
-        <div class="dup-icon">🔍</div>
-        <h3 class="dup-title">Related Note Found</h3>
-        <p class="dup-body">
-          A related note already exists:<br>
-          <strong>"{{ duplicateMatchedNote?.topic }}"</strong><br>
-          What would you like to do?
-        </p>
-        <div class="dup-actions dup-actions-col">
-          <button class="dup-btn dup-btn-primary" (click)="onDuplicateMerge()">
-            🔗 Merge with existing note
-          </button>
-          <button class="dup-btn dup-btn-secondary" (click)="onDuplicateSaveNew()">
-            ➕ Save as new note
-          </button>
-          <button class="dup-btn dup-btn-secondary" (click)="onDuplicateUpdate()">
-            ✏️ Update existing note
-          </button>
-          <button class="dup-btn dup-btn-ghost" (click)="onDuplicateCancel()">
-            Cancel
+      <div class="am-nav-footer">
+        <a routerLink="/interview-prep" class="am-nav-footer-link">
+          <span>📝</span> Interview Prep
+        </a>
+        <a routerLink="/notes" class="am-nav-footer-link">
+          <span>📌</span> My Notes
+        </a>
+      </div>
+    </aside>
+
+
+    <!-- ── Col 2: Chat Area ── -->
+    <main class="am-chat">
+
+      <!-- Chat Header -->
+      <div class="am-chat-header">
+        <div class="am-chat-hd-left">
+          <div class="am-chat-avatar-sm">🤖</div>
+          <div class="am-chat-hd-info">
+            <div class="am-chat-hd-name">AI Mentor</div>
+            <div class="am-chat-hd-status">
+              <span class="am-status-dot" [class.am-status-busy]="isLoadingAI || !!streamingText"></span>
+              {{ isLoadingAI ? 'Thinking…' : (streamingText ? 'Responding…' : 'Online') }}
+            </div>
+          </div>
+        </div>
+        <div class="am-chat-hd-right">
+          <span class="am-topic-chip">
+            <span class="am-topic-chip-icon">✨</span>
+            {{ currentTopicName }}
+          </span>
+          <button class="am-close-btn" (click)="closeModal()" title="Close (ESC)">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
       </div>
 
-    </div><!-- end dup-overlay -->
+      <!-- Scrollable Chat Body -->
+      <div class="am-chat-body" #mentorBody>
 
-    <!-- Mentor Header -->
-    <div class="mentor-header">
-      <div class="mentor-title-row">
-        <span class="mentor-avatar">🤖</span>
-        <div>
-          <h3>AI Mentor</h3>
-          <span class="mentor-topic-badge">{{ currentTopicName }}</span>
+        <!-- Duplicate Detection Overlay -->
+        <div class="dup-overlay" *ngIf="duplicateDialogMode">
+          <div class="dup-card" *ngIf="duplicateDialogMode === 'exact'">
+            <div class="dup-icon">📌</div>
+            <h3 class="dup-title">Already Saved</h3>
+            <p class="dup-body">This note is already saved under<br><strong>"{{ duplicateMatchedNote?.topic }}"</strong>.</p>
+            <div class="dup-actions">
+              <button class="dup-btn dup-btn-primary" (click)="onDuplicateViewNote()">📂 View Note</button>
+              <button class="dup-btn dup-btn-ghost" (click)="onDuplicateCancel()">Cancel</button>
+            </div>
+          </div>
+          <div class="dup-card" *ngIf="duplicateDialogMode === 'similar'">
+            <div class="dup-icon">🔍</div>
+            <h3 class="dup-title">Related Note Found</h3>
+            <p class="dup-body">A related note:<br><strong>"{{ duplicateMatchedNote?.topic }}"</strong></p>
+            <div class="dup-actions dup-actions-col">
+              <button class="dup-btn dup-btn-primary" (click)="onDuplicateMerge()">🔗 Merge with existing</button>
+              <button class="dup-btn dup-btn-secondary" (click)="onDuplicateSaveNew()">➕ Save as new</button>
+              <button class="dup-btn dup-btn-secondary" (click)="onDuplicateUpdate()">✏️ Update existing</button>
+              <button class="dup-btn dup-btn-ghost" (click)="onDuplicateCancel()">Cancel</button>
+            </div>
+          </div>
         </div>
-      </div>
-      <button class="mentor-close" (click)="closeModal()" title="Close (ESC)">✕</button>
-    </div>
 
-    <!-- Mentor Body (scrollable content) -->
-    <div class="mentor-body" #mentorBody>
-        
-        <!-- ============ AI MODE ============ -->
-        <div class="ai-chat-container" *ngIf="isAIMode">
+        <!-- Welcome / Empty State -->
+        <div class="am-welcome" *ngIf="!isAIMode || (aiMessages.length === 0 && !isLoadingAI && !streamingText)">
+          <div class="am-welcome-avatar">🤖</div>
+          <h3 class="am-welcome-title">Your AI Mentor is ready</h3>
+          <p class="am-welcome-sub">I'll teach you <strong>{{ currentTopicName }}</strong> with clear explanations, code examples, and real-world context.</p>
+          <div class="am-welcome-features">
+            <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Concept breakdown</span>
+            <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Code examples</span>
+            <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Interview tips</span>
+            <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Follow-up Q&amp;A</span>
+          </div>
+        </div>
 
-          <!-- AI Chat Messages (conversation history — always on top) -->
-          <div class="ai-messages" *ngIf="aiMessages.length > 0">
-            <div class="message" 
-                 *ngFor="let msg of aiMessages"
-                 [class]="'message-' + msg.role">
-              <div class="message-avatar">
-                {{ msg.role === 'user' ? '👤' : '🤖' }}
+        <!-- Message Thread -->
+        <div class="am-messages" *ngIf="isAIMode && aiMessages.length > 0">
+          <div class="am-message"
+               *ngFor="let msg of aiMessages"
+               [class.am-message-user]="msg.role === 'user'"
+               [class.am-message-ai]="msg.role === 'assistant'">
+
+            <div class="am-msg-avatar" *ngIf="msg.role === 'assistant'">🤖</div>
+
+            <div class="am-msg-bubble">
+              <div class="am-msg-label" *ngIf="msg.role === 'assistant'">AI Mentor</div>
+              <div class="am-msg-text md-content" [innerHTML]="msg.content | markdown"></div>
+              <div class="am-msg-meta">
+                <span class="am-msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
+                <button *ngIf="msg.role === 'assistant'"
+                        class="am-msg-save-btn"
+                        [class.saved]="savedMessageIds.has(msg.timestamp.getTime().toString())"
+                        [class.saving]="savingMessageIds.has(msg.timestamp.getTime().toString())"
+                        (click)="saveMessageNote(msg)"
+                        [disabled]="savedMessageIds.has(msg.timestamp.getTime().toString()) || savingMessageIds.has(msg.timestamp.getTime().toString())"
+                        title="Save as note">
+                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10a1 1 0 0 1 1 1v10.5l-6-2.5-6 2.5V3a1 1 0 0 1 1-1z"/></svg>
+                  <span *ngIf="!savingMessageIds.has(msg.timestamp.getTime().toString()) && !savedMessageIds.has(msg.timestamp.getTime().toString())">Save</span>
+                  <span *ngIf="savingMessageIds.has(msg.timestamp.getTime().toString())">Saving…</span>
+                  <span *ngIf="savedMessageIds.has(msg.timestamp.getTime().toString())">Saved ✓</span>
+                </button>
               </div>
-              <div class="message-content">
-                <div class="message-text md-content" [innerHTML]="msg.content | markdown"></div>
-                <div class="msg-meta">
-                  <span class="message-time">{{ msg.timestamp | date: 'short' }}</span>
-                  <button *ngIf="msg.role === 'assistant'"
-                          class="msg-save-btn"
-                          [class.saved]="savedMessageIds.has(msg.timestamp.getTime().toString())"
-                          [class.saving]="savingMessageIds.has(msg.timestamp.getTime().toString())"
-                          (click)="saveMessageNote(msg)"
-                          [disabled]="savedMessageIds.has(msg.timestamp.getTime().toString()) || savingMessageIds.has(msg.timestamp.getTime().toString())"
-                          title="Save this response as a note">
-                    <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M3 2h10a1 1 0 0 1 1 1v10.5l-6-2.5-6 2.5V3a1 1 0 0 1 1-1z"/>
-                    </svg>
-                    <span *ngIf="!savingMessageIds.has(msg.timestamp.getTime().toString()) && !savedMessageIds.has(msg.timestamp.getTime().toString())">Save note</span>
-                    <span *ngIf="savingMessageIds.has(msg.timestamp.getTime().toString())">Saving…</span>
-                    <span *ngIf="savedMessageIds.has(msg.timestamp.getTime().toString())">Saved ✓</span>
-                  </button>
-                </div>
-              </div>
             </div>
-          </div>
 
-          <!-- Loading State (spinner only before first streaming token) -->
-          <div class="ai-thinking" *ngIf="isLoadingAI && !streamingText">
-            <div class="thinking-brain">🧠</div>
-            <div class="thinking-dots">
-              <span></span><span></span><span></span>
+            <div class="am-msg-avatar am-msg-avatar-user" *ngIf="msg.role === 'user'">👤</div>
+          </div>
+        </div>
+
+        <!-- Thinking State -->
+        <div class="am-thinking-row" *ngIf="isLoadingAI && !streamingText">
+          <div class="am-msg-avatar">🤖</div>
+          <div class="am-thinking-bubble">
+            <span class="am-thinking-dot"></span>
+            <span class="am-thinking-dot"></span>
+            <span class="am-thinking-dot"></span>
+          </div>
+        </div>
+
+        <!-- Streaming Response -->
+        <div class="am-message am-message-ai am-message-streaming" *ngIf="streamingText">
+          <div class="am-msg-avatar">🤖</div>
+          <div class="am-msg-bubble">
+            <div class="am-msg-label">
+              AI Mentor
+              <span class="am-streaming-badge">● Live</span>
             </div>
-            <p class="thinking-text">AI is thinking...</p>
+            <div class="am-msg-text md-content" [innerHTML]="streamingText | markdown"></div>
+            <span class="am-cursor">▋</span>
           </div>
+        </div>
 
-          <!-- Real-time Streaming Text (shown both during and after isLoadingAI) -->
-          <div class="ai-streaming" *ngIf="streamingText">
-            <div class="streaming-header">🤖 <strong>AI is responding...</strong></div>
-            <div class="streaming-body md-content" [innerHTML]="streamingText | markdown"></div>
-            <span class="streaming-cursor">▋</span>
-          </div>
+      </div><!-- end am-chat-body -->
 
-          <!-- Follow-up Questions -->
-          <div class="follow-up-questions" *ngIf="showFollowUps && followUpQuestions.length > 0 && !isLoadingAI && !streamingText">
-            <h4>🤔 Ask More:</h4>
-            <div class="question-pills">
-              <button class="question-pill" 
-                      *ngFor="let question of followUpQuestions"
-                      (click)="sendFollowUpQuestion(question)"
-                      [disabled]="isLoadingAI || !!streamingText">
-                {{ question }}
-              </button>
+      <!-- Input Bar -->
+      <div class="am-input-bar">
+        <div class="am-save-row" *ngIf="aiExplanation && !isLoadingAI && !streamingText && customAuth.isLoggedIn">
+          <button class="am-save-btn"
+                  [class.saved]="noteSaved"
+                  [class.error]="saveError"
+                  [disabled]="isSavingNote || noteSaved"
+                  (click)="saveCurrentNote()">
+            <span *ngIf="!isSavingNote && !noteSaved && !saveError">📌 Save to Notes</span>
+            <span *ngIf="isSavingNote">Saving…</span>
+            <span *ngIf="noteSaved">✅ Saved!</span>
+            <span *ngIf="saveError && !isSavingNote">⚠️ Retry</span>
+          </button>
+        </div>
+        <div class="am-nudge" *ngIf="aiExplanation && !isLoadingAI && !streamingText && !customAuth.isLoggedIn">
+          💡 Sign in to save this explanation to your notes
+        </div>
+        <div class="am-input-row">
+          <input class="am-input" type="text"
+                 [(ngModel)]="currentQuestion"
+                 (keyup.enter)="sendFollowUpQuestion(currentQuestion)"
+                 placeholder="Ask your AI mentor about this topic..."
+                 [disabled]="isLoadingAI || !!streamingText">
+          <button class="am-send-btn"
+                  (click)="sendFollowUpQuestion(currentQuestion)"
+                  [disabled]="isLoadingAI || !!streamingText || !currentQuestion.trim()"
+                  title="Send">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </main>
+
+
+    <!-- ── Col 3: Learning Tools ── -->
+    <aside class="am-tools">
+      <div class="am-tools-hd">
+        <span class="am-tools-hd-icon">🎯</span>
+        <span class="am-tools-hd-title">Learning Tools</span>
+      </div>
+
+      <div class="am-tools-body">
+
+        <!-- Follow-up Questions (appears after first AI response) -->
+      <div class="am-tool-card am-tool-card-followups" *ngIf="followUpQuestions.length > 0">
+        <div class="am-tool-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          Follow-up Questions
+        </div>
+        <div class="am-followup-list">
+          <button class="am-followup-pill"
+                  *ngFor="let q of followUpQuestions.slice(0, 5)"
+                  (click)="sendFollowUpQuestion(q)"
+                  [disabled]="isLoadingAI || !!streamingText">
+            {{ q }}
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Capabilities (before first response) -->
+      <div class="am-tool-card am-tool-card-features" *ngIf="followUpQuestions.length === 0">
+        <div class="am-tool-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          What I Can Teach
+        </div>
+        <ul class="am-feature-list">
+          <li><span class="am-feat-check">✓</span> Step-by-step explanation</li>
+          <li><span class="am-feat-check">✓</span> Real code examples</li>
+          <li><span class="am-feat-check">✓</span> Common mistakes &amp; fixes</li>
+          <li><span class="am-feat-check">✓</span> Interview tips &amp; Q&amp;A</li>
+          <li><span class="am-feat-check">✓</span> Practice challenges</li>
+          <li><span class="am-feat-check">✓</span> Save to your notes</li>
+        </ul>
+      </div>
+
+      <!-- Related Concepts -->
+      <div class="am-tool-card am-tool-card-related">
+        <div class="am-tool-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+          Related Concepts
+        </div>
+        <div class="am-related-list">
+          <button class="am-related-item"
+                  *ngFor="let c of popularConcepts.slice(0, 5)"
+                  [class.am-related-item-active]="c.name === currentTopicName"
+                  (click)="searchQuery = c.name; onSearchEnter()">
+            <span class="am-related-icon">{{ c.icon }}</span>
+            <div class="am-related-info">
+              <div class="am-related-name">{{ c.name }}</div>
+              <div class="am-related-desc">{{ c.desc }}</div>
             </div>
-          </div>
+            <svg class="am-related-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+        </div>
+      </div>
 
-        </div><!-- end ai-chat-container -->
-
-    </div><!-- end mentor-body -->
-
-    <!-- Mentor Footer: question input always visible at bottom -->
-    <div class="mentor-footer">
-      <!-- Save to Notes bar (shown only when AI has fully finished + user is signed in) -->
-      <div class="save-note-bar" *ngIf="aiExplanation && !isLoadingAI && !streamingText && customAuth.isLoggedIn">
-        <button class="save-note-btn"
-                [class.saved]="noteSaved"
-                [class.error]="saveError"
-                [disabled]="isSavingNote || noteSaved"
-                (click)="saveCurrentNote()">
-          <span *ngIf="!isSavingNote && !noteSaved && !saveError">📌 Save to Notes</span>
-          <span *ngIf="isSavingNote">Saving…</span>
-          <span *ngIf="noteSaved">✅ Saved!</span>
-          <span *ngIf="saveError && !isSavingNote">⚠️ Save failed — tap to retry</span>
+      <!-- Quick Action: Interview Tips -->
+      <div class="am-tool-card am-tool-cta-card" *ngIf="!isLoadingAI && !streamingText">
+        <div class="am-tool-cta-emoji">🎯</div>
+        <div class="am-tool-cta-title">Interview Tips</div>
+        <p class="am-tool-cta-sub">Get top interview Q&amp;A about <strong>{{ currentTopicName }}</strong></p>
+        <button class="am-tool-cta-btn"
+                (click)="sendFollowUpQuestion('Give me the top 3 interview questions and model answers about ' + currentTopicName)">
+          Ask Interview Tips
         </button>
       </div>
-      <!-- Sign-in nudge when logged out and there's a completed answer -->
-      <div class="save-note-nudge" *ngIf="aiExplanation && !isLoadingAI && !streamingText && !customAuth.isLoggedIn">
-        <span class="nudge-text">💡 Sign in to save this explanation to your notes</span>
-      </div>
-      <div class="mentor-input-row">
-        <input 
-          type="text" 
-          class="mentor-input"
-          [(ngModel)]="currentQuestion"
-          (keyup.enter)="sendFollowUpQuestion(currentQuestion)"
-          placeholder="Ask AI Mentor anything..."
-          [disabled]="isLoadingAI || !!streamingText">
-        <button 
-          class="mentor-send-btn" 
-          (click)="sendFollowUpQuestion(currentQuestion)"
-          [disabled]="isLoadingAI || !!streamingText || !currentQuestion.trim()"
-          title="Send">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+
+      <!-- Quick Action: Practice Challenge -->
+      <div class="am-tool-card am-tool-practice-card" *ngIf="!isLoadingAI && !streamingText">
+        <div class="am-tool-cta-emoji">🧪</div>
+        <div class="am-tool-cta-title">Practice Challenge</div>
+        <p class="am-tool-cta-sub">Test your understanding with a coding exercise</p>
+        <button class="am-tool-practice-btn"
+                (click)="sendFollowUpQuestion('Give me a practical coding exercise to practice ' + currentTopicName + ', then explain the solution step-by-step')">
+          Get Challenge
         </button>
       </div>
-    </div>
-  </aside>
-</div>
+      </div><!-- end am-tools-body -->
+    </aside>
+
+  </div><!-- end am-shell -->
+
+</div><!-- end ai-learning-home -->
