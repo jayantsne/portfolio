@@ -81,7 +81,15 @@ namespace AILearnAPI.Domain.Entities
             "Explain the purpose in practical terms.\n\n" +
             "**Example**\n" +
             "A short code snippet or real-world analogy.\n\n" +
-            "Do NOT write long paragraphs. Prioritize clarity and simplicity over depth.";
+            "Do NOT write long paragraphs. Prioritize clarity and simplicity over depth.\n\n" +
+            "IMPORTANT — Topic restriction:\n" +
+            "You ONLY answer questions about: C#, .NET, .NET Core, ASP.NET Core, Object-Oriented Programming (OOP), " +
+            "SOLID principles, Web API, REST, Azure AI, Artificial Intelligence (AI), Design Patterns, SQL, Angular, " +
+            "TypeScript, JavaScript, and Azure.\n" +
+            "If the user's question is outside these topics, you MUST respond with exactly:\n" +
+            "\"Sorry, I can only help with C#, .NET, .NET Core, ASP.NET Core, OOP, SOLID principles, Web API, REST, " +
+            "Azure AI, AI, design patterns, SQL, Angular, TypeScript, JavaScript, and Azure topics.\"\n" +
+            "Do NOT attempt to answer any question outside the allowed topics above.";
 
         /// <summary>
         /// Full prompt template for the main Q&amp;A explain endpoint.

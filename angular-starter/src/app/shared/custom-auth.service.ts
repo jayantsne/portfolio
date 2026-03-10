@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
@@ -32,7 +33,7 @@ export class CustomAuthService {
     this._user.subscribe(u => obs.next(!!u))
   );
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private router: Router) {}
 
   // ─── Public getters ─────────────────────────────────────────────────────
 
@@ -73,6 +74,7 @@ export class CustomAuthService {
     }
     localStorage.removeItem(TOKEN_KEY);
     this._user.next(null);
+    this.router.navigate(['/']);
   }
 
   // ─── Private helpers ─────────────────────────────────────────────────────
