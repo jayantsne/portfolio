@@ -77,6 +77,24 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     return 0; // future feature
   }
 
+  /** Extract follow-up questions from the last AI message (## Common Follow-up Questions section) */
+  get suggestedFollowUps(): string[] {
+    const lastAi = [...this.aiMessages].reverse().find(m => m.role === 'ai');
+    if (!lastAi) return [];
+    const match = lastAi.text.match(/##\s*Common Follow-up Questions[\s\S]*?\n(([\s\S]*?)(?=\n##|$))/);
+    if (!match) return [];
+    return match[1]
+      .split('\n')
+      .map(l => l.replace(/^\s*[-*\d.]+\s*/, '').trim())
+      .filter(l => l.length > 10 && l.length < 160 && !l.startsWith('#'))
+      .slice(0, 3);
+  }
+
+  sendSuggestedFollowUp(text: string): void {
+    this.followUpText = text;
+    this.sendFollowUp();
+  }
+
   @ViewChild('msgContainer') msgContainer!: ElementRef;
 
   private sub!: Subscription;
