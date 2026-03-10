@@ -221,6 +221,15 @@ public class AIController : ControllerBase
             var streamDeviceLimit = GetDeviceTokenLimitFromConfig(cfg);
             var providerName = (request.Provider ?? "ollama").ToLowerInvariant();
 
+            // Auth-based provider routing:
+            //   Logged-in user  → OpenAI
+            //   Guest           → Ollama
+            // Custom-provider requests (custom:xxx) bypass this — they have their own auth check.
+            if (!providerName.StartsWith("custom:"))
+            {
+                providerName = string.IsNullOrEmpty(ExtractUserIdFromBearer()) ? "ollama" : "openai";
+            }
+
             IAsyncEnumerable<string> tokenStream;
 
             if (providerName == "openai")
