@@ -263,74 +263,173 @@
           </div>
         </div>
 
-        <!-- Welcome / Empty State -->
-        <div class="am-welcome" *ngIf="!isAIMode || (aiMessages.length === 0 && !isLoadingAI && !streamingText)">
-          <div class="am-welcome-avatar">🤖</div>
-          <h3 class="am-welcome-title">Your AI Mentor is ready</h3>
-          <p class="am-welcome-sub">I'll teach you <strong>{{ currentTopicName }}</strong> with clear explanations, code examples, and real-world context.</p>
-          <div class="am-welcome-features">
-            <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Concept breakdown</span>
-            <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Code examples</span>
-            <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Interview tips</span>
-            <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Follow-up Q&amp;A</span>
-          </div>
-        </div>
+        <!-- Centred feed column -->
+        <div class="am-chat-inner">
 
-        <!-- Message Thread -->
-        <div class="am-messages" *ngIf="isAIMode && aiMessages.length > 0">
-          <div class="am-message"
-               *ngFor="let msg of aiMessages"
-               [class.am-message-user]="msg.role === 'user'"
-               [class.am-message-ai]="msg.role === 'assistant'">
-
-            <div class="am-msg-avatar" *ngIf="msg.role === 'assistant'">🤖</div>
-
-            <div class="am-msg-bubble">
-              <div class="am-msg-label" *ngIf="msg.role === 'assistant'">AI Mentor</div>
-              <div class="am-msg-text md-content" [innerHTML]="msg.content | markdown"></div>
-              <div class="am-msg-meta">
-                <span class="am-msg-time">{{ msg.timestamp | date:'shortTime' }}</span>
-                <button *ngIf="msg.role === 'assistant'"
-                        class="am-msg-save-btn"
-                        [class.saved]="savedMessageIds.has(msg.timestamp.getTime().toString())"
-                        [class.saving]="savingMessageIds.has(msg.timestamp.getTime().toString())"
-                        (click)="saveMessageNote(msg)"
-                        [disabled]="savedMessageIds.has(msg.timestamp.getTime().toString()) || savingMessageIds.has(msg.timestamp.getTime().toString())"
-                        title="Save as note">
-                  <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10a1 1 0 0 1 1 1v10.5l-6-2.5-6 2.5V3a1 1 0 0 1 1-1z"/></svg>
-                  <span *ngIf="!savingMessageIds.has(msg.timestamp.getTime().toString()) && !savedMessageIds.has(msg.timestamp.getTime().toString())">Save</span>
-                  <span *ngIf="savingMessageIds.has(msg.timestamp.getTime().toString())">Saving…</span>
-                  <span *ngIf="savedMessageIds.has(msg.timestamp.getTime().toString())">Saved ✓</span>
+          <!-- Welcome / Empty State -->
+          <div class="am-welcome" *ngIf="!isAIMode || (aiMessages.length === 0 && !isLoadingAI && !streamingText)">
+            <div class="am-welcome-avatar">🤖
+              <span class="am-welcome-pulse"></span>
+            </div>
+            <h3 class="am-welcome-title">Hi! I'm your AI Mentor</h3>
+            <p class="am-welcome-sub">I'll teach you <strong>{{ currentTopicName }}</strong> with clear explanations, live code examples, and interview tips — one message at a time.</p>
+            <div class="am-welcome-features">
+              <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Concept breakdown</span>
+              <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Code examples</span>
+              <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Interview tips</span>
+              <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Follow-up Q&amp;A</span>
+            </div>
+            <!-- Quick starter prompts -->
+            <div class="am-welcome-starters">
+              <p class="am-welcome-starters-label">Quick start:</p>
+              <div class="am-welcome-starter-chips">
+                <button class="am-starter-chip" (click)="sendFollowUpQuestion('Explain ' + currentTopicName + ' like I am a beginner with a simple analogy')">
+                  🐣 Explain for beginners
+                </button>
+                <button class="am-starter-chip" (click)="sendFollowUpQuestion('Show me a real-world code example of ' + currentTopicName)">
+                  💻 Show code example
+                </button>
+                <button class="am-starter-chip" (click)="sendFollowUpQuestion('What are the top interview questions about ' + currentTopicName + '?')">
+                  🎯 Interview prep
+                </button>
+                <button class="am-starter-chip" (click)="sendFollowUpQuestion('What are common mistakes developers make with ' + currentTopicName + '?')">
+                  ⚠️ Common mistakes
                 </button>
               </div>
             </div>
-
-            <div class="am-msg-avatar am-msg-avatar-user" *ngIf="msg.role === 'user'">👤</div>
           </div>
-        </div>
 
-        <!-- Thinking State -->
-        <div class="am-thinking-row" *ngIf="isLoadingAI && !streamingText">
-          <div class="am-msg-avatar">🤖</div>
-          <div class="am-thinking-bubble">
-            <span class="am-thinking-dot"></span>
-            <span class="am-thinking-dot"></span>
-            <span class="am-thinking-dot"></span>
-          </div>
-        </div>
+          <!-- Message Thread -->
+          <div class="am-messages" *ngIf="isAIMode && aiMessages.length > 0">
+            <div class="am-message"
+                 *ngFor="let msg of aiMessages; let last = last"
+                 [class.am-message-user]="msg.role === 'user'"
+                 [class.am-message-ai]="msg.role === 'assistant'">
 
-        <!-- Streaming Response -->
-        <div class="am-message am-message-ai am-message-streaming" *ngIf="streamingText">
-          <div class="am-msg-avatar">🤖</div>
-          <div class="am-msg-bubble">
-            <div class="am-msg-label">
-              AI Mentor
-              <span class="am-streaming-badge">● Live</span>
+              <!-- AI message -->
+              <ng-container *ngIf="msg.role === 'assistant'">
+                <div class="am-msg-row">
+                  <div class="am-msg-avatar">🤖</div>
+                  <div class="am-msg-col">
+                    <div class="am-msg-label">AI Mentor
+                      <span class="am-msg-time-inline">{{ msg.timestamp | date:'shortTime' }}</span>
+                    </div>
+                    <!-- Main card -->
+                    <div class="am-msg-card">
+                      <div class="am-msg-text md-content" [innerHTML]="msg.content | markdown"></div>
+
+                      <!-- Action buttons -->
+                      <div class="am-msg-actions">
+                        <button class="am-msg-action-btn"
+                                (click)="sendFollowUpQuestion('Explain ' + currentTopicName + ' in even simpler terms with a beginner-friendly analogy')"
+                                [disabled]="isLoadingAI || !!streamingText"
+                                title="Explain simpler">
+                          💡 Explain Simpler
+                        </button>
+                        <button class="am-msg-action-btn"
+                                (click)="sendFollowUpQuestion('Show me a complete real-world code example for ' + currentTopicName + ' that I would find in a production app')"
+                                [disabled]="isLoadingAI || !!streamingText"
+                                title="Show real example">
+                          🌍 Real Example
+                        </button>
+                        <button class="am-msg-action-btn"
+                                (click)="sendFollowUpQuestion('Give me a practice coding problem to test my understanding of ' + currentTopicName + ', then walk through the solution')"
+                                [disabled]="isLoadingAI || !!streamingText"
+                                title="Generate practice question">
+                          🧪 Practice Q
+                        </button>
+                        <button class="am-msg-action-btn"
+                                (click)="sendFollowUpQuestion('What is the ideal interview answer when asked about ' + currentTopicName + '? Include what to say and what to avoid')"
+                                [disabled]="isLoadingAI || !!streamingText"
+                                title="Interview answer">
+                          🎯 Interview Answer
+                        </button>
+                      </div>
+
+                      <!-- Suggested chips (show on last AI message) -->
+                      <div class="am-msg-chips" *ngIf="last">
+                        <span class="am-msg-chips-label">Ask more:</span>
+                        <button class="am-msg-chip"
+                                (click)="sendFollowUpQuestion('Give me a real-world example of ' + currentTopicName + ' used in a modern web app')"
+                                [disabled]="isLoadingAI || !!streamingText">
+                          🌍 Real world example
+                        </button>
+                        <button class="am-msg-chip"
+                                (click)="sendFollowUpQuestion('What are the most common mistakes developers make with ' + currentTopicName + ' and how to fix them?')"
+                                [disabled]="isLoadingAI || !!streamingText">
+                          ⚠️ Common mistakes
+                        </button>
+                        <button class="am-msg-chip"
+                                (click)="sendFollowUpQuestion('Give me the best interview answer for a question about ' + currentTopicName)"
+                                [disabled]="isLoadingAI || !!streamingText">
+                          🎯 Interview answer
+                        </button>
+                      </div>
+                    </div><!-- end am-msg-card -->
+
+                    <!-- Meta row -->
+                    <div class="am-msg-meta">
+                      <button class="am-msg-save-btn"
+                              [class.saved]="savedMessageIds.has(msg.timestamp.getTime().toString())"
+                              [class.saving]="savingMessageIds.has(msg.timestamp.getTime().toString())"
+                              (click)="saveMessageNote(msg)"
+                              [disabled]="savedMessageIds.has(msg.timestamp.getTime().toString()) || savingMessageIds.has(msg.timestamp.getTime().toString())"
+                              title="Save as note">
+                        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10a1 1 0 0 1 1 1v10.5l-6-2.5-6 2.5V3a1 1 0 0 1 1-1z"/></svg>
+                        <span *ngIf="!savingMessageIds.has(msg.timestamp.getTime().toString()) && !savedMessageIds.has(msg.timestamp.getTime().toString())">Save note</span>
+                        <span *ngIf="savingMessageIds.has(msg.timestamp.getTime().toString())">Saving…</span>
+                        <span *ngIf="savedMessageIds.has(msg.timestamp.getTime().toString())">✓ Saved</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </ng-container>
+
+              <!-- User message -->
+              <ng-container *ngIf="msg.role === 'user'">
+                <div class="am-msg-row am-msg-row-user">
+                  <div class="am-msg-col am-msg-col-user">
+                    <div class="am-msg-user-bubble">{{ msg.content }}</div>
+                    <div class="am-msg-time-user">{{ msg.timestamp | date:'shortTime' }}</div>
+                  </div>
+                  <div class="am-msg-avatar am-msg-avatar-user">👤</div>
+                </div>
+              </ng-container>
+
             </div>
-            <div class="am-msg-text md-content" [innerHTML]="streamingText | markdown"></div>
-            <span class="am-cursor">▋</span>
           </div>
-        </div>
+
+          <!-- Typing / Thinking indicator -->
+          <div class="am-typing-row" *ngIf="isLoadingAI && !streamingText">
+            <div class="am-msg-avatar">🤖</div>
+            <div class="am-typing-card">
+              <div class="am-typing-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <span class="am-typing-label">AI Mentor is thinking…</span>
+            </div>
+          </div>
+
+          <!-- Streaming Response -->
+          <div class="am-message am-message-ai am-message-streaming" *ngIf="streamingText">
+            <div class="am-msg-row">
+              <div class="am-msg-avatar">🤖</div>
+              <div class="am-msg-col">
+                <div class="am-msg-label">
+                  AI Mentor
+                  <span class="am-streaming-badge">
+                    <span class="am-streaming-dot"></span> Live
+                  </span>
+                </div>
+                <div class="am-msg-card am-msg-card-streaming">
+                  <div class="am-msg-text md-content" [innerHTML]="streamingText | markdown"></div>
+                  <span class="am-cursor"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- end am-chat-inner -->
 
       </div><!-- end am-chat-body -->
 
