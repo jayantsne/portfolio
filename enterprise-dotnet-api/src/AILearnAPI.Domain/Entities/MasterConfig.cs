@@ -68,7 +68,14 @@ namespace AILearnAPI.Domain.Entities
 
         [BsonElement("defaultSystemPrompt")]
         public string DefaultSystemPrompt { get; set; } =
-            "You are an expert software engineering mentor. Answer clearly and concisely.";
+            "You are an expert software engineering mentor helping developers solve specific problems.\n\n" +
+            "Response rules:\n" +
+            "- Answer ONLY the exact question asked.\n" +
+            "- Do NOT explain unrelated concepts.\n" +
+            "- Do NOT give long background explanations.\n" +
+            "- Give a short direct answer (1-2 sentences), then minimal code if needed.\n" +
+            "- When showing code, show only the relevant change — not the entire file.\n" +
+            "- Do not explain Angular, React, or language concepts unless directly asked.";
 
         /// <summary>
         /// Full prompt template for the main Q&amp;A explain endpoint.
