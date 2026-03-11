@@ -599,13 +599,102 @@
 }
 .notes-welcome-cta:hover { opacity: 0.9; transform: translateY(-1px); }
 
-/* ─── Responsive ──────────────────────────────────────────────── */
+/* ─── Responsive — Mobile (≤ 768px) ──────────────────────────── */
 @media (max-width: 768px) {
-  .notes-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; height: auto; }
-  .notes-right { min-height: 60vh; }
-  .notes-feat-grid { grid-template-columns: 1fr; }
-  .notes-header { flex-wrap: wrap; gap: 0.5rem; }
+
+  /* ── 1. Compact purple-gradient top bar ─────────────────────── */
+  .notes-header {
+    background: linear-gradient(135deg, #4338ca 0%, #6366f1 50%, #7c3aed 100%);
+    padding: 0.55rem 0.875rem;
+    min-height: 52px;
+    border-bottom: none;
+    box-shadow: 0 2px 14px rgba(99,102,241,0.35);
+    gap: 0.5rem;
+    flex-wrap: nowrap;
+  }
+  .back-home-btn {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.3);
+    color: #fff;
+    font-size: 0.78rem;
+    padding: 0.32rem 0.7rem;
+    white-space: nowrap;
+  }
+  .back-home-btn:hover { background: rgba(255,255,255,0.28); transform: none; }
+  .notes-title { color: #fff; font-size: 1rem; }
+  .notes-title-row { flex: 1; min-width: 0; }
   .user-name { display: none; }
+  .user-avatar-initial { border-color: rgba(255,255,255,0.4); }
+
+  /* ── 2. Remove duplicate "New Note" button from header ──────── */
+  .create-note-header-btn { display: none !important; }
+
+  /* ── 3. Full-viewport notes shell — block layout ────────────── */
+  .notes-shell {
+    display: block;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+  }
+
+  /* ── 4. Left panel fills screen ─────────────────────────────── */
+  .notes-left {
+    height: 100%;
+    border-right: none;
+  }
+
+  /* ── 5. Compact hero strip ───────────────────────────────────── */
+  .notes-hero {
+    padding: 11px 14px 11px;
+  }
+  .notes-hero-icon { font-size: 1.6rem; }
+  .notes-hero-title { font-size: 1.05rem; margin-bottom: 0; }
+  .notes-hero-sub { display: none; }
+  .notes-hero-badge { min-width: 44px; padding: 4px 8px; }
+  .notes-hero-count { font-size: 1.15rem; }
+
+  /* ── 6. Search bar — tighter padding ─────────────────────────── */
+  .notes-search-row { padding: 10px 12px 6px; }
+  .notes-search { font-size: 0.84rem; padding: 8px 34px 8px 34px; }
+
+  /* ── 7. Category filters — horizontal-scrolling pill row ─────── */
+  .notes-filters { padding: 0 12px 8px; }
+  .notes-filter-group {
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 0;
+  }
+  .notes-filter-label { display: none; }
+  .notes-pill-track {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+    padding: 2px 0 4px;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .notes-pill-track::-webkit-scrollbar { display: none; }
+  .notes-pill {
+    flex-shrink: 0;
+    font-size: 0.73rem;
+    padding: 4px 12px;
+  }
+
+  /* ── 8. New-note row compact ─────────────────────────────────── */
+  .notes-new-row { padding: 5px 12px 7px; }
+  .notes-new-btn { font-size: 0.77rem; padding: 6px 12px; border-radius: 7px; }
+
+  /* ── 9. Right panel hidden — mobile overlays take over ────────── */
+  .notes-right { display: none; }
+
+  /* ── 10. Empty state — compact & centered ─────────────────────── */
+  .notes-list-empty { padding: 1.75rem 1.25rem; gap: 0.65rem; }
+  .notes-empty-icon { font-size: 2.25rem; }
+  .notes-list-empty p { font-size: 0.86rem; margin: 0; }
+  .notes-empty-cta { font-size: 0.84rem; padding: 8px 18px; }
+
+  /* ── 11. Feature grid inside welcome (fallback) ──────────────── */
+  .notes-feat-grid { grid-template-columns: 1fr 1fr; gap: 0.6rem; }
 }
 
 /* ─── Reader ──────────────────────────────────────────────────── */
