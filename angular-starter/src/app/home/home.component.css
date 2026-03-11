@@ -4036,6 +4036,65 @@ html {
   margin: 0;
 }
 
+/* ──────────────────────────────────────────────
+   HOW IT WORKS — RESPONSIVE OVERRIDES
+   ────────────────────────────────────────────── */
+
+/* Tablet ≤860px: collapse to single-column vertical stack */
+@media (max-width: 860px) {
+  .hiw-inner {
+    padding: 56px 24px 64px;
+  }
+  .hiw-title {
+    font-size: 1.65rem;
+    margin-bottom: 36px;
+  }
+  .hiw-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  /* Hide horizontal connectors — vertical flow is self-evident */
+  .hiw-connector {
+    display: none;
+  }
+  .hiw-step {
+    margin-bottom: 16px;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .hiw-step-num {
+    margin-bottom: 12px;
+  }
+}
+
+/* Mobile ≤480px: tighter padding & typography */
+@media (max-width: 480px) {
+  .hiw-inner {
+    padding: 44px 16px 52px;
+  }
+  .hiw-title {
+    font-size: 1.45rem;
+    margin-bottom: 28px;
+  }
+  .hiw-step {
+    padding: 24px 20px;
+    margin-bottom: 12px;
+    border-radius: 16px;
+  }
+  .hiw-step-icon {
+    font-size: 1.9rem;
+    margin-bottom: 12px;
+  }
+  .hiw-step-title {
+    font-size: 1rem;
+  }
+  .hiw-step-desc {
+    font-size: 0.86rem;
+  }
+}
+
 /* ══════════════════════════════════════════════════════════════
    CTA SECTION
    ══════════════════════════════════════════════════════════════ */
