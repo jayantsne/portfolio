@@ -866,7 +866,10 @@
 .md-content th { background: #f1f5f9; font-weight: 700; color: #1e293b; }
 .md-content tr:nth-child(even) td { background: #f8fafc; }
 .md-content a { color: #6366f1; text-decoration: underline; }
-.md-content input[type="checkbox"] { margin-right: 5px; }
+.md-content input[type="checkbox"] { margin-right: 6px; accent-color: #6366f1; cursor: default; }
+.md-content .md-check-item { list-style: none; margin-left: -1rem; }
+.md-content .md-checklist { padding-left: 1rem; }
+.md-content .md-check-done { opacity: 0.55; text-decoration: line-through; }
 
 /* ─── Edit mode panel ────────────────────────────────────────── */
 .editor-panel {

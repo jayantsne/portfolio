@@ -107,6 +107,18 @@ export class MarkdownPipe implements PipeTransform {
         continue;
       }
 
+      // Checklist items:  - [ ] todo   or   - [x] done
+      const cl = line.match(/^[-*+\u2022]\s+\[([ xX])\]\s+(.+)/);
+      if (cl) {
+        if (!listStack.length || listStack[listStack.length - 1] !== 'ul') {
+          closeLists(); out.push('<ul class="md-ul md-checklist">'); listStack.push('ul');
+        }
+        const checked = cl[1].toLowerCase() === 'x' ? ' checked' : '';
+        const doneClass = cl[1].toLowerCase() === 'x' ? ' class="md-check-done"' : '';
+        out.push(`<li class="md-li md-check-item"><input type="checkbox" disabled${checked}> <span${doneClass}>${this.inline(cl[2])}</span></li>`);
+        continue;
+      }
+
       const ul = line.match(/^[-*+\u2022]\s+(.+)/);
       if (ul) {
         if (!listStack.length || listStack[listStack.length - 1] !== 'ul') {

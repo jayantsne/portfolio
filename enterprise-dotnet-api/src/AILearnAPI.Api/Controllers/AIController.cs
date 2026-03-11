@@ -259,8 +259,10 @@ public class AIController : ControllerBase
                 }
 
                 _logger.LogInformation("⚡ SSE Stream → OpenAI model={M}", prov.Model);
+                // rawMode: frontend-built rich prompt is the user message;
+                // still inject the system persona so OpenAI keeps the mentor role.
                 var (oaiSystem, oaiUser) = request.RawMode
-                    ? ("", request.Question)
+                    ? (cfg.defaultSystemPrompt, request.Question)
                     : BuildOpenAIMessages(request.Question, cfg);
                 tokenStream = _openAIStreaming.StreamAsync(
                     apiKey,
@@ -294,7 +296,7 @@ public class AIController : ControllerBase
 
                 _logger.LogInformation("⚡ SSE Stream → Custom provider id={Id} model={M}", customId, info.Model);
                 var (custSystem, custUser) = request.RawMode
-                    ? ("", request.Question)
+                    ? (cfg.defaultSystemPrompt, request.Question)
                     : BuildOpenAIMessages(request.Question, cfg);
                 tokenStream = _openAIStreaming.StreamAsync(
                     info.ApiKey,
