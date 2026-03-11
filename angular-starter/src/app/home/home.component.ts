@@ -699,32 +699,42 @@ const pool = new ThreadPool(4);`,
     });
 
     try {
-      // Generate a concise, high-quality structured prompt
-      const prompt = `You are an expert programming teacher. Explain "${conceptName}" clearly and concisely.
+      // Build a rich, structured mentor prompt that works well across Ollama / Groq / Gemini
+      const topicTitle = conceptName.trim();
+      const prompt =
+        `You are an expert senior software engineer and programming mentor. ` +
+        `Explain "${topicTitle}" as if teaching an intermediate developer preparing for a technical interview. ` +
+        `Never start with filler phrases like "Sure!", "Certainly!", or "Great question!". Go straight into the explanation.\n\n` +
 
-## What is ${conceptName}?
-One-sentence definition + real-world analogy.
+        `## What is ${topicTitle}?\n` +
+        `Start with a one-sentence definition. Then add a real-world analogy that makes it click.\n\n` +
 
-## Why it matters
-2-3 sentences on the problem it solves.
+        `## Why it matters\n` +
+        `Explain the problem it solves and when a developer actually encounters this in production code.\n\n` +
 
-## How it works
-Clear step-by-step explanation with a mental model.
+        `## How it works (step-by-step)\n` +
+        `Walk through the mechanics clearly. Use numbered steps. Include a simple ASCII diagram if it helps visualise the concept.\n\n` +
 
-## Code Example
-A practical, well-commented example:
-\`\`\`javascript
-// show ${conceptName} in action
-\`\`\`
+        `## Code Example\n` +
+        `Show a practical, self-contained example with inline comments explaining what each key line does.\n` +
+        `Use the most relevant language (JavaScript / TypeScript / Python / Java as appropriate).\n` +
+        `Wrap the code in a fenced block with the language specified, e.g.:\n` +
+        `\`\`\`javascript\n// your code here\n\`\`\`\n\n` +
 
-## Common mistakes ❌
-3 pitfalls with one-line fixes.
+        `## Common Mistakes ❌\n` +
+        `List exactly 3 common mistakes developers make, each with a one-line fix.\n\n` +
 
-## Quick reference
-| Use ✅ | Avoid ❌ |
-|---|---|
+        `## Best Practices ✅\n` +
+        `3-5 bullet points of actionable best practices.\n\n` +
 
-Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. Be concise — no filler text.`;
+        `## Interview Tips 🎯\n` +
+        `2-3 things an interviewer is really looking for when they ask about ${topicTitle}. Include one tricky follow-up question they might ask.\n\n` +
+
+        `## Follow-up Questions\n` +
+        `List exactly 3 questions the reader might want to explore next (as a numbered list).\n\n` +
+
+        `Formatting rules: use ## headings, **bold** key terms on first use, \`inline code\` for short snippets, ` +
+        `fenced code blocks with language identifier for multi-line code. No unbroken wall-of-text paragraphs.`;
 
       // Call AI service — handles real-time streaming
       this.streamingText = '';
@@ -856,13 +866,27 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
     this.shouldScrollToBottom = true;
 
     try {
-      // Build context from previous conversation (exclude current user msg we just pushed)
-      const context = this.aiMessages
-        .slice(-6) // Last 6 messages for richer context
-        .map(m => `${m.role}: ${m.content}`)
+      // Build a context-aware follow-up prompt with a clear mentor identity
+      // Include the last 6 messages so the model has enough context
+      const historyLines = this.aiMessages
+        .slice(-6)
+        .map(m => `${m.role === 'user' ? '**User**' : '**Mentor**'}: ${m.content.slice(0, 600)}`)
         .join('\n\n');
 
-      const prompt = `${context}\n\nProvide a clear, concise answer with code examples if relevant.`;
+      const prompt =
+        `You are an expert senior software engineer and programming mentor. ` +
+        `Answer the student's follow-up question below based on the conversation so far. ` +
+        `Be direct, practical, and structured. No filler phrases.\n\n` +
+        `---\n` +
+        `**Conversation so far:**\n${historyLines}\n` +
+        `---\n\n` +
+        `**Student's question:** ${question}\n\n` +
+        `Rules:\n` +
+        `- Answer the specific question asked — don't repeat what was already covered\n` +
+        `- Use ## headings if the answer has multiple parts\n` +
+        `- Wrap all code in fenced blocks with language identifier (e.g. \`\`\`javascript)\n` +
+        `- **Bold** key terms\n` +
+        `- End with 2 brief follow-up questions the student might want to ask next`;
 
       this.followUpSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
         next: (response: any) => {
@@ -918,11 +942,19 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
     if (!text) return text;
     const t = text.replace(/^\s+/, '');
 
-    // ── Case 1: Full prompt echoed (has "Rules:" line) ───────────────────────
-    const rulesIdx = t.indexOf('Rules:');
-    if (rulesIdx !== -1 && /You are an expert/i.test(t.substring(0, rulesIdx))) {
-      const afterRules = t.indexOf('\n', rulesIdx);
-      return afterRules !== -1 ? t.substring(afterRules + 1).replace(/^\s+/, '') : '';
+    // ── Case 1: Full prompt echoed — look for "Rules:" OR "Formatting rules:" ──
+    const rulesPatterns = ['Formatting rules:', 'Rules:'];
+    for (const pattern of rulesPatterns) {
+      const rulesIdx = t.indexOf(pattern);
+      if (rulesIdx !== -1 && /You are an expert/i.test(t.substring(0, rulesIdx))) {
+        const afterRules = t.indexOf('\n', rulesIdx);
+        // Try to find the first real heading after the rules line
+        const firstHeading = afterRules !== -1 ? t.search(/^#{1,3}\s/m) : -1;
+        if (firstHeading > rulesIdx) {
+          return t.substring(firstHeading).replace(/^\s+/, '');
+        }
+        return afterRules !== -1 ? t.substring(afterRules + 1).replace(/^\s+/, '') : '';
+      }
     }
 
     // ── Case 2: Model echoes only the opening line (plain or **bold**) ────────
@@ -1031,18 +1063,32 @@ Rules: use ## headers, **bold** key terms, \`inline code\`, fenced code blocks. 
       }
     });
     
-    // Extract follow-up questions
-    const questionMatches = rawResponse.match(/[^.!?]*\?[^.!?]*/g);
-    if (questionMatches) {
-      questionMatches.forEach(q => {
-        const cleaned = q.trim();
-        if (cleaned.length > 10 && cleaned.length < 150) {
+    // Extract follow-up questions — prefer the dedicated ## Follow-up Questions section
+    const followUpSection = rawResponse.match(/##\s*Follow-up Questions[\s\S]*?(?=\n##|\n---|\n\*\*|\s*$)/i);
+    if (followUpSection) {
+      const lines = followUpSection[0].split('\n');
+      for (const line of lines) {
+        const cleaned = line.replace(/^[\d\.\-\*\s]+/, '').trim();
+        if (cleaned.length > 10 && cleaned.endsWith('?')) {
           followUpQuestions.push(cleaned);
         }
-      });
+      }
     }
-    
-    // Generate default follow-ups if none found
+
+    // Fallback: scan the whole response for question-sentences
+    if (followUpQuestions.length === 0) {
+      const questionMatches = rawResponse.match(/[^.!?\n]{15,120}\?/g);
+      if (questionMatches) {
+        questionMatches.forEach(q => {
+          const cleaned = q.trim();
+          if (cleaned.length > 10 && cleaned.length < 150) {
+            followUpQuestions.push(cleaned);
+          }
+        });
+      }
+    }
+
+    // Default follow-ups if none found at all
     if (followUpQuestions.length === 0) {
       followUpQuestions.push(
         `Can you show me a real-world example of ${conceptName}?`,

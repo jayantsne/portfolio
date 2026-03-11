@@ -89,14 +89,14 @@ export const AI_MODELS = {
 //     Controls creativity, length and quality of responses.
 // ─────────────────────────────────────────────────────────────────────────────
 export const AI_GENERATION = {
-  temperature:     0.9,    // 0 = deterministic, 1 = creative
+  temperature:     0.65,   // 0.65 = focused & accurate for code/teaching (was 0.9 — too random)
   topK:            50,
-  topP:            0.98,
-  maxOutputTokens: 1536,   // Main explanation length
-  maxTokensStream: 2048,   // Streaming endpoint (Ollama / SSE)
+  topP:            0.95,
+  maxOutputTokens: 1800,   // Main explanation length
+  maxTokensStream: 2400,   // Streaming endpoint — more room for code examples
 
   /** "Explain Differently" (simplified / visual) response length */
-  maxTokensSimplified: 2048,
+  maxTokensSimplified: 2400,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -104,38 +104,56 @@ export const AI_GENERATION = {
 // ─────────────────────────────────────────────────────────────────────────────
 export const AI_PROMPT = {
   /**
-   * The opening line of every prompt.
-   * This defines the AI's role.
+   * System identity — defines the AI's persona and tone.
+   * Injected at the start of every backend request.
    */
-  SYSTEM_ROLE: `You are an expert technical interviewer and educator. `,
+  SYSTEM_ROLE:
+    `You are an expert senior software engineer and programming mentor with 15+ years of industry experience. ` +
+    `You explain concepts the way a great teacher would — clear, practical, and structured. ` +
+    `You never start replies with "Sure!", "Certainly!", "Great question!" or similar filler phrases. ` +
+    `You go straight into the explanation. ` +
+    `All responses MUST be in valid Markdown with proper headings, fenced code blocks with language identifiers, ` +
+    `bold key terms, and bullet points where appropriate. `,
 
   /**
    * Extra instruction appended right after SYSTEM_ROLE,
    * chosen based on the detected question type.
    */
   TYPE_INSTRUCTIONS: {
-    code:            `Provide clear code examples with comments. Focus on practical implementation.`,
-    concept:         `Explain concepts clearly with real-world analogies. Build from basics to advanced.`,
-    comparison:      `Compare options objectively. Show clear differences with pros/cons.`,
-    troubleshooting: `Diagnose the issue step-by-step. Provide actionable solutions with explanations.`,
-    default:         `Provide comprehensive, interview-ready explanations.`,
+    code:            `Focus on practical, working code. Every code block must specify the language (e.g. \`\`\`javascript). Add inline comments explaining key lines.`,
+    concept:         `Build understanding from first principles. Use a real-world analogy before diving into technical detail. Visual ASCII diagrams are encouraged.`,
+    comparison:      `Compare options in a structured way — differences table, then prose pros/cons. Be opinionated about when to choose each.`,
+    troubleshooting: `Diagnose step-by-step. Show the broken pattern first, then the fix, with explanation of WHY it was wrong.`,
+    default:         `Give a complete, interview-ready explanation. Balance theory with code. Include best practices and common pitfalls.`,
   },
 
   /**
-   * Output format instruction added at the very end of every prompt.
-   * Change this to get different answer formats (bullet points, tables, etc.).
+   * Mandatory output format appended at the end of every prompt.
    */
-  FORMAT_INSTRUCTION: `\n\nFormat: Use clear sections with headers. Include code examples when relevant. Make it interview-ready and easy to remember.`,
+  FORMAT_INSTRUCTION:
+    `\n\n---\n` +
+    `**Response format rules (strictly follow):**\n` +
+    `- Use ## for main section headings, ### for sub-sections\n` +
+    `- Wrap ALL code in triple-backtick fenced blocks with the language name (e.g. \`\`\`javascript, \`\`\`python, \`\`\`typescript)\n` +
+    `- Bold (**) every key term on first use\n` +
+    `- Use bullet points or numbered lists — never long unbroken paragraphs\n` +
+    `- End the answer with a ## Follow-up Questions section containing exactly 3 questions the student might ask next`,
 
   /**
    * Length/depth instructions based on detected complexity.
    */
   COMPLEXITY_INSTRUCTIONS: {
-    simple: `\n\nProvide a concise, clear explanation (2-3 paragraphs).`,
+    simple:
+      `\n\nDepth: Concise. One practical code example. 3-4 bullet points per section. Total ~300 words.`,
 
-    medium: `\n\nProvide a thorough explanation with:\n1. Clear concept overview\n2. Practical examples\n3. Best practices\n4. Common mistakes\n5. Interview preparation tips`,
+    medium:
+      `\n\nDepth: Thorough. Cover: (1) clear definition, (2) how it works step-by-step, ` +
+      `(3) a real working code example with comments, (4) 3 common mistakes and fixes, (5) interview tip.`,
 
-    complex: `\n\nProvide an in-depth, comprehensive explanation with:\n1. Core concepts and fundamentals\n2. Detailed examples with code (if applicable)\n3. Advanced patterns and best practices\n4. Common pitfalls and how to avoid them\n5. Real-world applications and interview tips`,
+    complex:
+      `\n\nDepth: Comprehensive. Cover: (1) core concept with analogy, (2) detailed code example, ` +
+      `(3) advanced patterns and edge cases, (4) performance / security considerations, ` +
+      `(5) comparison with alternatives, (6) interview tips and trick questions to watch for.`,
   },
 };
 
