@@ -19,6 +19,43 @@ interface SavedNote {
   savedAt: string;
 }
 
+// ─── Roadmap types ────────────────────────────────────────────────────────────
+export interface RoadmapTopic {
+  id: string;
+  text: string;
+  done: boolean;
+}
+
+export interface RoadmapSection {
+  id: string;
+  title: string;
+  emoji: string;
+  topics: RoadmapTopic[];
+  expanded: boolean;
+}
+
+export interface TechStack {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+}
+
+export const TECH_STACKS: TechStack[] = [
+  { id: 'angular',       name: 'Angular',        icon: '🅰️',  color: '#dd0031' },
+  { id: 'react',         name: 'React',           icon: '⚛️',  color: '#61dafb' },
+  { id: 'nodejs',        name: 'Node.js',         icon: '🟢',  color: '#339933' },
+  { id: 'typescript',    name: 'TypeScript',      icon: '📘',  color: '#3178c6' },
+  { id: 'dotnet',        name: '.NET Core',       icon: '🔷',  color: '#512bd4' },
+  { id: 'python',        name: 'Python',          icon: '🐍',  color: '#3776ab' },
+  { id: 'java',          name: 'Java',            icon: '☕',  color: '#f89820' },
+  { id: 'system-design', name: 'System Design',   icon: '🏗️',  color: '#6366f1' },
+  { id: 'devops',        name: 'DevOps / CI-CD',  icon: '🔄',  color: '#0ea5e9' },
+  { id: 'sql',           name: 'SQL & Databases', icon: '🗄️',  color: '#00758f' },
+  { id: 'docker',        name: 'Docker / K8s',    icon: '🐳',  color: '#2496ed' },
+  { id: 'vue',           name: 'Vue.js',          icon: '💚',  color: '#42b883' },
+];
+
 @Component({
   selector: 'app-interview-prep',
   templateUrl: './interview-prep.component.html',
@@ -39,6 +76,9 @@ interface SavedNote {
   ],
 })
 export class InterviewPrepComponent implements OnInit, OnDestroy {
+  /* ─── View mode ─────────────────────────────────────────── */
+  sidebarTab: 'questions' | 'roadmap' = 'questions';
+
   /* ─── Data ─────────────────────────────────────────────── */
   allQuestions: InterviewQuestion[] = [];
   filteredQuestions: InterviewQuestion[] = [];
@@ -62,6 +102,17 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   savedNotes: SavedNote[] = [];
   noteSaved = false;
   showNotesDrawer = false;
+
+  /* ─── Roadmap state ──────────────────────────────────────── */
+  readonly techStacks = TECH_STACKS;
+  selectedStack: TechStack | null = null;
+  roadmapSections: RoadmapSection[] = [];
+  isGeneratingRoadmap = false;
+  roadmapError = '';
+  roadmapProgress = 0;           // 0-100 for the generation progress bar
+  activeTopic: string | null = null;  // which topic is being explained in chat
+  private progressTimer: any;
+  private roadmapSub?: Subscription;
 
   /* ─── UI helpers ────────────────────────────────────────── */
   get categories(): string[] {
@@ -119,6 +170,190 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
     this.aiSub?.unsubscribe();
+    this.roadmapSub?.unsubscribe();
+    clearInterval(this.progressTimer);
+  }
+
+  /* ─── Roadmap ─────────────────────────────────────────────── */
+  selectStack(stack: TechStack): void {
+    if (this.selectedStack?.id === stack.id) return;
+    this.selectedStack = stack;
+    this.roadmapSections = [];
+    this.roadmapError = '';
+    this.activeTopic = null;
+    this.generateRoadmap();
+  }
+
+  generateRoadmap(): void {
+    if (!this.selectedStack || this.isGeneratingRoadmap) return;
+    this.isGeneratingRoadmap = true;
+    this.roadmapError = '';
+    this.roadmapSections = [];
+    this.roadmapProgress = 0;
+    this.activeTopic = null;
+
+    // Fake progress ticker so the UI feels alive while streaming
+    this.progressTimer = setInterval(() => {
+      if (this.roadmapProgress < 88) this.roadmapProgress += 4;
+    }, 300);
+
+    const stack = this.selectedStack;
+    const prompt =
+      `You are an expert technical interview coach with 15+ years of industry experience.\n\n` +
+      `Generate a comprehensive, structured interview preparation roadmap for: **${stack.name}**\n\n` +
+      `Your roadmap must follow this EXACT format — no deviations:\n\n` +
+      `## 1. <Phase Title>\n` +
+      `- Topic 1\n` +
+      `- Topic 2\n` +
+      `- Topic 3\n\n` +
+      `## 2. <Phase Title>\n` +
+      `...\n\n` +
+      `Requirements:\n` +
+      `- Generate exactly 6 to 8 numbered phases\n` +
+      `- Each phase has 4 to 8 bullet-point topics\n` +
+      `- Phase titles should be interview-focused (e.g. "Fundamentals", "Core Concepts", "Advanced Topics", "System Design", "Interview Practice")\n` +
+      `- Topics must be specific and actionable — not vague\n` +
+      `- Cover fundamentals → advanced → interview-specific in sequence\n` +
+      `- Final phase must be "Interview Practice" with sample question types\n` +
+      `- ONLY use ## headings and - bullets. No other formatting.\n` +
+      `- Do NOT include any introduction, conclusion, or explanation outside the roadmap structure.`;
+
+    this.roadmapSub?.unsubscribe();
+    this.roadmapSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
+      next: (res: any) => {
+        if (res.done) {
+          clearInterval(this.progressTimer);
+          this.roadmapProgress = 100;
+          const parsed = this.parseRoadmap(res.explanation || '');
+          if (parsed.length === 0) {
+            this.roadmapError = 'Could not parse the roadmap. Please try again.';
+          } else {
+            this.roadmapSections = parsed;
+            // Restore done-state from localStorage
+            const saved = this.loadRoadmapProgress(stack.id);
+            if (saved) {
+              this.roadmapSections.forEach(sec => {
+                sec.topics.forEach(t => {
+                  t.done = saved.includes(t.id);
+                });
+              });
+            }
+          }
+          this.isGeneratingRoadmap = false;
+          setTimeout(() => { this.roadmapProgress = 0; }, 600);
+        }
+        // We don't stream roadmap sections incrementally — wait for the full response
+      },
+      error: () => {
+        clearInterval(this.progressTimer);
+        this.isGeneratingRoadmap = false;
+        this.roadmapProgress = 0;
+        this.roadmapError = '⚠️ Failed to generate roadmap. Please try again.';
+      },
+    });
+  }
+
+  /** Parse the AI markdown into RoadmapSection[] */
+  private parseRoadmap(text: string): RoadmapSection[] {
+    const sections: RoadmapSection[] = [];
+    // Split on ## headings
+    const chunks = text.split(/\n(?=##\s)/);
+    const sectionEmojis = ['📌', '🧠', '⚙️', '🚀', '🏗️', '🔬', '⭐', '🎯'];
+
+    for (const chunk of chunks) {
+      const lines = chunk.split('\n').map(l => l.trim()).filter(Boolean);
+      if (!lines.length) continue;
+
+      // First line is the heading
+      const headingLine = lines[0].replace(/^##\s*/, '').trim();
+      if (!headingLine) continue;
+
+      // Number prefix "1. Title" or just "Title"
+      const titleMatch = headingLine.match(/^\d+\.\s*(.+)$/);
+      const title = titleMatch ? titleMatch[1].trim() : headingLine;
+      const secIdx = sections.length;
+      const secId = `sec-${secIdx}`;
+
+      const topics: RoadmapTopic[] = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.startsWith('-') || line.startsWith('*') || line.match(/^\d+\.\s/)) {
+          const topicText = line.replace(/^[-*\d.]+\s*/, '').trim();
+          if (topicText.length > 2) {
+            topics.push({
+              id: `${secId}-t${topics.length}`,
+              text: topicText,
+              done: false,
+            });
+          }
+        }
+      }
+
+      if (topics.length) {
+        sections.push({
+          id: secId,
+          title,
+          emoji: sectionEmojis[secIdx % sectionEmojis.length],
+          topics,
+          expanded: secIdx === 0, // first section open by default
+        });
+      }
+    }
+    return sections;
+  }
+
+  toggleSection(sec: RoadmapSection): void {
+    sec.expanded = !sec.expanded;
+  }
+
+  /** User clicks a roadmap topic → open AI explanation in chat panel */
+  askAboutTopic(topic: RoadmapTopic, section: RoadmapSection): void {
+    this.activeTopic = topic.id;
+    const stack = this.selectedStack!;
+    const fakeQuestion: InterviewQuestion = {
+      id: -1,
+      question: `Explain "${topic.text}" for a ${stack.name} interview`,
+      answer: '',
+      category: stack.name,
+      difficulty: 'Medium',
+      tags: [stack.id, 'roadmap'],
+    };
+    this.selectedQuestion = fakeQuestion;
+    this.aiMessages = [];
+    this.streamingText = '';
+    this.loadAIExplanation(fakeQuestion);
+  }
+
+  markTopicDone(topic: RoadmapTopic, event: Event): void {
+    event.stopPropagation();
+    topic.done = !topic.done;
+    if (this.selectedStack) {
+      this.saveRoadmapProgress(this.selectedStack.id);
+    }
+  }
+
+  get roadmapDoneCount(): number {
+    return this.roadmapSections.reduce((acc, s) => acc + s.topics.filter(t => t.done).length, 0);
+  }
+
+  get roadmapTotalCount(): number {
+    return this.roadmapSections.reduce((acc, s) => acc + s.topics.length, 0);
+  }
+
+  get roadmapPercent(): number {
+    if (!this.roadmapTotalCount) return 0;
+    return Math.round((this.roadmapDoneCount / this.roadmapTotalCount) * 100);
+  }
+
+  private saveRoadmapProgress(stackId: string): void {
+    const doneIds = this.roadmapSections
+      .reduce((acc: string[], s) => acc.concat(s.topics.filter(t => t.done).map(t => t.id)), []);
+    localStorage.setItem(`ip_roadmap_${stackId}`, JSON.stringify(doneIds));
+  }
+
+  private loadRoadmapProgress(stackId: string): string[] | null {
+    const raw = localStorage.getItem(`ip_roadmap_${stackId}`);
+    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
   }
 
   /* ─── Filtering ─────────────────────────────────────────── */
@@ -164,6 +399,7 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     this.selectedQuestion = null;
     this.aiMessages = [];
     this.streamingText = '';
+    this.activeTopic = null;
     this.aiSub?.unsubscribe();
   }
 

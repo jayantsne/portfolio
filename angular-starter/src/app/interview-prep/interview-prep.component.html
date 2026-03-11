@@ -21,6 +21,21 @@
       </button>
     </div>
 
+    <!-- Tab switcher: Questions | Roadmap -->
+    <div class="ip-tab-bar">
+      <button class="ip-tab" [class.ip-tab-active]="sidebarTab === 'questions'"
+        (click)="sidebarTab = 'questions'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 4.78 2.83c-.67.37-1.07.85-1.07 1.67v.5"></path><circle cx="12" cy="17.5" r=".5" fill="currentColor"></circle></svg>
+        Questions
+      </button>
+      <button class="ip-tab" [class.ip-tab-active]="sidebarTab === 'roadmap'"
+        (click)="sidebarTab = 'roadmap'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+        Roadmap
+        <span class="ip-tab-badge">NEW</span>
+      </button>
+    </div>
+
     <!-- Notes drawer -->
     <div class="ip-notes-drawer" [class.ip-notes-drawer-open]="showNotesDrawer">
       <div class="ip-notes-inner">
@@ -37,6 +52,9 @@
         </div>
       </div>
     </div>
+
+    <!-- ═══ QUESTIONS TAB ═══════════════════════════════════ -->
+    <ng-container *ngIf="sidebarTab === 'questions'">
 
     <!-- Search -->
     <div class="ip-search-box">
@@ -104,6 +122,126 @@
         *ngFor="let s of suggestedFollowUps"
         (click)="sendSuggestedFollowUp(s)">{{ s }}</button>
     </div>
+
+    </ng-container><!-- /questions tab -->
+
+    <!-- ═══ ROADMAP TAB ════════════════════════════════════════ -->
+    <ng-container *ngIf="sidebarTab === 'roadmap'">
+
+      <!-- Stack selection (before roadmap generated) -->
+      <div class="ip-roadmap-pane" *ngIf="!selectedStack && !isGeneratingRoadmap">
+        <div class="ip-roadmap-intro">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          <div>
+            <strong>AI Prep Roadmap</strong>
+            <span>Pick a stack to generate your personalised interview prep plan</span>
+          </div>
+        </div>
+        <div class="ip-stack-grid">
+          <button class="ip-stack-btn" *ngFor="let s of techStacks" (click)="selectStack(s)">
+            <span class="ip-stack-icon">{{ s.icon }}</span>
+            <span class="ip-stack-name">{{ s.name }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Generating state -->
+      <div class="ip-roadmap-loading" *ngIf="isGeneratingRoadmap">
+        <div class="ip-roadmap-loading-inner">
+          <div class="ip-rl-icon">
+            <span>{{ selectedStack?.icon }}</span>
+          </div>
+          <p class="ip-rl-title">Generating your {{ selectedStack?.name }} roadmap…</p>
+          <p class="ip-rl-sub">Analysing interview requirements &amp; structuring your prep plan</p>
+          <div class="ip-progress-bar">
+            <div class="ip-progress-fill" [style.width.%]="roadmapProgress"></div>
+          </div>
+          <p class="ip-rl-pct">{{ roadmapProgress }}%</p>
+        </div>
+      </div>
+
+      <!-- Error state -->
+      <div class="ip-roadmap-error" *ngIf="roadmapError && !isGeneratingRoadmap">
+        <p>{{ roadmapError }}</p>
+        <button class="ip-btn-retry" (click)="generateRoadmap()">↻ Try again</button>
+        <button class="ip-link-btn" (click)="selectedStack = null; roadmapError = ''">← Change stack</button>
+      </div>
+
+      <!-- Roadmap sections -->
+      <div class="ip-roadmap-view" *ngIf="roadmapSections.length && !isGeneratingRoadmap">
+
+        <!-- Header -->
+        <div class="ip-roadmap-header">
+          <div class="ip-rh-left">
+            <span class="ip-rh-icon">{{ selectedStack?.icon }}</span>
+            <div>
+              <strong class="ip-rh-title">{{ selectedStack?.name }} Roadmap</strong>
+              <span class="ip-rh-sub">{{ roadmapDoneCount }}/{{ roadmapTotalCount }} topics done</span>
+            </div>
+          </div>
+          <button class="ip-link-btn ip-rh-change" (click)="selectedStack = null; roadmapSections = []">Change</button>
+        </div>
+
+        <!-- Overall progress -->
+        <div class="ip-overall-progress" *ngIf="roadmapTotalCount > 0">
+          <div class="ip-op-bar">
+            <div class="ip-op-fill" [style.width.%]="roadmapPercent"
+              [class.ip-op-complete]="roadmapPercent === 100"></div>
+          </div>
+          <span class="ip-op-label">{{ roadmapPercent }}% complete</span>
+        </div>
+
+        <!-- Scrollable section list -->
+        <div class="ip-rm-scroll">
+          <div class="ip-rm-section" *ngFor="let sec of roadmapSections">
+
+            <!-- Section header -->
+            <button class="ip-rm-sec-hd" (click)="toggleSection(sec)"
+              [class.ip-rm-sec-open]="sec.expanded">
+              <span class="ip-rm-sec-emoji">{{ sec.emoji }}</span>
+              <span class="ip-rm-sec-title">{{ sec.title }}</span>
+              <span class="ip-rm-sec-count">{{ sec.topics.length }}</span>
+              <svg class="ip-rm-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" stroke-width="2.5" stroke-linecap="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </button>
+
+            <!-- Topic list -->
+            <ul class="ip-rm-topics" *ngIf="sec.expanded">
+              <li class="ip-rm-topic"
+                [class.ip-rm-topic-done]="topic.done"
+                [class.ip-rm-topic-active]="activeTopic === topic.id"
+                *ngFor="let topic of sec.topics">
+                <button class="ip-rm-check" (click)="markTopicDone(topic, $event)"
+                  [title]="topic.done ? 'Mark incomplete' : 'Mark as done'">
+                  <svg *ngIf="topic.done" width="11" height="11" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="3" stroke-linecap="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                  </svg>
+                </button>
+                <span class="ip-rm-topic-text" (click)="askAboutTopic(topic, sec)">{{ topic.text }}</span>
+                <button class="ip-rm-ask-btn" (click)="askAboutTopic(topic, sec)" title="Ask AI to explain">
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 1 1 4.78 2.83c-.67.37-1.07.85-1.07 1.67v.5"></path>
+                    <circle cx="12" cy="17.5" r=".5" fill="currentColor"></circle>
+                  </svg>
+                </button>
+              </li>
+            </ul>
+
+          </div><!-- /ip-rm-section -->
+        </div><!-- /ip-rm-scroll -->
+
+        <button class="ip-roadmap-regen" (click)="generateRoadmap()" title="Re-generate roadmap">
+          ↻ Regenerate
+        </button>
+
+      </div><!-- /ip-roadmap-view -->
+
+    </ng-container><!-- /roadmap tab -->
 
   </section><!-- /ip-sidebar -->
 
@@ -214,7 +352,7 @@
     <div class="ip-welcome-card">
       <div class="ip-welcome-icon"></div>
       <h2 class="ip-welcome-h">Your AI Mentor is ready</h2>
-      <p class="ip-welcome-p">Select a question from the list to get a structured, interview-ready explanation with code examples and pro tips.</p>
+      <p class="ip-welcome-p">Select a question from the list to get a structured, interview-ready explanation with code examples and pro tips — or generate a full <strong>AI Roadmap</strong> for any tech stack.</p>
       <div class="ip-feat-grid">
         <div class="ip-feat">
           <span class="ip-feat-ico"></span>
@@ -228,8 +366,8 @@
         </div>
         <div class="ip-feat">
           <span class="ip-feat-ico"></span>
-          <strong>Follow-ups</strong>
-          <span>Drill deeper on any topic</span>
+          <strong>AI Roadmap</strong>
+          <span>Full prep plan per stack</span>
         </div>
         <div class="ip-feat">
           <span class="ip-feat-ico"></span>
@@ -237,7 +375,7 @@
           <span>Senior-level nuance</span>
         </div>
       </div>
-      <div class="ip-welcome-arrow"> Select a question to begin</div>
+      <div class="ip-welcome-arrow"> Select a question or open the Roadmap tab</div>
     </div>
   </main>
 
