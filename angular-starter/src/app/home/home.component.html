@@ -216,6 +216,10 @@
       <!-- Chat Header -->
       <div class="am-chat-header">
         <div class="am-chat-hd-left">
+          <!-- Mobile-only back button (nav sidebar is hidden on mobile) -->
+          <button class="am-mobile-back-btn" (click)="closeModal()" aria-label="Back">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
           <div class="am-chat-avatar-sm">🤖</div>
           <div class="am-chat-hd-info">
             <div class="am-chat-hd-name">AI Mentor</div>
