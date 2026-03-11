@@ -1720,7 +1720,9 @@ Backend proxy is enabled but all 9 keys are exhausted.
         observer.complete();
       };
 
-      xhr.send(JSON.stringify({ question: prompt, maxTokens: this.appCfg.cfg.maxTokensStream, provider: selectedProvider }));
+      // rawMode: true → backend passes our structured mentor prompt verbatim to the AI
+      // without this the backend would replace the rich prompt with its own minimal template
+      xhr.send(JSON.stringify({ question: prompt, maxTokens: this.appCfg.cfg.maxTokensStream, provider: selectedProvider, rawMode: true }));
       return () => { xhr.abort(); this.activeXhr = null; };
     });
   }

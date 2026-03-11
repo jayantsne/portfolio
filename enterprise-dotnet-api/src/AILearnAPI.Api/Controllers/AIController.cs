@@ -605,31 +605,50 @@ public class AIController : ControllerBase
 
         var systemRole = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
             ? cfg.defaultSystemPrompt
-            : "You are a senior software engineer who explains concepts clearly and simply.";
+            : "You are an expert senior software engineer and programming mentor with 15+ years of industry experience.";
 
         var systemInstructions = $"""
             {systemRole}
 
-            When explaining a concept, use short sections and simple language.
-            Format your response as:
+            You produce fully structured study notes — never summaries, never wall-of-text paragraphs.
 
-            # [concept name]
+            REQUIRED response format (all sections mandatory):
 
-            Idea: one clear sentence.
+            # [Topic Name]
 
-            Analogy: simple real-world comparison.
+            ## Definition
+            One or two clear sentences.
 
-            Why: what problem it solves.
+            ## Key Concepts
+            - 5-7 bullet points with **bold** key terms
 
-            How:
-            1. step
-            2. step
-            3. step
+            ## Real-World Analogy
+            A relatable non-technical comparison.
 
-            Example: short code snippet.
+            ## How It Works
+            Numbered step-by-step mechanics.
+
+            ## Code Example
+            ```language
+            // Practical, commented example
+            ```
+
+            ## Common Mistakes
+            - ❌ Exactly 3 mistakes with a one-line fix each
+
+            ## Best Practices
+            - ✅ 3-5 actionable best practices
+
+            ## Interview Tips
+            What interviewers are really testing. Include 1 tricky follow-up question.
+
+            ## Follow-up Questions
+            1. Natural next question
+            2. Deeper follow-up
+            3. Practical/real-world application question
             """;
 
-        return (systemInstructions, $"Explain \"{question}\" for developers.");
+        return (systemInstructions, $"Explain \"{question}\" as fully structured study notes.");
     }
 
     private string BuildClaudeQualityPrompt(string question, MasterConfigDto cfg)
@@ -643,33 +662,57 @@ public class AIController : ControllerBase
 
         var systemRole = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
             ? cfg.defaultSystemPrompt
-            : "You are a senior software engineer who explains concepts clearly and simply.";
+            : "You are an expert senior software engineer and programming mentor with 15+ years of industry experience.";
 
-        _logger.LogInformation("📋 Using optimized tutor prompt");
+        _logger.LogInformation("📋 Using structured study notes prompt");
 
         return $@"
 {systemRole}
 
-Explain **{question}** for developers.
-
-Use short sections and simple language.
-
-Format:
+Explain **{question}** as fully structured study notes for a developer preparing for a technical interview.
+Never start with filler phrases like 'Sure!' or 'Great question!'. Go straight into the content.
+Never summarize — every section must be complete.
 
 # {question}
 
-Idea: one clear sentence.
+## Definition
+One or two clear sentences defining the concept.
 
-Analogy: simple real-world comparison.
+## Key Concepts
+- 5-7 bullet points with **bold** key terms
 
-Why: what problem it solves.
+## Real-World Analogy
+A relatable non-technical analogy.
 
-How:
-1. step
-2. step
-3. step
+## How It Works
+1. Numbered step-by-step mechanics
+2. ...
+3. ...
 
-Example: short code snippet.";
+## Code Example
+A practical, self-contained example with inline comments.
+Wrap in a fenced block with the language specified, e.g.:
+```csharp
+// example code here
+```
+
+## Common Mistakes
+- ❌ Mistake 1 — one-line fix
+- ❌ Mistake 2 — one-line fix
+- ❌ Mistake 3 — one-line fix
+
+## Best Practices
+- ✅ Best practice 1
+- ✅ Best practice 2
+- ✅ Best practice 3
+
+## Interview Tips
+What interviewers are really testing. Include 1 tricky follow-up question they might ask.
+
+## Follow-up Questions
+1. Natural next question
+2. Deeper follow-up
+3. Practical real-world application";
     }
 
     private string BuildMobileLearningPrompt(string question)
