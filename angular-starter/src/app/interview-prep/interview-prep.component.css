@@ -32,7 +32,8 @@
   background: var(--bg);
 }
 
-@media (max-width: 900px) {
+/* ≤ 900px — collapse to single chat column (tools panel hidden, desktop still usable) */
+@media (max-width: 900px) and (min-width: 861px) {
   .ip-shell { grid-template-columns: 1fr; }
   .ip-shell.ip-split .ip-sidebar { display: none; }
 }
@@ -851,14 +852,145 @@
 }
 
 
-/*  MOBILE  */
-@media (max-width: 767px) {
-  :host { height: calc(100vh - 56px); }
-  .ip-shell { grid-template-columns: 1fr; }
-  .ip-shell.ip-split .ip-sidebar { display: none; }
-  .ip-messages { padding: 16px 14px 12px; }
-  .ip-msg-row { max-width: 92%; }
-  .ip-input-area { padding: 10px 14px 12px; }
-  .ip-question-banner { padding: 10px 14px; }
-  .ip-chat-header { padding: 10px 14px; }
+/*  MOBILE  ── stacked full-screen panels via absolute positioning
+    ROOT CAUSE FIX: grid auto-rows collapse height: 100% on sidebar,
+    killing flex:1 on ip-qlist-wrap. Absolute panels always have a
+    resolved height so the scrollable question list works correctly.
+    ─────────────────────────────────────────────────────────────── */
+@media (max-width: 860px) {
+  /* Host: always fill space between header and bottom of screen */
+  :host {
+    height: calc(100vh - 64px);
+    overflow: hidden;
+    display: block;
+  }
+
+  /* Shell becomes a simple positioning context — no grid stacking */
+  .ip-shell {
+    display: block;
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  /* ── Every panel occupies the full shell absolutely ─────────── */
+  .ip-sidebar,
+  .ip-welcome,
+  .ip-chat {
+    position: absolute;
+    inset: 0;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* ── Default (no question selected): sidebar on top, welcome hidden */
+  .ip-sidebar {
+    z-index: 2;
+    display: flex;            /* restore flex column layout */
+    flex-direction: column;
+    border-right: none;
+    border-bottom: 1.5px solid var(--border);
+  }
+
+  /* Welcome state is irrelevant on mobile — list IS the welcome */
+  .ip-welcome { display: none !important; }
+
+  /* ── Question selected (ip-split): slide sidebar away, show chat */
+  .ip-shell.ip-split .ip-sidebar {
+    display: none;
+  }
+  .ip-shell.ip-split .ip-chat {
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Sidebar internals ───────────────────────────────────────── */
+  /* Brand header: purple gradient bar (matches app language) */
+  .ip-sidebar-header {
+    padding: 14px 14px 12px;
+    background: linear-gradient(135deg, #4338ca 0%, #6d28d9 60%, #7c3aed 100%);
+    border-bottom: none;
+    flex-shrink: 0;
+  }
+  .ip-brand-title { color: #ffffff; font-size: 0.92rem; }
+  .ip-brand-mode  { color: rgba(255,255,255,0.72); }
+  .ip-mode-dot    { background: #6ee7b7; }
+  .ip-brand-avatar {
+    background: rgba(255,255,255,0.18);
+    border: 1.5px solid rgba(255,255,255,0.3);
+  }
+  .ip-notes-toggle-btn {
+    border-color: rgba(255,255,255,0.3);
+    background: rgba(255,255,255,0.1);
+    color: rgba(255,255,255,0.85);
+  }
+  .ip-notes-toggle-btn:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
+    color: white;
+  }
+  .ip-notes-toggle-active {
+    background:   rgba(255,255,255,0.22) !important;
+    border-color: rgba(255,255,255,0.5)  !important;
+    color: white !important;
+  }
+
+  /* Search box */
+  .ip-search-box {
+    margin: 10px 12px 0;
+    border-radius: 10px;
+  }
+
+  /* Category pills: single scrollable row, never wrap */
+  .ip-cat-pills {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding: 8px 12px 6px;
+    gap: 6px;
+  }
+  .ip-cat-pills::-webkit-scrollbar { display: none; }
+  .ip-pill {
+    white-space: nowrap;
+    flex-shrink: 0;
+    font-size: 0.72rem;
+    padding: 4px 10px;
+  }
+
+  /* Question list: takes all remaining space — this is the critical fix */
+  .ip-qlist-wrap {
+    flex: 1;
+    min-height: 0;        /* required for overflow-y: auto in flex child */
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Question items: slightly larger touch targets */
+  .ip-qitem {
+    padding: 12px 10px 12px 8px;
+    border-radius: 10px;
+  }
+  .ip-qitem-text { font-size: 0.82rem; }
+
+  /* Suggested follow-ups: hide on mobile (shown in chat) */
+  .ip-suggestions { display: none; }
+
+  /* ── Chat panel internals ─────────────────────────────────── */
+  .ip-chat-header { padding: 10px 14px; flex-shrink: 0; }
+  .ip-question-banner { padding: 10px 14px; flex-shrink: 0; }
+  .ip-messages {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 14px 12px 10px;
+  }
+  .ip-msg-row { max-width: 94%; }
+  .ip-bubble { font-size: 0.87rem; }
+  .ip-input-area { padding: 8px 12px 12px; flex-shrink: 0; }
+  .ip-input-hint { display: none; }   /* hide keyboard hint on touch */
+  .ip-send-btn { width: 40px; height: 40px; border-radius: 10px; }
 }
