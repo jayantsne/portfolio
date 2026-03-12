@@ -111,6 +111,7 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   roadmapError = '';
   roadmapProgress = 0;           // 0-100 for the generation progress bar
   activeTopic: string | null = null;  // which topic is being explained in chat
+  roadmapNoteSaved = false;      // flash feedback after Save to Notes
   private progressTimer: any;
   private roadmapSub?: Subscription;
 
@@ -176,11 +177,25 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
 
   /* ─── Roadmap ─────────────────────────────────────────────── */
   selectStack(stack: TechStack): void {
-    if (this.selectedStack?.id === stack.id) return;
+    if (this.selectedStack?.id === stack.id && this.roadmapSections.length) return;
     this.selectedStack = stack;
-    this.roadmapSections = [];
     this.roadmapError = '';
     this.activeTopic = null;
+
+    // Restore a previously generated roadmap from localStorage
+    const savedSections = this.loadRoadmapStructure(stack.id);
+    if (savedSections && savedSections.length) {
+      this.roadmapSections = savedSections;
+      const progress = this.loadRoadmapProgress(stack.id);
+      if (progress) {
+        this.roadmapSections.forEach(sec =>
+          sec.topics.forEach(t => { t.done = progress.includes(t.id); })
+        );
+      }
+      return; // resume immediately — no AI call
+    }
+
+    this.roadmapSections = [];
     this.generateRoadmap();
   }
 
@@ -238,6 +253,8 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
                 });
               });
             }
+            // Persist the full structure so resuming is instant next visit
+            this.saveRoadmapStructure(stack.id);
           }
           this.isGeneratingRoadmap = false;
           setTimeout(() => { this.roadmapProgress = 0; }, 600);
@@ -354,6 +371,56 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   private loadRoadmapProgress(stackId: string): string[] | null {
     const raw = localStorage.getItem(`ip_roadmap_${stackId}`);
     try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  }
+
+  /** Whether a generated roadmap is already stored for this stack */
+  hasSavedRoadmap(stackId: string): boolean {
+    return !!localStorage.getItem(`ip_roadmap_sections_${stackId}`);
+  }
+
+  private saveRoadmapStructure(stackId: string): void {
+    localStorage.setItem(`ip_roadmap_sections_${stackId}`, JSON.stringify(this.roadmapSections));
+  }
+
+  private loadRoadmapStructure(stackId: string): RoadmapSection[] | null {
+    const raw = localStorage.getItem(`ip_roadmap_sections_${stackId}`);
+    try { return raw ? JSON.parse(raw) : null; } catch { return null; }
+  }
+
+  /** Wipe persisted roadmap and generate a fresh one */
+  clearAndRegenerate(): void {
+    if (!this.selectedStack) return;
+    localStorage.removeItem(`ip_roadmap_sections_${this.selectedStack.id}`);
+    this.roadmapSections = [];
+    this.generateRoadmap();
+  }
+
+  /** Serialise the current roadmap as a markdown note and save to the notes drawer */
+  saveRoadmapAsNote(): void {
+    if (!this.selectedStack || !this.roadmapSections.length) return;
+    const stack = this.selectedStack;
+
+    let md = `# ${stack.icon} ${stack.name} Interview Prep Roadmap\n\n`;
+    md += `**Progress:** ${this.roadmapDoneCount}/${this.roadmapTotalCount} topics (${this.roadmapPercent}%)\n\n`;
+    this.roadmapSections.forEach(sec => {
+      md += `## ${sec.emoji} ${sec.title}\n`;
+      sec.topics.forEach(t => { md += `- [${t.done ? 'x' : ' '}] ${t.text}\n`; });
+      md += '\n';
+    });
+
+    const noteId = -(TECH_STACKS.findIndex(s => s.id === stack.id) + 100);
+    const note: SavedNote = {
+      questionId: noteId,
+      question:   `${stack.name} Interview Prep Roadmap`,
+      category:   'Roadmap',
+      answer:     md,
+      savedAt:    new Date().toISOString(),
+    };
+    this.savedNotes = this.savedNotes.filter(n => n.questionId !== noteId);
+    this.savedNotes.unshift(note);
+    localStorage.setItem('ip_saved_notes', JSON.stringify(this.savedNotes));
+    this.roadmapNoteSaved = true;
+    setTimeout(() => (this.roadmapNoteSaved = false), 2500);
   }
 
   /* ─── Filtering ─────────────────────────────────────────── */

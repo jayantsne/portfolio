@@ -141,6 +141,7 @@
           <button class="ip-stack-btn" *ngFor="let s of techStacks" (click)="selectStack(s)">
             <span class="ip-stack-icon">{{ s.icon }}</span>
             <span class="ip-stack-name">{{ s.name }}</span>
+            <span class="ip-stack-resume" *ngIf="hasSavedRoadmap(s.id)">Resume</span>
           </button>
         </div>
       </div>
@@ -179,7 +180,18 @@
               <span class="ip-rh-sub">{{ roadmapDoneCount }}/{{ roadmapTotalCount }} topics done</span>
             </div>
           </div>
-          <button class="ip-link-btn ip-rh-change" (click)="selectedStack = null; roadmapSections = []">Change</button>
+          <div class="ip-rh-actions">
+            <button class="ip-rh-save-btn" (click)="saveRoadmapAsNote()" title="Save roadmap to notes">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+              </svg>
+              {{ roadmapNoteSaved ? '✓ Saved!' : 'Save to Notes' }}
+            </button>
+            <button class="ip-link-btn ip-rh-change" (click)="selectedStack = null; roadmapSections = []">Change</button>
+          </div>
         </div>
 
         <!-- Overall progress -->
@@ -235,8 +247,8 @@
           </div><!-- /ip-rm-section -->
         </div><!-- /ip-rm-scroll -->
 
-        <button class="ip-roadmap-regen" (click)="generateRoadmap()" title="Re-generate roadmap">
-          ↻ Regenerate
+        <button class="ip-roadmap-regen" (click)="clearAndRegenerate()" title="Re-generate roadmap">
+          ↻ Regenerate fresh
         </button>
 
       </div><!-- /ip-roadmap-view -->

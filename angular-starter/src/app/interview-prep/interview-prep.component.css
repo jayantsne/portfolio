@@ -1105,6 +1105,17 @@
   text-align: center;
   line-height: 1.2;
 }
+.ip-stack-resume {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: #6366f1;
+  background: rgba(99,102,241,0.12);
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: 999px;
+  padding: 1px 7px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
 
 /* ═══════════════════════════════════════════════════════════════
    ── ROADMAP LOADING STATE
@@ -1239,6 +1250,31 @@
 .ip-rh-change {
   flex-shrink: 0;
   font-size: 0.76rem;
+}
+.ip-rh-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.ip-rh-save-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #6366f1;
+  background: rgba(99,102,241,0.10);
+  border: 1.5px solid rgba(99,102,241,0.25);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.ip-rh-save-btn:hover {
+  background: rgba(99,102,241,0.18);
+  border-color: #6366f1;
 }
 
 /* ── Overall completion bar ───────────────────────────────── */
