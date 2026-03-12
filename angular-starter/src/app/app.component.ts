@@ -4,6 +4,7 @@ import { filter } from 'rxjs/operators';
 import { AnalyticsService } from './shared/analytics.service';
 import { PwaInstallService } from './pwa-install.service';
 import { APP_CONFIG } from './config/app.config';
+import { DevToolsGuardService } from './shared/devtools-guard.service';
 
 @Component({
   selector: 'app-root',
@@ -29,7 +30,8 @@ export class AppComponent implements OnInit {
   constructor(
     private analyticsService: AnalyticsService,
     private pwaInstallService: PwaInstallService,
-    private router: Router
+    private router: Router,
+    private devToolsGuard: DevToolsGuardService
   ) {
     // No longer need to track route changes for header visibility
   }
@@ -37,6 +39,9 @@ export class AppComponent implements OnInit {
   ngOnInit(): void {
     // Initialize Google Analytics
     this.analyticsService.init();
+
+    // Block right-click + inspect shortcuts in production
+    this.devToolsGuard.init();
     
     // DISABLED: Service worker registration to prevent reload loops in development
     // Only enable in production builds
