@@ -241,37 +241,50 @@ public class AIController : ControllerBase
 
                 if (prov == null)
                 {
-                    await Response.WriteAsync("data: {\"error\":\"OpenAI provider is not configured or disabled.\",\"done\":true}\n\n", cancellationToken);
-                    await Response.Body.FlushAsync(cancellationToken);
-                    return;
+                    _logger.LogWarning("OpenAI provider not configured or disabled — falling back to Ollama");
+                    tokenStream = _ollamaService.StreamAsync(
+                        prompt,
+                        request.Model ?? cfg.modelOllamaStream,
+                        temperature: request.Temperature ?? (float)cfg.defaultTemperature,
+                        maxTokens: streamDeviceLimit,
+                        cancellationToken: cancellationToken);
                 }
-
-                // Resolve API key: process env → machine env → appsettings
-                var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")  // Process (Linux systemd / shell export)
-                          ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.Machine)
-                          ?? _configuration["LlmProviders:OpenAI:ApiKey"]
-                          ?? _configuration["OpenAI:ApiKey"];
-                if (string.IsNullOrEmpty(apiKey))
+                else
                 {
-                    await Response.WriteAsync("data: {\"error\":\"OpenAI API key could not be resolved.\",\"done\":true}\n\n", cancellationToken);
-                    await Response.Body.FlushAsync(cancellationToken);
-                    return;
-                }
+                    // Resolve API key: process env → machine env → appsettings
+                    var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")  // Process (Linux systemd / shell export)
+                              ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.Machine)
+                              ?? _configuration["LlmProviders:OpenAI:ApiKey"]
+                              ?? _configuration["OpenAI:ApiKey"];
 
-                _logger.LogInformation("⚡ SSE Stream → OpenAI model={M}", prov.Model);
-                // rawMode: frontend-built rich prompt is the user message;
-                // still inject the system persona so OpenAI keeps the mentor role.
-                var (oaiSystem, oaiUser) = request.RawMode
-                    ? (cfg.defaultSystemPrompt, request.Question)
-                    : BuildOpenAIMessages(request.Question, cfg);
-                tokenStream = _openAIStreaming.StreamAsync(
-                    apiKey,
-                    prov.BaseUrl,
-                    request.Model ?? prov.Model,
-                    oaiSystem,
-                    oaiUser,
-                    streamDeviceLimit,
-                    cancellationToken);
+                    if (string.IsNullOrEmpty(apiKey))
+                    {
+                        _logger.LogWarning("OpenAI API key could not be resolved — falling back to Ollama");
+                        tokenStream = _ollamaService.StreamAsync(
+                            prompt,
+                            request.Model ?? cfg.modelOllamaStream,
+                            temperature: request.Temperature ?? (float)cfg.defaultTemperature,
+                            maxTokens: streamDeviceLimit,
+                            cancellationToken: cancellationToken);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("⚡ SSE Stream → OpenAI model={M}", prov.Model);
+                        // rawMode: frontend-built rich prompt is the user message;
+                        // still inject the system persona so OpenAI keeps the mentor role.
+                        var (oaiSystem, oaiUser) = request.RawMode
+                            ? (cfg.defaultSystemPrompt, request.Question)
+                            : BuildOpenAIMessages(request.Question, cfg);
+                        tokenStream = _openAIStreaming.StreamAsync(
+                            apiKey,
+                            prov.BaseUrl,
+                            request.Model ?? prov.Model,
+                            oaiSystem,
+                            oaiUser,
+                            streamDeviceLimit,
+                            cancellationToken);
+                    }
+                }
             }
             else if (providerName.StartsWith("custom:"))
             {
