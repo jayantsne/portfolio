@@ -675,8 +675,12 @@ public class AIController : ControllerBase
                 For this question:
                 1. Give a clear, concise definition (2-3 sentences).
                 2. Include a short code snippet (≤ 10 lines) only if it directly illustrates the concept.
-                3. Add one-sentence real-world analogy if a great one exists.
-                4. End with: "Want to go deeper? I can cover: [3 specific follow-up aspects as comma-separated options]"
+                3. Add one-sentence real-world analogy only if a great one exists.
+                4. End with EXACTLY this block on its own line — no other text after it:
+                **Explore more:**
+                - [specific follow-up question about the topic?]
+                - [another question the learner naturally asks next?]
+                - [a practical or interview-related question?]
 
                 Total response length: ~150-250 words.
                 Use **bold** for key terms. Skip large ## section headers for simple answers.

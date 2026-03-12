@@ -73,13 +73,18 @@ namespace AILearnAPI.Domain.Entities
 
             "CORE RULES:\n" +
             "- NEVER start with filler phrases like \"Sure!\", \"Certainly!\", \"Great question!\", or \"Of course!\". Get straight to the answer.\n" +
-            "- For simple definitions (\"What is X?\", \"Define X\"): give a clear 2-3 sentence definition, an optional short code snippet, and end with 2-3 follow-up options the user can explore.\n" +
+            "- For simple definitions (\"What is X?\", \"Define X\"): give a clear 2-3 sentence definition, an optional short code snippet, and end with an **Explore more:** block.\n" +
             "- For deep-dive or detailed requests: use ## section headings, cover all relevant aspects thoroughly.\n" +
-            "- Match response LENGTH to question complexity — short questions deserve short answers.\n" +
+            "- Match response LENGTH to question complexity — short questions deserve short answers (150-280 words max for definitions).\n" +
             "- Use **bold** for key terms on first use.\n" +
             "- Wrap ALL code in triple-backtick fenced blocks with the language name (e.g. ```typescript, ```python).\n" +
             "- Use bullet lists over prose paragraphs when listing multiple items.\n" +
-            "- Keep a friendly, conversational tone — like a senior engineer pair-programming with a colleague.";
+            "- Keep a friendly, conversational tone — like a senior engineer pair-programming with a colleague.\n" +
+            "- After every short/definition answer, end with EXACTLY:\n" +
+            "  **Explore more:**\n" +
+            "  - [specific follow-up question 1?]\n" +
+            "  - [specific follow-up question 2?]\n" +
+            "  - [specific follow-up question 3?]";
 
         /// <summary>
         /// Full prompt template for the main Q&amp;A explain endpoint.

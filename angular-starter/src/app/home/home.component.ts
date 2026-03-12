@@ -875,7 +875,10 @@ const pool = new ThreadPool(4);`,
           `- Use ## headings only if the answer has multiple distinct parts\n` +
           `- Wrap all code in fenced blocks with language identifier (e.g. \`\`\`javascript)\n` +
           `- **Bold** key terms\n` +
-          `- End with 2 brief follow-up questions the student might want to explore next`;
+          `- End your response with this exact block on its own line:\n` +
+          `**Explore more:**\n` +
+          `- [specific follow-up question 1?]\n` +
+          `- [specific follow-up question 2?]`;
       }
 
       this.followUpSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
@@ -937,14 +940,18 @@ const pool = new ThreadPool(4);`,
       `Answer conversationally like ChatGPT — concise, clear, and direct.\n\n` +
       `Topic: "${topic}"\n\n` +
       `Response format:\n` +
-      `**Definition** — A clear, 2-3 sentence definition. No filler phrases like "Sure!", "Certainly!", or "Great question!". Get straight to the point.\n\n` +
-      `**Quick example** — If a code snippet (≤ 10 lines) makes the concept tangible, include it in a fenced block with the language identifier.\n\n` +
-      `**Analogy** — One optional sentence if a great real-world analogy exists.\n\n` +
-      `**Go deeper** — End with exactly: "Want to go deeper? I can cover: [list 3 specific follow-up aspects separated by commas]"\n\n` +
+      `1. A clear, 2-3 sentence definition. No filler phrases like "Sure!", "Certainly!", or "Great question!". Get straight to the point.\n` +
+      `2. A short code snippet (≤ 10 lines) only if it directly illustrates the concept — wrap in a fenced block with the language identifier.\n` +
+      `3. One-sentence real-world analogy, only if a great one exists.\n` +
+      `4. End your response with EXACTLY this block — no extra text before or after it:\n` +
+      `**Explore more:**\n` +
+      `- [specific follow-up question about ${topic}?]\n` +
+      `- [another specific question the learner might ask next?]\n` +
+      `- [a practical or interview-related question about ${topic}?]\n\n` +
       `Rules:\n` +
-      `- Total response length: 150-300 words\n` +
+      `- Total response length: 150-280 words\n` +
       `- Use **bold** for key terms on first use\n` +
-      `- Skip large ## section headers — keep it conversational\n` +
+      `- Skip ## section headers — keep it conversational\n` +
       `- Wrap all code in fenced blocks with language identifier\n` +
       `- Do NOT produce a long structured article for a simple definition question`
     );
@@ -1223,19 +1230,44 @@ NOW CREATE THE COMPLETE DIAGRAM FOR: "${topic}"`;
       }
     });
     
-    // Extract follow-up questions — prefer the dedicated ## Follow-up Questions section
-    const followUpSection = rawResponse.match(/##\s*Follow-up Questions[\s\S]*?(?=\n##|\n---|\n\*\*|\s*$)/i);
-    if (followUpSection) {
-      const lines = followUpSection[0].split('\n');
-      for (const line of lines) {
-        const cleaned = line.replace(/^[\d\.\-\*\s]+/, '').trim();
-        if (cleaned.length > 10 && cleaned.endsWith('?')) {
-          followUpQuestions.push(cleaned);
+    // 1. New format: **Explore more:** bullet block (from buildQuickAnswerPrompt)
+    const exploreBlock = rawResponse.match(/\*\*Explore more[:\*]*\*\*(.*?)(?=\n\n|\n\*\*[^E]|$)/is);
+    if (exploreBlock) {
+      const chips = exploreBlock[0]
+        .split('\n')
+        .filter(l => /^\s*[-*]\s/.test(l))
+        .map(l => l.replace(/^\s*[-*]\s+/, '').replace(/\*\*/g, '').trim())
+        .filter(q => q.length > 5)
+        .slice(0, 4);
+      followUpQuestions.push(...chips);
+    }
+
+    // 2. Legacy inline format: "I can cover: X, Y, Z"
+    if (followUpQuestions.length === 0) {
+      const legacyMatch = rawResponse.match(/I can cover:\s*([^\n]{10,})/i);
+      if (legacyMatch) {
+        legacyMatch[1].split(',')
+          .map(s => s.trim().replace(/['"]/g, ''))
+          .filter(s => s.length > 3)
+          .forEach(s => followUpQuestions.push(s.endsWith('?') ? s : `Tell me about: ${s}`));
+      }
+    }
+
+    // 3. Dedicated ## Follow-up Questions section (deep-dive responses)
+    if (followUpQuestions.length === 0) {
+      const followUpSection = rawResponse.match(/##\s*Follow-up Questions[\s\S]*?(?=\n##|\n---|\n\*\*|\s*$)/i);
+      if (followUpSection) {
+        const lines = followUpSection[0].split('\n');
+        for (const line of lines) {
+          const cleaned = line.replace(/^[\d\.\-\*\s]+/, '').trim();
+          if (cleaned.length > 10 && cleaned.endsWith('?')) {
+            followUpQuestions.push(cleaned);
+          }
         }
       }
     }
 
-    // Fallback: scan the whole response for question-sentences
+    // 4. Last-resort: scan the whole response for question-sentences
     if (followUpQuestions.length === 0) {
       const questionMatches = rawResponse.match(/[^.!?\n]{15,120}\?/g);
       if (questionMatches) {
@@ -1248,7 +1280,7 @@ NOW CREATE THE COMPLETE DIAGRAM FOR: "${topic}"`;
       }
     }
 
-    // Default follow-ups if none found at all
+    // 5. Absolute default if nothing found
     if (followUpQuestions.length === 0) {
       followUpQuestions.push(
         `Can you show me a real-world example of ${conceptName}?`,
@@ -1279,7 +1311,7 @@ NOW CREATE THE COMPLETE DIAGRAM FOR: "${topic}"`;
         language: 'javascript'
       }],
       keyPoints: keyPoints.length > 0 ? keyPoints : ['Understanding the core concept', 'Practical applications', 'Best practices'],
-      followUpQuestions: followUpQuestions.slice(0, 3),
+      followUpQuestions: followUpQuestions.slice(0, 4),
       contentBlocks,
       renderMode,
       hasSteps,
@@ -1568,17 +1600,58 @@ NOW CREATE THE COMPLETE DIAGRAM FOR: "${topic}"`;
   /**
    * Generate smart follow-up questions based on conversation
    */
+  /**
+   * Parse the last AI message for an **Explore more:** block and convert
+   * each bullet into a clickable follow-up chip.  Falls back to generic
+   * suggestions only when the pattern is not found.
+   */
   private generateFollowUpQuestions(): void {
-    const lastMessage = this.aiMessages[this.aiMessages.length - 1];
-    
-    // Generate contextual follow-ups
+    const lastMsg = this.aiMessages[this.aiMessages.length - 1];
+    if (lastMsg?.role === 'assistant') {
+      const chips = this.extractFollowUpChips(lastMsg.content);
+      if (chips.length > 0) {
+        this.followUpQuestions = chips;
+        this.showFollowUps = true;
+        return;
+      }
+    }
+    // Generic fallback when AI omitted the Explore more block
+    const topic = this.currentTopicName || 'this concept';
     this.followUpQuestions = [
-      'Can you explain that in simpler terms?',
-      'Show me another example',
-      'What are the best practices?'
+      `Deep dive into ${topic}`,
+      `Show me a real-world example of ${topic}`,
+      `What are common mistakes with ${topic}?`
     ];
-    
     this.showFollowUps = true;
+  }
+
+  /**
+   * Extract follow-up questions from an **Explore more:** bullet block.
+   * Matches both the new "**Explore more:**" and legacy "Want to go deeper? I can cover:" formats.
+   */
+  private extractFollowUpChips(text: string): string[] {
+    // New format: **Explore more:\n- question?\n- question?
+    const exploreMatch = text.match(/\*\*Explore more[:\*]*\*\*(.*?)(?=\n\n|\n\*\*[^E]|$)/is);
+    if (exploreMatch) {
+      const items = exploreMatch[0]
+        .split('\n')
+        .filter(l => /^\s*[-*]\s/.test(l))
+        .map(l => l.replace(/^\s*[-*]\s+/, '').replace(/\*\*/g, '').trim())
+        .filter(q => q.length > 5)
+        .slice(0, 4);
+      if (items.length > 0) return items;
+    }
+    // Legacy format: "I can cover: X, Y, Z" or "Want to go deeper? I can cover: ..."
+    const legacyMatch = text.match(/I can cover:\s*([^\n]{10,})/i);
+    if (legacyMatch) {
+      return legacyMatch[1]
+        .split(',')
+        .map(s => s.trim().replace(/["']/g, ''))
+        .filter(s => s.length > 3)
+        .map(s => s.endsWith('?') ? s : `Tell me about: ${s}`)
+        .slice(0, 3);
+    }
+    return [];
   }
 
   /**
