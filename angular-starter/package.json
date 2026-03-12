@@ -9,6 +9,8 @@
   "scripts": {
     "start": "ng serve",
     "build": "ng build --configuration production",
+    "build:secure": "ng build --configuration production && node scripts/obfuscate.mjs",
+    "obfuscate": "node scripts/obfuscate.mjs",
     "test": "jest",
     "lint": "ng lint",
     "e2e": "testcafe chrome ./e2e/",
@@ -53,6 +55,7 @@
     "@compodoc/compodoc": "^1.1.16",
     "auditjs": "^4.0.33",
     "auto-changelog": "^2.3.0",
+    "javascript-obfuscator": "^4.2.2",
     "jest": "^27.4.5",
     "prettier": "^2.5.1",
     "typescript": "~4.5.5",
