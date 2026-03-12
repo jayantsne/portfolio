@@ -699,42 +699,14 @@ const pool = new ThreadPool(4);`,
     });
 
     try {
-      // Build a rich, structured mentor prompt that works well across Ollama / Groq / Gemini
+      // Build an intent-aware mentor prompt:
+      // • deep-dive keywords → full structured study notes
+      // • everything else → short, ChatGPT-style conversational answer
       const topicTitle = conceptName.trim();
-      const prompt =
-        `You are an expert senior software engineer and programming mentor. ` +
-        `Explain "${topicTitle}" as if teaching an intermediate developer preparing for a technical interview. ` +
-        `Never start with filler phrases like "Sure!", "Certainly!", or "Great question!". Go straight into the explanation.\n\n` +
-
-        `## What is ${topicTitle}?\n` +
-        `Start with a one-sentence definition. Then add a real-world analogy that makes it click.\n\n` +
-
-        `## Why it matters\n` +
-        `Explain the problem it solves and when a developer actually encounters this in production code.\n\n` +
-
-        `## How it works (step-by-step)\n` +
-        `Walk through the mechanics clearly. Use numbered steps. Include a simple ASCII diagram if it helps visualise the concept.\n\n` +
-
-        `## Code Example\n` +
-        `Show a practical, self-contained example with inline comments explaining what each key line does.\n` +
-        `Use the most relevant language (JavaScript / TypeScript / Python / Java as appropriate).\n` +
-        `Wrap the code in a fenced block with the language specified, e.g.:\n` +
-        `\`\`\`javascript\n// your code here\n\`\`\`\n\n` +
-
-        `## Common Mistakes ❌\n` +
-        `List exactly 3 common mistakes developers make, each with a one-line fix.\n\n` +
-
-        `## Best Practices ✅\n` +
-        `3-5 bullet points of actionable best practices.\n\n` +
-
-        `## Interview Tips 🎯\n` +
-        `2-3 things an interviewer is really looking for when they ask about ${topicTitle}. Include one tricky follow-up question they might ask.\n\n` +
-
-        `## Follow-up Questions\n` +
-        `List exactly 3 questions the reader might want to explore next (as a numbered list).\n\n` +
-
-        `Formatting rules: use ## headings, **bold** key terms on first use, \`inline code\` for short snippets, ` +
-        `fenced code blocks with language identifier for multi-line code. No unbroken wall-of-text paragraphs.`;
+      const wantsDeepDive = /\b(deep dive|in depth|in detail|comprehensive|full explanation|advanced|internals?|under the hood|walk me through|step by step|explain everything)\b/i.test(topicTitle);
+      const prompt = wantsDeepDive
+        ? this.buildDeepDivePrompt(topicTitle)
+        : this.buildQuickAnswerPrompt(topicTitle);
 
       // Call AI service — handles real-time streaming
       this.streamingText = '';
@@ -866,27 +838,37 @@ const pool = new ThreadPool(4);`,
     this.shouldScrollToBottom = true;
 
     try {
-      // Build a context-aware follow-up prompt with a clear mentor identity
-      // Include the last 6 messages so the model has enough context
-      const historyLines = this.aiMessages
-        .slice(-6)
-        .map(m => `${m.role === 'user' ? '**User**' : '**Mentor**'}: ${m.content.slice(0, 600)}`)
-        .join('\n\n');
+      // If the user explicitly asks for a deep dive, generate full structured notes;
+      // otherwise give a context-aware conversational reply.
+      const wantsDeepDive = /\b(deep dive|in depth|explain (everything|fully|in detail|more|further|all of it)|go deeper|comprehensive|full explanation|detailed|tell me everything|show me everything)\b/i.test(question.trim());
 
-      const prompt =
-        `You are an expert senior software engineer and programming mentor. ` +
-        `Answer the student's follow-up question below based on the conversation so far. ` +
-        `Be direct, practical, and structured. No filler phrases.\n\n` +
-        `---\n` +
-        `**Conversation so far:**\n${historyLines}\n` +
-        `---\n\n` +
-        `**Student's question:** ${question}\n\n` +
-        `Rules:\n` +
-        `- Answer the specific question asked — don't repeat what was already covered\n` +
-        `- Use ## headings if the answer has multiple parts\n` +
-        `- Wrap all code in fenced blocks with language identifier (e.g. \`\`\`javascript)\n` +
-        `- **Bold** key terms\n` +
-        `- End with 2 brief follow-up questions the student might want to ask next`;
+      let prompt: string;
+      if (wantsDeepDive) {
+        const topicForDive = (this.aiExplanation as any)?.concept ?? question.replace(/deep dive|in depth|explain (more|fully|in detail)/gi, '').trim();
+        prompt = this.buildDeepDivePrompt(topicForDive || question);
+      } else {
+        // Context-aware conversational follow-up
+        const historyLines = this.aiMessages
+          .slice(-6)
+          .map(m => `${m.role === 'user' ? '**User**' : '**Mentor**'}: ${m.content.slice(0, 600)}`)
+          .join('\n\n');
+
+        prompt =
+          `You are an expert senior software engineer and programming mentor. ` +
+          `Answer the student's follow-up question based on the conversation. ` +
+          `Be direct, practical, and conversational. No filler phrases like "Sure!" or "Certainly!".\n\n` +
+          `---\n` +
+          `**Conversation so far:**\n${historyLines}\n` +
+          `---\n\n` +
+          `**Student's question:** ${question}\n\n` +
+          `Rules:\n` +
+          `- Answer only what was asked — don't repeat what was already covered\n` +
+          `- Match response length to the question — short questions get short answers\n` +
+          `- Use ## headings only if the answer has multiple distinct parts\n` +
+          `- Wrap all code in fenced blocks with language identifier (e.g. \`\`\`javascript)\n` +
+          `- **Bold** key terms\n` +
+          `- End with 2 brief follow-up questions the student might want to explore next`;
+      }
 
       this.followUpSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
         next: (response: any) => {
@@ -935,6 +917,72 @@ const pool = new ThreadPool(4);`,
       console.error('Error sending follow-up:', error);
       this.isLoadingAI = false;
     }
+  }
+
+  /**
+   * Builds a short, ChatGPT-style answer for simple/definition questions.
+   * Response is conversational (150-300 words) with optional mini code snippet.
+   */
+  private buildQuickAnswerPrompt(topic: string): string {
+    return (
+      `You are a friendly, expert software engineering mentor. ` +
+      `Answer conversationally like ChatGPT — concise, clear, and direct.\n\n` +
+      `Topic: "${topic}"\n\n` +
+      `Response format:\n` +
+      `**Definition** — A clear, 2-3 sentence definition. No filler phrases like "Sure!", "Certainly!", or "Great question!". Get straight to the point.\n\n` +
+      `**Quick example** — If a code snippet (≤ 10 lines) makes the concept tangible, include it in a fenced block with the language identifier.\n\n` +
+      `**Analogy** — One optional sentence if a great real-world analogy exists.\n\n` +
+      `**Go deeper** — End with exactly: "Want to go deeper? I can cover: [list 3 specific follow-up aspects separated by commas]"\n\n` +
+      `Rules:\n` +
+      `- Total response length: 150-300 words\n` +
+      `- Use **bold** for key terms on first use\n` +
+      `- Skip large ## section headers — keep it conversational\n` +
+      `- Wrap all code in fenced blocks with language identifier\n` +
+      `- Do NOT produce a long structured article for a simple definition question`
+    );
+  }
+
+  /**
+   * Builds a comprehensive structured study notes prompt for deep-dive requests.
+   * Response uses all sections: Definition, Why it matters, How it works, Code Example,
+   * Common Mistakes, Best Practices, Interview Tips, Follow-up Questions.
+   */
+  private buildDeepDivePrompt(topic: string): string {
+    return (
+      `You are an expert senior software engineer and programming mentor. ` +
+      `Explain "${topic}" as comprehensive study notes for an intermediate developer preparing for a technical interview. ` +
+      `Never start with filler phrases like "Sure!", "Certainly!", or "Great question!". Go straight into the explanation.\n\n` +
+
+      `## What is ${topic}?\n` +
+      `One-sentence definition. Then a real-world analogy that makes it click.\n\n` +
+
+      `## Why it matters\n` +
+      `The problem it solves and when developers actually encounter it in production code.\n\n` +
+
+      `## How it works (step-by-step)\n` +
+      `Numbered steps. Include a simple ASCII diagram if it helps visualise the concept.\n\n` +
+
+      `## Code Example\n` +
+      `A practical, self-contained example with inline comments explaining key lines.\n` +
+      `Use the most relevant language (TypeScript / JavaScript / Python / Java as appropriate).\n` +
+      `Wrap in a fenced block with the language identifier, e.g.:\n` +
+      `\`\`\`typescript\n// your code here\n\`\`\`\n\n` +
+
+      `## Common Mistakes ❌\n` +
+      `Exactly 3 common mistakes developers make, each with a one-line fix.\n\n` +
+
+      `## Best Practices ✅\n` +
+      `3-5 actionable best practices.\n\n` +
+
+      `## Interview Tips 🎯\n` +
+      `2-3 things an interviewer is really testing when they ask about ${topic}. Include one tricky follow-up question they might ask.\n\n` +
+
+      `## Follow-up Questions\n` +
+      `Exactly 3 numbered questions the reader might want to explore next.\n\n` +
+
+      `Formatting: use ## headings, **bold** key terms on first use, \`inline code\` for short snippets, ` +
+      `fenced code blocks with language identifier for multi-line code. No wall-of-text paragraphs.`
+    );
   }
 
   /** Strip echoed system prompt from AI response if the model repeated it back */

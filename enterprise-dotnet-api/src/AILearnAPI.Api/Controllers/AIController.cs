@@ -589,14 +589,14 @@ public class AIController : ControllerBase
     /// </summary>
     /// <summary>
     /// Builds separate system-prompt and user-message for OpenAI chat completions.
-    /// Keeps the model persona in the system role so it is never echoed back.
+    /// Detects question intent (quick definition vs deep dive) and selects the
+    /// appropriate system instructions so responses feel natural and conversational.
     /// </summary>
     private (string systemPrompt, string userMessage) BuildOpenAIMessages(string question, MasterConfigDto cfg)
     {
-        // DB-driven template: treat full template as system instructions
+        // DB-driven template takes priority
         if (!string.IsNullOrWhiteSpace(cfg.mainPromptTemplate))
         {
-            // Strip the {question} placeholder and any surrounding whitespace for the system part
             var sysTemplate = cfg.mainPromptTemplate
                 .Replace("Explain **{question}** for developers.", "")
                 .Replace("Explain \"{question}\" for developers.", "")
@@ -607,50 +607,82 @@ public class AIController : ControllerBase
 
         var systemRole = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
             ? cfg.defaultSystemPrompt
-            : "You are an expert senior software engineer and programming mentor with 15+ years of industry experience.";
+            : "You are an expert software engineering mentor. Respond conversationally and adapt response length to question complexity.";
 
-        var systemInstructions = $"""
-            {systemRole}
+        // ── Intent detection ─────────────────────────────────────────────────
+        var isDeepDive = System.Text.RegularExpressions.Regex.IsMatch(
+            question,
+            @"\b(deep dive|in depth|in detail|comprehensive|full explanation|advanced|internals?|under the hood|walk me through|step by step|explain everything|teach me everything)\b",
+            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
 
-            You produce fully structured study notes — never summaries, never wall-of-text paragraphs.
+        var isSimpleQuestion = !isDeepDive && (
+            System.Text.RegularExpressions.Regex.IsMatch(
+                question,
+                @"^(what is|what are|what does|define|who is|how do|how does|briefly|quick|give me a|tell me about|can you explain)\b",
+                System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+            || (question.TrimEnd().EndsWith("?") && question.Split(' ').Length <= 10));
 
-            REQUIRED response format (all sections mandatory):
+        if (isDeepDive)
+        {
+            // ── Full structured study notes ──────────────────────────────────
+            var deepInstructions = $"""
+                {systemRole}
 
-            # [Topic Name]
+                Produce fully structured study notes for this topic. All sections are mandatory.
+                Never start with "Sure!", "Certainly!", "Great question!", or any filler phrase.
 
-            ## Definition
-            One or two clear sentences.
+                ## Definition
+                One or two clear sentences.
 
-            ## Key Concepts
-            - 5-7 bullet points with **bold** key terms
+                ## Key Concepts
+                - 5-7 bullet points with **bold** key terms
 
-            ## Real-World Analogy
-            A relatable non-technical comparison.
+                ## Real-World Analogy
+                A relatable non-technical comparison.
 
-            ## How It Works
-            Numbered step-by-step mechanics.
+                ## How It Works
+                Numbered step-by-step mechanics.
 
-            ## Code Example
-            ```language
-            // Practical, commented example
-            ```
+                ## Code Example
+                ```language
+                // Practical, commented example
+                ```
 
-            ## Common Mistakes
-            - ❌ Exactly 3 mistakes with a one-line fix each
+                ## Common Mistakes
+                - ❌ Exactly 3 mistakes with a one-line fix each
 
-            ## Best Practices
-            - ✅ 3-5 actionable best practices
+                ## Best Practices
+                - ✅ 3-5 actionable best practices
 
-            ## Interview Tips
-            What interviewers are really testing. Include 1 tricky follow-up question.
+                ## Interview Tips
+                What interviewers are really testing. Include 1 tricky follow-up question.
 
-            ## Follow-up Questions
-            1. Natural next question
-            2. Deeper follow-up
-            3. Practical/real-world application question
-            """;
+                ## Follow-up Questions
+                1. Natural next question
+                2. Deeper follow-up
+                3. Practical/real-world application question
+                """;
+            return (deepInstructions, $"Give me a full deep-dive on: \"{question}\"");
+        }
+        else
+        {
+            // ── Short, ChatGPT-style conversational answer (default) ─────────
+            var quickInstructions = $"""
+                {systemRole}
 
-        return (systemInstructions, $"Explain \"{question}\" as fully structured study notes.");
+                Answer conversationally like ChatGPT. Never start with filler phrases.
+
+                For this question:
+                1. Give a clear, concise definition (2-3 sentences).
+                2. Include a short code snippet (≤ 10 lines) only if it directly illustrates the concept.
+                3. Add one-sentence real-world analogy if a great one exists.
+                4. End with: "Want to go deeper? I can cover: [3 specific follow-up aspects as comma-separated options]"
+
+                Total response length: ~150-250 words.
+                Use **bold** for key terms. Skip large ## section headers for simple answers.
+                """;
+            return (quickInstructions, question);
+        }
     }
 
     private string BuildClaudeQualityPrompt(string question, MasterConfigDto cfg)
