@@ -1,6 +1,7 @@
 import { AfterViewChecked, Component, ElementRef, HostListener, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AILearnService } from '../services/ai-learn.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService, SavedNote } from '../shared/notes.service';
@@ -85,6 +86,12 @@ export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
   // Active follow-up subscription — cancelled before starting a new one
   private followUpSub: Subscription | null = null;
 
+  // ── Visual Animated Diagram ─────────────────────────────────────────────
+  diagramOpen     = false;   // panel visible?
+  diagramLoading  = false;   // AI is generating
+  diagramHtml: SafeHtml | null = null;  // sanitized AI-generated HTML
+  private _diagramTopic = '';           // topic last generated for
+
   // Sentinel that tells ngAfterViewChecked to scroll to bottom
   private shouldScrollToBottom = false;
 
@@ -97,7 +104,8 @@ export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
     private aiLearnService: AILearnService,
     public customAuth: CustomAuthService,
     private notesService: NotesService,
-    private router: Router
+    private router: Router,
+    private sanitizer: DomSanitizer
   ) {}
 
   // Input properties (for compatibility with main-portfolio component)
@@ -983,6 +991,110 @@ const pool = new ThreadPool(4);`,
       `Formatting: use ## headings, **bold** key terms on first use, \`inline code\` for short snippets, ` +
       `fenced code blocks with language identifier for multi-line code. No wall-of-text paragraphs.`
     );
+  }
+
+  // ── Visual Animated Diagram ──────────────────────────────────────────────
+
+  /**
+   * Toggle the visual diagram panel.
+   * Re-generates if the topic has changed since last generation.
+   */
+  showVisualDiagram(): void {
+    const topic = this.currentTopicName?.trim();
+    if (!topic) return;
+
+    // If already open for this topic — just toggle it closed
+    if (this.diagramOpen && this._diagramTopic === topic) {
+      this.diagramOpen = false;
+      return;
+    }
+
+    // Open the panel
+    this.diagramOpen = true;
+    this._diagramTopic = topic;
+
+    // Don't regenerate if we already have HTML for this topic
+    if (this.diagramHtml && this._diagramTopic === topic) return;
+
+    this.diagramLoading = true;
+    this.diagramHtml = null;
+
+    const prompt = `You are a visual learning expert creating an animated HTML flow diagram.
+
+Topic: "${topic}"
+
+Create a clear, animated visual flow diagram using plain HTML with inline styles.
+Follow this EXACT structure — do NOT add markdown fences or extra text outside the HTML.
+
+RULES:
+• Output ONLY the HTML snippet — no \`\`\` fences, no explanations outside the HTML
+• Use class="diagram-box" on every step card (CSS animations are applied from the parent)
+• 3-6 steps maximum — keep it focused
+• Each step needs: emoji icon, bold title (2-5 words), 1-sentence description
+• Connect steps with a big arrow (↓ or →) between them
+• Use colorful gradient backgrounds — alternate colors per step
+• End with a "Key Insight" block
+
+COLOR PALETTE (rotate through these for each step):
+  Step 1: background: linear-gradient(135deg,#fef3c7,#fde68a); border-left:4px solid #f59e0b; text: #92400e
+  Step 2: background: linear-gradient(135deg,#ddd6fe,#c4b5fd); border-left:4px solid #8b5cf6; text: #5b21b6
+  Step 3: background: linear-gradient(135deg,#d1fae5,#a7f3d0); border-left:4px solid #10b981; text: #065f46
+  Step 4: background: linear-gradient(135deg,#fce7f3,#fbcfe8); border-left:4px solid #ec4899; text: #9d174d
+  Step 5: background: linear-gradient(135deg,#dbeafe,#bfdbfe); border-left:4px solid #3b82f6; text: #1e3a8a
+  Step 6: background: linear-gradient(135deg,#fee2e2,#fecaca); border-left:4px solid #ef4444; text: #991b1b
+
+REQUIRED OUTPUT FORMAT:
+<div style="text-align:center;margin-bottom:1.25rem;">
+  <h3 style="color:#8b5cf6;font-size:1.2rem;font-weight:700;margin:0 0 0.3rem;">📊 [Topic] — Visual Flow</h3>
+  <p style="color:#64748b;font-size:0.875rem;margin:0;">Step-by-step process</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:0.75rem;padding:0.5rem 0;">
+  <div class="diagram-box" style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;padding:1.1rem 1.25rem;border-left:4px solid #f59e0b;">
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.4rem;">
+      <span style="font-size:1.75rem;">🎯</span>
+      <strong style="color:#92400e;font-size:1rem;">Step 1 Title</strong>
+    </div>
+    <p style="color:#78350f;font-size:0.875rem;line-height:1.5;margin:0;">One clear sentence about this step.</p>
+  </div>
+  <div style="text-align:center;color:#8b5cf6;font-size:1.4rem;line-height:1;">↓</div>
+  [... more steps ...]
+</div>
+<div style="margin-top:1rem;padding:0.875rem 1rem;background:#f1f5f9;border-radius:10px;border-left:3px solid #6366f1;">
+  <p style="color:#475569;font-size:0.875rem;line-height:1.5;margin:0;">💡 <strong>Key Insight:</strong> [One sentence summarizing the entire flow concept]</p>
+</div>
+
+NOW CREATE THE COMPLETE DIAGRAM FOR: "${topic}"`;
+
+    this.aiLearnService.getSimplifiedExplanation(prompt).subscribe({
+      next: (response: any) => {
+        this.diagramLoading = false;
+        const raw: string = response?.explanation ?? response?.answer ?? response?.text ?? '';
+        if (raw && raw.trim().length > 80) {
+          // Strip any accidental markdown fences the model may add
+          const cleaned = raw
+            .replace(/^```html?\s*/im, '')
+            .replace(/^```\s*/im, '')
+            .replace(/```\s*$/im, '')
+            .trim();
+          this.diagramHtml = this.sanitizer.bypassSecurityTrustHtml(cleaned);
+        } else {
+          this.diagramHtml = this.sanitizer.bypassSecurityTrustHtml(
+            `<div style="text-align:center;padding:2rem;color:#ef4444;">
+               <p style="font-size:1rem;font-weight:600;">⚠️ Could not generate diagram</p>
+               <p style="font-size:0.85rem;color:#94a3b8;">Please try again or ask a follow-up question.</p>
+             </div>`
+          );
+        }
+      },
+      error: () => {
+        this.diagramLoading = false;
+        this.diagramHtml = this.sanitizer.bypassSecurityTrustHtml(
+          `<div style="text-align:center;padding:2rem;color:#ef4444;">
+             <p style="font-size:1rem;font-weight:600;">⚠️ Failed to connect to AI server</p>
+           </div>`
+        );
+      }
+    });
   }
 
   /** Strip echoed system prompt from AI response if the model repeated it back */

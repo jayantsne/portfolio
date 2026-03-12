@@ -364,6 +364,23 @@
                                 title="Interview answer">
                           🎯 Interview Answer
                         </button>
+                        <!-- Visual Diagram button — only on the last AI message -->
+                        <button class="am-msg-action-btn am-diagram-btn"
+                                *ngIf="last"
+                                (click)="showVisualDiagram()"
+                                [class.am-diagram-btn-active]="diagramOpen"
+                                [disabled]="diagramLoading"
+                                title="Show animated flow diagram">
+                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+                            <rect x="1" y="1" width="5" height="5" rx="1"/>
+                            <rect x="10" y="1" width="5" height="5" rx="1"/>
+                            <rect x="5.5" y="10" width="5" height="5" rx="1"/>
+                            <line x1="3.5" y1="6" x2="3.5" y2="8.5"/><line x1="12.5" y1="6" x2="12.5" y2="8.5"/>
+                            <line x1="3.5" y1="8.5" x2="8" y2="8.5"/><line x1="12.5" y1="8.5" x2="8" y2="8.5"/>
+                            <line x1="8" y1="8.5" x2="8" y2="10"/>
+                          </svg>
+                          {{ diagramLoading ? 'Generating…' : (diagramOpen ? 'Hide Diagram' : 'Visual Diagram') }}
+                        </button>
                       </div>
 
                       <!-- Suggested chips (show on last AI message) -->
@@ -406,6 +423,39 @@
                         </button>
                         <span class="am-card-footer-time">{{ msg.timestamp | date:'shortTime' }}</span>
                       </div>
+
+                      <!-- ══ Visual Animated Diagram Panel ══ -->
+                      <div class="am-diagram-panel" *ngIf="last && (diagramOpen || diagramLoading)">
+                        <!-- Header bar -->
+                        <div class="am-diagram-panel-hd">
+                          <span class="am-diagram-panel-hd-icon">
+                            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                              <rect x="1" y="1" width="5" height="5" rx="1"/><rect x="10" y="1" width="5" height="5" rx="1"/><rect x="5.5" y="10" width="5" height="5" rx="1"/>
+                              <line x1="3.5" y1="6" x2="3.5" y2="8.5"/><line x1="12.5" y1="6" x2="12.5" y2="8.5"/>
+                              <line x1="3.5" y1="8.5" x2="8" y2="8.5"/><line x1="12.5" y1="8.5" x2="8" y2="8.5"/>
+                              <line x1="8" y1="8.5" x2="8" y2="10"/>
+                            </svg>
+                          </span>
+                          <span class="am-diagram-panel-hd-title">📊 Visual Flow &mdash; {{ currentTopicName }}</span>
+                          <button class="am-diagram-panel-hd-close" (click)="diagramOpen = false" title="Close diagram">✕</button>
+                        </div>
+
+                        <!-- Loading skeleton -->
+                        <div class="am-diagram-skeleton" *ngIf="diagramLoading">
+                          <div class="am-diagram-skeleton-box"></div>
+                          <div class="am-diagram-skeleton-arrow">↓</div>
+                          <div class="am-diagram-skeleton-box"></div>
+                          <div class="am-diagram-skeleton-arrow">↓</div>
+                          <div class="am-diagram-skeleton-box"></div>
+                          <p class="am-diagram-skeleton-label">AI is drawing your diagram…</p>
+                        </div>
+
+                        <!-- Diagram content (AI-generated animated HTML) -->
+                        <div class="am-diagram-content" *ngIf="!diagramLoading && diagramHtml"
+                             [innerHTML]="diagramHtml">
+                        </div>
+                      </div><!-- end am-diagram-panel -->
+
                     </div><!-- end am-msg-card -->
                   </div>
                 </div>

@@ -6473,6 +6473,151 @@ html {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* ═══════════════════════════════════════════════════════════
+   VISUAL ANIMATED DIAGRAM
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Visual Diagram button (inside am-msg-actions) ── */
+.am-diagram-btn {
+  color: #6366f1 !important;
+  border-color: rgba(99,102,241,0.3) !important;
+  background: rgba(99,102,241,0.06) !important;
+  transition: background 0.15s, border-color 0.15s, color 0.15s !important;
+}
+.am-diagram-btn:hover:not(:disabled) {
+  background: rgba(99,102,241,0.12) !important;
+  border-color: #6366f1 !important;
+}
+.am-diagram-btn-active {
+  background: rgba(99,102,241,0.15) !important;
+  border-color: #6366f1 !important;
+}
+
+/* ── Diagram panel container ── */
+.am-diagram-panel {
+  border-top: 1.5px solid rgba(99,102,241,0.18);
+  background: #fafbff;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  animation: amDiagramIn 0.28s cubic-bezier(0.25,0.46,0.45,0.94) both;
+}
+
+@keyframes amDiagramIn {
+  from { opacity:0; transform:translateY(-8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ── Panel header ── */
+.am-diagram-panel-hd {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  background: linear-gradient(90deg, rgba(99,102,241,0.08) 0%, transparent 100%);
+  border-bottom: 1px solid rgba(99,102,241,0.12);
+}
+.am-diagram-panel-hd-icon { color: #6366f1; display:flex; align-items:center; }
+.am-diagram-panel-hd-title {
+  flex: 1;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #4f46e5;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.am-diagram-panel-hd-close {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 0.9rem;
+  padding: 2px 4px;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.12s, background 0.12s;
+}
+.am-diagram-panel-hd-close:hover { color: #1e293b; background: rgba(0,0,0,0.06); }
+
+/* ── Diagram content area ── */
+.am-diagram-content {
+  padding: 1rem 1.1rem 1.25rem;
+  max-height: 520px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.am-diagram-content::-webkit-scrollbar { width: 5px; }
+.am-diagram-content::-webkit-scrollbar-track { background: transparent; }
+.am-diagram-content::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.25); border-radius: 99px; }
+
+/* ── Animated step cards (class="diagram-box" on AI-generated elements) ── */
+.am-diagram-content :global(.diagram-box),
+.am-diagram-content .diagram-box {
+  animation: diagramBoxIn 0.45s cubic-bezier(0.25,0.46,0.45,0.94) both;
+  transform-origin: top center;
+  cursor: default;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+.am-diagram-content .diagram-box:nth-child(1)  { animation-delay: 0.00s; }
+.am-diagram-content .diagram-box:nth-child(3)  { animation-delay: 0.12s; }
+.am-diagram-content .diagram-box:nth-child(5)  { animation-delay: 0.24s; }
+.am-diagram-content .diagram-box:nth-child(7)  { animation-delay: 0.36s; }
+.am-diagram-content .diagram-box:nth-child(9)  { animation-delay: 0.48s; }
+.am-diagram-content .diagram-box:nth-child(11) { animation-delay: 0.60s; }
+.am-diagram-content .diagram-box:hover {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.10);
+  z-index: 1;
+  position: relative;
+}
+
+@keyframes diagramBoxIn {
+  from { opacity:0; transform:translateY(16px) scale(0.97); }
+  to   { opacity:1; transform:translateY(0)  scale(1); }
+}
+
+/* ── Loading skeleton ── */
+.am-diagram-skeleton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem 1.25rem 2rem;
+}
+.am-diagram-skeleton-box {
+  width: 100%;
+  max-width: 420px;
+  height: 64px;
+  background: linear-gradient(90deg,#e2e8f0 25%,#f1f5f9 50%,#e2e8f0 75%);
+  background-size: 200% 100%;
+  border-radius: 10px;
+  animation: amSkeleton 1.4s ease-in-out infinite;
+}
+.am-diagram-skeleton-arrow {
+  font-size: 1.4rem;
+  color: #cbd5e1;
+  animation: amPulse 1.4s ease-in-out infinite;
+}
+.am-diagram-skeleton-label {
+  margin-top: 0.5rem;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  letter-spacing: 0.02em;
+}
+@keyframes amSkeleton {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes amPulse {
+  0%,100% { opacity:0.4; } 50% { opacity:1; }
+}
+
+/* ── Mobile: full-width, compact padding ── */
+@media (max-width: 640px) {
+  .am-diagram-content { padding: 0.75rem 0.75rem 1rem; max-height: 400px; }
+  .am-diagram-panel-hd-title { font-size: 0.72rem; }
+}
+
 /* ── Mobile tweaks for new elements ── */
 @media (max-width: 640px) {
   .am-mentor-card-hd-sections { display: none; }
