@@ -219,7 +219,7 @@ public class AIController : ControllerBase
         try
         {
             var streamDeviceLimit = GetDeviceTokenLimitFromConfig(cfg);
-            var providerName = (request.Provider ?? "ollama").ToLowerInvariant();
+            var providerName = (request.Provider ?? "openai").ToLowerInvariant();
 
             // Auth-based provider routing:
             //   Logged-in user  → OpenAI
