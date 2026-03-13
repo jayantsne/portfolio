@@ -292,129 +292,231 @@
   </div>
 
   <!-- ══════════════════════════════════════════════════════
-       ROADMAP VIEW — horizontal data flow
+       ROADMAP VIEW — split sidebar + AI mentor panel
   ══════════════════════════════════════════════════════ -->
   <div *ngIf="view === 'view' && activeRoadmap" class="rm-view" @fadeUp>
 
-    <!-- Navigation -->
+    <!-- ── Top navigation bar ── -->
     <div class="rm-view-nav">
       <button class="rm-back-btn" (click)="goHome()">← My Roadmaps</button>
-      <div class="rm-view-nav-info">
+      <span class="rm-view-nav-title">{{ activeRoadmap.title }}</span>
+      <div class="rm-view-nav-right">
         <span class="rm-badge rm-badge-lang">{{ getLanguageIcon(activeRoadmap.language) }} {{ activeRoadmap.language }}</span>
         <span *ngIf="activeRoadmap.streakDays > 0" class="rm-streak-badge">🔥 {{ activeRoadmap.streakDays }}-day streak</span>
       </div>
     </div>
 
-    <!-- Header card -->
-    <div class="rm-view-header">
-      <div class="rm-view-header-left">
-        <h2 class="rm-view-title">{{ activeRoadmap.title }}</h2>
-        <div class="rm-view-meta">
-          <span class="rm-badge">{{ getLevelIcon(activeRoadmap.level) }} {{ getLevelLabel(activeRoadmap.level) }}</span>
-          <span class="rm-badge">{{ getGoalLabel(activeRoadmap.goal) }}</span>
-          <span class="rm-badge">~{{ activeRoadmap.estimatedWeeks }} weeks</span>
+    <!-- ── Progress header ── -->
+    <div class="rm-progress-header">
+      <div class="rm-progress-text-row">
+        <div class="rm-progress-left-info">
+          <div class="rm-view-meta-badges">
+            <span class="rm-badge">{{ getLevelIcon(activeRoadmap.level) }} {{ getLevelLabel(activeRoadmap.level) }}</span>
+            <span class="rm-badge">{{ getGoalLabel(activeRoadmap.goal) }}</span>
+            <span class="rm-badge">~{{ activeRoadmap.estimatedWeeks }} weeks</span>
+          </div>
+          <span class="rm-progress-topics-label">
+            {{ progress?.completedCount ?? 0 }} of {{ activeRoadmap.nodes.length }} topics completed
+          </span>
         </div>
+        <span class="rm-progress-pct-label">{{ progress?.percent ?? 0 }}%</span>
       </div>
-      <div class="rm-view-progress-ring-wrap">
-        <svg class="rm-progress-ring" viewBox="0 0 52 52">
-          <circle class="rm-progress-ring-track" cx="26" cy="26" r="22"/>
-          <circle class="rm-progress-ring-fill" cx="26" cy="26" r="22"
-                  [style.stroke-dashoffset]="138 - (138 * (progress?.percent ?? 0) / 100)"/>
-        </svg>
-        <span class="rm-progress-ring-pct">{{ progress?.percent ?? 0 }}%</span>
+      <div class="rm-progress-bar-track">
+        <div class="rm-progress-bar-fill" [style.width.%]="progress?.percent ?? 0"></div>
       </div>
     </div>
 
-    <!-- Vertical learning path -->
-    <div class="rm-vpath">
+    <!-- ── Two-column split layout ── -->
+    <div class="rm-split-layout">
 
-      <!-- START cap -->
-      <div class="rm-vpath-cap rm-vpath-cap-start">
-        <div class="rm-vpath-cap-dot">🚀</div>
-        <div class="rm-vpath-cap-line"></div>
-      </div>
+      <!-- ════ LEFT SIDEBAR: Roadmap topics ════ -->
+      <div class="rm-sidebar">
+        <div class="rm-sidebar-top">
+          <span class="rm-sidebar-heading">Learning Path</span>
+          <button class="rm-btn rm-btn-primary rm-btn-sm"
+                  (click)="resumeLearning()">▶ Resume</button>
+        </div>
 
-      <ng-container *ngFor="let node of activeRoadmap.nodes; let last = last">
-        <div class="rm-vn-wrap">
-
-          <!-- Spine: dot + connecting line -->
-          <div class="rm-vn-spine">
-            <div class="rm-vn-dot"
-                 [class.rm-vn-dot-done]="node.status === 'completed'"
-                 [class.rm-vn-dot-active]="node.status === 'active'"
-                 [class.rm-vn-dot-locked]="node.status === 'locked'">
-              <span *ngIf="node.status === 'completed'">✓</span>
-              <span *ngIf="node.status === 'active'">{{ node.order }}</span>
-              <span *ngIf="node.status === 'locked'" class="rm-vn-lock">🔒</span>
-            </div>
-            <div *ngIf="!last" class="rm-vn-line"
-                 [class.rm-vn-line-done]="node.status === 'completed'"></div>
-          </div>
-
-          <!-- Card + inline expanded detail -->
-          <div class="rm-vn-right">
-            <button class="rm-vn-card"
-                    [class.rm-vn-card-done]="node.status === 'completed'"
-                    [class.rm-vn-card-active]="node.status === 'active'"
-                    [class.rm-vn-card-locked]="node.status === 'locked'"
-                    [class.rm-vn-card-sel]="expandedNodeId === node.id"
-                    [@nodeAnim]="node.status"
+        <div class="rm-sidebar-nodes">
+          <ng-container *ngFor="let node of activeRoadmap.nodes; let last = last">
+            <button class="rm-sn-row"
+                    [class.rm-sn-done]="node.status === 'completed'"
+                    [class.rm-sn-active]="node.status === 'active'"
+                    [class.rm-sn-locked]="node.status === 'locked'"
+                    [class.rm-sn-selected]="expandedNodeId === node.id"
                     [class.rm-node-burst]="isNodeJustCompleted(node)"
-                    (click)="toggleExpandNode(node.id)">
-              <span class="rm-vn-icon">{{ node.icon }}</span>
-              <div class="rm-vn-info">
-                <span class="rm-vn-topic">{{ node.topic }}</span>
-                <span class="rm-vn-est">~{{ node.estMinutes }} min</span>
-              </div>
-              <span class="rm-vn-status-icon">
-                <span *ngIf="node.status === 'completed'">✔</span>
-                <span *ngIf="node.status === 'active'">▶</span>
-                <span *ngIf="node.status === 'locked'">🔒</span>
-              </span>
-              <span class="rm-vn-chevron">{{ expandedNodeId === node.id ? '▲' : '▼' }}</span>
-            </button>
+                    (click)="selectNodePanel(node)"
+                    [@nodeAnim]="node.status">
 
-            <!-- Inline detail panel -->
-            <div *ngIf="expandedNodeId === node.id" class="rm-vn-detail" @expandPanel>
-              <p class="rm-vn-desc">{{ node.description }}</p>
-              <div class="rm-vn-detail-meta">
-                <span class="rm-badge">~{{ node.estMinutes }} min</span>
-                <span *ngIf="node.completedAt" class="rm-badge">Done {{ node.completedAt | date:'MMM d' }}</span>
-                <span class="rm-status-pill"
-                      [class.rm-status-pill-completed]="node.status === 'completed'"
-                      [class.rm-status-pill-active]="node.status === 'active'"
-                      [class.rm-status-pill-locked]="node.status === 'locked'">
-                  {{ node.status === 'completed' ? '✔ Completed' :
-                     node.status === 'active'    ? '▶ In Progress' : '🔒 Locked' }}
-                </span>
+              <!-- Spine: dot + connector line -->
+              <div class="rm-sn-spine">
+                <div class="rm-sn-dot"
+                     [class.rm-sn-dot-done]="node.status === 'completed'"
+                     [class.rm-sn-dot-active]="node.status === 'active'"
+                     [class.rm-sn-dot-locked]="node.status === 'locked'">
+                  <span *ngIf="node.status === 'completed'">✓</span>
+                  <span *ngIf="node.status !== 'completed'">{{ node.order }}</span>
+                </div>
+                <div *ngIf="!last" class="rm-sn-connector"
+                     [class.rm-sn-connector-done]="node.status === 'completed'"></div>
               </div>
-              <div class="rm-vn-detail-actions">
-                <button *ngIf="node.status !== 'locked'"
-                        class="rm-btn rm-btn-primary rm-btn-sm"
-                        (click)="openLesson(node)">
-                  {{ node.status === 'completed' ? '📖 Review Lesson' : '▶ Start Lesson' }}
-                </button>
-                <button *ngIf="node.status === 'active'"
-                        class="rm-btn rm-btn-success rm-btn-sm"
-                        (click)="markComplete(node)">
-                  ✔ Mark Complete
-                </button>
+
+              <!-- Topic body -->
+              <div class="rm-sn-body">
+                <div class="rm-sn-topic-row">
+                  <span class="rm-sn-icon">{{ node.icon }}</span>
+                  <span class="rm-sn-topic">{{ node.topic }}</span>
+                  <span *ngIf="node.status === 'locked'" class="rm-sn-lock-icon">🔒</span>
+                </div>
+                <div class="rm-sn-sub-row">
+                  <span class="rm-sn-est">~{{ node.estMinutes }} min</span>
+                  <span *ngIf="node.completedAt" class="rm-sn-done-chip">
+                    ✔ {{ node.completedAt | date:'MMM d' }}
+                  </span>
+                </div>
               </div>
+
+              <span class="rm-sn-chevron">{{ expandedNodeId === node.id ? '◀' : '›' }}</span>
+            </button>
+          </ng-container>
+        </div>
+
+        <div *ngIf="progress?.percent === 100" class="rm-sidebar-complete-chip" @fadeIn>
+          🏆 All topics complete!
+        </div>
+      </div>
+
+      <!-- ════ RIGHT PANEL: AI Mentor ════ -->
+      <div class="rm-mentor-panel">
+
+        <!-- Empty state: no topic selected -->
+        <div *ngIf="!expandedNode" class="rm-mentor-empty" @fadeIn>
+          <div class="rm-mentor-empty-icon">🤖</div>
+          <h3 class="rm-mentor-empty-title">Select a topic to begin</h3>
+          <p class="rm-mentor-empty-body">
+            Click any topic from the learning path on the left to get an AI-powered
+            explanation tailored to your skill level.
+          </p>
+          <button *ngIf="progress?.activeNode"
+                  class="rm-btn rm-btn-primary"
+                  (click)="selectNodePanel(progress!.activeNode!)">
+            ▶ Continue — "{{ progress?.activeNode?.topic }}"
+          </button>
+        </div>
+
+        <!-- Topic selected -->
+        <ng-container *ngIf="expandedNode">
+
+          <!-- Panel header -->
+          <div class="rm-mentor-header">
+            <div class="rm-mentor-topic-row">
+              <span class="rm-mentor-icon">{{ expandedNode.icon }}</span>
+              <div class="rm-mentor-topic-info">
+                <h3 class="rm-mentor-topic-title">{{ expandedNode.topic }}</h3>
+                <div class="rm-mentor-topic-meta">
+                  <span class="rm-status-pill"
+                        [class.rm-status-pill-completed]="expandedNode.status === 'completed'"
+                        [class.rm-status-pill-active]="expandedNode.status === 'active'"
+                        [class.rm-status-pill-locked]="expandedNode.status === 'locked'">
+                    {{ expandedNode.status === 'completed' ? '✔ Complete'
+                       : expandedNode.status === 'active' ? '▶ In Progress' : '🔒 Locked' }}
+                  </span>
+                  <span class="rm-badge">~{{ expandedNode.estMinutes }} min</span>
+                  <span *ngIf="expandedNode.completedAt" class="rm-badge">
+                    Done {{ expandedNode.completedAt | date:'MMM d' }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Action buttons row -->
+            <div class="rm-mentor-actions">
+              <button *ngIf="expandedNode.status === 'active'"
+                      class="rm-btn rm-btn-success rm-btn-sm"
+                      (click)="markComplete(expandedNode)">
+                ✔ Mark Complete
+              </button>
+              <button class="rm-btn rm-btn-ghost rm-btn-sm rm-save-notes-btn"
+                      [disabled]="saveNoteBusy"
+                      [class.rm-saved]="savedToNotes"
+                      (click)="saveNodeToNotes()">
+                {{ saveNoteBusy ? '⏳ Saving…' : savedToNotes ? '✔ Saved to Notes!' : '📝 Save to Notes' }}
+              </button>
             </div>
           </div>
 
-        </div>
-      </ng-container>
+          <!-- Topic description -->
+          <p class="rm-mentor-topic-desc">{{ expandedNode.description }}</p>
 
-      <!-- FINISH cap -->
-      <div class="rm-vpath-cap rm-vpath-cap-finish">
-        <div class="rm-vpath-cap-dot rm-vpath-cap-dot-finish">🏆</div>
-        <span class="rm-vpath-cap-label">Finish</span>
+          <!-- AI explanation body -->
+          <div class="rm-mentor-body" #mentorBody>
+
+            <!-- Loading -->
+            <div *ngIf="lessonLoading" class="rm-mentor-loading" @fadeIn>
+              <div class="rm-thinking-brain">🧠</div>
+              <div class="rm-thinking-dots">
+                <span></span><span></span><span></span>
+              </div>
+              <p>AI Mentor is preparing your explanation…</p>
+            </div>
+
+            <!-- Error -->
+            <div *ngIf="lessonError && !lessonLoading" class="rm-lesson-error" @fadeIn>
+              <p>⚠️ Could not load explanation. Please check your connection.</p>
+              <button class="rm-btn rm-btn-ghost rm-btn-sm"
+                      (click)="loadLesson(expandedNode)">🔄 Retry</button>
+            </div>
+
+            <!-- Messages -->
+            <ng-container *ngIf="!lessonLoading && !lessonError">
+              <div *ngFor="let msg of lessonMessages"
+                   class="rm-lesson-msg"
+                   [class.rm-lesson-msg-user]="msg.role === 'user'"
+                   [class.rm-lesson-msg-ai]="msg.role === 'ai'"
+                   @fadeUp>
+                <div class="rm-lesson-msg-avatar">
+                  {{ msg.role === 'user' ? '👤' : '🤖' }}
+                </div>
+                <div class="rm-lesson-msg-bubble md-content"
+                     [innerHTML]="msg.text | markdown"></div>
+              </div>
+              <div *ngIf="lessonFollowUpLoading"
+                   class="rm-lesson-loading rm-lesson-loading-sm" @fadeIn>
+                <div class="rm-thinking-dots">
+                  <span></span><span></span><span></span>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- Footer: complete bar + follow-up input -->
+          <div *ngIf="expandedNode.status !== 'locked'" class="rm-mentor-footer">
+            <div *ngIf="expandedNode.status === 'active'" class="rm-mentor-complete-bar">
+              <button class="rm-btn rm-btn-success rm-btn-full"
+                      (click)="markComplete(expandedNode)">
+                ✔ Mark as Complete &amp; Unlock Next Topic
+              </button>
+            </div>
+            <div class="rm-mentor-input-row">
+              <input class="rm-lesson-input"
+                     type="text"
+                     [(ngModel)]="lessonQuestion"
+                     [disabled]="lessonFollowUpLoading || lessonLoading"
+                     placeholder="Ask a follow-up about {{ expandedNode.topic }}…"
+                     (keyup.enter)="sendLessonQuestion()" />
+              <button class="rm-lesson-send-btn"
+                      (click)="sendLessonQuestion()"
+                      [disabled]="!lessonQuestion.trim() || lessonFollowUpLoading || lessonLoading">
+                Send →
+              </button>
+            </div>
+          </div>
+
+        </ng-container>
       </div>
-
     </div>
 
-    <!-- Completion banner -->
+    <!-- Full-width completion banner -->
     <div *ngIf="progress?.percent === 100" class="rm-completion-banner" @fadeIn>
       <div class="rm-completion-icon">🏆</div>
       <h3>Roadmap Complete!</h3>

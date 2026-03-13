@@ -7,6 +7,7 @@ import {
 } from '@angular/animations';
 import { Subscription } from 'rxjs';
 import { CustomAuthService } from '../shared/custom-auth.service';
+import { NotesService } from '../shared/notes.service';
 import { RoadmapService } from './roadmap.service';
 import {
   Roadmap, RoadmapNode, RoadmapProgress, WizardState,
@@ -113,13 +114,19 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   lessonFollowUpLoading = false;
   lessonMessages:  { role: 'user' | 'ai'; text: string }[] = [];
 
-  @ViewChild('lessonBody') lessonBodyEl?: ElementRef<HTMLDivElement>;
+  @ViewChild('lessonBody')  lessonBodyEl?:  ElementRef<HTMLDivElement>;
+  @ViewChild('mentorBody')  mentorBodyEl?:  ElementRef<HTMLDivElement>;
+
+  // ── Side-panel note-saving state ──────────────────────────────────────
+  saveNoteBusy = false;
+  savedToNotes = false;
 
   private subs = new Subscription();
 
   constructor(
     public  auth:    CustomAuthService,
     private rmSvc:   RoadmapService,
+    private notesSvc: NotesService,
     private cdr:     ChangeDetectorRef,
   ) {}
 
@@ -170,9 +177,17 @@ export class RoadmapComponent implements OnInit, OnDestroy {
 
     this.activeRoadmap  = fresh;
     this.progress       = this.rmSvc.computeProgress(fresh.nodes);
-    this.expandedNodeId = this.progress.activeNode?.id ?? null;
+    this.expandedNodeId = null;
     this.lessonNode     = null;
+    this.lessonMessages = [];
+    this.savedToNotes   = false;
     this.view           = 'view';
+
+    // Auto-select the current active node so the right panel is not empty
+    const active = this.progress.activeNode;
+    if (active) {
+      setTimeout(() => this.selectNodePanel(active), 50);
+    }
   }
 
   // ─── Wizard ─────────────────────────────────────────────────────────────
@@ -239,6 +254,62 @@ export class RoadmapComponent implements OnInit, OnDestroy {
 
   toggleExpandNode(nodeId: string): void {
     this.expandedNodeId = this.expandedNodeId === nodeId ? null : nodeId;
+  }
+
+  /** Select a node for the right panel (sidebar click in view mode). */
+  selectNodePanel(node: RoadmapNode): void {
+    if (this.expandedNodeId === node.id) {
+      // Deselect if clicking the already-selected node
+      this.expandedNodeId = null;
+      return;
+    }
+    this.expandedNodeId = node.id;
+    this.savedToNotes   = false;
+    if (node.status !== 'locked') {
+      // Reuse existing lesson infrastructure to load content into the right panel
+      this.lessonNode          = node;
+      this.lessonMessages      = [];
+      this.lessonQuestion      = '';
+      this.lessonError         = false;
+      this.loadLesson(node);
+    } else {
+      // Locked node — clear panel but don't call API
+      this.lessonNode     = node;
+      this.lessonMessages = [];
+      this.lessonError    = false;
+    }
+  }
+
+  /** Jump to the current active node in the sidebar panel. */
+  resumeLearning(): void {
+    const active = this.progress?.activeNode;
+    if (active) this.selectNodePanel(active);
+  }
+
+  /** Save the current panel's lesson content to the user's Notes. */
+  async saveNodeToNotes(): Promise<void> {
+    if (!this.expandedNode || !this.lessonMessages.length || this.saveNoteBusy) return;
+    const aiText = this.lessonMessages
+      .filter(m => m.role === 'ai')
+      .map(m => m.text)
+      .join('\n\n---\n\n');
+    if (!aiText.trim()) return;
+    this.saveNoteBusy = true;
+    try {
+      await this.notesSvc.saveNote(
+        this.expandedNode.topic,
+        this.activeRoadmap?.language ?? 'Roadmap',
+        aiText,
+        ['roadmap', this.activeRoadmap?.language ?? '']
+      );
+      this.savedToNotes = true;
+      setTimeout(() => { this.savedToNotes = false; }, 3000);
+    } catch {
+      // silently swallow — user still sees the content
+    } finally {
+      this.saveNoteBusy = false;
+      this.cdr.markForCheck();
+    }
   }
 
   openLesson(node: RoadmapNode): void {
@@ -313,16 +384,20 @@ export class RoadmapComponent implements OnInit, OnDestroy {
       this.activeRoadmap  = updated;
       this.progress       = this.rmSvc.computeProgress(updated.nodes);
 
-      // auto-expand next active node
+      // auto-advance to next active node in the panel
       const next = this.progress.activeNode;
       setTimeout(() => {
         this.justCompletedId = null;
-        this.expandedNodeId  = next?.id ?? null;
+        if (next && this.view === 'view') {
+          this.selectNodePanel(next);           // load next lesson into right panel
+        } else {
+          this.expandedNodeId = next?.id ?? null;
+        }
         this.cdr.markForCheck();
       }, 900);
     }
 
-    // if we're in lesson view, go back to path
+    // if we're in full-screen lesson view, go back to path
     if (this.view === 'lesson') this.view = 'view';
   }
 
@@ -385,10 +460,10 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   }
 
   private scrollLessonToBottom(): void {
-    if (this.lessonBodyEl?.nativeElement) {
-      const el = this.lessonBodyEl.nativeElement;
-      el.scrollTop = el.scrollHeight;
-    }
+    const lessonEl = this.lessonBodyEl?.nativeElement;
+    if (lessonEl) lessonEl.scrollTop = lessonEl.scrollHeight;
+    const mentorEl = this.mentorBodyEl?.nativeElement;
+    if (mentorEl) mentorEl.scrollTop = mentorEl.scrollHeight;
   }
 
   // Wizard label helpers for preview step
