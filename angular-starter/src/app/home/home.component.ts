@@ -92,6 +92,13 @@ export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
   diagramHtml: SafeHtml | null = null;  // sanitized AI-generated HTML
   private _diagramTopic = '';           // topic last generated for
 
+  // ── Diagram playback / step-through controls ────────────────────────────
+  diagramStepIndex  = 0;     // 0-based currently-highlighted step
+  diagramTotalSteps = 0;     // total .diagram-box count (set after render)
+  diagramIsPlaying  = false; // auto-play running
+  diagramFullscreen = false; // fullscreen overlay open
+  private _playInterval: any = null;
+
   // Sentinel that tells ngAfterViewChecked to scroll to bottom
   private shouldScrollToBottom = false;
 
@@ -405,6 +412,7 @@ const pool = new ThreadPool(4);`,
   ngOnDestroy(): void {
     this.followUpSub?.unsubscribe();
     clearTimeout(this.noteSavedTimer);
+    clearInterval(this._playInterval);
   }
 
   private scrollToBottom(): void {
@@ -1084,6 +1092,11 @@ NOW CREATE THE COMPLETE DIAGRAM FOR: "${topic}"`;
             .replace(/```\s*$/im, '')
             .trim();
           this.diagramHtml = this.sanitizer.bypassSecurityTrustHtml(cleaned);
+          // Count steps and reset playback after Angular renders the HTML
+          setTimeout(() => {
+            this.diagramTotalSteps = document.querySelectorAll('.diagram-box').length;
+            this.diagramStepIndex  = 0;
+          }, 120);
         } else {
           this.diagramHtml = this.sanitizer.bypassSecurityTrustHtml(
             `<div style="text-align:center;padding:2rem;color:#ef4444;">
@@ -1102,6 +1115,63 @@ NOW CREATE THE COMPLETE DIAGRAM FOR: "${topic}"`;
         );
       }
     });
+  }
+
+  // ── Diagram step-through / playback methods ───────────────────────────
+
+  /** Apply / remove the active-step highlight on .diagram-box elements */
+  private highlightStep(idx: number): void {
+    const boxes = Array.from(document.querySelectorAll<HTMLElement>('.am-diagram-content .diagram-box'));
+    boxes.forEach((el, i) => {
+      if (i === idx) {
+        el.classList.add('am-diagram-step--active');
+      } else {
+        el.classList.remove('am-diagram-step--active');
+      }
+    });
+  }
+
+  stepForward(): void {
+    if (this.diagramTotalSteps === 0) return;
+    this.diagramStepIndex = (this.diagramStepIndex + 1) % this.diagramTotalSteps;
+    this.highlightStep(this.diagramStepIndex);
+  }
+
+  stepBack(): void {
+    if (this.diagramTotalSteps === 0) return;
+    this.diagramStepIndex = this.diagramStepIndex === 0
+      ? this.diagramTotalSteps - 1
+      : this.diagramStepIndex - 1;
+    this.highlightStep(this.diagramStepIndex);
+  }
+
+  playPauseDiagram(): void {
+    if (this.diagramIsPlaying) {
+      clearInterval(this._playInterval);
+      this._playInterval = null;
+      this.diagramIsPlaying = false;
+    } else {
+      this.diagramIsPlaying = true;
+      this._playInterval = setInterval(() => this.stepForward(), 1800);
+    }
+  }
+
+  replayDiagram(): void {
+    clearInterval(this._playInterval);
+    this._playInterval = null;
+    this.diagramIsPlaying = false;
+    this.diagramStepIndex = 0;
+    // Remove all highlights
+    document.querySelectorAll<HTMLElement>('.am-diagram-content .diagram-box')
+      .forEach(el => el.classList.remove('am-diagram-step--active'));
+    // Force re-render animation by briefly clearing and restoring HTML
+    const saved = this.diagramHtml;
+    this.diagramHtml = null;
+    setTimeout(() => { this.diagramHtml = saved; }, 40);
+  }
+
+  toggleDiagramFullscreen(): void {
+    this.diagramFullscreen = !this.diagramFullscreen;
   }
 
   /** Strip echoed system prompt from AI response if the model repeated it back */

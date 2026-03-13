@@ -440,6 +440,42 @@
                           <button class="am-diagram-panel-hd-close" (click)="diagramOpen = false" title="Close diagram">✕</button>
                         </div>
 
+                        <!-- Playback / step controls — shown once diagram is ready -->
+                        <div class="am-diagram-controls" *ngIf="!diagramLoading && diagramHtml">
+                          <button class="am-dc-btn" (click)="replayDiagram()" title="Replay animation">↩ Replay</button>
+                          <div class="am-dc-step-group">
+                            <button class="am-dc-btn am-dc-icon-btn"
+                                    (click)="stepBack()"
+                                    [disabled]="diagramTotalSteps === 0"
+                                    title="Previous step">‹</button>
+                            <span class="am-dc-step-counter">
+                              {{ diagramTotalSteps > 0 ? (diagramStepIndex + 1) + ' / ' + diagramTotalSteps : '—' }}
+                            </span>
+                            <button class="am-dc-btn am-dc-icon-btn"
+                                    (click)="stepForward()"
+                                    [disabled]="diagramTotalSteps === 0"
+                                    title="Next step">›</button>
+                          </div>
+                          <button class="am-dc-btn am-dc-play-btn"
+                                  [class.am-dc-btn--active]="diagramIsPlaying"
+                                  (click)="playPauseDiagram()"
+                                  [disabled]="diagramTotalSteps === 0">
+                            {{ diagramIsPlaying ? '⏸ Pause' : '▶ Play' }}
+                          </button>
+                          <button class="am-dc-btn am-dc-icon-btn" (click)="toggleDiagramFullscreen()" title="Fullscreen">⛶</button>
+                        </div>
+
+                        <!-- Fullscreen overlay -->
+                        <div class="am-diagram-fullscreen" *ngIf="diagramFullscreen" (click)="toggleDiagramFullscreen()">
+                          <div class="am-diagram-fullscreen-inner" (click)="$event.stopPropagation()">
+                            <div class="am-diagram-fullscreen-hd">
+                              <span class="am-diagram-fullscreen-title">📊 {{ currentTopicName }}</span>
+                              <button class="am-diagram-fullscreen-close" (click)="toggleDiagramFullscreen()">✕</button>
+                            </div>
+                            <div class="am-diagram-content am-diagram-content--fs" [innerHTML]="diagramHtml"></div>
+                          </div>
+                        </div>
+
                         <!-- Loading skeleton -->
                         <div class="am-diagram-skeleton" *ngIf="diagramLoading">
                           <div class="am-diagram-skeleton-box"></div>
