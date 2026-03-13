@@ -73,4 +73,13 @@ namespace AILearnAPI.Domain.Interfaces
         Task<Subscription?> GetByUserIdAsync(string userId);
         Task<Subscription> UpsertByUserIdAsync(Subscription subscription);
     }
+
+    public interface IInterviewRoadmapRepository : IBaseRepository<InterviewRoadmap>
+    {
+        Task<List<InterviewRoadmap>> GetByUserIdAsync(string userId);
+        Task<InterviewRoadmap?> GetByUserAndStackAsync(string userId, string techStackId);
+        /// <summary>Inserts or replaces the roadmap for a given (userId, techStackId) pair.</summary>
+        Task<InterviewRoadmap> UpsertAsync(InterviewRoadmap roadmap);
+        Task<bool> DeleteByUserAndIdAsync(string userId, string id);
+    }
 }

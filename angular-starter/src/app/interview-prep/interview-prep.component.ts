@@ -3,6 +3,8 @@ import { Subscription } from 'rxjs';
 import { trigger, state, style, animate, transition } from '@angular/animations';
 import { QuestionsDataService, InterviewQuestion } from '../shared/questions-data.service';
 import { AILearnService } from '../services/ai-learn.service';
+import { InterviewRoadmapService } from '../services/interview-roadmap.service';
+import { CustomAuthService } from '../shared/custom-auth.service';
 
 interface AIMessage {
   role: 'user' | 'ai';
@@ -112,6 +114,14 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   roadmapProgress = 0;           // 0-100 for the generation progress bar
   activeTopic: string | null = null;  // which topic is being explained in chat
   roadmapNoteSaved = false;      // flash feedback after Save to Notes
+
+  // ── Backend sync state ───────────────────────────────────────────
+  savedRoadmapId   = '';      // MongoDB _id once the roadmap is persisted
+  roadmapSyncing   = false;   // spinner while saving / updating to backend
+  roadmapSynced    = false;   // “Saved ✓” flash for 2 s
+  roadmapSyncError = false;   // error flash
+  private progressDebounce: any = null;
+
   private progressTimer: any;
   private roadmapSub?: Subscription;
 
@@ -155,6 +165,8 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   constructor(
     private questionsData: QuestionsDataService,
     private aiLearnService: AILearnService,
+    private roadmapBackend: InterviewRoadmapService,
+    private customAuth: CustomAuthService,
   ) {}
 
   ngOnInit(): void {
@@ -173,6 +185,7 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     this.aiSub?.unsubscribe();
     this.roadmapSub?.unsubscribe();
     clearInterval(this.progressTimer);
+    clearTimeout(this.progressDebounce);
   }
 
   /* ─── Roadmap ─────────────────────────────────────────────── */
@@ -255,6 +268,10 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
             }
             // Persist the full structure so resuming is instant next visit
             this.saveRoadmapStructure(stack.id);
+            // Auto-save to backend (fire-and-forget)
+            if (this.customAuth.isLoggedIn) {
+              this.autoSaveToBackend(stack);
+            }
           }
           this.isGeneratingRoadmap = false;
           setTimeout(() => { this.roadmapProgress = 0; }, 600);
@@ -346,6 +363,10 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     topic.done = !topic.done;
     if (this.selectedStack) {
       this.saveRoadmapProgress(this.selectedStack.id);
+      // Debounce-sync to backend (avoid one call per rapid click)
+      if (this.customAuth.isLoggedIn && this.savedRoadmapId) {
+        this.debounceProgressSync();
+      }
     }
   }
 
@@ -393,6 +414,61 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     localStorage.removeItem(`ip_roadmap_sections_${this.selectedStack.id}`);
     this.roadmapSections = [];
     this.generateRoadmap();
+  }
+
+  // ── Backend sync ────────────────────────────────────────────────────────
+
+  /** Save the full roadmap to the backend after generation. */
+  private autoSaveToBackend(stack: TechStack): void {
+    this.roadmapSyncing   = true;
+    this.roadmapSyncError = false;
+    const payload = {
+      techStackId:   stack.id,
+      techStackName: stack.name,
+      techStackIcon: stack.icon,
+      sections: this.roadmapSections.map(sec => ({
+        id:       sec.id,
+        title:    sec.title,
+        emoji:    sec.emoji,
+        expanded: sec.expanded,
+        topics:   sec.topics.map(t => ({
+          id:   t.id,
+          text: t.text,
+          done: t.done,
+          completedAt: null as string | null,
+        })),
+      })),
+    };
+    this.roadmapBackend.save(payload).subscribe(dto => {
+      this.roadmapSyncing = false;
+      if (dto) {
+        this.savedRoadmapId = dto.id;
+        this.roadmapSynced  = true;
+        setTimeout(() => { this.roadmapSynced = false; }, 2500);
+      } else {
+        this.roadmapSyncError = true;
+        setTimeout(() => { this.roadmapSyncError = false; }, 3000);
+      }
+    });
+  }
+
+  /** Debounce progress updates so rapid checkbox clicks → one API call. */
+  private debounceProgressSync(): void {
+    clearTimeout(this.progressDebounce);
+    this.progressDebounce = setTimeout(() => this.syncProgressNow(), 1200);
+  }
+
+  private syncProgressNow(): void {
+    if (!this.savedRoadmapId || !this.roadmapSections.length) return;
+    this.roadmapSyncing = true;
+    this.roadmapBackend.updateProgress(this.savedRoadmapId, this.roadmapSections)
+      .subscribe(dto => {
+        this.roadmapSyncing = false;
+        if (dto) {
+          this.roadmapSynced = true;
+          setTimeout(() => { this.roadmapSynced = false; }, 1800);
+        }
+      });
   }
 
   /** Serialise the current roadmap as a markdown note and save to the notes drawer */

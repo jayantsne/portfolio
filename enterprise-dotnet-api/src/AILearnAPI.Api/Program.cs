@@ -133,6 +133,7 @@ builder.Services.AddScoped<IMasterConfigRepository, MasterConfigRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();
 builder.Services.AddScoped<ILlmProviderRepository, LlmProviderRepository>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
+builder.Services.AddScoped<IInterviewRoadmapRepository, InterviewRoadmapRepository>();
 // Deployment service — no repository layer needed (uses IMongoDatabase directly)
 builder.Services.AddScoped<IDeploymentService, DeploymentService>();
 // Analytics service — tracks visits + clicks, serves admin dashboard
@@ -158,6 +159,7 @@ builder.Services.AddScoped<IMasterConfigService, MasterConfigService>();
 builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddScoped<ILlmProviderService, LlmProviderService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+builder.Services.AddScoped<IInterviewRoadmapService, InterviewRoadmapService>();
 
 // Razorpay HttpClient (short timeout — REST call to payment gateway)
 builder.Services.AddHttpClient("Razorpay", c =>
