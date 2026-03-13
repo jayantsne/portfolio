@@ -2,9 +2,10 @@ import { Component, HostListener, ElementRef, ViewChild, AfterViewInit, Input } 
 import { trigger, transition, style, animate } from '@angular/animations';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs/operators';
-import { AuthService } from '../shared/auth.service';
-import { ApiService } from '../shared/api.service';
+import { AuthService }      from '../shared/auth.service';
+import { ApiService }       from '../shared/api.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
+import { SubscriptionService } from '../shared/subscription.service';
 import { AuthModalComponent } from '../auth-modal/auth-modal.component';
 import { UserSettingsComponent } from '../user-settings/user-settings.component';
 import { MasterConfigComponent } from '../master-config/master-config.component';
@@ -47,7 +48,8 @@ export class HeaderComponent implements AfterViewInit {
     public authService: AuthService,
     private router: Router,
     private apiService: ApiService,
-    public customAuth: CustomAuthService
+    public customAuth: CustomAuthService,
+    public subSvc: SubscriptionService
   ) {
     // Check initial route
     this.checkRoute(this.router.url);

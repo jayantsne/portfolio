@@ -15,15 +15,18 @@ namespace AILearnAPI.Application.Services
         private readonly IAuthRepository _authRepository;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthService> _logger;
+        private readonly ISubscriptionService? _subscriptionService;
 
         public AuthService(
             IAuthRepository authRepository,
             IConfiguration configuration,
-            ILogger<AuthService> logger)
+            ILogger<AuthService> logger,
+            ISubscriptionService? subscriptionService = null)
         {
-            _authRepository = authRepository;
-            _configuration  = configuration;
-            _logger         = logger;
+            _authRepository      = authRepository;
+            _configuration       = configuration;
+            _logger              = logger;
+            _subscriptionService = subscriptionService;
         }
 
         public async Task<AuthDto?> GetAuthStatusAsync(string userId)
@@ -76,6 +79,13 @@ namespace AILearnAPI.Application.Services
 
             await _authRepository.CreateAsync(auth);
             _logger.LogInformation("Registered new user {Email} with ID {UserId} and role {Role}", emailTrimmed, userId, role);
+
+            // ── Start free trial ─────────────────────────────────────────────
+            if (_subscriptionService != null)
+            {
+                try   { await _subscriptionService.CreateTrialAsync(userId); }
+                catch (Exception ex) { _logger.LogWarning(ex, "Failed to create trial for {UserId}", userId); }
+            }
 
             var token = BuildToken(userId, displayName, auth.Email, role);
             return new LoginResponseDto

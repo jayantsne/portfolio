@@ -67,4 +67,10 @@ namespace AILearnAPI.Domain.Interfaces
         Task<bool> SetEnabledAsync(string providerName, bool enabled);
         Task<bool> UpdateApiKeyAsync(string providerName, string encryptedKey);
     }
+
+    public interface ISubscriptionRepository : IBaseRepository<Subscription>
+    {
+        Task<Subscription?> GetByUserIdAsync(string userId);
+        Task<Subscription> UpsertByUserIdAsync(Subscription subscription);
+    }
 }

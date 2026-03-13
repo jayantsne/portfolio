@@ -132,6 +132,7 @@ builder.Services.AddScoped<IUserConfigRepository, UserConfigRepository>();
 builder.Services.AddScoped<IMasterConfigRepository, MasterConfigRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();
 builder.Services.AddScoped<ILlmProviderRepository, LlmProviderRepository>();
+builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 // Deployment service — no repository layer needed (uses IMongoDatabase directly)
 builder.Services.AddScoped<IDeploymentService, DeploymentService>();
 // Analytics service — tracks visits + clicks, serves admin dashboard
@@ -156,6 +157,15 @@ builder.Services.AddScoped<IUserConfigService, UserConfigService>();
 builder.Services.AddScoped<IMasterConfigService, MasterConfigService>();
 builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddScoped<ILlmProviderService, LlmProviderService>();
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+
+// Razorpay HttpClient (short timeout — REST call to payment gateway)
+builder.Services.AddHttpClient("Razorpay", c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(15);
+    c.DefaultRequestHeaders.Accept.Add(
+        new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+});
 
 // OpenAI streaming — dedicated HttpClient with 5-minute timeout for long completions
 builder.Services.AddHttpClient("OpenAI", c =>
@@ -241,6 +251,7 @@ app.UseAuthentication(); // ← required for JWT Bearer
 // Custom middleware from LearnQuest
 app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
 app.UseMiddleware<ExceptionHandlingMiddleware>();
+app.UseMiddleware<SubscriptionAccessMiddleware>();
 
 app.UseAuthorization();
 

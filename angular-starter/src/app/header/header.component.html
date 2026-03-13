@@ -78,6 +78,23 @@
             </a>
           </li>
 
+          <!-- Subscription trial badge -->
+          <li class="nav-item" *ngIf="customAuth.isLoggedIn && subSvc.currentStatus">
+            <a class="sub-trial-badge"
+               [class.sub-trial-badge--trial]="subSvc.currentStatus?.isTrialActive"
+               [class.sub-trial-badge--active]="subSvc.currentStatus?.isSubscriptionActive"
+               [class.sub-trial-badge--expired]="subSvc.currentStatus?.subscriptionStatus === 'expired'"
+               routerLink="/subscribe"
+               (click)="closeNavbar()"
+               title="Subscription status">
+              <span *ngIf="subSvc.currentStatus?.isTrialActive">
+                ⏰ Trial – {{ subSvc.currentStatus?.trialDaysRemaining }}d left
+              </span>
+              <span *ngIf="subSvc.currentStatus?.isSubscriptionActive">✓ Pro</span>
+              <span *ngIf="subSvc.currentStatus?.subscriptionStatus === 'expired'">🔒 Subscribe</span>
+            </a>
+          </li>
+
           <!-- User avatar chip -->
           <li class="nav-item" *ngIf="customAuth.isLoggedIn">
             <div class="user-chip">

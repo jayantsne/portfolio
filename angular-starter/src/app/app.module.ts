@@ -52,6 +52,8 @@ import { AppConfigService } from './shared/app-config.service';
 import { RoadmapComponent } from './roadmap/roadmap.component';
 import { InterviewPrepComponent } from './interview-prep/interview-prep.component';
 import { SaveNotesModalComponent } from './shared/save-notes-modal/save-notes-modal.component';
+import { SubscribeComponent }      from './subscribe/subscribe.component';
+import { SubscriptionWallComponent } from './shared/subscription-wall/subscription-wall.component';
 
 @NgModule({
   declarations: [
@@ -98,6 +100,8 @@ import { SaveNotesModalComponent } from './shared/save-notes-modal/save-notes-mo
     RoadmapComponent,  // Personalized Learning Roadmap
     InterviewPrepComponent,  // AI-powered Interview Practice
     SaveNotesModalComponent,    // Save conversation to Notes modal
+    SubscribeComponent,           // Subscription / payment page
+    SubscriptionWallComponent,    // Paywall modal overlay
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],

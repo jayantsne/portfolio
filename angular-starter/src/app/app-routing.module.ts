@@ -16,16 +16,18 @@ import { LearnQuestComponent } from './learn-quest/learn-quest.component';
 // import { VisualDesignerComponent } from './visual-designer/visual-designer.component'; // Temporarily disabled
 import { DsaGameComponent } from './dsa-game/dsa-game.component';
 import { AzureAiLearnComponent } from './azure-ai-learn/azure-ai-learn.component';
-import { MemoryGameComponent } from './memory-game/memory-game.component';
-import { TestPageComponent } from './test-page/test-page.component';
-import { AdminLoginComponent } from './admin/admin-login/admin-login.component';
+import { MemoryGameComponent }   from './memory-game/memory-game.component';
+import { TestPageComponent }     from './test-page/test-page.component';
+import { AdminLoginComponent }   from './admin/admin-login/admin-login.component';
 import { AdminDashboardComponent } from './admin/admin-dashboard/admin-dashboard.component';
-import { NotesComponent } from './notes/notes.component';
-import { DeploymentComponent } from './deployment/deployment.component';
+import { NotesComponent }        from './notes/notes.component';
+import { DeploymentComponent }   from './deployment/deployment.component';
 import { AnalyticsDashboardComponent } from './analytics-dashboard/analytics-dashboard.component';
-import { RoadmapComponent } from './roadmap/roadmap.component';
+import { RoadmapComponent }      from './roadmap/roadmap.component';
 import { InterviewPrepComponent } from './interview-prep/interview-prep.component';
-import { LoginGuard } from './shared/login.guard';
+import { LoginGuard }            from './shared/login.guard';
+import { SubscribeComponent }    from './subscribe/subscribe.component';
+import { SubscriptionGuard }     from './shared/subscription.guard';
 
 
 const routes: Routes = [
@@ -36,18 +38,21 @@ const routes: Routes = [
   { path: '', component: HomeComponent },
   { path: 'home', component: HomeComponent },
 
-  // Saved Notes (requires Google Sign-In)
-  { path: 'notes', component: NotesComponent },
+  // Saved Notes (requires login + subscription)
+  { path: 'notes', component: NotesComponent, canActivate: [SubscriptionGuard] },
+
+  // Subscription / payment page
+  { path: 'subscribe', component: SubscribeComponent },
   
   // { path: 'login', component: LoginComponent }, // Temporarily disabled
   // { path: 'tools', component: FreeToolsComponent }, // Free Tools - Public (removed)
   
   // Direct access to games (outside ai-qa parent)
-  { path: 'learn-quest', component: LearnQuestComponent },
-  { path: 'dsa-game', component: DsaGameComponent },
-  { path: 'memory-game', component: MemoryGameComponent },
-  { path: 'azure-ai-102', component: AzureAiLearnComponent },
-  { path: 'questions', component: QuestionsListComponent }, // Practice questions
+  { path: 'learn-quest',  component: LearnQuestComponent,  canActivate: [SubscriptionGuard] },
+  { path: 'dsa-game',     component: DsaGameComponent,     canActivate: [SubscriptionGuard] },
+  { path: 'memory-game',  component: MemoryGameComponent,  canActivate: [SubscriptionGuard] },
+  { path: 'azure-ai-102', component: AzureAiLearnComponent, canActivate: [SubscriptionGuard] },
+  { path: 'questions',    component: QuestionsListComponent, canActivate: [SubscriptionGuard] }, // Practice questions
   
   // { path: 'questions', component: QuestionsPublicComponent }, // Public access - Temporarily disabled
   // { path: 'ai-tool', component: AiToolComponent }, // Unique AI Tool page (removed)
@@ -65,10 +70,10 @@ const routes: Routes = [
   { path: 'admin-analytics', component: AnalyticsDashboardComponent },
 
   // Personalized Learning Roadmap
-  { path: 'roadmap', component: RoadmapComponent, canActivate: [LoginGuard] },
+  { path: 'roadmap', component: RoadmapComponent, canActivate: [LoginGuard, SubscriptionGuard] },
 
   // AI-powered Interview Practice (split-screen)
-  { path: 'interview-prep', component: InterviewPrepComponent, canActivate: [LoginGuard] },
+  { path: 'interview-prep', component: InterviewPrepComponent, canActivate: [LoginGuard, SubscriptionGuard] },
 
   // Fallback — any unknown path goes to home (fixes blank page on refresh)
   { path: '**', redirectTo: '', pathMatch: 'full' },

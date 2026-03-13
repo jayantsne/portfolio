@@ -1,0 +1,140 @@
+<div class="sub-page">
+
+  <!-- Loading skeleton -->
+  <div class="sub-loading" *ngIf="loading">
+    <div class="sub-spinner"></div>
+    <p>Checking subscription status…</p>
+  </div>
+
+  <!-- Already active banner -->
+  <div class="sub-success-banner" *ngIf="!loading && status?.hasAccess && !successMsg">
+    <div class="sub-card sub-card--success">
+      <div class="sub-card-icon">✅</div>
+      <h2>You already have access!</h2>
+      <p *ngIf="status?.isTrialActive">
+        Your free trial is active — <strong>{{ status?.trialDaysRemaining }} day(s) remaining</strong>.
+      </p>
+      <p *ngIf="status?.isSubscriptionActive">
+        Your <strong>AI Learn Pro</strong> subscription is active until
+        <strong>{{ status?.subscriptionExpiry | date:'dd MMM yyyy' }}</strong>.
+      </p>
+      <button class="sub-btn sub-btn--primary" (click)="goHome()">← Back to AI Learn</button>
+    </div>
+  </div>
+
+  <!-- Payment success message -->
+  <div class="sub-card sub-card--success" *ngIf="successMsg" style="max-width:520px;margin:60px auto">
+    <div class="sub-card-icon">🎉</div>
+    <h2>Subscription Activated!</h2>
+    <p>{{ successMsg }}</p>
+    <p class="sub-redirecting">Redirecting you to home…</p>
+  </div>
+
+  <!-- Main subscription page -->
+  <ng-container *ngIf="!loading && !successMsg && !(status?.hasAccess)">
+
+    <!-- Expired notice if trial ended -->
+    <div class="sub-expired-banner" *ngIf="status?.subscriptionStatus === 'expired'">
+      <span>⏰</span>
+      Your free trial has ended. Subscribe below to continue.
+    </div>
+
+    <!-- Hero -->
+    <div class="sub-hero">
+      <div class="sub-hero-badge">🤖 AI Learn Pro</div>
+      <h1 class="sub-hero-title">Unlock Everything for&nbsp;<span class="sub-price-hl">₹199/month</span></h1>
+      <p class="sub-hero-sub">Prepare smarter. Interview better. Land the job.</p>
+    </div>
+
+    <div class="sub-layout">
+
+      <!-- Feature list -->
+      <div class="sub-features">
+        <h3 class="sub-features-title">What you get</h3>
+        <ul class="sub-feature-list">
+          <li><span class="sub-feat-icon">🤖</span><div><strong>AI Mentor</strong><p>Ask anything, get expert answers in seconds.</p></div></li>
+          <li><span class="sub-feat-icon">🎯</span><div><strong>Interview Prep</strong><p>Mock Q&amp;A sessions tailored to your target role.</p></div></li>
+          <li><span class="sub-feat-icon">🗺️</span><div><strong>Learning Roadmaps</strong><p>Step-by-step paths for DSA, System Design, and more.</p></div></li>
+          <li><span class="sub-feat-icon">📝</span><div><strong>Smart Notes</strong><p>Auto-save AI explanations, tag and review later.</p></div></li>
+          <li><span class="sub-feat-icon">💡</span><div><strong>Practice Questions</strong><p>500+ MCQs with AI-powered explanations.</p></div></li>
+          <li><span class="sub-feat-icon">🏗️</span><div><strong>Architecture Diagrams</strong><p>AI generates visual system diagrams on demand.</p></div></li>
+          <li><span class="sub-feat-icon">☁️</span><div><strong>Azure AI-102 Course</strong><p>Full guided course with quizzes and mentor chat.</p></div></li>
+        </ul>
+      </div>
+
+      <!-- Payment card -->
+      <div class="sub-payment-card">
+        <div class="sub-plan-header">
+          <div class="sub-plan-name">AI Learn Pro</div>
+          <div class="sub-plan-price">
+            <span class="sub-plan-rupee">₹</span><span class="sub-plan-amt">199</span>
+            <span class="sub-plan-period">/month</span>
+          </div>
+          <p class="sub-plan-renew">Renew any time — cancel any time.</p>
+        </div>
+
+        <!-- Error message -->
+        <div class="sub-alert sub-alert--error" *ngIf="errorMsg">
+          ⚠️ {{ errorMsg }}
+        </div>
+
+        <!-- Not logged in -->
+        <div *ngIf="!auth.isLoggedIn" class="sub-login-prompt">
+          <p>Please <strong>sign in</strong> to subscribe.</p>
+          <button class="sub-btn sub-btn--primary" (click)="goHome()">← Sign in</button>
+        </div>
+
+        <!-- Pay button -->
+        <button class="sub-btn sub-btn--pay"
+                *ngIf="auth.isLoggedIn"
+                [disabled]="paymentBusy"
+                (click)="pay()">
+          <span *ngIf="!paymentBusy">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                 style="vertical-align:-3px;margin-right:6px">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
+            </svg>
+            Pay ₹199 — Subscribe Now
+          </span>
+          <span *ngIf="paymentBusy" class="sub-spinner sub-spinner--sm"></span>
+        </button>
+
+        <!-- Trust line -->
+        <p class="sub-trust">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5"
+               style="vertical-align:-2px;margin-right:4px">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+          Secure payment via Razorpay · UPI, Cards, Net Banking accepted
+        </p>
+
+        <!-- UPI direct QR (fallback) -->
+        <details class="sub-upi-fallback">
+          <summary>Pay directly via UPI (alternative)</summary>
+          <div class="sub-upi-body">
+            <div class="sub-qr-placeholder">
+              <div class="sub-qr-inner">
+                <p style="font-size:12px;color:#64748b;text-align:center">
+                  Scan with any UPI app<br>
+                  <strong>ailearn@upi</strong>
+                </p>
+                <!-- Replace the src with your generated QR code image -->
+                <img src="assets/upi-qr.png" alt="UPI QR Code"
+                     onerror="this.style.display='none'"
+                     class="sub-qr-img" />
+              </div>
+            </div>
+            <p class="sub-upi-id">UPI ID: <strong>ailearn@upi</strong></p>
+            <p class="sub-upi-note">
+              After payment, email your UTR/screenshot to
+              <a href="mailto:support@ailearn.tech">support@ailearn.tech</a>
+              and we will activate within 2 hours.
+            </p>
+          </div>
+        </details>
+
+      </div>
+    </div><!-- /sub-layout -->
+  </ng-container>
+
+</div>

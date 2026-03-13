@@ -1,0 +1,275 @@
+/* =====================================================
+   Subscribe / Paywall Page
+   ===================================================== */
+
+.sub-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f0f4ff 0%, #f8faff 60%, #fff0fa 100%);
+  padding: 32px 16px 64px;
+  font-family: 'Inter', system-ui, sans-serif;
+}
+
+/* ---- Loading ---- */
+.sub-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  gap: 16px;
+  color: #64748b;
+  font-size: 15px;
+}
+
+/* ---- Spinner ---- */
+.sub-spinner {
+  width: 40px; height: 40px;
+  border: 3.5px solid rgba(99,102,241,.2);
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+.sub-spinner--sm { width: 20px; height: 20px; border-width: 2.5px; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- Expired banner ---- */
+.sub-expired-banner {
+  max-width: 700px;
+  margin: 0 auto 24px;
+  background: rgba(239,68,68,.08);
+  border: 1.5px solid rgba(239,68,68,.2);
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-size: 14px;
+  color: #dc2626;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---- Hero ---- */
+.sub-hero {
+  text-align: center;
+  max-width: 680px;
+  margin: 0 auto 40px;
+}
+.sub-hero-badge {
+  display: inline-block;
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 4px 16px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+  letter-spacing: .5px;
+}
+.sub-hero-title {
+  font-size: clamp(24px, 5vw, 38px);
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 10px;
+  line-height: 1.2;
+}
+.sub-price-hl {
+  background: linear-gradient(135deg,#6366f1,#8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.sub-hero-sub {
+  font-size: 17px;
+  color: #64748b;
+  margin: 0;
+}
+
+/* ---- Layout ---- */
+.sub-layout {
+  max-width: 900px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 28px;
+  align-items: start;
+}
+@media (max-width: 720px) {
+  .sub-layout { grid-template-columns: 1fr; }
+}
+
+/* ---- Feature list ---- */
+.sub-features {
+  background: #fff;
+  border-radius: 18px;
+  border: 1.5px solid rgba(99,102,241,.12);
+  padding: 28px 26px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.05);
+}
+.sub-features-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 20px;
+}
+.sub-feature-list {
+  list-style: none;
+  margin: 0; padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.sub-feature-list li {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.sub-feat-icon {
+  font-size: 22px;
+  flex-shrink: 0;
+  line-height: 1.2;
+}
+.sub-feature-list li div strong {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  display: block;
+}
+.sub-feature-list li div p {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+/* ---- Payment card ---- */
+.sub-payment-card {
+  background: #fff;
+  border-radius: 20px;
+  border: 2px solid rgba(99,102,241,.18);
+  padding: 28px 24px 24px;
+  box-shadow: 0 8px 32px rgba(99,102,241,.12);
+  position: sticky;
+  top: 80px;
+}
+.sub-plan-header {
+  margin-bottom: 24px;
+  text-align: center;
+}
+.sub-plan-name {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: #6366f1;
+  margin-bottom: 8px;
+}
+.sub-plan-price {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
+  margin-bottom: 4px;
+}
+.sub-plan-rupee { font-size: 22px; font-weight: 700; color: #1e293b; }
+.sub-plan-amt   { font-size: 52px; font-weight: 800; color: #1e293b; line-height: 1; }
+.sub-plan-period{ font-size: 16px; color: #64748b; font-weight: 500; }
+.sub-plan-renew { font-size: 12px; color: #94a3b8; margin: 0; }
+
+/* ---- Buttons ---- */
+.sub-btn {
+  width: 100%;
+  padding: 13px;
+  border-radius: 28px;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.sub-btn--primary {
+  background: rgba(99,102,241,.1);
+  color: #6366f1;
+  border: 1.5px solid #6366f1;
+}
+.sub-btn--primary:hover { background: #6366f1; color: #fff; }
+.sub-btn--pay {
+  background: linear-gradient(135deg,#6366f1 0%,#8b5cf6 100%);
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(99,102,241,.35);
+}
+.sub-btn--pay:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(99,102,241,.4); }
+.sub-btn--pay:disabled { opacity: .65; cursor: not-allowed; }
+
+/* ---- Trust line ---- */
+.sub-trust {
+  text-align: center;
+  font-size: 12px;
+  color: #64748b;
+  margin: 14px 0 0;
+}
+
+/* ---- UPI fallback ---- */
+.sub-upi-fallback {
+  margin-top: 20px;
+  border-top: 1px solid rgba(99,102,241,.1);
+  padding-top: 16px;
+}
+.sub-upi-fallback summary {
+  font-size: 13px;
+  color: #6366f1;
+  cursor: pointer;
+  font-weight: 600;
+}
+.sub-upi-body  { padding-top: 14px; }
+.sub-qr-placeholder {
+  background: #f8faff;
+  border-radius: 12px;
+  border: 1.5px dashed rgba(99,102,241,.25);
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.sub-qr-inner { text-align: center; }
+.sub-qr-img   { max-width: 160px; margin-top: 8px; border-radius: 8px; }
+.sub-upi-id   { text-align: center; font-size: 14px; color: #1e293b; margin: 0 0 8px; }
+.sub-upi-note { font-size: 12px; color: #64748b; text-align: center; }
+.sub-upi-note a { color: #6366f1; }
+
+/* ---- Alert ---- */
+.sub-alert {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+.sub-alert--error {
+  background: rgba(239,68,68,.08);
+  border: 1.5px solid rgba(239,68,68,.2);
+  color: #dc2626;
+}
+
+/* ---- Success card ---- */
+.sub-card {
+  background: #fff;
+  border-radius: 20px;
+  padding: 36px 28px;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,.07);
+}
+.sub-card--success {
+  border: 2px solid rgba(34,197,94,.25);
+}
+.sub-card-icon { font-size: 48px; margin-bottom: 12px; }
+.sub-card h2   { font-size: 22px; font-weight: 800; color: #1e293b; margin: 0 0 8px; }
+.sub-card p    { color: #64748b; margin: 0 0 20px; }
+.sub-redirecting { font-size: 13px; color: #94a3b8 !important; }
+
+/* ---- Login prompt ---- */
+.sub-login-prompt {
+  text-align: center;
+  margin-bottom: 4px;
+}
+.sub-login-prompt p { font-size: 14px; color: #64748b; margin-bottom: 12px; }

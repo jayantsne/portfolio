@@ -1,0 +1,31 @@
+<div class="sw-overlay" *ngIf="visible" (click)="dismiss()">
+  <div class="sw-modal" (click)="$event.stopPropagation()">
+
+    <div class="sw-lock-icon">🔒</div>
+
+    <h2 class="sw-title">Unlock AI Learn Pro</h2>
+
+    <p class="sw-body">
+      Your free trial has ended.<br>
+      Subscribe to continue using <strong>{{ feature }}</strong> and all other features.
+    </p>
+
+    <div class="sw-price-badge">₹199 / month</div>
+
+    <ul class="sw-perks">
+      <li>✅ AI Mentor &amp; Explanations</li>
+      <li>✅ Interview Prep</li>
+      <li>✅ Learning Roadmaps</li>
+      <li>✅ Smart Notes</li>
+      <li>✅ Practice Questions</li>
+      <li>✅ Architecture Diagrams</li>
+    </ul>
+
+    <button class="sw-btn sw-btn--primary" (click)="subscribe()">
+      🚀 Subscribe Now — ₹199/month
+    </button>
+
+    <button class="sw-btn sw-btn--ghost" (click)="dismiss()">Maybe later</button>
+
+  </div>
+</div>
