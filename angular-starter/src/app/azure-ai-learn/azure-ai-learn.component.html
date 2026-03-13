@@ -186,6 +186,14 @@
           <div class="topic-arrow" (click)="selectTopic(topic)">→</div>
         </div>
       </div>
+
+      <!-- Take Quiz -->
+      <div class="al-quiz-launch" *ngIf="getModuleQuiz().length > 0">
+        <button class="al-quiz-launch-btn" (click)="startQuiz()">
+          <span>📝</span> Take Module Quiz
+          <span class="al-quiz-count-badge">{{ getModuleQuiz().length }} Qs</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -266,6 +274,55 @@
         </div>
       </div>
 
+      <!-- Architecture Diagram -->
+      <div class="al-arch-section">
+        <button class="al-arch-btn" (click)="showArchitectureDiagram()" [disabled]="archDiagramLoading">
+          <span>🏗️</span>
+          {{ archDiagramLoading ? 'Generating…' : (archDiagramOpen ? 'Hide Diagram' : 'Show Architecture') }}
+        </button>
+        <div class="al-arch-panel" *ngIf="archDiagramOpen || archDiagramLoading">
+          <div class="al-arch-panel-hd">
+            <span>📐 Architecture: {{ selectedTopic?.name }}</span>
+            <button class="al-arch-close" (click)="closeArchDiagram()">✕</button>
+          </div>
+          <div class="al-arch-skeleton" *ngIf="archDiagramLoading">
+            <div class="al-arch-skel-box"></div>
+            <div class="al-arch-skel-arrow">↓</div>
+            <div class="al-arch-skel-box"></div>
+            <div class="al-arch-skel-arrow">↓</div>
+            <div class="al-arch-skel-box"></div>
+            <p>AI is generating the architecture diagram…</p>
+          </div>
+          <div class="al-arch-content" *ngIf="!archDiagramLoading && archDiagramHtml" [innerHTML]="archDiagramHtml"></div>
+        </div>
+      </div>
+
+      <!-- Inline AI Mentor Chat -->
+      <div class="al-chat-section">
+        <div class="al-chat-hd">
+          <span>🤖 Ask AI Mentor about {{ selectedTopic?.name }}</span>
+          <button class="al-chat-clear-btn" *ngIf="mentorMessages.length > 0" (click)="clearMentorChat()">Clear</button>
+        </div>
+        <div class="al-chat-body" *ngIf="mentorMessages.length > 0">
+          <div *ngFor="let m of mentorMessages" class="al-chat-msg" [class.al-chat-msg--user]="m.role==='user'" [class.al-chat-msg--ai]="m.role==='ai'">
+            <span class="al-chat-msg-icon">{{ m.role === 'user' ? '👤' : '🤖' }}</span>
+            <div class="al-chat-msg-text" [innerHTML]="m.text"></div>
+          </div>
+          <div class="al-chat-typing" *ngIf="mentorLoading">
+            <span>🤖 AI Mentor is thinking</span>
+            <span class="al-chat-dots"><span></span><span></span><span></span></span>
+          </div>
+        </div>
+        <div class="al-chat-input-row">
+          <input class="al-chat-input" type="text" [(ngModel)]="mentorInput"
+                 placeholder="Ask about {{ selectedTopic?.name }}…"
+                 (keyup.enter)="sendMentorMessage()" [disabled]="mentorLoading" />
+          <button class="al-chat-send-btn" (click)="sendMentorMessage()" [disabled]="mentorLoading || !mentorInput.trim()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+
       <!-- Action Buttons -->
       <div class="topic-actions">
         <button class="nav-btn prev-btn" 
@@ -295,6 +352,57 @@
     </div>
   </div>
 </div>
+<!-- Quiz Overlay -->
+<div class="al-quiz-overlay" *ngIf="quizActive" @fadeInUp>
+  <div class="al-quiz-modal">
+    <div class="al-quiz-hd">
+      <span>📝 Quiz: {{ selectedModule?.title }}</span>
+      <button class="al-quiz-hd-close" (click)="closeQuiz()">✕</button>
+    </div>
+
+    <div class="al-quiz-body" *ngIf="!quizSubmitted">
+      <div class="al-quiz-q" *ngFor="let q of getModuleQuiz(); let qi = index">
+        <p class="al-quiz-q-text">{{ qi + 1 }}. {{ q.question }}</p>
+        <div class="al-quiz-opts">
+          <button *ngFor="let opt of q.options; let ai = index"
+                  class="al-quiz-opt" [ngClass]="quizLetterClass(qi, ai)"
+                  (click)="selectAnswer(qi, ai)">
+            <span class="al-quiz-opt-letter">{{ ['A','B','C','D'][ai] }}</span>
+            {{ opt }}
+          </button>
+        </div>
+      </div>
+      <button class="al-quiz-submit-btn" (click)="submitQuiz()"
+              [disabled]="quizAnswers.includes(null)">
+        Submit Quiz
+      </button>
+    </div>
+
+    <div class="al-quiz-results" *ngIf="quizSubmitted">
+      <div class="al-quiz-score">
+        <span class="al-quiz-score-num">{{ quizScore }} / {{ getModuleQuiz().length }}</span>
+        <span class="al-quiz-score-label">
+          {{ quizScore === getModuleQuiz().length ? '🏆 Perfect!' : quizScore >= getModuleQuiz().length * 0.7 ? '✅ Passed!' : '📚 Keep studying' }}
+        </span>
+      </div>
+      <div class="al-quiz-review" *ngFor="let q of getModuleQuiz(); let qi = index">
+        <p class="al-quiz-q-text">{{ qi + 1 }}. {{ q.question }}</p>
+        <div class="al-quiz-opts">
+          <div *ngFor="let opt of q.options; let ai = index"
+               class="al-quiz-opt" [ngClass]="quizLetterClass(qi, ai)">
+            <span class="al-quiz-opt-letter">{{ ['A','B','C','D'][ai] }}</span>{{ opt }}
+          </div>
+        </div>
+        <p class="al-quiz-explanation">💡 {{ q.explanation }}</p>
+      </div>
+      <div class="al-quiz-result-actions">
+        <button class="al-quiz-retake-btn" (click)="retakeQuiz()">🔄 Retake</button>
+        <button class="al-quiz-close-btn" (click)="closeQuiz()">✓ Done</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- AI Understanding Modal -->
 <div *ngIf="showAiModal" class="ai-modal-overlay" [class.dark-mode]="darkMode" (click)="closeAiModal()">
   <div class="ai-modal-content modern-glass" (click)="$event.stopPropagation()" @fadeInUp>
@@ -507,6 +615,21 @@
             </button>
           </div>
 
+        </div>
+
+        <!-- Save to Notes -->
+        <div class="al-note-bar" *ngIf="aiResponse && !aiLoading && !aiError">
+          <button class="al-note-btn"
+                  [class.al-note-btn--saving]="noteSaving"
+                  [class.al-note-btn--saved]="noteSaved"
+                  [disabled]="noteSaving || !isLoggedIn"
+                  (click)="saveAiExplanationToNotes()">
+            <span *ngIf="!noteSaving && !noteSaved">📝 Save to Notes</span>
+            <span *ngIf="noteSaving">⏳ Saving…</span>
+            <span *ngIf="noteSaved">✅ Saved!</span>
+          </button>
+          <span class="al-note-hint" *ngIf="!isLoggedIn">Sign in to save notes</span>
+          <span class="al-note-error" *ngIf="noteError">{{ noteError }}</span>
         </div>
 
         <!-- Bottom Actions -->

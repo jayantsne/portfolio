@@ -1,6 +1,18 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { trigger, transition, style, animate, state } from '@angular/animations';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AiUnderstandService, UnderstandResponse } from '../services/ai-understand.service';
+import { AILearnService } from '../services/ai-learn.service';
+import { NotesService } from '../shared/notes.service';
+import { CustomAuthService } from '../shared/custom-auth.service';
+import { Subscription } from 'rxjs';
+
+export interface QuizQuestion {
+  question: string;
+  options: string[];
+  correct: number;    // 0-based index
+  explanation: string;
+}
 
 export interface LearningModule {
   id: number;
@@ -11,6 +23,7 @@ export interface LearningModule {
   topics: Topic[];
   completed: boolean;
   progress: number;
+  quizQuestions?: QuizQuestion[];
 }
 
 export interface Topic {
@@ -62,7 +75,7 @@ export interface Topic {
     ])
   ]
 })
-export class AzureAiLearnComponent implements OnInit {
+export class AzureAiLearnComponent implements OnInit, OnDestroy {
   currentView: 'roadmap' | 'module' | 'topic' = 'roadmap';
   selectedModule: LearningModule | null = null;
   selectedTopic: Topic | null = null;
@@ -82,6 +95,31 @@ export class AzureAiLearnComponent implements OnInit {
   showSkeleton: boolean = false;
   aiProgress: number = 0;
   aiStatusText: string = '';
+
+  // ── Quiz feature ─────────────────────────────────────────────────────────
+  quizActive        = false;             // quiz panel open?
+  quizAnswers:      (number | null)[] = [];
+  quizSubmitted     = false;
+  quizScore         = 0;
+
+  // ── Notes ────────────────────────────────────────────────────────────────
+  noteSaving        = false;
+  noteSaved         = false;
+  noteError         = '';
+  isLoggedIn        = false;
+
+  // ── Architecture Diagram ─────────────────────────────────────────────────
+  archDiagramOpen   = false;
+  archDiagramLoading= false;
+  archDiagramHtml:  SafeHtml | null = null;
+  private _archTopic = '';
+  private archSub:  Subscription | null = null;
+
+  // ── Inline Mentor Chat ───────────────────────────────────────────────────
+  mentorMessages:   { role: 'user' | 'ai'; text: string }[] = [];
+  mentorInput       = '';
+  mentorLoading     = false;
+  private mentorSub: Subscription | null = null;
   
   // Loading messages
   private loadingMessages = [
@@ -95,10 +133,18 @@ export class AzureAiLearnComponent implements OnInit {
   private progressInterval: any;
   private messageInterval: any;
 
-  constructor(private aiUnderstandService: AiUnderstandService) {}
+  constructor(
+    private aiUnderstandService: AiUnderstandService,
+    private aiLearnService: AILearnService,
+    private notesService: NotesService,
+    private authService: CustomAuthService,
+    private sanitizer: DomSanitizer
+  ) {}
   
   ngOnDestroy(): void {
     this.clearIntervals();
+    this.archSub?.unsubscribe();
+    this.mentorSub?.unsubscribe();
   }
   
   toggleDarkMode(): void {
@@ -1869,6 +1915,9 @@ results.forEach(result => {
   ngOnInit(): void {
     this.loadProgress();
     
+    // Track login state for Save to Notes
+    this.authService.currentUser$.subscribe(u => this.isLoggedIn = !!u);
+
     // Load dark mode preference
     const savedDarkMode = localStorage.getItem('darkMode');
     if (savedDarkMode === 'true') {
@@ -2081,4 +2130,348 @@ results.forEach(result => {
       modalBody.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ── SAVE TO NOTES ─────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  async saveAiExplanationToNotes(): Promise<void> {
+    if (!this.aiResponse || this.noteSaving) return;
+    if (!this.isLoggedIn) {
+      this.noteError = 'Please sign in to save notes.';
+      return;
+    }
+    this.noteSaving = true;
+    this.noteSaved  = false;
+    this.noteError  = '';
+    try {
+      await this.notesService.saveNote(
+        this.aiResponse.topicName,
+        'Azure AI-102',
+        this.aiResponse.explanation,
+        ['AI-102', 'Azure', this.aiResponse.topicName]
+      );
+      this.noteSaved = true;
+      setTimeout(() => { this.noteSaved = false; }, 3000);
+    } catch (err: any) {
+      this.noteError = 'Could not save note. Try again.';
+    } finally {
+      this.noteSaving = false;
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ── ARCHITECTURE DIAGRAM ──────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  showArchitectureDiagram(): void {
+    const topic = this.selectedTopic?.name;
+    if (!topic) return;
+
+    // Toggle off if already open for same topic
+    if (this.archDiagramOpen && this._archTopic === topic) {
+      this.archDiagramOpen = false;
+      return;
+    }
+
+    this._archTopic       = topic;
+    this.archDiagramOpen  = true;
+    this.archDiagramLoading = true;
+    this.archDiagramHtml  = null;
+    this.archSub?.unsubscribe();
+
+    const prompt =
+      `Generate an animated HTML architecture/flow diagram for: "${topic}" (Azure AI-102 topic).\n\n` +
+      `STRICT RULES — output ONLY plain HTML, no markdown fences, no explanations:\n` +
+      `- Each step/component must be a <div class="diagram-box"> with style="background: linear-gradient(135deg, #COLOR1, #COLOR2);"\n` +
+      `- Use 6 distinct gradient color pairs (indigo, teal, purple, green, orange, pink)\n` +
+      `- Each box must have: an emoji icon, a bold title, a 1-2 sentence description\n` +
+      `- Connect boxes with <div class="arch-arrow">↓</div> between them\n` +
+      `- End with a <div class="arch-insight"> containing a Key Insight about "${topic}"\n` +
+      `- Wrap everything in <div class="arch-wrapper">\n` +
+      `Output ONLY the HTML. No text before or after it.`;
+
+    this.archSub = this.aiLearnService.getSimplifiedExplanation(prompt).subscribe({
+      next: (res: any) => {
+        this.archDiagramLoading = false;
+        if (res?.success && res?.explanation) {
+          const raw = res.explanation
+            .replace(/^```html?\s*/i, '')
+            .replace(/```\s*$/,       '')
+            .trim();
+          if (raw.length > 50) {
+            this.archDiagramHtml = this.sanitizer.bypassSecurityTrustHtml(raw);
+          } else {
+            this.archDiagramHtml = this.sanitizer.bypassSecurityTrustHtml(
+              `<p style="color:#94a3b8;padding:1rem">Could not generate diagram. Please try again.</p>`
+            );
+          }
+        }
+      },
+      error: () => {
+        this.archDiagramLoading = false;
+        this.archDiagramHtml = this.sanitizer.bypassSecurityTrustHtml(
+          `<p style="color:#ef4444;padding:1rem">⚠️ Diagram generation failed. Please try again.</p>`
+        );
+      }
+    });
+  }
+
+  closeArchDiagram(): void {
+    this.archDiagramOpen = false;
+    this.archSub?.unsubscribe();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ── INLINE MENTOR CHAT ────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  sendMentorMessage(): void {
+    const q = this.mentorInput.trim();
+    if (!q || this.mentorLoading) return;
+
+    this.mentorMessages.push({ role: 'user', text: q });
+    this.mentorInput   = '';
+    this.mentorLoading = true;
+
+    const topic   = this.selectedTopic?.name ?? 'Azure AI';
+    const history = this.mentorMessages
+      .slice(-6)
+      .map(m => `${m.role === 'user' ? 'Student' : 'Mentor'}: ${m.text}`)
+      .join('\n');
+
+    const prompt =
+      `You are an Azure AI-102 exam mentor. Answer conversationally in 100-200 words.\n` +
+      `Topic context: "${topic}"\n\n` +
+      `Conversation:\n${history}\n\n` +
+      `Student: ${q}\n\n` +
+      `Rules: Be direct, no filler. Use **bold** for key terms. End with one follow-up tip.`;
+
+    this.mentorSub?.unsubscribe();
+    this.mentorSub = this.aiLearnService.getSimplifiedExplanation(prompt).subscribe({
+      next: (res: any) => {
+        this.mentorLoading = false;
+        const text = res?.explanation?.trim() || '⚠️ No response. Please try again.';
+        this.mentorMessages.push({ role: 'ai', text });
+        setTimeout(() => {
+          const el = document.querySelector('.al-chat-body');
+          if (el) el.scrollTop = el.scrollHeight;
+        }, 60);
+      },
+      error: () => {
+        this.mentorLoading = false;
+        this.mentorMessages.push({ role: 'ai', text: '⚠️ AI unavailable right now. Please try again.' });
+      }
+    });
+  }
+
+  clearMentorChat(): void {
+    this.mentorMessages = [];
+    this.mentorInput = '';
+    this.mentorSub?.unsubscribe();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ── QUIZ ──────────────────────────────────────────────────────────────────
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /** Returns the built-in quiz questions for the currently selected module */
+  getModuleQuiz(): QuizQuestion[] {
+    if (!this.selectedModule) return [];
+    return this.quizBank[this.selectedModule.id] ?? [];
+  }
+
+  startQuiz(): void {
+    const qs = this.getModuleQuiz();
+    this.quizActive    = true;
+    this.quizAnswers   = new Array(qs.length).fill(null);
+    this.quizSubmitted = false;
+    this.quizScore     = 0;
+  }
+
+  selectAnswer(qi: number, answerIdx: number): void {
+    if (this.quizSubmitted) return;
+    this.quizAnswers[qi] = answerIdx;
+  }
+
+  submitQuiz(): void {
+    if (this.quizAnswers.some(a => a === null)) return;  // require all answered
+    const qs = this.getModuleQuiz();
+    this.quizScore = qs.filter((q, i) => this.quizAnswers[i] === q.correct).length;
+    this.quizSubmitted = true;
+  }
+
+  retakeQuiz(): void {
+    const qs = this.getModuleQuiz();
+    this.quizAnswers   = new Array(qs.length).fill(null);
+    this.quizSubmitted = false;
+    this.quizScore     = 0;
+  }
+
+  closeQuiz(): void {
+    this.quizActive    = false;
+    this.quizSubmitted = false;
+    this.quizAnswers   = [];
+    this.quizScore     = 0;
+  }
+
+  quizLetterClass(qi: number, ai: number): string {
+    if (!this.quizSubmitted) return this.quizAnswers[qi] === ai ? 'al-quiz-opt--selected' : '';
+    const q = this.getModuleQuiz()[qi];
+    if (ai === q.correct)             return 'al-quiz-opt--correct';
+    if (this.quizAnswers[qi] === ai)  return 'al-quiz-opt--wrong';
+    return '';
+  }
+
+  // Quiz question bank — keyed by module id
+  readonly quizBank: Record<number, QuizQuestion[]> = {
+    1: [
+      {
+        question: 'What does AI stand for?',
+        options: ['Automated Intelligence', 'Artificial Intelligence', 'Azure Intelligence', 'Advanced Interface'],
+        correct: 1,
+        explanation: 'AI stands for Artificial Intelligence — making computers perform tasks that typically require human intelligence.'
+      },
+      {
+        question: 'Which Azure service lets you call pre-built AI via REST APIs without ML expertise?',
+        options: ['Azure Machine Learning', 'Azure Synapse', 'Azure Cognitive Services', 'Azure Logic Apps'],
+        correct: 2,
+        explanation: 'Azure Cognitive Services provides pre-built AI via simple REST API calls — no ML training required.'
+      },
+      {
+        question: 'What is a "confidence score" in Azure AI responses?',
+        options: ['The API speed in ms', 'How sure the AI is about its result (0–1)', 'The number of API calls made', 'The pricing tier selected'],
+        correct: 1,
+        explanation: 'A confidence score (0–1) indicates how certain the AI is about its prediction. Values above 0.7 are generally reliable.'
+      },
+      {
+        question: 'What is "inference" in AI?',
+        options: ['Training a new model', 'Uploading data to Azure', 'Using a trained model to make predictions', 'Monitoring API usage'],
+        correct: 2,
+        explanation: 'Inference = using a trained AI model to make predictions on new data. Training creates the model; inference uses it.'
+      },
+      {
+        question: 'Why does Azure provide two keys for each Cognitive Service?',
+        options: ['One key is for read, one for write', 'For key rotation without service downtime', 'They work in different regions', 'One is free, one is paid'],
+        correct: 1,
+        explanation: 'Two keys allow you to regenerate one key for security rotation while still using the other, ensuring zero downtime.'
+      }
+    ],
+    2: [
+      {
+        question: 'Where do you find your API key after creating a Cognitive Services resource?',
+        options: ['Azure Monitor', 'Keys and Endpoint section', 'Resource Group settings', 'Azure Active Directory'],
+        correct: 1,
+        explanation: 'Navigate to your resource in Azure Portal → "Keys and Endpoint" in the left menu to find your keys and endpoint URL.'
+      },
+      {
+        question: 'What is the purpose of a Resource Group in Azure?',
+        options: ['It stores API keys', 'It is a container for organizing related Azure resources', 'It sets the pricing tier', 'It monitors API usage'],
+        correct: 1,
+        explanation: 'A Resource Group is a logical container for related Azure resources, making it easy to manage, monitor, and delete them together.'
+      },
+      {
+        question: 'Which HTTP header do you add for Cognitive Services key authentication?',
+        options: ['Authorization: Bearer', 'X-API-Key', 'Ocp-Apim-Subscription-Key', 'Content-Type'],
+        correct: 2,
+        explanation: 'Azure Cognitive Services requires the subscription key in the "Ocp-Apim-Subscription-Key" header for authentication.'
+      },
+      {
+        question: 'Free tier (F0) pricing is best for:',
+        options: ['High-volume production apps', 'Enterprise deployments', 'Learning and development testing', 'Multi-region deployments'],
+        correct: 2,
+        explanation: 'F0 (Free) tier is ideal for learning and testing with limited transactions. Use S0 (Standard) for production workloads.'
+      }
+    ],
+    3: [
+      {
+        question: 'Azure Cognitive Services are organized into how many main families?',
+        options: ['3', '4', '5', '7'],
+        correct: 2,
+        explanation: 'Five families: Vision, Speech, Language, Decision, and Azure OpenAI.'
+      },
+      {
+        question: 'What is the benefit of a multi-service Cognitive Services resource?',
+        options: ['Better performance per service', 'Access all Cognitive Services with one key', 'Lower pricing per API call', 'Dedicated compute resources'],
+        correct: 1,
+        explanation: 'Multi-service resource provides a single key and endpoint to access ALL Cognitive Services — simpler management.'
+      },
+      {
+        question: 'Which error code means your API key is invalid?',
+        options: ['200', '404', '401', '429'],
+        correct: 2,
+        explanation: '401 = Unauthorized. This means your subscription key is missing, invalid, or expired.'
+      },
+      {
+        question: 'Error 429 from a Cognitive Services API means:',
+        options: ['Resource not found', 'Invalid API key', 'Too many requests — rate limit exceeded', 'Service unavailable'],
+        correct: 2,
+        explanation: '429 = Too Many Requests. You have exceeded the rate limit for your pricing tier. Implement retry logic with backoff.'
+      }
+    ],
+    5: [
+      {
+        question: 'Which Azure service performs Sentiment Analysis on text?',
+        options: ['Azure Computer Vision', 'Azure Language Service (Text Analytics)', 'Azure Bot Service', 'Azure Form Recognizer'],
+        correct: 1,
+        explanation: 'Azure Language Service (Text Analytics) provides sentiment analysis — classifying text as positive, negative, neutral, or mixed.'
+      },
+      {
+        question: 'What does NER stand for in Azure Language Service?',
+        options: ['Neural Extraction Rules', 'Named Entity Recognition', 'Natural Event Ranking', 'Network Error Response'],
+        correct: 1,
+        explanation: 'NER = Named Entity Recognition — automatically identifies people, locations, organizations, dates, and more in text.'
+      },
+      {
+        question: 'In LUIS, "intents" represent:',
+        options: ['Important data pieces like names or dates', 'What the user wants to do', 'The confidence threshold', 'The language of the utterance'],
+        correct: 1,
+        explanation: 'Intents represent what the user wants to achieve (e.g., BookFlight, OrderFood). Entities are the important data extracted from the utterance.'
+      },
+      {
+        question: 'A confidence score of 0.45 in a Language service response means:',
+        options: ['Very reliable, use this result', 'Probably incorrect — consider human review', 'The service is unavailable', 'Maximum confidence achieved'],
+        correct: 1,
+        explanation: 'Scores below 0.5 are generally unreliable. Always implement threshold checks — if score < 0.7, flag for human review in production apps.'
+      },
+      {
+        question: 'Opinion mining in Azure Language Service provides:',
+        options: ['Who wrote the text', 'Translation of opinions', 'Aspect-based sentiment (likes product, hates shipping)', 'The author emotion score'],
+        correct: 2,
+        explanation: 'Opinion mining (aspect-based sentiment) identifies specific aspects and their sentiment — "amazing quality" (product positive), "late arrival" (shipping negative).'
+      }
+    ],
+    12: [
+      {
+        question: 'What is Azure OpenAI Service?',
+        options: ['A free tier of ChatGPT', 'Enterprise-grade access to OpenAI models via Azure infrastructure', 'An open-source AI tool by Microsoft', 'Azure equivalent of Python'],
+        correct: 1,
+        explanation: 'Azure OpenAI gives enterprise access to GPT-4, DALL-E, Embeddings etc. with Azure security, compliance, and regional data residency.'
+      },
+      {
+        question: 'Roughly how many characters equals one token in GPT models?',
+        options: ['1 character', '4 characters', '10 characters', '100 characters'],
+        correct: 1,
+        explanation: '~4 characters = 1 token, or roughly ¾ of a word. 100 tokens ≈ 75 words. Both input and output tokens count toward costs.'
+      },
+      {
+        question: 'What technique uses your own documents to ground AI responses and reduce hallucinations?',
+        options: ['Fine-tuning', 'Prompt caching', 'RAG (Retrieval Augmented Generation)', 'RLHF'],
+        correct: 2,
+        explanation: 'RAG retrieves relevant context from your documents via vector search, then passes it to the LLM — grounding answers in YOUR data.'
+      },
+      {
+        question: 'Embeddings in Azure OpenAI convert text to:',
+        options: ['Compressed ZIP files', 'High-dimensional numeric vectors capturing semantic meaning', 'Audio waveforms', 'SQL database rows'],
+        correct: 1,
+        explanation: 'Embeddings = 1536-dimensional vectors. Similar meanings = similar vectors. Used for semantic search, clustering, and RAG.'
+      },
+      {
+        question: 'Which system is used to control harmful output in Azure OpenAI responses?',
+        options: ['Azure Monitor', 'Content Safety filters', 'Azure Key Vault', 'RBAC policies'],
+        correct: 1,
+        explanation: 'Azure OpenAI has built-in Content Safety filters for 4 categories (Hate, Sexual, Violence, Self-harm) with configurable severity thresholds.'
+      }
+    ]
+  };
 }
