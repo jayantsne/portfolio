@@ -3,7 +3,7 @@ namespace AILearnAPI.Shared.DTOs.Subscription
     /// <summary>Full subscription status returned to the client.</summary>
     public record SubscriptionStatusDto(
         string  UserId,
-        string  SubscriptionStatus,   // trial | active | expired
+        string  SubscriptionStatus,   // trial | active | expired | admin
         bool    HasAccess,
         bool    IsTrialActive,
         bool    IsSubscriptionActive,
@@ -11,7 +11,8 @@ namespace AILearnAPI.Shared.DTOs.Subscription
         string? SubscriptionPlan,
         DateTime? SubscriptionExpiry,
         DateTime  TrialEndDate,
-        DateTime  SignupDate
+        DateTime  SignupDate,
+        bool    IsAdmin = false        // true → user has ADMIN role — skip all payment UI
     );
 
     /// <summary>Returned after creating a Razorpay order.</summary>

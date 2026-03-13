@@ -177,6 +177,20 @@ namespace AILearnAPI.Application.Services
                 _logger.LogInformation("Role for user {UserId} changed to {Role}", targetUserId, newRole);
             return updated;
         }
+
+        public async Task<List<UserSummaryDto>> GetAllUsersAsync(int skip = 0, int limit = 200)
+        {
+            var users = await _authRepository.GetAllUsersAsync(skip, limit);
+            return users.Select(u => new UserSummaryDto
+            {
+                UserId          = u.UserId,
+                Username        = u.Username,
+                Email           = u.Email,
+                Role            = u.Role,
+                IsAuthenticated = u.IsAuthenticated,
+                LastLogin       = u.LastLogin
+            }).ToList();
+        }
         // ── Private helpers ──────────────────────────────────────────────────────
 
         private string BuildToken(string userId, string username, string email, string role)

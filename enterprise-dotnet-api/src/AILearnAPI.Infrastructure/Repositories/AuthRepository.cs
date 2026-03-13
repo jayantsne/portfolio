@@ -75,5 +75,14 @@ namespace AILearnAPI.Infrastructure.Repositories
             var result = await _collection.UpdateOneAsync(filter, update);
             return result.ModifiedCount > 0;
         }
+
+        public async Task<List<Auth>> GetAllUsersAsync(int skip = 0, int limit = 200)
+        {
+            return await _collection.Find(_ => true)
+                .SortByDescending(x => x.LastLogin)
+                .Skip(skip)
+                .Limit(limit)
+                .ToListAsync();
+        }
     }
 }

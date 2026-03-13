@@ -31,6 +31,8 @@ namespace AILearnAPI.Domain.Interfaces
         /// <summary>Returns total number of users — used to assign ADMIN to the very first signup.</summary>
         Task<long> CountUsersAsync();
         Task<bool> UpdateRoleAsync(string userId, string role);
+        /// <summary>Admin-only: returns all registered users ordered by last login.</summary>
+        Task<List<Auth>> GetAllUsersAsync(int skip = 0, int limit = 200);
     }
 
     public interface IAIQARepository : IBaseRepository<AIQA>

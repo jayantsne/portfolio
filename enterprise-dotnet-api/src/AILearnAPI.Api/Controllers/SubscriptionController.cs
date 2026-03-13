@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using AILearnAPI.Application.Interfaces;
+using AILearnAPI.Domain.Constants;
 using AILearnAPI.Shared.DTOs.Subscription;
 
 namespace AILearnAPI.Api.Controllers
@@ -25,6 +27,25 @@ namespace AILearnAPI.Api.Controllers
         [HttpGet("status/{userId}")]
         public async Task<IActionResult> GetStatus(string userId)
         {
+            // Admin users always have unrestricted access — return synthetic admin status
+            if (User.IsInRole(UserRoles.Admin))
+            {
+                var now = DateTime.UtcNow;
+                return Ok(new SubscriptionStatusDto(
+                    UserId:               userId,
+                    SubscriptionStatus:   "admin",
+                    HasAccess:            true,
+                    IsTrialActive:        false,
+                    IsSubscriptionActive: true,
+                    TrialDaysRemaining:   0,
+                    SubscriptionPlan:     "Admin",
+                    SubscriptionExpiry:   null,
+                    TrialEndDate:         now,
+                    SignupDate:           now,
+                    IsAdmin:              true
+                ));
+            }
+
             var status = await _svc.GetStatusAsync(userId);
             if (status == null)
                 return NotFound(new { message = "Subscription record not found for this user." });
@@ -36,6 +57,10 @@ namespace AILearnAPI.Api.Controllers
         [HttpGet("check-access/{userId}")]
         public async Task<IActionResult> CheckAccess(string userId)
         {
+            // Admin users always have access — no DB lookup needed
+            if (User.IsInRole(UserRoles.Admin))
+                return Ok(new { hasAccess = true, isAdmin = true });
+
             var ok = await _svc.HasAccessAsync(userId);
             return Ok(new { hasAccess = ok });
         }

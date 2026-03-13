@@ -7,7 +7,7 @@ import { CustomAuthService } from './custom-auth.service';
 // ── Shared interfaces ──────────────────────────────────────────────────────
 export interface SubscriptionStatus {
   userId:               string;
-  subscriptionStatus:   'trial' | 'active' | 'expired';
+  subscriptionStatus:   'trial' | 'active' | 'expired' | 'admin';
   hasAccess:            boolean;
   isTrialActive:        boolean;
   isSubscriptionActive: boolean;
@@ -16,6 +16,8 @@ export interface SubscriptionStatus {
   subscriptionExpiry:   string | null;  // ISO date
   trialEndDate:         string;
   signupDate:           string;
+  /** True when the user holds the ADMIN role — payment/trial UI should be hidden. */
+  isAdmin?:             boolean;
 }
 
 export interface CreateOrderResponse {
@@ -64,12 +66,16 @@ export class SubscriptionService {
 
   get currentStatus(): SubscriptionStatus | null { return this._status.value; }
 
-  /** true if trial is active OR subscription is active */
-  get hasAccess(): boolean { return this._status.value?.hasAccess ?? false; }
+  /** true if admin OR trial is active OR subscription is active */
+  get hasAccess(): boolean {
+    if (this.authSvc.isAdmin) return true;
+    return this._status.value?.hasAccess ?? false;
+  }
 
   get trialDaysRemaining(): number { return this._status.value?.trialDaysRemaining ?? 0; }
 
   get subscriptionLabel(): string {
+    if (this.authSvc.isAdmin) return '🛡️ Admin';
     const s = this._status.value;
     if (!s) return '';
     if (s.isTrialActive)        return `Trial (${s.trialDaysRemaining}d left)`;

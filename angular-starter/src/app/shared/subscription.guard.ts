@@ -6,7 +6,8 @@ import { SubscriptionService } from './subscription.service';
 /**
  * Guards feature routes that require an active trial or paid subscription.
  * Unauthenticated users → /  (let the auth flow handle it)
- * Authenticated, no access → /subscribe
+ * Admin users → always allowed (bypass payment/trial checks)
+ * Authenticated non-admin, no access → /subscribe
  */
 @Injectable({ providedIn: 'root' })
 export class SubscriptionGuard implements CanActivate {
@@ -22,6 +23,9 @@ export class SubscriptionGuard implements CanActivate {
       this.router.navigate(['/']);
       return false;
     }
+
+    // ── Admin bypass: admins always have unrestricted access ────────────────
+    if (this.auth.isAdmin) return true;
 
     const status = this.subSvc.currentStatus;
 

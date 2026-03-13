@@ -65,7 +65,7 @@
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/learn-quest" routerLinkActive="active" (click)="closeNavbar()">🎫 Learn Quest</a></li> -->
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/dsa-game" routerLinkActive="active" (click)="closeNavbar()">🎮 DSA Game</a></li> -->
           <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/memory-game" routerLinkActive="active" (click)="closeNavbar()">🧠 Memory Game</a></li> -->
-          <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link certification-link" routerLink="/azure-ai-102" routerLinkActive="active" (click)="closeNavbar()">☁️ Azure AI-102</a></li> -->
+          <li class="nav-item" *ngIf="customAuth.isLoggedIn"><a class="nav-link certification-link" routerLink="/azure-ai-102" routerLinkActive="active" (click)="closeNavbar()">☁️ Azure AI-102</a></li>
           
           <!-- AI Learn Link - Show when NOT on AI Learn pages -->
           <li class="nav-item" *ngIf="!isAILearnPage"><a class="nav-link ai-link" href="https://learnwithai.tech/" target="_blank" rel="noopener noreferrer">🤖 AI Learn</a></li>
@@ -78,8 +78,8 @@
             </a>
           </li>
 
-          <!-- Subscription trial badge -->
-          <li class="nav-item" *ngIf="customAuth.isLoggedIn && subSvc.currentStatus">
+          <!-- Subscription trial badge (never shown to admins) -->
+          <li class="nav-item" *ngIf="customAuth.isLoggedIn && subSvc.currentStatus && !customAuth.isAdmin">
             <a class="sub-trial-badge"
                [class.sub-trial-badge--trial]="subSvc.currentStatus?.isTrialActive"
                [class.sub-trial-badge--active]="subSvc.currentStatus?.isSubscriptionActive"
@@ -93,6 +93,13 @@
               <span *ngIf="subSvc.currentStatus?.isSubscriptionActive">✓ Pro</span>
               <span *ngIf="subSvc.currentStatus?.subscriptionStatus === 'expired'">🔒 Subscribe</span>
             </a>
+          </li>
+
+          <!-- Admin badge — only visible to admin users -->
+          <li class="nav-item" *ngIf="customAuth.isAdmin">
+            <span class="admin-badge" title="Admin account — full access enabled">
+              🛡️ Admin
+            </span>
           </li>
 
           <!-- User avatar chip -->

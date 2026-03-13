@@ -29,6 +29,12 @@ export class SubscribeComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    // Admins never need to pay — redirect immediately
+    if (this.auth.isAdmin) {
+      this.router.navigate(['/']);
+      return;
+    }
+
     this.sub$ = this.subSvc.status$.subscribe(s => {
       this.status  = s;
       this.loading = false;

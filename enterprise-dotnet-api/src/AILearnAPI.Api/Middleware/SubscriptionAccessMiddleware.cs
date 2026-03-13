@@ -1,5 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using AILearnAPI.Application.Interfaces;
+using AILearnAPI.Domain.Constants;
 
 namespace AILearnAPI.Api.Middleware
 {
@@ -71,11 +73,20 @@ namespace AILearnAPI.Api.Middleware
                 return;
             }
 
-            // Extract userId from JWT claim
+            // Extract userId and role from JWT
             var userId = ExtractUserId(context);
             if (string.IsNullOrEmpty(userId))
             {
                 // No JWT at all — let the normal auth pipeline reject it
+                await _next(context);
+                return;
+            }
+
+            // ── Admin bypass: ADMIN role always has unrestricted access ────────
+            var role = ExtractRole(context);
+            if (string.Equals(role, UserRoles.Admin, StringComparison.OrdinalIgnoreCase))
+            {
+                _logger.LogDebug("Admin user {UserId} — skipping subscription check", userId);
                 await _next(context);
                 return;
             }
@@ -110,21 +121,28 @@ namespace AILearnAPI.Api.Middleware
 
         private static string? ExtractUserId(HttpContext ctx)
         {
-            // 1. Check Authorization: Bearer <token>
+            var jwt = ParseJwt(ctx);
+            if (jwt is null) return null;
+            return jwt.Claims.FirstOrDefault(c => c.Type == "userId")?.Value
+                ?? jwt.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+        }
+
+        private static string? ExtractRole(HttpContext ctx)
+        {
+            var jwt = ParseJwt(ctx);
+            if (jwt is null) return null;
+            return jwt.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value
+                ?? jwt.Claims.FirstOrDefault(c => c.Type == "role")?.Value;
+        }
+
+        private static JwtSecurityToken? ParseJwt(HttpContext ctx)
+        {
             var authHeader = ctx.Request.Headers["Authorization"].FirstOrDefault();
-            if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-            {
-                var token = authHeader["Bearer ".Length..].Trim();
-                try
-                {
-                    var jwt    = new JwtSecurityTokenHandler().ReadJwtToken(token);
-                    var userId = jwt.Claims.FirstOrDefault(c => c.Type == "userId")?.Value
-                              ?? jwt.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-                    return userId;
-                }
-                catch { /* invalid token — fall through */ }
-            }
-            return null;
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+                return null;
+            var token = authHeader["Bearer ".Length..].Trim();
+            try   { return new JwtSecurityTokenHandler().ReadJwtToken(token); }
+            catch { return null; }
         }
     }
 }

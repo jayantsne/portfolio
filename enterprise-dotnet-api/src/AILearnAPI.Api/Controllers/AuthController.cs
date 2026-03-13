@@ -121,10 +121,16 @@ namespace AILearnAPI.Api.Controllers
         {
             try
             {
+                // Prevent self-demotion (safety guardrail)
+                var callerId = User.Claims.FirstOrDefault(c => c.Type == "userId")?.Value;
+                if (callerId == dto.targetUserId && dto.role != UserRoles.Admin)
+                    return BadRequest(new { message = "Admins cannot remove their own ADMIN role." });
+
                 var success = await _authService.AssignRoleAsync(dto.targetUserId, dto.role);
                 if (!success)
                     return NotFound(new { message = $"User {dto.targetUserId} not found" });
 
+                _logger.LogInformation("Admin {Caller} changed role of {Target} to {Role}", callerId, dto.targetUserId, dto.role);
                 return Ok(new { message = $"Role updated to '{dto.role}' for user {dto.targetUserId}" });
             }
             catch (ArgumentException ex)
@@ -135,6 +141,27 @@ namespace AILearnAPI.Api.Controllers
             {
                 _logger.LogError(ex, "Error assigning role");
                 return StatusCode(500, new { message = "Error assigning role" });
+            }
+        }
+
+        // GET /api/auth/admin/users?skip=0&limit=100  [ADMIN only]
+        /// <summary>Returns a paginated list of all registered users (admin only).</summary>
+        [HttpGet("admin/users")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = UserRoles.Admin)]
+        public async Task<ActionResult<List<UserSummaryDto>>> GetAllUsers(
+            [FromQuery] int skip  = 0,
+            [FromQuery] int limit = 100)
+        {
+            try
+            {
+                limit = Math.Clamp(limit, 1, 500); // safety cap
+                var users = await _authService.GetAllUsersAsync(skip, limit);
+                return Ok(new { total = users.Count, users });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching user list");
+                return StatusCode(500, new { message = "Error fetching users" });
             }
         }
     }
