@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthService } from '../shared/auth.service';
+import { CustomAuthService } from '../shared/custom-auth.service';
 import { ApiService } from '../shared/api.service';
 import { take } from 'rxjs/operators';
 
@@ -54,6 +55,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
+    private customAuth: CustomAuthService,
     private router: Router,
     private apiService: ApiService
   ) {}
@@ -279,51 +281,36 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
 
-    this.authService.login(this.username, this.password);
-    
-    // Subscribe to auth state changes
-    const authSubscription = this.authService.isAuthenticated$.subscribe(
-      (isAuth) => {
-        if (isAuth && !this.isLoading) {
-          authSubscription.unsubscribe();
-          
-          // Track successful login with Google Analytics
-          if (typeof gtag !== 'undefined') {
-            gtag('event', 'login_success', {
-              method: 'password'
-            });
-          }
-          
-          this.router.navigate(['/questions']);
-        }
-      }
-    );
-    
-    // Wait for login response with longer timeout
-    setTimeout(() => {
-      this.isLoading = false;
-      this.showAiScanner = false;
-      this.scanProgress = 0;
-      if (!this.authService.isAuthenticated()) {
-        this.errorMessage = 'Invalid username or password';
-        
-        // Track failed login with Google Analytics
-        if (typeof gtag !== 'undefined') {
-          gtag('event', 'login_failed', {
-            error_type: 'invalid_credentials'
-          });
-        }
-      } else {
+    // Call CustomAuthService directly so we get a real Observable with success/error callbacks
+    this.customAuth.login(this.username, this.password).subscribe({
+      next: () => {
+        this.isLoading = false;
+        this.showAiScanner = false;
+        this.scanProgress = 0;
+
         // Track successful login with Google Analytics
         if (typeof gtag !== 'undefined') {
           gtag('event', 'login_success', {
             method: 'password'
           });
         }
+
         this.router.navigate(['/questions']);
+      },
+      error: (err: any) => {
+        this.isLoading = false;
+        this.showAiScanner = false;
+        this.scanProgress = 0;
+        this.errorMessage = err?.error?.message ?? 'Invalid username or password';
+
+        // Track failed login with Google Analytics
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'login_failed', {
+            error_type: 'invalid_credentials'
+          });
+        }
       }
-      authSubscription.unsubscribe();
-    }, 2000);
+    });
   }
 
   togglePasswordVisibility(): void {
