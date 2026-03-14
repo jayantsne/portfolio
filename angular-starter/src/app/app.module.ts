@@ -54,6 +54,7 @@ import { InterviewPrepComponent } from './interview-prep/interview-prep.componen
 import { SaveNotesModalComponent } from './shared/save-notes-modal/save-notes-modal.component';
 import { SubscribeComponent }      from './subscribe/subscribe.component';
 import { SubscriptionWallComponent } from './shared/subscription-wall/subscription-wall.component';
+import { AdminUsersComponent }       from './admin/admin-users/admin-users.component';
 
 @NgModule({
   declarations: [
@@ -114,7 +115,8 @@ import { SubscriptionWallComponent } from './shared/subscription-wall/subscripti
     ReactiveFormsModule,
     TranslocoRootModule,
     AppRoutingModule,
-    NgScrollbarModule
+    NgScrollbarModule,
+    AdminUsersComponent,    // Standalone — admin user management panel
   ],
   providers: [
     {

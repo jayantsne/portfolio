@@ -40,6 +40,7 @@ namespace AILearnAPI.Api.Middleware
             "/api/subscription",
             "/api/health",
             "/api/admin",
+            "/api/user-admin",
             "/api/master-config",
             "/api/app-config",
             "/api/analytics",

@@ -66,7 +66,7 @@ export class AiUnderstandService {
     console.log('Fetching AI understanding for:', topicName);
 
     return this.http.post<UnderstandResponse>(
-      `${this.apiUrl}/api/ai/understand`,
+      `${this.apiUrl}/ai/understand`,
       request,
       { headers }
     ).pipe(

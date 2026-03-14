@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminService, AIProvider } from '../services/admin.service';
 
+type AdminTab = 'providers' | 'users';
+
 @Component({
   selector: 'app-admin-dashboard',
   templateUrl: './admin-dashboard.component.html',
@@ -15,6 +17,8 @@ export class AdminDashboardComponent implements OnInit {
   selectedProvider: AIProvider | null = null;
   showAddKeyModal = false;
   newApiKey = '';
+
+  activeTab: AdminTab = 'providers';
 
   constructor(
     private adminService: AdminService,

@@ -4,7 +4,7 @@
     <div class="header-content">
       <div class="header-left">
         <h1>AI Provider Dashboard</h1>
-        <p>Manage AI providers and API configurations</p>
+        <p>Manage AI providers, user subscriptions &amp; API configurations</p>
       </div>
       <div class="header-right">
         <div class="user-info">
@@ -34,7 +34,31 @@
         </button>
       </div>
     </div>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav">
+      <button
+        class="tab-btn"
+        [class.tab-active]="activeTab === 'providers'"
+        (click)="activeTab = 'providers'">
+        ⚙️ AI Providers
+      </button>
+      <button
+        class="tab-btn"
+        [class.tab-active]="activeTab === 'users'"
+        (click)="activeTab = 'users'">
+        👥 User Management
+      </button>
+    </nav>
   </header>
+
+  <!-- ── Users Tab ─────────────────────────────────────────────────── -->
+  <div *ngIf="activeTab === 'users'">
+    <app-admin-users></app-admin-users>
+  </div>
+
+  <!-- ── Providers Tab ─────────────────────────────────────────────── -->
+  <ng-container *ngIf="activeTab === 'providers'">
 
   <!-- Loading State -->
   <div *ngIf="loading" class="loading-container">
@@ -147,6 +171,8 @@
       </div>
     </div>
   </div>
+
+  </ng-container>
 </div>
 
 <!-- Add API Key Modal -->
@@ -177,3 +203,4 @@
     </div>
   </div>
 </div>
+

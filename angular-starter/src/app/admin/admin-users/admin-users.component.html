@@ -1,0 +1,293 @@
+<div class="users-panel">
+
+  <!-- ── Analytics Cards ────────────────────────────────────────────── -->
+  <div class="analytics-row" *ngIf="analytics">
+    <div class="analytics-card total">
+      <span class="card-value">{{ analytics.totalUsers }}</span>
+      <span class="card-label">Total Users</span>
+    </div>
+    <div class="analytics-card admins">
+      <span class="card-value">{{ analytics.adminUsers }}</span>
+      <span class="card-label">Admins</span>
+    </div>
+    <div class="analytics-card trial">
+      <span class="card-value">{{ analytics.activeTrial }}</span>
+      <span class="card-label">Active Trial</span>
+    </div>
+    <div class="analytics-card active">
+      <span class="card-value">{{ analytics.activeSubscribers }}</span>
+      <span class="card-label">Paid Subscribers</span>
+    </div>
+    <div class="analytics-card expired">
+      <span class="card-value">{{ analytics.expiredUsers }}</span>
+      <span class="card-label">Expired / No Sub</span>
+    </div>
+    <div class="analytics-card blocked">
+      <span class="card-value">{{ analytics.blockedUsers }}</span>
+      <span class="card-label">Blocked</span>
+    </div>
+  </div>
+
+  <!-- ── Filters ────────────────────────────────────────────────────── -->
+  <div class="filters-bar">
+    <input
+      class="search-input"
+      type="text"
+      placeholder="Search by name, email or ID…"
+      [(ngModel)]="searchQuery"
+      (ngModelChange)="onSearchChange()"
+    />
+    <select class="filter-select" [(ngModel)]="filterRole" (change)="onFilterChange()">
+      <option value="">All Roles</option>
+      <option value="ADMIN">Admin</option>
+      <option value="USER">User</option>
+    </select>
+    <select class="filter-select" [(ngModel)]="filterStatus" (change)="onFilterChange()">
+      <option value="">All Statuses</option>
+      <option value="trial">Trial</option>
+      <option value="active">Active</option>
+      <option value="expired">Expired</option>
+      <option value="none">No Record</option>
+    </select>
+    <button class="refresh-btn" (click)="loadUsers(); loadAnalytics()">↻ Refresh</button>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────────────── -->
+  <div class="loading-row" *ngIf="loading">
+    <div class="spinner-sm"></div>
+    <span>Loading users…</span>
+  </div>
+
+  <!-- ── Error ──────────────────────────────────────────────────────── -->
+  <div class="error-banner" *ngIf="error && !loading">
+    {{ error }}
+    <button (click)="loadUsers()">Retry</button>
+  </div>
+
+  <!-- ── Table ──────────────────────────────────────────────────────── -->
+  <div class="table-wrapper" *ngIf="!loading && !error">
+    <table class="users-table">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Role</th>
+          <th>Subscription</th>
+          <th>Expiry / Trial End</th>
+          <th>Last Login</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let u of users" [class.row-blocked]="u.isBlocked">
+          <!-- User info -->
+          <td class="user-cell">
+            <div class="user-avatar-sm">{{ u.username.charAt(0).toUpperCase() }}</div>
+            <div class="user-info">
+              <span class="user-name">{{ u.username }}</span>
+              <span class="user-email">{{ u.email }}</span>
+              <span class="user-id">{{ u.userId }}</span>
+            </div>
+          </td>
+
+          <!-- Role -->
+          <td>
+            <span class="badge" [ngClass]="roleBadge(u.role)">{{ u.role }}</span>
+          </td>
+
+          <!-- Subscription status -->
+          <td>
+            <span class="badge" [ngClass]="statusBadge(u).cls">{{ statusBadge(u).text }}</span>
+          </td>
+
+          <!-- Dates -->
+          <td class="date-cell">
+            <span *ngIf="u.isSubscriptionActive">{{ formatDate(u.subscriptionExpiry) }}</span>
+            <span *ngIf="u.isTrialActive">{{ formatDate(u.trialEndDate) }}</span>
+            <span *ngIf="!u.isSubscriptionActive && !u.isTrialActive" class="muted">—</span>
+          </td>
+
+          <!-- Last Login -->
+          <td class="date-cell">{{ formatDateTime(u.lastLogin) }}</td>
+
+          <!-- Actions -->
+          <td class="actions-cell">
+            <!-- Activate Sub -->
+            <button
+              class="action-btn btn-activate"
+              title="Activate Subscription"
+              (click)="openModal(u, 'activate')"
+              *ngIf="!u.isSubscriptionActive && !u.isAdmin">
+              ✅
+            </button>
+
+            <!-- Extend Sub -->
+            <button
+              class="action-btn btn-extend"
+              title="Extend Subscription"
+              (click)="openModal(u, 'extend')"
+              *ngIf="u.isSubscriptionActive && !u.isAdmin">
+              ➕
+            </button>
+
+            <!-- Reset Trial -->
+            <button
+              class="action-btn btn-trial"
+              title="Reset Trial"
+              (click)="openModal(u, 'reset-trial')"
+              *ngIf="!u.isAdmin">
+              🔄
+            </button>
+
+            <!-- Cancel -->
+            <button
+              class="action-btn btn-cancel"
+              title="Cancel Subscription"
+              (click)="openModal(u, 'cancel')"
+              *ngIf="(u.isSubscriptionActive || u.isTrialActive) && !u.isAdmin">
+              🚫
+            </button>
+
+            <!-- Block / Unblock -->
+            <button
+              class="action-btn btn-block"
+              [title]="u.isBlocked ? 'Unblock User' : 'Block User'"
+              (click)="openModal(u, u.isBlocked ? 'unblock' : 'block')"
+              *ngIf="!u.isAdmin">
+              {{ u.isBlocked ? '🔓' : '🔒' }}
+            </button>
+
+            <!-- Change Role -->
+            <button
+              class="action-btn btn-role"
+              title="Change Role"
+              (click)="openModal(u, 'role')">
+              👤
+            </button>
+
+            <!-- Delete -->
+            <button
+              class="action-btn btn-delete"
+              title="Delete User"
+              (click)="openModal(u, 'delete')">
+              🗑️
+            </button>
+          </td>
+        </tr>
+
+        <!-- Empty state -->
+        <tr *ngIf="users.length === 0">
+          <td colspan="6" class="empty-row">No users found matching the current filters.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Pagination ──────────────────────────────────────────────────── -->
+  <div class="pagination-row" *ngIf="total > pageSize">
+    <span class="page-info">{{ currentPageStart }}–{{ currentPageEnd }} of {{ total }}</span>
+    <button class="page-btn" (click)="prevPage()" [disabled]="pageIndex === 0">‹ Prev</button>
+    <span class="page-indicator">{{ pageIndex + 1 }} / {{ totalPages }}</span>
+    <button class="page-btn" (click)="nextPage()" [disabled]="(pageIndex + 1) * pageSize >= total">Next ›</button>
+  </div>
+
+</div>
+
+<!-- ── Action Modal ────────────────────────────────────────────────────── -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-box" (click)="$event.stopPropagation()">
+    <div class="modal-header" [class.modal-header-danger]="isDestructive()">
+      <h3>{{ modalTitle() }}</h3>
+      <button class="modal-close" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Block: ask for reason -->
+      <div *ngIf="modalAction === 'block'">
+        <p class="modal-desc">This will block <strong>{{ modalUser?.username }}</strong> from accessing the platform.</p>
+        <label>Reason (optional):</label>
+        <textarea
+          class="modal-textarea"
+          [(ngModel)]="modalBlockReason"
+          placeholder="Describe why the user is being blocked…"
+          rows="3">
+        </textarea>
+      </div>
+
+      <!-- Unblock -->
+      <div *ngIf="modalAction === 'unblock'">
+        <p class="modal-desc">Unblock <strong>{{ modalUser?.username }}</strong>? They will regain access immediately.</p>
+      </div>
+
+      <!-- Activate / Extend: ask for days -->
+      <div *ngIf="modalAction === 'activate' || modalAction === 'extend'">
+        <p class="modal-desc">
+          {{ modalAction === 'activate' ? 'Grant a subscription to' : 'Extend subscription for' }}
+          <strong>{{ modalUser?.username }}</strong>.
+        </p>
+        <label>Duration (days):</label>
+        <input
+          class="modal-input"
+          type="number"
+          [(ngModel)]="modalDays"
+          min="1"
+          max="3650"
+        />
+      </div>
+
+      <!-- Reset Trial -->
+      <div *ngIf="modalAction === 'reset-trial'">
+        <p class="modal-desc">Reset the trial for <strong>{{ modalUser?.username }}</strong> to a fresh 2-day period?</p>
+        <p class="modal-desc muted">Their subscription status will be set back to Trial.</p>
+      </div>
+
+      <!-- Cancel -->
+      <div *ngIf="modalAction === 'cancel'">
+        <p class="modal-desc">Cancel the subscription for <strong>{{ modalUser?.username }}</strong>?</p>
+        <p class="modal-desc muted">Their status will immediately become Expired.</p>
+      </div>
+
+      <!-- Delete -->
+      <div *ngIf="modalAction === 'delete'">
+        <p class="modal-desc danger">⚠️ Permanently delete <strong>{{ modalUser?.username }}</strong>?</p>
+        <p class="modal-desc muted">This will remove their auth + subscription records. This action cannot be undone.</p>
+      </div>
+
+      <!-- Change Role -->
+      <div *ngIf="modalAction === 'role'">
+        <p class="modal-desc">Change role for <strong>{{ modalUser?.username }}</strong>:</p>
+        <div class="role-toggle">
+          <button
+            class="role-opt"
+            [class.role-opt-selected]="modalRole === 'USER'"
+            (click)="modalRole = 'USER'">
+            👤 USER
+          </button>
+          <button
+            class="role-opt"
+            [class.role-opt-selected]="modalRole === 'ADMIN'"
+            (click)="modalRole = 'ADMIN'">
+            🛡️ ADMIN
+          </button>
+        </div>
+      </div>
+
+      <!-- Result message -->
+      <div *ngIf="modalMessage" class="modal-result" [class.modal-result-success]="modalSuccess" [class.modal-result-error]="!modalSuccess">
+        {{ modalMessage }}
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-secondary" (click)="closeModal()" [disabled]="modalWorking">Cancel</button>
+      <button
+        class="btn-primary"
+        [class.btn-danger]="isDestructive()"
+        (click)="confirmModal()"
+        [disabled]="modalWorking || !!modalMessage && modalSuccess">
+        <span *ngIf="!modalWorking">Confirm</span>
+        <span *ngIf="modalWorking">Working…</span>
+      </button>
+    </div>
+  </div>
+</div>
