@@ -125,6 +125,7 @@ export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   // Current topic being explained in split-screen mentor mode
   currentTopicName: string = '';
+  currentModuleName: string = '';
 
   // Accordion open/close for tablet view (topic-panel collapsible)
   isTopicAccordionOpen: boolean = false;
@@ -396,6 +397,7 @@ const pool = new ThreadPool(4);`,
       name: 'AI Fundamentals',
       icon: '🧠',
       expanded: true,
+      hasPlayground: true,
       topics: [
         { icon: '🤖', name: 'Machine Learning Basics', desc: 'Supervised & unsupervised learning' },
         { icon: '🕸️', name: 'Neural Networks', desc: 'Layers, weights, activations' },
@@ -408,6 +410,7 @@ const pool = new ThreadPool(4);`,
       name: 'Cloud & Architecture',
       icon: '☁️',
       expanded: false,
+      hasPlayground: false,
       topics: [
         { icon: '🏗️', name: 'Cloud Architecture', desc: 'Scalable cloud design patterns' },
         { icon: '🧩', name: 'Microservices', desc: 'Service decomposition strategies' },
@@ -420,6 +423,7 @@ const pool = new ThreadPool(4);`,
       name: 'APIs & Web',
       icon: '🔌',
       expanded: false,
+      hasPlayground: true,
       topics: [
         { icon: '🌐', name: 'REST APIs', desc: 'HTTP verbs, status codes, design' },
         { icon: '📊', name: 'GraphQL', desc: 'Query language for APIs' },
@@ -432,6 +436,7 @@ const pool = new ThreadPool(4);`,
       name: 'Model Training',
       icon: '⚙️',
       expanded: false,
+      hasPlayground: true,
       topics: [
         { icon: '🔢', name: 'Data Preprocessing', desc: 'Cleaning, normalising, encoding' },
         { icon: '🧮', name: 'Feature Engineering', desc: 'Selecting & creating features' },
@@ -444,6 +449,7 @@ const pool = new ThreadPool(4);`,
       name: 'AI Terminology',
       icon: '📚',
       expanded: false,
+      hasPlayground: false,
       topics: [
         { icon: '🪙', name: 'Tokens & Embeddings', desc: 'How text becomes numbers' },
         { icon: '🎯', name: 'Attention Mechanism', desc: 'Transformers & self-attention' },
@@ -456,6 +462,7 @@ const pool = new ThreadPool(4);`,
       name: 'JavaScript & Angular',
       icon: '⚡',
       expanded: false,
+      hasPlayground: true,
       topics: [
         { icon: '🔄', name: 'Closures', desc: 'Scope, lexical environment' },
         { icon: '⏳', name: 'Async/Await', desc: 'Promises and async patterns' },
@@ -474,6 +481,7 @@ const pool = new ThreadPool(4);`,
   openTopicLesson(topicName: string): void {
     // Open the workspace and show a structured lesson (no chat started yet)
     this.currentTopicName = topicName;
+    this.syncModuleName(topicName);
     this.showModal = true;
     this.isAIMode = false;
     this.aiMessages = [];
@@ -598,6 +606,18 @@ One sentence: the single most important thing to remember about ${topic} in a te
   pgTokens   = 512;
   pgMs       = 0;
   private pgSub: Subscription | null = null;
+
+  /** True when the current topic's parent module supports code experimentation. */
+  get topicHasPlayground(): boolean {
+    const mod = this.learningModules.find(m => m.name === this.currentModuleName);
+    return mod ? !!(mod as any).hasPlayground : false;
+  }
+
+  /** Keep currentModuleName in sync whenever the active topic changes. */
+  private syncModuleName(topicName: string): void {
+    const owner = this.learningModules.find(m => m.topics.some((t: any) => t.name === topicName));
+    this.currentModuleName = owner ? owner.name : '';
+  }
 
   togglePlayground(): void { this.pgOpen = !this.pgOpen; }
 
@@ -914,6 +934,7 @@ One sentence: the single most important thing to remember about ${topic} in a te
     if (cached) {
       console.log('[HOME] cache hit for:', conceptName);
       this.currentTopicName = conceptName;
+      this.syncModuleName(conceptName);
       this.showModal = true;
       this.isAIMode = true;
       this.isLoadingAI = false;
@@ -940,6 +961,7 @@ One sentence: the single most important thing to remember about ${topic} in a te
 
     console.log('🚀 Starting AI explanation...');
     this.currentTopicName = conceptName;
+    this.syncModuleName(conceptName);
     this.isLoadingAI = true;
     this.showModal = true;
     this.isAIMode = true;
