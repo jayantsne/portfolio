@@ -53,12 +53,16 @@ export class LwLessonContentComponent implements OnChanges {
   /** True from first chunk until stream completes */
   @Input() isStreaming = false;
 
+  /** Quick-action chips to show below lesson content */
+  @Input() mentorChips: { label: string; icon: string; prompt: string }[] = [];
+
   // ── Outputs ─────────────────────────────────────────────────────────────
 
   @Output() markComplete = new EventEmitter<void>();
   @Output() prevTopic    = new EventEmitter<void>();
   @Output() nextTopic    = new EventEmitter<void>();
   @Output() retry        = new EventEmitter<void>();
+  @Output() mentorChip   = new EventEmitter<string>();
 
   // ── Internal ─────────────────────────────────────────────────────────────
 

@@ -306,31 +306,41 @@
       </div>
     </div>
 
-    <!-- ── Progress header ── -->
-    <div class="rm-progress-header">
-      <div class="rm-progress-text-row">
-        <div class="rm-progress-left-info">
-          <div class="rm-view-meta-badges">
-            <span class="rm-badge">{{ getLevelIcon(activeRoadmap.level) }} {{ getLevelLabel(activeRoadmap.level) }}</span>
-            <span class="rm-badge">{{ getGoalLabel(activeRoadmap.goal) }}</span>
-            <span class="rm-badge">~{{ activeRoadmap.estimatedWeeks }} weeks</span>
-          </div>
-          <span class="rm-progress-topics-label">
-            {{ progress?.completedCount ?? 0 }} of {{ activeRoadmap.nodes.length }} topics completed
-          </span>
+    <!-- ── Progress header (compact, single row) ── -->
+    <div class="rm-progress-header" [class.rm-progress-header--hidden]="focusMode">
+      <div class="rm-ph-row">
+        <div class="rm-ph-left">
+          <button class="rm-ph-toggle-btn" (click)="toggleLeftPanel()"
+                  [title]="leftPanelCollapsed ? 'Show Topics' : 'Hide Topics'">
+            {{ leftPanelCollapsed ? '▶' : '◀' }}
+          </button>
+          <span class="rm-badge">{{ getLevelIcon(activeRoadmap.level) }} {{ getLevelLabel(activeRoadmap.level) }}</span>
+          <span class="rm-badge">{{ getGoalLabel(activeRoadmap.goal) }}</span>
+          <span class="rm-badge">~{{ activeRoadmap.estimatedWeeks }} weeks</span>
+          <span class="rm-ph-topics">{{ progress?.completedCount ?? 0 }}/{{ activeRoadmap.nodes.length }} topics</span>
         </div>
-        <span class="rm-progress-pct-label">{{ progress?.percent ?? 0 }}%</span>
+        <div class="rm-ph-right">
+          <span class="rm-ph-pct">{{ progress?.percent ?? 0 }}%</span>
+          <button class="rm-ph-toggle-btn" (click)="toggleRightPanel()"
+                  [title]="rightPanelCollapsed ? 'Show AI Mentor' : 'Hide AI Mentor'">
+            {{ rightPanelCollapsed ? '◀' : '▶' }}
+          </button>
+          <button class="rm-ph-focus-btn" (click)="toggleFocusMode()"
+                  [title]="focusMode ? 'Exit Focus Mode' : 'Focus Mode'">
+            {{ focusMode ? '⊠' : '⊡' }}
+          </button>
+        </div>
       </div>
-      <div class="rm-progress-bar-track">
-        <div class="rm-progress-bar-fill" [style.width.%]="progress?.percent ?? 0"></div>
-      </div>
+      <div class="rm-ph-bar"><div class="rm-ph-bar-fill" [style.width.%]="progress?.percent ?? 0"></div></div>
     </div>
 
     <!-- ════════════════════════════════════════════════════════
          LEARNING WORKSPACE — reusable 3-column component
          Sidebar | Lesson + Playground | AI Mentor
     ═════════════════════════════════════════════════════════ -->
-    <app-lw-workspace [heightFill]="true">
+    <app-lw-workspace [heightFill]="true"
+      [leftCollapsed]="leftPanelCollapsed || focusMode"
+      [rightCollapsed]="rightPanelCollapsed || focusMode">
 
       <!-- ── Col 1: Topic sidebar ── -->
       <app-lw-sidebar lwSidebar
@@ -353,10 +363,12 @@
         [followUpLoading]="lessonFollowUpLoading"
         [hasPrev]="lwHasPrev"
         [hasNext]="lwHasNext"
+        [mentorChips]="mentorChips"
         (markComplete)="expandedNode && markComplete(expandedNode)"
         (prevTopic)="prevTopicNode()"
         (nextTopic)="nextTopicNode()"
-        (retry)="expandedNode && loadLesson(expandedNode)">
+        (retry)="expandedNode && loadLesson(expandedNode)"
+        (mentorChip)="onMentorSend($event)">
       </app-lw-lesson-content>
 
       <!-- ── Col 2 bottom: AI Playground ── -->

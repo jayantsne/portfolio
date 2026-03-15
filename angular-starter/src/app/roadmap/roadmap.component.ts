@@ -17,7 +17,7 @@ import {
   AICourseFocus, ProgrammingLang, SkillLevel, LearningGoal, Commitment,
 } from './roadmap.models';
 import {
-  LwTopic, LwSection, LwMessage, LwNote,
+  LwTopic, LwSection, LwMessage, LwNote, MENTOR_CHIPS,
 } from '../shared/learning-workspace/learning-workspace.models';
 
 type ViewMode = 'auth-gate' | 'home' | 'create' | 'view' | 'lesson';
@@ -126,6 +126,22 @@ export class RoadmapComponent implements OnInit, OnDestroy {
 
   // ── Right-panel tab ─────────────────────────────────────────────────────
   mentorPanelTab: 'mentor' | 'notes' = 'mentor';
+
+  // ── Panel collapse + Focus Mode ──────────────────────────────────────────
+  leftPanelCollapsed  = this.loadPanelState('rm_left_collapsed',  false);
+  rightPanelCollapsed = this.loadPanelState('rm_right_collapsed', false);
+  focusMode           = false;
+
+  readonly mentorChips = MENTOR_CHIPS;
+
+  toggleLeftPanel():  void { this.leftPanelCollapsed  = !this.leftPanelCollapsed;  this.savePanelState('rm_left_collapsed',  this.leftPanelCollapsed);  this.cdr.markForCheck(); }
+  toggleRightPanel(): void { this.rightPanelCollapsed = !this.rightPanelCollapsed; this.savePanelState('rm_right_collapsed', this.rightPanelCollapsed); this.cdr.markForCheck(); }
+  toggleFocusMode():  void { this.focusMode = !this.focusMode; this.cdr.markForCheck(); }
+
+  private loadPanelState(key: string, def: boolean): boolean {
+    try { return JSON.parse(localStorage.getItem(key) ?? String(def)); } catch { return def; }
+  }
+  private savePanelState(key: string, val: boolean): void { localStorage.setItem(key, String(val)); }
 
   // ── Quick inline notes ───────────────────────────────────────────────────
   inlineNotes: { topic: string; text: string }[] = [];

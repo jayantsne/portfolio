@@ -2,7 +2,10 @@
      Provides the 3-column grid: Sidebar | Lesson (+ Playground) | Mentor
      Host places named content via ng-content select directives. -->
 
-<div class="lw-workspace" [class.lw-workspace--fill]="heightFill">
+<div class="lw-workspace"
+     [class.lw-workspace--fill]="heightFill"
+     [class.lw-workspace--left-collapsed]="leftCollapsed"
+     [class.lw-workspace--right-collapsed]="rightCollapsed">
 
   <!-- ── Col 1: Topic sidebar ── -->
   <aside class="lw-col lw-col-sidebar">

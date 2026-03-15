@@ -1,4 +1,4 @@
-import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, HostBinding, ChangeDetectionStrategy } from '@angular/core';
 import { LwConfig } from '../learning-workspace.models';
 
 @Component({
@@ -10,4 +10,7 @@ import { LwConfig } from '../learning-workspace.models';
 export class LwWorkspaceComponent {
   @Input() config: LwConfig = {};
   @Input() heightFill = true;
+
+  @Input() leftCollapsed  = false;
+  @Input() rightCollapsed = false;
 }
