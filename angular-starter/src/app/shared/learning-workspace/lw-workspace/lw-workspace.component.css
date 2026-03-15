@@ -1,0 +1,98 @@
+/* ═══════════════════════════════════════════════════════════════
+   LW-WORKSPACE — 3-column learning layout host
+   Exported design tokens (inherited by all child lw-* components)
+   ═══════════════════════════════════════════════════════════════ */
+
+:host {
+  --lw-primary:        #6366f1;
+  --lw-primary-dark:   #4f46e5;
+  --lw-violet:         #8b5cf6;
+  --lw-green:          #10b981;
+  --lw-red:            #ef4444;
+  --lw-amber:          #f59e0b;
+  --lw-bg:             #f4f6fb;
+  --lw-surface:        #ffffff;
+  --lw-border:         #e5e9f5;
+  --lw-text:           #1e1b4b;
+  --lw-muted:          #64748b;
+  --lw-subtle:         #94a3b8;
+  --lw-radius:         12px;
+  --lw-radius-sm:      8px;
+  --lw-shadow:         0 2px 12px rgba(99,102,241,0.08);
+  --lw-shadow-md:      0 4px 20px rgba(99,102,241,0.12);
+  --lw-sidebar-w:      230px;
+  --lw-mentor-w:       290px;
+  --lw-transition:     0.18s cubic-bezier(0.4,0,0.2,1);
+
+  display: block;
+}
+
+.lw-workspace {
+  display: grid;
+  grid-template-columns: var(--lw-sidebar-w) 1fr var(--lw-mentor-w);
+  grid-template-rows: 1fr;
+  gap: 0;
+  background: var(--lw-bg);
+  overflow: hidden;
+}
+
+.lw-workspace--fill {
+  height: calc(100vh - 132px); /* subtract navbar + progress header */
+}
+
+/* Columns */
+.lw-col {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.lw-col-sidebar {
+  background: var(--lw-surface);
+  border-right: 1.5px solid var(--lw-border);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,102,241,0.2) transparent;
+}
+.lw-col-sidebar::-webkit-scrollbar { width: 3px; }
+.lw-col-sidebar::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.2); border-radius: 2px; }
+
+.lw-col-lesson {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,102,241,0.15) transparent;
+}
+.lw-col-lesson::-webkit-scrollbar { width: 4px; }
+.lw-col-lesson::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.15); border-radius: 2px; }
+
+.lw-col-mentor {
+  background: var(--lw-surface);
+  border-left: 1.5px solid var(--lw-border);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,102,241,0.2) transparent;
+}
+.lw-col-mentor::-webkit-scrollbar { width: 3px; }
+.lw-col-mentor::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.2); border-radius: 2px; }
+
+/* ── Responsive ── */
+@media (max-width: 1100px) {
+  .lw-workspace {
+    grid-template-columns: 200px 1fr 260px;
+  }
+}
+
+@media (max-width: 820px) {
+  .lw-workspace {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+  .lw-workspace--fill { height: auto; }
+  .lw-col-sidebar {
+    max-height: 200px;
+    border-right: none;
+    border-bottom: 1.5px solid var(--lw-border);
+  }
+  .lw-col-mentor { display: none; }
+}

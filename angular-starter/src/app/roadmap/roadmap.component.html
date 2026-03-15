@@ -326,392 +326,70 @@
       </div>
     </div>
 
-    <!-- ── Three-column workspace layout ── -->
-    <div class="rm-workspace">
+    <!-- ════════════════════════════════════════════════════════
+         LEARNING WORKSPACE — reusable 3-column component
+         Sidebar | Lesson + Playground | AI Mentor
+    ═════════════════════════════════════════════════════════ -->
+    <app-lw-workspace [heightFill]="true">
 
-      <!-- ════ COL 1: Topic navigation ════ -->
-      <div class="rm-sidebar">
-        <div class="rm-sidebar-top">
-          <span class="rm-sidebar-heading">Learning Path</span>
-          <button class="rm-btn rm-btn-primary rm-btn-sm"
-                  (click)="resumeLearning()">&#9654; Resume</button>
-        </div>
+      <!-- ── Col 1: Topic sidebar ── -->
+      <app-lw-sidebar lwSidebar
+        [roadmapTitle]="activeRoadmap.title"
+        [roadmapIcon]="getLanguageIcon(activeRoadmap.language)"
+        [topics]="lwTopics"
+        [activeTopicId]="expandedNodeId"
+        (topicSelect)="onLwTopicSelect($event)">
+      </app-lw-sidebar>
 
-        <div class="rm-sidebar-nodes">
-          <ng-container *ngFor="let node of activeRoadmap.nodes; let last = last">
-            <button class="rm-sn-row"
-                    [class.rm-sn-done]="node.status === 'completed'"
-                    [class.rm-sn-active]="node.status === 'active'"
-                    [class.rm-sn-locked]="node.status === 'locked'"
-                    [class.rm-sn-selected]="expandedNodeId === node.id"
-                    [class.rm-node-burst]="isNodeJustCompleted(node)"
-                    (click)="selectNodePanel(node)"
-                    [@nodeAnim]="node.status">
+      <!-- ── Col 2: Lesson content ── -->
+      <app-lw-lesson-content lwLesson
+        [topic]="lwActiveTopic"
+        [sections]="lwSections"
+        [loading]="lessonLoading"
+        [error]="lessonError"
+        [followUpMessages]="lwFollowUpMessages"
+        [followUpLoading]="lessonFollowUpLoading"
+        [hasPrev]="lwHasPrev"
+        [hasNext]="lwHasNext"
+        (markComplete)="expandedNode && markComplete(expandedNode)"
+        (prevTopic)="prevTopicNode()"
+        (nextTopic)="nextTopicNode()"
+        (retry)="expandedNode && loadLesson(expandedNode)">
+      </app-lw-lesson-content>
 
-              <!-- Spine: dot + connector line -->
-              <div class="rm-sn-spine">
-                <div class="rm-sn-dot"
-                     [class.rm-sn-dot-done]="node.status === 'completed'"
-                     [class.rm-sn-dot-active]="node.status === 'active'"
-                     [class.rm-sn-dot-locked]="node.status === 'locked'">
-                  <span *ngIf="node.status === 'completed'">&#10003;</span>
-                  <span *ngIf="node.status !== 'completed'">{{ node.order }}</span>
-                </div>
-                <div *ngIf="!last" class="rm-sn-connector"
-                     [class.rm-sn-connector-done]="node.status === 'completed'"></div>
-              </div>
+      <!-- ── Col 2 bottom: AI Playground ── -->
+      <app-lw-playground lwPlayground
+        [prompt]="pgPrompt"
+        [output]="pgOutputSafe"
+        [loading]="pgLoading"
+        [error]="pgError"
+        [ms]="pgMs"
+        [selectedModel]="pgModel"
+        [temperature]="pgTemp"
+        (promptChange)="pgPrompt = $event"
+        (selectedModelChange)="pgModel = $event"
+        (temperatureChange)="pgTemp = $event"
+        (run)="runPg()"
+        (reset)="resetPg()">
+      </app-lw-playground>
 
-              <!-- Topic body -->
-              <div class="rm-sn-body">
-                <div class="rm-sn-topic-row">
-                  <span class="rm-sn-icon">{{ node.icon }}</span>
-                  <span class="rm-sn-topic">{{ node.topic }}</span>
-                  <span *ngIf="node.status === 'locked'" class="rm-sn-lock-icon">&#128274;</span>
-                </div>
-                <div class="rm-sn-sub-row">
-                  <span class="rm-sn-est">~{{ node.estMinutes }} min</span>
-                  <span *ngIf="node.completedAt" class="rm-sn-done-chip">
-                    &#10004; {{ node.completedAt | date:'MMM d' }}
-                  </span>
-                </div>
-              </div>
+      <!-- ── Col 3: AI Mentor panel ── -->
+      <app-lw-mentor-panel lwMentor
+        [topicTitle]="expandedNode?.topic || ''"
+        [messages]="lwMentorMessages"
+        [loading]="lessonFollowUpLoading"
+        [notes]="lwNotes"
+        [activeTab]="mentorPanelTab"
+        (activeTabChange)="mentorPanelTab = $event"
+        (sendMessage)="onMentorSend($event)"
+        (addNote)="onMentorAddNote($event)"
+        (deleteNote)="deleteInlineNote($event)"
+        (syncNotes)="saveNodeToNotes()">
+      </app-lw-mentor-panel>
 
-              <span class="rm-sn-chevron">{{ expandedNodeId === node.id ? '&#9664;' : '&#8250;' }}</span>
-            </button>
-          </ng-container>
-        </div>
+    </app-lw-workspace>
 
-        <div *ngIf="progress?.percent === 100" class="rm-sidebar-complete-chip" @fadeIn>
-          &#127942; All topics complete!
-        </div>
-      </div>
 
-      <!-- ════ COL 2: Lesson content ════ -->
-      <main class="rm-lesson-center">
-
-        <!-- Empty state: no topic selected -->
-        <div *ngIf="!expandedNode" class="rm-lc-empty" @fadeIn>
-          <div class="rm-lc-empty-icon">&#128218;</div>
-          <h3 class="rm-lc-empty-title">Select a topic to start learning</h3>
-          <p class="rm-lc-empty-sub">Pick any topic from the learning path on the left. The AI mentor will generate a structured lesson with explanations, code examples, and key points.</p>
-          <button *ngIf="progress?.activeNode"
-                  class="rm-btn rm-btn-primary"
-                  (click)="selectNodePanel(progress!.activeNode!)">
-            &#9654; Continue &mdash; &ldquo;{{ progress?.activeNode?.topic }}&rdquo;
-          </button>
-        </div>
-
-        <!-- Topic content -->
-        <ng-container *ngIf="expandedNode">
-
-          <!-- Compact topic hero (no dominating bar) -->
-          <div class="rm-lc-hero">
-            <div class="rm-lc-hero-left">
-              <span class="rm-lc-hero-icon">{{ expandedNode.icon }}</span>
-              <div class="rm-lc-hero-info">
-                <h2 class="rm-lc-hero-title">{{ expandedNode.topic }}</h2>
-                <div class="rm-lc-hero-meta">
-                  <span class="rm-status-pill"
-                        [class.rm-status-pill-completed]="expandedNode.status === 'completed'"
-                        [class.rm-status-pill-active]="expandedNode.status === 'active'"
-                        [class.rm-status-pill-locked]="expandedNode.status === 'locked'">
-                    {{ expandedNode.status === 'completed' ? '&#10004; Complete'
-                       : expandedNode.status === 'active' ? '&#9654; In Progress' : '&#128274; Locked' }}
-                  </span>
-                  <span class="rm-badge">~{{ expandedNode.estMinutes }} min</span>
-                  <span *ngIf="expandedNode.completedAt" class="rm-badge">Done {{ expandedNode.completedAt | date:'MMM d' }}</span>
-                </div>
-              </div>
-            </div>
-            <!-- Inline action buttons (not a big bar) -->
-            <div class="rm-lc-hero-actions">
-              <button *ngIf="expandedNode.status === 'active'"
-                      class="rm-btn rm-btn-success rm-btn-sm"
-                      (click)="markComplete(expandedNode)">
-                &#10004; Mark Complete
-              </button>
-              <button class="rm-btn rm-btn-ghost rm-btn-sm"
-                      [disabled]="saveNoteBusy"
-                      [class.rm-saved]="savedToNotes"
-                      (click)="saveNodeToNotes()">
-                {{ saveNoteBusy ? '&#8987; Saving&#8230;' : savedToNotes ? '&#10004; Saved!' : '&#128203; Save to Notes' }}
-              </button>
-            </div>
-          </div>
-
-          <!-- Topic description chip -->
-          <p class="rm-lc-desc" *ngIf="expandedNode.description">{{ expandedNode.description }}</p>
-
-          <!-- ── Lesson content area ── -->
-          <div class="rm-lc-body" #mentorBody>
-
-            <!-- Locked state -->
-            <div *ngIf="expandedNode.status === 'locked'" class="rm-lc-locked" @fadeIn>
-              <div class="rm-lc-locked-icon">&#128274;</div>
-              <h3>Topic Locked</h3>
-              <p>Complete the previous topic to unlock <strong>{{ expandedNode.topic }}</strong>.</p>
-            </div>
-
-            <!-- Skeleton loading -->
-            <div *ngIf="lessonLoading" class="rm-lc-skeleton" @fadeIn>
-              <div class="rm-sk-header">
-                <div class="rm-sk-badge"></div>
-                <div class="rm-sk-title"></div>
-              </div>
-              <div class="rm-sk-card"></div>
-              <div class="rm-sk-card rm-sk-card--code"></div>
-              <div class="rm-sk-card rm-sk-card--short"></div>
-              <div class="rm-sk-card rm-sk-card--short"></div>
-              <p class="rm-sk-label">AI Mentor is preparing your lesson&#8230;</p>
-            </div>
-
-            <!-- Error -->
-            <div *ngIf="lessonError && !lessonLoading" class="rm-lc-error" @fadeIn>
-              <p>&#9888;&#65039; Could not load explanation.</p>
-              <button class="rm-btn rm-btn-ghost rm-btn-sm"
-                      (click)="loadLesson(expandedNode)">&#128260; Retry</button>
-            </div>
-
-            <!-- Lesson content wrapper -->
-            <div *ngIf="!lessonLoading && !lessonError && lessonMessages.length > 0" class="rm-lc-content" @fadeIn>
-
-              <!-- Lesson header card -->
-              <div class="rm-lc-lesson-hd">
-                <span class="rm-lc-lesson-badge">&#128218; Lesson</span>
-                <span class="rm-lc-lesson-topic">{{ expandedNode.topic }}</span>
-                <span class="rm-lc-lesson-lang">{{ activeRoadmap?.language }}</span>
-              </div>
-
-              <!-- Main lesson content (AI text as styled card) -->
-              <div class="rm-lc-main-card">
-                <div class="rm-lc-main-card-hd">
-                  <span class="rm-lc-section-icon">&#128214;</span>
-                  <span class="rm-lc-section-title">AI Explanation</span>
-                </div>
-                <div class="rm-lc-main-body md-content"
-                     [innerHTML]="lessonMessages[0].text | markdown"></div>
-              </div>
-
-              <!-- Follow-up conversation messages -->
-              <ng-container *ngIf="lessonMessages.length > 1">
-                <div *ngFor="let msg of lessonMessages.slice(1)"
-                     class="rm-lc-followup-msg"
-                     [class.rm-lc-followup-user]="msg.role === 'user'"
-                     [class.rm-lc-followup-ai]="msg.role === 'ai'">
-                  <span class="rm-lc-msg-avatar">{{ msg.role === 'user' ? '&#128100;' : '&#129302;' }}</span>
-                  <div class="rm-lc-msg-bubble md-content" [innerHTML]="msg.text | markdown"></div>
-                </div>
-              </ng-container>
-
-              <!-- Follow-up loading -->
-              <div *ngIf="lessonFollowUpLoading" class="rm-lc-followup-loading" @fadeIn>
-                <span class="rm-lc-msg-avatar">&#129302;</span>
-                <div class="rm-lc-followup-dots">
-                  <span></span><span></span><span></span>
-                </div>
-              </div>
-
-              <!-- Prev / Next navigation row -->
-              <div class="rm-lc-nav-row">
-                <button class="rm-lc-nav-btn rm-lc-nav-btn--prev"
-                        (click)="prevTopicNode()"
-                        [disabled]="!activeRoadmap || activeRoadmap.nodes.indexOf(expandedNode) === 0">
-                  &#8592; Previous
-                </button>
-                <button class="rm-btn rm-btn-success rm-btn-sm"
-                        *ngIf="expandedNode.status === 'active'"
-                        (click)="markComplete(expandedNode)">
-                  &#10004; Mark Complete &amp; Continue
-                </button>
-                <button class="rm-lc-nav-btn rm-lc-nav-btn--next"
-                        (click)="nextTopicNode()">
-                  Next &#8594;
-                </button>
-              </div>
-
-            </div>
-          </div><!-- /rm-lc-body -->
-
-        </ng-container>
-      </main>
-
-      <!-- ════ COL 3: AI Mentor + Notes ════ -->
-      <aside class="rm-mentor-side">
-
-        <!-- Tab strip -->
-        <div class="rm-ms-tabs">
-          <button class="rm-ms-tab" [class.rm-ms-tab--active]="mentorPanelTab === 'mentor'"
-                  (click)="mentorPanelTab = 'mentor'">
-            &#129302; Mentor
-          </button>
-          <button class="rm-ms-tab" [class.rm-ms-tab--active]="mentorPanelTab === 'notes'"
-                  (click)="mentorPanelTab = 'notes'">
-            &#128221; Notes
-          </button>
-        </div>
-
-        <!-- ─ Mentor tab ─ -->
-        <div class="rm-ms-body" *ngIf="mentorPanelTab === 'mentor'">
-
-          <p class="rm-ms-hint" *ngIf="expandedNode">
-            Ask about <strong>{{ expandedNode.topic }}</strong>
-          </p>
-          <p class="rm-ms-hint" *ngIf="!expandedNode">Select a topic to activate the AI Mentor</p>
-
-          <!-- Quick-action chips -->
-          <div class="rm-ms-chips" *ngIf="expandedNode && expandedNode.status !== 'locked'">
-            <button class="rm-ms-chip"
-                    (click)="sendMentorChip('Explain ' + expandedNode.topic + ' in very simple terms with a beginner-friendly analogy')"
-                    [disabled]="lessonFollowUpLoading || lessonLoading">
-              &#128161; Explain simpler
-            </button>
-            <button class="rm-ms-chip"
-                    (click)="sendMentorChip('Give a memorable real-world analogy for ' + expandedNode.topic)"
-                    [disabled]="lessonFollowUpLoading || lessonLoading">
-              &#127975; Give analogy
-            </button>
-            <button class="rm-ms-chip"
-                    (click)="sendMentorChip('Show a practical code example for ' + expandedNode.topic + ' with inline comments')"
-                    [disabled]="lessonFollowUpLoading || lessonLoading">
-              &#128187; Show code
-            </button>
-            <button class="rm-ms-chip"
-                    (click)="sendMentorChip('Generate a realistic interview question about ' + expandedNode.topic + ' with a model answer')"
-                    [disabled]="lessonFollowUpLoading || lessonLoading">
-              &#127919; Interview Q
-            </button>
-            <button class="rm-ms-chip"
-                    (click)="sendMentorChip('What are the most common mistakes with ' + expandedNode.topic + ' and how to avoid them?')"
-                    [disabled]="lessonFollowUpLoading || lessonLoading">
-              &#9888;&#65039; Common mistakes
-            </button>
-            <button class="rm-ms-chip"
-                    (click)="sendMentorChip('Give me 5 exam-focused bullet points I must remember about ' + expandedNode.topic)"
-                    [disabled]="lessonFollowUpLoading || lessonLoading">
-              &#9889; Exam tips
-            </button>
-          </div>
-
-          <!-- Follow-up input -->
-          <div class="rm-ms-input-row" *ngIf="expandedNode && expandedNode.status !== 'locked'">
-            <input class="rm-ms-input"
-                   type="text"
-                   [(ngModel)]="lessonQuestion"
-                   [disabled]="lessonFollowUpLoading || lessonLoading"
-                   placeholder="Ask anything&#8230;"
-                   (keyup.enter)="sendLessonQuestion()" />
-            <button class="rm-ms-send"
-                    (click)="sendLessonQuestion()"
-                    [disabled]="!lessonQuestion.trim() || lessonFollowUpLoading || lessonLoading">
-              &#9658;
-            </button>
-          </div>
-
-        </div><!-- /mentor tab -->
-
-        <!-- ─ Notes tab ─ -->
-        <div class="rm-ms-body" *ngIf="mentorPanelTab === 'notes'">
-          <p class="rm-ms-hint">Capture insights while you learn</p>
-
-          <div class="rm-ms-note-editor">
-            <textarea class="rm-ms-note-textarea"
-                      [(ngModel)]="inlineNoteText"
-                      rows="4"
-                      placeholder="Write your note or insight&#8230;"></textarea>
-            <button class="rm-btn rm-btn-primary rm-btn-sm rm-btn-full"
-                    (click)="addInlineNote()"
-                    [disabled]="!inlineNoteText.trim()">
-              &#128190; Save Note
-            </button>
-          </div>
-
-          <!-- Notes list -->
-          <div class="rm-ms-notes-list">
-            <div class="rm-ms-note" *ngFor="let n of inlineNotes; let ni = index">
-              <div class="rm-ms-note-hd">
-                <span class="rm-ms-note-topic">{{ n.topic }}</span>
-                <button class="rm-ms-note-del" (click)="deleteInlineNote(ni)">&#10005;</button>
-              </div>
-              <p class="rm-ms-note-text">{{ n.text }}</p>
-            </div>
-            <div class="rm-ms-notes-empty" *ngIf="inlineNotes.length === 0">
-              <span class="rm-ms-notes-empty-icon">&#128221;</span>
-              <span>No notes yet</span>
-            </div>
-          </div>
-
-          <button class="rm-btn rm-btn-ghost rm-btn-sm rm-btn-full rm-ms-sync-btn"
-                  *ngIf="inlineNotes.length > 0"
-                  [disabled]="saveNoteBusy"
-                  (click)="saveNodeToNotes()">
-            {{ saveNoteBusy ? '&#8987; Syncing&#8230;' : savedToNotes ? '&#10004; Synced to My Notes!' : '&#9925; Sync to My Notes' }}
-          </button>
-
-        </div><!-- /notes tab -->
-
-      </aside>
-
-    </div><!-- /rm-workspace -->
-
-    <!-- ── AI Playground (collapsible bottom section) ── -->
-    <div class="rm-pg-wrap" *ngIf="view === 'view' && activeRoadmap">
-      <button class="rm-pg-toggle" (click)="togglePg()">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
-        <span>AI Playground</span>
-        <span class="rm-pg-toggle-sub">Experiment freely with prompts</span>
-        <svg class="rm-pg-chevron" [class.rm-pg-chevron--open]="pgOpen" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-      </button>
-      <div class="rm-pg-body" [class.rm-pg-body--open]="pgOpen">
-        <div class="rm-pg-inner">
-          <!-- Editor -->
-          <div class="rm-pg-editor">
-            <div class="rm-pg-controls">
-              <div class="rm-pg-ctrl">
-                <label class="rm-pg-label">Model</label>
-                <select class="rm-pg-select" [(ngModel)]="pgModel">
-                  <option value="auto">Auto</option>
-                  <option value="fast">Fast</option>
-                  <option value="creative">Creative</option>
-                </select>
-              </div>
-              <div class="rm-pg-ctrl">
-                <label class="rm-pg-label">Temperature: {{ pgTemp }}</label>
-                <input type="range" min="0" max="1" step="0.1" [(ngModel)]="pgTemp" class="rm-pg-range">
-              </div>
-            </div>
-            <label class="rm-pg-label">Prompt</label>
-            <textarea class="rm-pg-textarea" [(ngModel)]="pgPrompt"
-                      placeholder="Enter any prompt&#8230; e.g. 'Explain {{ expandedNode?.topic || 'neural networks' }} with a Python code example'"
-                      rows="5" [disabled]="pgLoading"></textarea>
-            <div class="rm-pg-actions">
-              <button class="rm-pg-run-btn" (click)="runPg()" [disabled]="pgLoading || !pgPrompt.trim()">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-                {{ pgLoading ? 'Running&#8230;' : 'Run' }}
-              </button>
-              <button class="rm-pg-reset-btn" (click)="resetPg()" [disabled]="pgLoading">&#8635; Reset</button>
-              <span class="rm-pg-ms" *ngIf="pgMs > 0">{{ pgMs }}ms</span>
-            </div>
-          </div>
-          <!-- Output -->
-          <div class="rm-pg-output">
-            <div class="rm-pg-output-hd">
-              <span>Output</span>
-              <span class="rm-pg-output-live" *ngIf="pgLoading">
-                <span class="rm-pg-live-dot"></span> Generating&#8230;
-              </span>
-            </div>
-            <div class="rm-pg-output-body">
-              <div class="rm-pg-err" *ngIf="pgError">{{ pgError }}</div>
-              <div class="rm-pg-result md-content" *ngIf="pgOutput && !pgError" [innerHTML]="pgOutput | markdown"></div>
-              <div class="rm-pg-placeholder" *ngIf="!pgOutput && !pgError && !pgLoading">
-                <span class="rm-pg-ph-icon">&#9889;</span>
-                <span>Run a prompt to see output</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div><!-- /rm-pg-wrap -->
 
     <!-- Full-width completion banner -->
     <div *ngIf="progress?.percent === 100" class="rm-completion-banner" @fadeIn>

@@ -55,6 +55,7 @@ import { SaveNotesModalComponent } from './shared/save-notes-modal/save-notes-mo
 import { SubscribeComponent }      from './subscribe/subscribe.component';
 import { SubscriptionWallComponent } from './shared/subscription-wall/subscription-wall.component';
 import { AdminUsersComponent }       from './admin/admin-users/admin-users.component';
+import { LearningWorkspaceModule } from './shared/learning-workspace/learning-workspace.module';
 
 @NgModule({
   declarations: [
@@ -117,6 +118,7 @@ import { AdminUsersComponent }       from './admin/admin-users/admin-users.compo
     TranslocoRootModule,
     AppRoutingModule,
     NgScrollbarModule,
+    LearningWorkspaceModule,
     // AdminUsersComponent removed from imports (now in declarations)
   ],
   providers: [

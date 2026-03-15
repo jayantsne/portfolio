@@ -1,0 +1,131 @@
+<!-- LW Lesson Content — center panel -->
+<div class="lwl-wrap">
+
+  <!-- ════════════════════════════════════════════
+       EMPTY STATE — no topic selected
+  ════════════════════════════════════════════ -->
+  <div *ngIf="isEmpty" class="lwl-empty">
+    <div class="lwl-empty-icon">📖</div>
+    <h3 class="lwl-empty-title">Select a topic to start learning</h3>
+    <p class="lwl-empty-sub">
+      Pick any topic from the sidebar to load a structured AI lesson.
+    </p>
+  </div>
+
+  <!-- Only show lesson area when a topic is picked -->
+  <ng-container *ngIf="topic">
+
+    <!-- ════════════════════════════════════════════
+         TOPIC HERO — compact header strip
+    ════════════════════════════════════════════ -->
+    <div class="lwl-hero">
+      <div class="lwl-hero-left">
+        <span class="lwl-hero-icon">{{ topic.icon }}</span>
+        <div class="lwl-hero-info">
+          <h2 class="lwl-hero-title">{{ topic.title }}</h2>
+          <div class="lwl-hero-meta">
+            <span class="lwl-badge lwl-badge--num">{{ topic.order }}</span>
+            <span class="lwl-badge" *ngIf="topic.estMinutes">⏱ {{ topic.estMinutes }} min</span>
+            <span class="lwl-badge lwl-badge--done" *ngIf="isCompleted">✓ Completed</span>
+            <span class="lwl-badge lwl-badge--active" *ngIf="topic.status === 'active' && !isCompleted">▶ In Progress</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Inline Mark Complete -->
+      <div class="lwl-hero-actions">
+        <button class="lwl-btn lwl-btn--complete"
+                *ngIf="!isCompleted && !loading && sections.length"
+                (click)="markComplete.emit()">
+          ✓ Mark Complete
+        </button>
+        <span class="lwl-done-chip" *ngIf="isCompleted">🏆 Completed</span>
+      </div>
+    </div>
+
+    <!-- Topic description -->
+    <p class="lwl-desc" *ngIf="topic.description">{{ topic.description }}</p>
+
+    <!-- ════════════════════════════════════════════
+         LESSON BODY
+    ════════════════════════════════════════════ -->
+    <div class="lwl-body">
+
+      <!-- LOCKED -->
+      <div *ngIf="isLocked" class="lwl-locked">
+        <div class="lwl-locked-icon">🔒</div>
+        <h3>Topic Locked</h3>
+        <p>Complete the previous topic to unlock this one.</p>
+      </div>
+
+      <!-- SKELETON LOADING -->
+      <div *ngIf="loading && !isLocked" class="lwl-skeleton">
+        <div class="lwl-sk-header">
+          <div class="lwl-sk-box lwl-sk-badge"></div>
+          <div class="lwl-sk-box lwl-sk-title"></div>
+        </div>
+        <div class="lwl-sk-box lwl-sk-card"></div>
+        <div class="lwl-sk-box lwl-sk-card lwl-sk-card--code"></div>
+        <div class="lwl-sk-box lwl-sk-card lwl-sk-card--short"></div>
+        <div class="lwl-sk-box lwl-sk-card"></div>
+        <p class="lwl-sk-label">AI Mentor is preparing your lesson…</p>
+      </div>
+
+      <!-- ERROR -->
+      <div *ngIf="error && !loading" class="lwl-error">
+        <span>⚠️ Could not load lesson.</span>
+        <button class="lwl-btn lwl-btn--ghost" (click)="retry.emit()">🔄 Retry</button>
+      </div>
+
+      <!-- LESSON CONTENT — section cards -->
+      <div *ngIf="!loading && !error && !isLocked && sections.length" class="lwl-content">
+        <app-lw-lesson-card
+          *ngFor="let s of rendered; trackBy: trackByIndex"
+          [type]="s.type"
+          [icon]="s.icon"
+          [title]="s.title"
+          [htmlContent]="s.htmlContent">
+        </app-lw-lesson-card>
+      </div>
+
+      <!-- FOLLOW-UP MESSAGES -->
+      <ng-container *ngIf="followUpMessages.length">
+        <div *ngFor="let msg of followUpMessages; trackBy: trackByIndex"
+             class="lwl-followup"
+             [class.lwl-followup--user]="msg.role === 'user'">
+          <div class="lwl-followup-avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</div>
+          <div class="lwl-followup-bubble"
+               [class.lwl-followup-bubble--user]="msg.role === 'user'"
+               [innerHTML]="msg.text">
+          </div>
+        </div>
+      </ng-container>
+
+      <!-- Follow-up loading dots -->
+      <div *ngIf="followUpLoading" class="lwl-followup">
+        <div class="lwl-followup-avatar">🤖</div>
+        <div class="lwl-followup-dots">
+          <span></span><span></span><span></span>
+        </div>
+      </div>
+
+    </div><!-- /lwl-body -->
+
+    <!-- ════════════════════════════════════════════
+         NAV ROW — prev / next topic
+    ════════════════════════════════════════════ -->
+    <div class="lwl-nav" *ngIf="!loading && sections.length">
+      <button class="lwl-btn lwl-btn--nav"
+              [disabled]="!hasPrev"
+              (click)="prevTopic.emit()">
+        ← Previous
+      </button>
+      <button class="lwl-btn lwl-btn--nav lwl-btn--next"
+              [disabled]="!hasNext"
+              (click)="nextTopic.emit()">
+        Next →
+      </button>
+    </div>
+
+  </ng-container>
+</div>

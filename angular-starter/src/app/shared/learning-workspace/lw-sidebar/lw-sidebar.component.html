@@ -1,0 +1,64 @@
+<!-- LW Sidebar — topic navigation -->
+<div class="lws-inner">
+
+  <!-- Roadmap title -->
+  <div class="lws-header" *ngIf="roadmapTitle">
+    <span class="lws-header-icon">{{ roadmapIcon }}</span>
+    <span class="lws-header-title" [title]="roadmapTitle">{{ roadmapTitle }}</span>
+  </div>
+
+  <!-- ── GROUPED view (modules) ── -->
+  <ng-container *ngIf="modules && modules.length; else flatList">
+    <div *ngFor="let mod of modules" class="lws-module">
+      <button class="lws-module-hd" (click)="toggleModule(mod.id)"
+              [attr.aria-expanded]="expandedModules.has(mod.id)">
+        <span class="lws-module-icon">{{ mod.icon || '📚' }}</span>
+        <span class="lws-module-title">{{ mod.title }}</span>
+        <span class="lws-module-prog">
+          {{ moduleProgress(mod.topics).done }}/{{ moduleProgress(mod.topics).total }}
+        </span>
+        <span class="lws-chevron" [class.lws-chevron--open]="expandedModules.has(mod.id)">›</span>
+      </button>
+
+      <div class="lws-module-body" *ngIf="expandedModules.has(mod.id)">
+        <button *ngFor="let t of mod.topics"
+                class="lws-topic"
+                [class.lws-topic--active]="t.id === activeTopicId"
+                [class.lws-topic--done]="t.status === 'completed'"
+                [class.lws-topic--locked]="t.status === 'locked'"
+                [disabled]="t.status === 'locked'"
+                (click)="onSelect(t)"
+                [title]="t.title">
+          <span class="lws-topic-status">{{ statusIcon(t.status) }}</span>
+          <span class="lws-topic-label">{{ t.title }}</span>
+          <span class="lws-topic-est" *ngIf="t.estMinutes">{{ t.estMinutes }}m</span>
+        </button>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- ── FLAT view (no grouping) ── -->
+  <ng-template #flatList>
+    <div class="lws-section-label" *ngIf="topics.length">LEARNING PATH</div>
+    <button *ngFor="let t of topics"
+            class="lws-topic"
+            [class.lws-topic--active]="t.id === activeTopicId"
+            [class.lws-topic--done]="t.status === 'completed'"
+            [class.lws-topic--locked]="t.status === 'locked'"
+            [disabled]="t.status === 'locked'"
+            (click)="onSelect(t)"
+            [title]="t.title">
+      <span class="lws-topic-num">{{ t.order }}</span>
+      <span class="lws-topic-status-dot"
+            [class.done]="t.status === 'completed'"
+            [class.active]="t.status === 'active'"
+            [class.locked]="t.status === 'locked'">
+        {{ statusIcon(t.status) }}
+      </span>
+      <span class="lws-topic-label">{{ t.icon }} {{ t.title }}</span>
+      <span class="lws-topic-est" *ngIf="t.estMinutes">{{ t.estMinutes }}m</span>
+      <span class="lws-topic-tag" *ngIf="t.tag">{{ t.tag }}</span>
+    </button>
+  </ng-template>
+
+</div>

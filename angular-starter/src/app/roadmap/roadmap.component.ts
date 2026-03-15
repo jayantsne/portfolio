@@ -5,6 +5,7 @@ import {
 import {
   trigger, state, style, animate, transition, keyframes,
 } from '@angular/animations';
+import { DomSanitizer } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService } from '../shared/notes.service';
@@ -14,6 +15,9 @@ import {
   LANGUAGES, SKILL_LEVELS, GOALS, COMMITMENTS,
   AICourseFocus, ProgrammingLang, SkillLevel, LearningGoal, Commitment,
 } from './roadmap.models';
+import {
+  LwTopic, LwSection, LwMessage, LwNote,
+} from '../shared/learning-workspace/learning-workspace.models';
 
 type ViewMode = 'auth-gate' | 'home' | 'create' | 'view' | 'lesson';
 
@@ -183,6 +187,93 @@ export class RoadmapComponent implements OnInit, OnDestroy {
     }
   }
 
+  // ── LearningWorkspace adapter ─────────────────────────────────────────
+
+  /** Converts active roadmap nodes to LwTopic array for the sidebar component */
+  get lwTopics(): LwTopic[] {
+    return (this.activeRoadmap?.nodes ?? []).map(n => ({
+      id: n.id,
+      title: n.topic,
+      icon: n.icon,
+      status: n.status as LwTopic['status'],
+      estMinutes: n.estMinutes,
+      description: n.description,
+      order: n.order,
+    }));
+  }
+
+  /** Converts the currently expanded RoadmapNode to an LwTopic */
+  get lwActiveTopic(): LwTopic | null {
+    const n = this.expandedNode;
+    if (!n) return null;
+    return {
+      id: n.id, title: n.topic, icon: n.icon,
+      status: n.status as LwTopic['status'],
+      estMinutes: n.estMinutes, description: n.description, order: n.order,
+    };
+  }
+
+  /** Wraps the initial AI lesson text into a single LwSection card */
+  get lwSections(): LwSection[] {
+    const text = this.lessonMessages[0]?.text;
+    if (!text) return [];
+    return [{ type: 'concept', title: 'AI Explanation', icon: '&#128214;', content: text }];
+  }
+
+  /** Messages after the initial AI explanation (index 1+) for the lesson thread */
+  get lwFollowUpMessages(): LwMessage[] {
+    return this.lessonMessages.slice(1).map(m => ({ role: m.role as 'user' | 'ai', text: m.text }));
+  }
+
+  /** All messages (follow-ups) shown in the mentor panel conversation */
+  get lwMentorMessages(): LwMessage[] {
+    return this.lwFollowUpMessages;
+  }
+
+  get lwHasPrev(): boolean {
+    if (!this.activeRoadmap || !this.expandedNode) return false;
+    return this.activeRoadmap.nodes.indexOf(this.expandedNode) > 0;
+  }
+
+  get lwHasNext(): boolean {
+    if (!this.activeRoadmap || !this.expandedNode) return false;
+    const idx = this.activeRoadmap.nodes.indexOf(this.expandedNode);
+    return idx < this.activeRoadmap.nodes.length - 1;
+  }
+
+  get lwNotes(): LwNote[] {
+    return this.inlineNotes.map(n => ({
+      topicTitle: n.topic,
+      text: n.text,
+      createdAt: new Date(),
+    }));
+  }
+
+  /** SafeHtml version of pgOutput for the playground component */
+  get pgOutputSafe() {
+    return this.pgOutput
+      ? this.sanitizer.bypassSecurityTrustHtml(this.pgOutput)
+      : '';
+  }
+
+  /** Handle topic selection from the LwSidebar */
+  onLwTopicSelect(topic: LwTopic): void {
+    const node = this.activeRoadmap?.nodes.find(n => n.id === topic.id);
+    if (node) this.selectNodePanel(node);
+  }
+
+  /** Forward mentor send event to existing sendLessonQuestion() */
+  onMentorSend(prompt: string): void {
+    this.lessonQuestion = prompt;
+    this.sendLessonQuestion();
+  }
+
+  /** Add a note from the mentor panel */
+  onMentorAddNote(text: string): void {
+    this.inlineNotes.unshift({ topic: this.expandedNode?.topic ?? 'Note', text });
+    this.cdr.markForCheck();
+  }
+
   @ViewChild('lessonBody')  lessonBodyEl?:  ElementRef<HTMLDivElement>;
   @ViewChild('mentorBody')  mentorBodyEl?:  ElementRef<HTMLDivElement>;
 
@@ -193,10 +284,11 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   private subs = new Subscription();
 
   constructor(
-    public  auth:    CustomAuthService,
-    private rmSvc:   RoadmapService,
-    private notesSvc: NotesService,
-    private cdr:     ChangeDetectorRef,
+    public  auth:      CustomAuthService,
+    private rmSvc:     RoadmapService,
+    private notesSvc:  NotesService,
+    private sanitizer: DomSanitizer,
+    private cdr:       ChangeDetectorRef,
   ) {}
 
   ngOnInit(): void {

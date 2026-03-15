@@ -1,0 +1,25 @@
+<!-- AI Learn — LearningWorkspace wrapper
+     Provides the 3-column grid: Sidebar | Lesson (+ Playground) | Mentor
+     Host places named content via ng-content select directives. -->
+
+<div class="lw-workspace" [class.lw-workspace--fill]="heightFill">
+
+  <!-- ── Col 1: Topic sidebar ── -->
+  <aside class="lw-col lw-col-sidebar">
+    <ng-content select="[lwSidebar]"></ng-content>
+  </aside>
+
+  <!-- ── Col 2: Lesson + playground ── -->
+  <main class="lw-col lw-col-lesson">
+    <ng-content select="[lwLesson]"></ng-content>
+
+    <!-- playground lives at the bottom of the lesson column -->
+    <ng-content select="[lwPlayground]"></ng-content>
+  </main>
+
+  <!-- ── Col 3: AI Mentor panel ── -->
+  <aside class="lw-col lw-col-mentor">
+    <ng-content select="[lwMentor]"></ng-content>
+  </aside>
+
+</div>

@@ -1,0 +1,84 @@
+<!-- LW Playground — collapsible AI experiment panel -->
+<div class="lwpg-wrap">
+
+  <!-- Toggle header -->
+  <button class="lwpg-toggle" (click)="toggle()" [attr.aria-expanded]="open">
+    <span class="lwpg-toggle-icon">⚡</span>
+    <span class="lwpg-toggle-label">AI Playground</span>
+    <span class="lwpg-toggle-sub">Experiment with AI prompts</span>
+    <span class="lwpg-chevron" [class.lwpg-chevron--open]="open">›</span>
+  </button>
+
+  <!-- Collapsible body -->
+  <div class="lwpg-body" [class.lwpg-body--open]="open">
+    <div class="lwpg-inner">
+
+      <!-- ── Editor column ── -->
+      <div class="lwpg-editor">
+
+        <!-- Controls row: model + temp -->
+        <div class="lwpg-controls">
+          <div class="lwpg-ctrl">
+            <label class="lwpg-label">Model</label>
+            <select class="lwpg-select"
+                    [value]="selectedModel"
+                    (change)="onModelChange($any($event.target).value)">
+              <option *ngFor="let m of models" [value]="m">{{ m }}</option>
+            </select>
+          </div>
+          <div class="lwpg-ctrl">
+            <label class="lwpg-label">Temp: {{ temperature.toFixed(1) }}</label>
+            <input type="range" class="lwpg-range"
+                   min="0" max="1" step="0.1"
+                   [value]="temperature"
+                   (input)="onTempChange(+$any($event.target).value)" />
+          </div>
+        </div>
+
+        <!-- Prompt textarea -->
+        <textarea class="lwpg-textarea"
+                  rows="5"
+                  placeholder="Enter an AI prompt to experiment with…"
+                  [value]="prompt"
+                  (input)="onPromptChange($any($event.target).value)">
+        </textarea>
+
+        <!-- Action buttons -->
+        <div class="lwpg-actions">
+          <button class="lwpg-run-btn"
+                  [disabled]="!prompt.trim() || loading"
+                  (click)="run.emit()">
+            <span *ngIf="!loading">▶ Run</span>
+            <span *ngIf="loading">⏳ Running…</span>
+          </button>
+          <button class="lwpg-reset-btn"
+                  [disabled]="loading"
+                  (click)="reset.emit()">
+            ↺ Reset
+          </button>
+          <span class="lwpg-ms" *ngIf="ms > 0">{{ ms }}ms</span>
+        </div>
+      </div>
+
+      <!-- ── Output column ── -->
+      <div class="lwpg-output">
+        <div class="lwpg-output-hd">
+          <span>Output</span>
+          <span class="lwpg-live" *ngIf="loading">
+            <span class="lwpg-live-dot"></span> Generating…
+          </span>
+        </div>
+        <div class="lwpg-output-body">
+          <div *ngIf="error" class="lwpg-err">{{ error }}</div>
+          <div *ngIf="!error && output" [innerHTML]="output" class="lwpg-result"></div>
+          <div *ngIf="!error && !output && !loading" class="lwpg-placeholder">
+            <span class="lwpg-ph-icon">💭</span>
+            <span>Output will appear here after you run a prompt.</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /lwpg-inner -->
+  </div><!-- /lwpg-body -->
+
+</div>

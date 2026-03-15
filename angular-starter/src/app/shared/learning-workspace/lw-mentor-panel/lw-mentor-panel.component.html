@@ -1,0 +1,120 @@
+<!-- LW Mentor Panel — right column AI assistant -->
+<div class="lwm-panel">
+
+  <!-- ── Tab strip ── -->
+  <div class="lwm-tabs" role="tablist">
+    <button class="lwm-tab" [class.lwm-tab--active]="activeTab === 'mentor'"
+            role="tab" (click)="setTab('mentor')">
+      🤖 AI Mentor
+    </button>
+    <button class="lwm-tab" [class.lwm-tab--active]="activeTab === 'notes'"
+            role="tab" (click)="setTab('notes')">
+      📝 My Notes
+    </button>
+  </div>
+
+  <!-- ════════════════════════
+       MENTOR TAB
+  ════════════════════════ -->
+  <div class="lwm-body" *ngIf="activeTab === 'mentor'">
+
+    <!-- Context hint -->
+    <p class="lwm-hint" *ngIf="topicTitle">
+      Studying: <strong>{{ topicTitle }}</strong>
+    </p>
+
+    <!-- Quick-action chips -->
+    <div class="lwm-chips-title">Quick Questions</div>
+    <div class="lwm-chips">
+      <button *ngFor="let c of chips; trackBy: trackByIndex"
+              class="lwm-chip"
+              [disabled]="loading"
+              (click)="onChip(c.prompt)">
+        <span>{{ c.icon }}</span> {{ c.label }}
+      </button>
+    </div>
+
+    <!-- Message history (only follow-ups; initial lesson is in center) -->
+    <ng-container *ngIf="messages.length">
+      <div class="lwm-divider">Conversation</div>
+      <div *ngFor="let msg of messages; trackBy: trackByIndex"
+           class="lwm-msg"
+           [class.lwm-msg--user]="msg.role === 'user'">
+        <span class="lwm-msg-avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</span>
+        <div class="lwm-msg-bubble"
+             [class.lwm-msg-bubble--user]="msg.role === 'user'"
+             [innerHTML]="msg.text">
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Typing indicator -->
+    <div *ngIf="loading" class="lwm-msg">
+      <span class="lwm-msg-avatar">🤖</span>
+      <div class="lwm-typing">
+        <span></span><span></span><span></span>
+      </div>
+    </div>
+
+    <!-- Ask input (sticky at bottom of scrollable area) -->
+    <div class="lwm-ask">
+      <input class="lwm-ask-input"
+             [(ngModel)]="askText"
+             (keyup.enter)="onSend()"
+             placeholder="Ask AI Mentor…"
+             [disabled]="loading" />
+      <button class="lwm-ask-send"
+              [disabled]="!askText.trim() || loading"
+              (click)="onSend()">
+        ➤
+      </button>
+    </div>
+
+  </div><!-- /mentor tab -->
+
+  <!-- ════════════════════════
+       NOTES TAB
+  ════════════════════════ -->
+  <div class="lwm-body" *ngIf="activeTab === 'notes'">
+
+    <!-- Add note -->
+    <div class="lwm-note-editor">
+      <textarea class="lwm-note-ta"
+                [(ngModel)]="noteText"
+                rows="3"
+                placeholder="Write a note about this topic…"></textarea>
+      <button class="lwm-btn lwm-btn--primary"
+              [disabled]="!noteText.trim()"
+              (click)="onAddNote()">
+        + Add Note
+      </button>
+    </div>
+
+    <!-- Notes list -->
+    <div *ngIf="notes.length" class="lwm-notes-list">
+      <div *ngFor="let n of notes; let i = index; trackBy: trackByIndex"
+           class="lwm-note">
+        <div class="lwm-note-hd">
+          <span class="lwm-note-topic">{{ n.topicTitle || 'Note' }}</span>
+          <button class="lwm-note-del" (click)="deleteNote.emit(i)" title="Delete note">✕</button>
+        </div>
+        <p class="lwm-note-text">{{ n.text }}</p>
+      </div>
+    </div>
+
+    <!-- Empty notes -->
+    <div *ngIf="!notes.length" class="lwm-notes-empty">
+      <span class="lwm-notes-empty-icon">📭</span>
+      <p>No notes yet. Add one above.</p>
+    </div>
+
+    <!-- Sync button -->
+    <button *ngIf="notes.length"
+            class="lwm-btn lwm-btn--ghost lwm-btn--full"
+            (click)="syncNotes.emit()">
+      ☁️ Sync to My Notes
+    </button>
+
+  </div><!-- /notes tab -->
+
+</div>

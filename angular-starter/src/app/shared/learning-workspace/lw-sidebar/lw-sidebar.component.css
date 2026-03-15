@@ -1,0 +1,141 @@
+:host { display: block; height: 100%; }
+
+.lws-inner {
+  padding: 0.75rem 0.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Roadmap title */
+.lws-header {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0 0.35rem 0.65rem;
+  border-bottom: 1.5px solid var(--lw-border, #e5e9f5);
+  margin-bottom: 0.5rem;
+}
+.lws-header-icon { font-size: 1.1rem; flex-shrink: 0; }
+.lws-header-title {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--lw-text, #1e1b4b);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Section label */
+.lws-section-label {
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: var(--lw-subtle, #94a3b8);
+  padding: 0.25rem 0.5rem 0.35rem;
+  text-transform: uppercase;
+}
+
+/* Module header */
+.lws-module { display: flex; flex-direction: column; }
+.lws-module-hd {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  width: 100%;
+  padding: 0.45rem 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--lw-text, #1e1b4b);
+  font-size: 0.78rem;
+  font-weight: 700;
+  border-radius: var(--lw-radius-sm, 8px);
+  transition: background var(--lw-transition, 0.18s);
+}
+.lws-module-hd:hover { background: rgba(99,102,241,0.06); }
+.lws-module-icon { font-size: 0.95rem; }
+.lws-module-title { flex: 1; text-align: left; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lws-module-prog { font-size: 0.64rem; color: var(--lw-muted, #64748b); background: rgba(99,102,241,0.08); padding: 0.1rem 0.4rem; border-radius: 10px; }
+.lws-chevron { color: var(--lw-muted, #64748b); font-size: 1rem; font-weight: 300; transform: rotate(0deg); transition: transform var(--lw-transition, 0.18s); }
+.lws-chevron--open { transform: rotate(90deg); }
+
+/* Topic row */
+.lws-topic {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.42rem 0.55rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  border-radius: var(--lw-radius-sm, 8px);
+  color: var(--lw-muted, #64748b);
+  font-size: 0.78rem;
+  font-weight: 500;
+  transition: background var(--lw-transition, 0.18s), color var(--lw-transition, 0.18s);
+  position: relative;
+}
+.lws-topic:hover:not([disabled]) { background: rgba(99,102,241,0.07); color: var(--lw-text, #1e1b4b); }
+
+/* States */
+.lws-topic--active {
+  background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(139,92,246,0.08));
+  color: var(--lw-primary, #6366f1);
+  font-weight: 700;
+}
+.lws-topic--active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 20%;
+  bottom: 20%;
+  width: 3px;
+  background: linear-gradient(180deg, var(--lw-primary, #6366f1), var(--lw-violet, #8b5cf6));
+  border-radius: 0 2px 2px 0;
+}
+.lws-topic--done { color: var(--lw-green, #10b981); }
+.lws-topic--locked { opacity: 0.4; cursor: not-allowed; }
+
+/* Topic sub-elements */
+.lws-topic-num {
+  font-size: 0.62rem;
+  font-weight: 700;
+  color: var(--lw-subtle, #94a3b8);
+  min-width: 14px;
+  text-align: right;
+  flex-shrink: 0;
+}
+.lws-topic-status { font-size: 0.7rem; flex-shrink: 0; }
+.lws-topic-status-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: grid;
+  place-items: center;
+  font-size: 0.55rem;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+.lws-topic-status-dot.done { background: var(--lw-green, #10b981); border-color: var(--lw-green, #10b981); color: #fff; }
+.lws-topic-status-dot.active { background: var(--lw-primary, #6366f1); border-color: var(--lw-primary, #6366f1); color: #fff; }
+.lws-topic-status-dot.locked { color: var(--lw-subtle, #94a3b8); border-color: var(--lw-border, #e5e9f5); }
+
+.lws-topic-label { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; }
+.lws-topic-est { font-size: 0.62rem; color: var(--lw-subtle, #94a3b8); flex-shrink: 0; }
+.lws-topic-tag {
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 0.1rem 0.35rem;
+  background: rgba(99,102,241,0.1);
+  color: var(--lw-primary, #6366f1);
+  border-radius: 10px;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+/* Module body indent */
+.lws-module-body { padding-left: 0.75rem; }

@@ -1,0 +1,74 @@
+:host { display: block; }
+
+/* ── Base card ── */
+.lwc-card {
+  background: var(--lw-surface, #fff);
+  border: 1.5px solid var(--lw-border, #e5e9f5);
+  border-left: 4px solid var(--lw-primary, #6366f1);
+  border-radius: var(--lw-radius, 12px);
+  overflow: hidden;
+  box-shadow: var(--lw-shadow, 0 2px 12px rgba(99,102,241,0.08));
+  transition: box-shadow 0.18s;
+}
+.lwc-card:hover { box-shadow: var(--lw-shadow-md, 0 4px 20px rgba(99,102,241,0.12)); }
+
+/* Accent colours by type */
+.lwc-card--code     { border-left-color: var(--lw-violet,  #8b5cf6); }
+.lwc-card--practice { border-left-color: var(--lw-amber,   #f59e0b); }
+.lwc-card--exam     { border-left-color: var(--lw-green,   #10b981); }
+
+/* ── Header ── */
+.lwc-hd {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.6rem 1rem;
+  background: rgba(99,102,241,0.035);
+  border-bottom: 1px solid var(--lw-border, #e5e9f5);
+}
+.lwc-card--code     .lwc-hd { background: rgba(139,92,246,0.04); }
+.lwc-card--practice .lwc-hd { background: rgba(245,158,11,0.04); }
+.lwc-card--exam     .lwc-hd { background: rgba(16,185,129,0.04); }
+
+.lwc-hd-icon  { font-size: 0.9rem; }
+.lwc-hd-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--lw-muted, #64748b);
+}
+
+/* ── Body ── */
+.lwc-body {
+  padding: 0.85rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.75;
+  color: var(--lw-text, #1e1b4b);
+}
+
+/* Markdown-rendered content hygiene */
+.lwc-body :is(p, ul, ol) { margin: 0 0 0.65rem; }
+.lwc-body :is(p, ul, ol):last-child { margin-bottom: 0; }
+.lwc-body li { margin-bottom: 0.2rem; }
+.lwc-body strong { font-weight: 700; color: var(--lw-text, #1e1b4b); }
+.lwc-body code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+  font-size: 0.82em;
+  background: rgba(99,102,241,0.08);
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  color: var(--lw-primary, #6366f1);
+}
+
+/* Code blocks inside body */
+.lwc-body :is(pre, .md-code-block) {
+  background: #0f172a;
+  border-radius: 8px;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  margin: 0.5rem 0;
+}
+.lwc-body :is(pre, .md-code-block) code { background: none; color: #e2e8f0; padding: 0; }

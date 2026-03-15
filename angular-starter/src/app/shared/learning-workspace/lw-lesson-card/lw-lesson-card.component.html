@@ -1,0 +1,16 @@
+<!-- LW Lesson Card — one structured lesson section -->
+<div class="lwc-card"
+     [class.lwc-card--code]="isCode"
+     [class.lwc-card--practice]="isPractice"
+     [class.lwc-card--exam]="isExamTip">
+
+  <!-- Card header -->
+  <div class="lwc-hd">
+    <span class="lwc-hd-icon">{{ meta.icon }}</span>
+    <span class="lwc-hd-title">{{ meta.title }}</span>
+  </div>
+
+  <!-- Body — parent passes SafeHtml rendered from markdown -->
+  <div class="lwc-body" [innerHTML]="htmlContent"></div>
+
+</div>
