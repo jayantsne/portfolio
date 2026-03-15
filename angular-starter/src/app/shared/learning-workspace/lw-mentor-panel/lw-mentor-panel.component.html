@@ -10,11 +10,14 @@
     <button class="lwm-tab" [class.lwm-tab--active]="activeTab === 'notes'"
             role="tab" (click)="setTab('notes')">
       📝 My Notes
+      <span *ngIf="localNotes.length" class="lwm-tab-badge">{{ localNotes.length }}</span>
     </button>
   </div>
 
   <!-- ════════════════════════
        MENTOR TAB
+       Only quick actions + ask input.
+       The actual conversation thread lives in the center lesson panel.
   ════════════════════════ -->
   <div class="lwm-body" *ngIf="activeTab === 'mentor'">
 
@@ -24,7 +27,7 @@
     </p>
 
     <!-- Quick-action chips -->
-    <div class="lwm-chips-title">Quick Questions</div>
+    <div class="lwm-chips-title">Quick Actions</div>
     <div class="lwm-chips">
       <button *ngFor="let c of chips; trackBy: trackByIndex"
               class="lwm-chip"
@@ -34,34 +37,20 @@
       </button>
     </div>
 
-    <!-- Message history (only follow-ups; initial lesson is in center) -->
-    <ng-container *ngIf="messages.length">
-      <div class="lwm-divider">Conversation</div>
-      <div *ngFor="let msg of messages; trackBy: trackByIndex"
-           class="lwm-msg"
-           [class.lwm-msg--user]="msg.role === 'user'">
-        <span class="lwm-msg-avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</span>
-        <div class="lwm-msg-bubble"
-             [class.lwm-msg-bubble--user]="msg.role === 'user'"
-             [innerHTML]="msg.text">
-        </div>
-      </div>
-    </ng-container>
-
-    <!-- Typing indicator -->
-    <div *ngIf="loading" class="lwm-msg">
-      <span class="lwm-msg-avatar">🤖</span>
-      <div class="lwm-typing">
-        <span></span><span></span><span></span>
-      </div>
+    <!-- Loading indicator (shows while AI is responding in the center panel) -->
+    <div class="lwm-generating" *ngIf="loading">
+      <span class="lwm-gen-dot"></span>
+      <span class="lwm-gen-dot"></span>
+      <span class="lwm-gen-dot"></span>
+      <span class="lwm-gen-label">Generating response…</span>
     </div>
 
-    <!-- Ask input (sticky at bottom of scrollable area) -->
+    <!-- Freeform ask input -->
     <div class="lwm-ask">
       <input class="lwm-ask-input"
              [(ngModel)]="askText"
              (keyup.enter)="onSend()"
-             placeholder="Ask AI Mentor…"
+             placeholder="Ask anything about this topic…"
              [disabled]="loading" />
       <button class="lwm-ask-send"
               [disabled]="!askText.trim() || loading"
@@ -74,46 +63,69 @@
 
   <!-- ════════════════════════
        NOTES TAB
+       Fully self-contained — persists to localStorage keyed by lessonId.
   ════════════════════════ -->
-  <div class="lwm-body" *ngIf="activeTab === 'notes'">
+  <div class="lwm-body lwm-body--notes" *ngIf="activeTab === 'notes'">
 
-    <!-- Add note -->
+    <!-- Editor -->
     <div class="lwm-note-editor">
       <textarea class="lwm-note-ta"
                 [(ngModel)]="noteText"
-                rows="3"
-                placeholder="Write a note about this topic…"></textarea>
-      <button class="lwm-btn lwm-btn--primary"
+                rows="4"
+                placeholder="Write a note for {{ topicTitle || 'this lesson' }}…"></textarea>
+      <button class="lwm-btn lwm-btn--primary lwm-btn--full"
               [disabled]="!noteText.trim()"
-              (click)="onAddNote()">
-        + Add Note
+              (click)="addNoteLocal()">
+        💾 Save Note
       </button>
     </div>
 
-    <!-- Notes list -->
-    <div *ngIf="notes.length" class="lwm-notes-list">
-      <div *ngFor="let n of notes; let i = index; trackBy: trackByIndex"
+    <!-- Notes count -->
+    <div *ngIf="localNotes.length" class="lwm-notes-count">
+      <span>{{ localNotes.length }} note{{ localNotes.length !== 1 ? 's' : '' }} for this lesson</span>
+      <button class="lwm-btn lwm-btn--ghost lwm-btn--sm"
+              (click)="syncNotes.emit()"
+              title="Sync to My Notes page">☁️ Sync</button>
+    </div>
+
+    <!-- Saved notes list -->
+    <div *ngIf="localNotes.length" class="lwm-notes-list">
+      <div *ngFor="let n of localNotes; let i = index; trackBy: trackById"
            class="lwm-note">
-        <div class="lwm-note-hd">
-          <span class="lwm-note-topic">{{ n.topicTitle || 'Note' }}</span>
-          <button class="lwm-note-del" (click)="deleteNote.emit(i)" title="Delete note">✕</button>
-        </div>
-        <p class="lwm-note-text">{{ n.text }}</p>
+        <!-- View mode -->
+        <ng-container *ngIf="editingIndex !== i">
+          <div class="lwm-note-hd">
+            <span class="lwm-note-date">{{ n.createdAt | date:'MMM d, h:mm a' }}</span>
+            <div class="lwm-note-actions">
+              <button class="lwm-note-edit" (click)="startEdit(i)" title="Edit note">✏️</button>
+              <button class="lwm-note-del"  (click)="deleteNoteLocal(i)" title="Delete note">✕</button>
+            </div>
+          </div>
+          <p class="lwm-note-text">{{ n.content }}</p>
+        </ng-container>
+
+        <!-- Edit mode -->
+        <ng-container *ngIf="editingIndex === i">
+          <textarea class="lwm-note-ta lwm-note-ta--edit"
+                    [(ngModel)]="editText"
+                    rows="3"></textarea>
+          <div class="lwm-edit-actions">
+            <button class="lwm-btn lwm-btn--primary lwm-btn--sm"
+                    [disabled]="!editText.trim()"
+                    (click)="saveEdit(i)">✓ Save</button>
+            <button class="lwm-btn lwm-btn--ghost lwm-btn--sm"
+                    (click)="cancelEdit()">Cancel</button>
+          </div>
+        </ng-container>
       </div>
     </div>
 
-    <!-- Empty notes -->
-    <div *ngIf="!notes.length" class="lwm-notes-empty">
-      <span class="lwm-notes-empty-icon">📭</span>
-      <p>No notes yet. Add one above.</p>
+    <!-- Empty state -->
+    <div *ngIf="!localNotes.length" class="lwm-notes-empty">
+      <span class="lwm-notes-empty-icon">📝</span>
+      <p>No notes yet for this lesson.</p>
+      <p class="lwm-notes-empty-sub">Use the editor above to add one.</p>
     </div>
-
-    <!-- Sync button -->
-    <button *ngIf="notes.length"
-            class="lwm-btn lwm-btn--ghost lwm-btn--full"
-            (click)="syncNotes.emit()">
-      ☁️ Sync to My Notes
-    </button>
 
   </div><!-- /notes tab -->
 

@@ -390,6 +390,7 @@
       <!-- ── Col 3: AI Mentor panel ── -->
       <app-lw-mentor-panel lwMentor
         [topicTitle]="expandedNode?.topic || ''"
+        [lessonId]="expandedNode?.id || ''"
         [messages]="lwMentorMessages"
         [loading]="lessonFollowUpLoading"
         [notes]="lwNotes"
