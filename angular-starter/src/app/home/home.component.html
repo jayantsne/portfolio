@@ -354,6 +354,12 @@
                 <div class="am-lcard-code-wrap">
                   <div class="am-lcard-code-bar">
                     <span class="am-lcard-lang-badge">{{ lessonData.codeLanguage }}</span>
+                    <button class="am-lcard-try-btn"
+                            (click)="tryInPlayground(lessonData.codeExample, lessonData.codeLanguage)"
+                            title="Open in Code Playground">
+                      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                      Try in Playground
+                    </button>
                   </div>
                   <pre class="am-lcard-pre"><code>{{ lessonData.codeExample }}</code></pre>
                 </div>
@@ -468,7 +474,7 @@
                         </div>
                       </div>
 
-                      <div class="am-msg-text md-content" [innerHTML]="msg.content | markdown"></div>
+                      <div class="am-msg-text md-content" [innerHTML]="msg.content | markdown" appTryNow></div>
 
                       <!-- ── Toolbar: save + timestamp only (actions live in right sidebar) ── -->
                       <div class="am-action-toolbar">
@@ -639,7 +645,7 @@
                   </span>
                 </div>
                 <div class="am-msg-card am-msg-card-streaming">
-                  <div class="am-msg-text md-content" [innerHTML]="streamingText | markdown"></div>
+                  <div class="am-msg-text md-content" [innerHTML]="streamingText | markdown" appTryNow></div>
                   <span class="am-cursor"></span>
                 </div>
               </div>

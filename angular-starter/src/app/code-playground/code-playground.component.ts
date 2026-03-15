@@ -7,6 +7,7 @@ import { Subscription } from 'rxjs';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService } from '../shared/notes.service';
 import { AILearnService } from '../services/ai-learn.service';
+import { PlaygroundService, PlaygroundRequest } from '../services/playground.service';
 import { environment } from '../../environments/environment';
 
 // Language definitions
@@ -137,9 +138,18 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
     private aiSvc:   AILearnService,
     private cdr:     ChangeDetectorRef,
     private http:    HttpClient,
+    private pgSvc:   PlaygroundService,
   ) {}
 
-  ngOnInit(): void {}
+  private pendingRequest: PlaygroundRequest | null = null;
+
+  ngOnInit(): void {
+    this.pendingRequest = this.pgSvc.consume();
+    if (this.pendingRequest) {
+      const match = LANGS.find(l => l.id === this.pendingRequest!.language);
+      if (match) this.selectedLang = match;
+    }
+  }
 
   @HostListener('document:keydown', ['$event'])
   handleKeydown(e: KeyboardEvent): void {
@@ -207,6 +217,19 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
     });
 
     this.cdr.detectChanges();
+
+    // Apply any pending request from PlaygroundService ("Try Now" flow)
+    if (this.pendingRequest) {
+      this.editor.setValue(this.pendingRequest.code);
+      if ((window as any).monaco) {
+        const model = this.editor.getModel();
+        if (model) {
+          (window as any).monaco.editor.setModelLanguage(model, this.selectedLang.monacoId);
+        }
+      }
+      this.pgSvc.clear();
+      this.pendingRequest = null;
+    }
   }
 
   // ── Language switching ────────────────────────────────────────────────────

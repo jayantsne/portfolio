@@ -9,6 +9,7 @@ import { LwLessonCardComponent }    from './lw-lesson-card/lw-lesson-card.compon
 import { LwMentorPanelComponent }   from './lw-mentor-panel/lw-mentor-panel.component';
 import { LwPlaygroundComponent }    from './lw-playground/lw-playground.component';
 import { MarkdownPipe }             from '../markdown.pipe';
+import { TryNowDirective }          from '../try-now.directive';
 
 const LW_COMPONENTS = [
   LwWorkspaceComponent,
@@ -21,7 +22,7 @@ const LW_COMPONENTS = [
 
 @NgModule({
   imports: [CommonModule, FormsModule],
-  declarations: [...LW_COMPONENTS, MarkdownPipe],
-  exports:      [...LW_COMPONENTS, MarkdownPipe],
+  declarations: [...LW_COMPONENTS, MarkdownPipe, TryNowDirective],
+  exports:      [...LW_COMPONENTS, MarkdownPipe, TryNowDirective],
 })
 export class LearningWorkspaceModule {}

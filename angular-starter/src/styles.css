@@ -444,6 +444,32 @@ body::-webkit-scrollbar,
   border-color: #58a6ff;
 }
 
+/* Header actions wrapper (Copy + Try Now) */
+.md-code-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* Try Now button */
+.md-try-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  background: #6366f1;
+  border: none;
+  border-radius: 5px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s;
+  font-family: inherit;
+}
+.md-try-btn:hover { background: #4f46e5; }
+.md-try-btn svg   { flex-shrink: 0; }
+
 /* ── Code block <pre> ── */
 .md-content .md-pre,
 .md-pre {

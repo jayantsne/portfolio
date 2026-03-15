@@ -7319,6 +7319,23 @@ html {
   font-weight: 600;
   text-transform: capitalize;
 }
+.am-lcard-try-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.22rem 0.75rem;
+  background: #6366f1;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s;
+  letter-spacing: 0.02em;
+}
+.am-lcard-try-btn:hover { background: #4f46e5; }
+.am-lcard-try-btn svg   { flex-shrink: 0; }
 .am-lcard-pre {
   margin: 0;
   padding: 1rem 1.25rem;

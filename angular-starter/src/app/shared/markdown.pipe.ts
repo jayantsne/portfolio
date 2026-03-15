@@ -48,9 +48,15 @@ export class MarkdownPipe implements PipeTransform {
       codeBlocks.push(
         `<div class="md-code-block">` +
         `<div class="md-code-header">${langLabel}` +
+        `<div class="md-code-header-actions">` +
         `<button class="md-copy-btn" data-code="${encoded}"` +
         ` onclick="navigator.clipboard.writeText(decodeURIComponent(this.dataset.code))` +
         `.then(()=>{this.textContent='✓ Copied';setTimeout(()=>{this.textContent='Copy'},1500)})">Copy</button>` +
+        `<button class="md-try-btn" data-code="${encoded}" data-lang="${langName}">` +
+        `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">` +
+        `<polygon points="5 3 19 12 5 21 5 3"/></svg>` +
+        ` Try Now</button>` +
+        `</div>` +
         `</div>` +
         `<pre class="md-pre hljs"><code class="hljs language-${langName}">${highlighted}</code></pre>` +
         `</div>`

@@ -5,6 +5,7 @@ import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AILearnService } from '../services/ai-learn.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService, SavedNote } from '../shared/notes.service';
+import { PlaygroundService } from '../services/playground.service';
 
 interface ConceptStep {
   title: string;
@@ -112,7 +113,8 @@ export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
     public customAuth: CustomAuthService,
     private notesService: NotesService,
     private router: Router,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private pg: PlaygroundService
   ) {}
 
   // Input properties (for compatibility with main-portfolio component)
@@ -680,6 +682,10 @@ One sentence: the single most important thing to remember about ${topic} in a te
     this.pgSub?.unsubscribe();
     clearTimeout(this.noteSavedTimer);
     clearInterval(this._playInterval);
+  }
+
+  tryInPlayground(code: string, lang: string): void {
+    this.pg.openWith(code, lang);
   }
 
   private scrollToBottom(): void {
