@@ -10,6 +10,7 @@ import { Subscription } from 'rxjs';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService } from '../shared/notes.service';
 import { RoadmapService } from './roadmap.service';
+import { AILearnService } from '../services/ai-learn.service';
 import {
   Roadmap, RoadmapNode, RoadmapProgress, WizardState,
   LANGUAGES, SKILL_LEVELS, GOALS, COMMITMENTS,
@@ -117,6 +118,11 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   lessonQuestion:  string               = '';
   lessonFollowUpLoading = false;
   lessonMessages:  { role: 'user' | 'ai'; text: string }[] = [];
+
+  // Streaming state for the lesson panel
+  lessonStreamingText = '';
+  lessonIsStreaming    = false;
+  private lessonSub:  Subscription | null = null;
 
   // ── Right-panel tab ─────────────────────────────────────────────────────
   mentorPanelTab: 'mentor' | 'notes' = 'mentor';
@@ -286,6 +292,7 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   constructor(
     public  auth:      CustomAuthService,
     private rmSvc:     RoadmapService,
+    private aiSvc:     AILearnService,
     private notesSvc:  NotesService,
     private sanitizer: DomSanitizer,
     private cdr:       ChangeDetectorRef,
@@ -305,7 +312,7 @@ export class RoadmapComponent implements OnInit, OnDestroy {
     );
   }
 
-  ngOnDestroy(): void { this.subs.unsubscribe(); this.pgSub?.unsubscribe(); }
+  ngOnDestroy(): void { this.subs.unsubscribe(); this.pgSub?.unsubscribe(); this.lessonSub?.unsubscribe(); }
 
   // ─── Navigation ─────────────────────────────────────────────────────────
 
@@ -435,9 +442,13 @@ export class RoadmapComponent implements OnInit, OnDestroy {
       this.loadLesson(node);
     } else {
       // Locked node — clear panel but don't call API
-      this.lessonNode     = node;
-      this.lessonMessages = [];
-      this.lessonError    = false;
+      this.lessonSub?.unsubscribe();
+      this.lessonSub           = null;
+      this.lessonNode          = node;
+      this.lessonMessages      = [];
+      this.lessonError         = false;
+      this.lessonStreamingText = '';
+      this.lessonIsStreaming   = false;
     }
   }
 
@@ -486,25 +497,60 @@ export class RoadmapComponent implements OnInit, OnDestroy {
 
   loadLesson(node: RoadmapNode): void {
     if (!this.activeRoadmap) return;
-    this.lessonLoading = true;
-    let text           = '';
 
-    this.rmSvc.explainNode(node, this.activeRoadmap.language, this.activeRoadmap.level)
-      .subscribe({
-        next: (res: any) => { if (res?.explanation) text = res.explanation; },
-        error: () => {
-          this.lessonLoading = false;
-          this.lessonError   = true;
-          this.cdr.markForCheck();
-        },
-        complete: () => {
-          this.lessonLoading = false;
-          this.lessonText    = text;
-          this.lessonMessages = [{ role: 'ai', text }];
+    // Cancel any in-flight lesson request
+    this.lessonSub?.unsubscribe();
+    this.lessonSub        = null;
+
+    // Reset state
+    this.lessonLoading       = true;
+    this.lessonError         = false;
+    this.lessonIsStreaming   = false;
+    this.lessonStreamingText = '';
+    this.lessonMessages      = [];
+    this.cdr.markForCheck();
+
+    const lang  = this.activeRoadmap.language;
+    const level = this.activeRoadmap.level;
+
+    const prompt =
+      `You are an expert AI teacher. Teach me "${node.topic}" in the context of ${lang} for a ${level} learner.\n\n` +
+      `Structure your response as:\n` +
+      `1. **What it is** — one-line essence\n` +
+      `2. **Why it matters** — real-world significance\n` +
+      `3. **How it works** — step-by-step explanation\n` +
+      `4. **Practical example** — code or concrete walkthrough\n` +
+      `5. **Key takeaway** — the one thing to remember\n\n` +
+      `Be concise, visual with examples, and avoid unnecessary jargon.`;
+
+    this.lessonSub = this.aiSvc.getOllamaExplanation(prompt).subscribe({
+      next: (res: any) => {
+        if (res.done) {
+          // Stream finished — populate lesson messages, clear streaming state
+          const finalText = res.explanation ?? '';
+          this.lessonMessages      = [{ role: 'ai', text: finalText }];
+          this.lessonStreamingText = '';
+          this.lessonIsStreaming   = false;
+          this.lessonLoading       = false;
+          this.lessonError         = !res.success && !finalText;
           this.cdr.markForCheck();
           setTimeout(() => this.scrollLessonToBottom(), 100);
-        },
-      });
+        } else {
+          // Partial chunk arrived — switch from skeleton to streaming bubble
+          if (this.lessonLoading) this.lessonLoading = false;
+          this.lessonIsStreaming   = true;
+          this.lessonStreamingText = res.explanation ?? '';
+          this.cdr.markForCheck();
+        }
+      },
+      error: () => {
+        this.lessonLoading       = false;
+        this.lessonIsStreaming   = false;
+        this.lessonStreamingText = '';
+        this.lessonError         = true;
+        this.cdr.markForCheck();
+      },
+    });
   }
 
   sendLessonQuestion(): void {

@@ -77,6 +77,23 @@
         <button class="lwl-btn lwl-btn--ghost" (click)="retry.emit()">🔄 Retry</button>
       </div>
 
+      <!-- ════════════════════════════════════════════
+           STREAMING BUBBLE — AI typing in real-time
+      ════════════════════════════════════════════ -->
+      <ng-container *ngIf="!loading && !isLocked && (isStreaming || streamingText)">
+        <!-- Typing dots — connected but no tokens yet -->
+        <div *ngIf="isStreaming && !streamingText" class="lwl-typing">
+          <div class="lwl-typing-dots">
+            <span></span><span></span><span></span>
+          </div>
+          <span class="lwl-typing-label">AI Mentor is explaining…</span>
+        </div>
+        <!-- Accumulating stream -->
+        <div *ngIf="streamingText" class="lwl-stream-bubble md-content"
+             [innerHTML]="streamingHtml">
+        </div>
+      </ng-container>
+
       <!-- LESSON CONTENT — section cards -->
       <div *ngIf="!loading && !error && !isLocked && sections.length" class="lwl-content">
         <app-lw-lesson-card

@@ -136,7 +136,96 @@
   font-size: 0.88rem;
 }
 
-/* ── Content sections ── */
+/* ── Streaming / typing indicator ── */
+.lwl-typing {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 1rem;
+  border-radius: 12px;
+  background: rgba(99,102,241,0.06);
+  border: 1.5px solid rgba(99,102,241,0.15);
+  width: fit-content;
+  max-width: 100%;
+}
+.lwl-typing-dots {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.lwl-typing-dots span {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--lw-primary, #6366f1);
+  animation: lwsDotBounce 1.3s ease-in-out infinite;
+}
+.lwl-typing-dots span:nth-child(2) { animation-delay: 0.18s; }
+.lwl-typing-dots span:nth-child(3) { animation-delay: 0.36s; }
+@keyframes lwsDotBounce {
+  0%, 60%, 100% { transform: translateY(0);  opacity: 0.35; }
+  30%           { transform: translateY(-5px); opacity: 1; }
+}
+.lwl-typing-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--lw-primary, #6366f1);
+  white-space: nowrap;
+}
+
+.lwl-stream-bubble {
+  padding: 1rem 1.15rem;
+  border-radius: 14px;
+  background: var(--lw-surface, #fff);
+  border: 1.5px solid rgba(99,102,241,0.18);
+  box-shadow: 0 2px 12px rgba(99,102,241,0.06);
+  font-size: 0.88rem;
+  line-height: 1.75;
+  color: var(--lw-text, #1e1b4b);
+  animation: lwsFadeIn 0.2s ease;
+  position: relative;
+}
+.lwl-stream-bubble::before {
+  content: '🤖';
+  position: absolute;
+  top: -0.65rem;
+  left: 0.85rem;
+  font-size: 0.9rem;
+  background: var(--lw-surface, #fff);
+  padding: 0 0.25rem;
+  border-radius: 4px;
+}
+@keyframes lwsFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* - md-content inside stream bubble - */
+.lwl-stream-bubble.md-content p:first-child { margin-top: 0; }
+.lwl-stream-bubble.md-content p:last-child  { margin-bottom: 0; }
+.lwl-stream-bubble.md-content .ai-heading   { font-size: 0.95rem; margin: 0.8rem 0 0.35rem; }
+.lwl-stream-bubble.md-content .md-pre {
+  background: rgba(15,23,42,0.04);
+  border-radius: 8px;
+  padding: 0.65rem 0.9rem;
+  overflow-x: auto;
+  font-size: 0.8rem;
+  margin: 0.5rem 0;
+}
+.lwl-stream-bubble.md-content .md-inline {
+  background: rgba(99,102,241,0.1);
+  color: var(--lw-primary, #6366f1);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.82rem;
+  font-family: monospace;
+}
+.lwl-stream-bubble.md-content li {
+  margin-left: 1.1rem;
+  margin-bottom: 0.2rem;
+  list-style: disc;
+}
+
+
 .lwl-content { display: flex; flex-direction: column; gap: 0.85rem; }
 
 /* ── Follow-up messages ── */
