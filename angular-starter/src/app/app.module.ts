@@ -103,6 +103,7 @@ import { AdminUsersComponent }       from './admin/admin-users/admin-users.compo
     SaveNotesModalComponent,    // Save conversation to Notes modal
     SubscribeComponent,           // Subscription / payment page
     SubscriptionWallComponent,    // Paywall modal overlay
+    AdminUsersComponent,          // Admin user management panel
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],
@@ -116,7 +117,7 @@ import { AdminUsersComponent }       from './admin/admin-users/admin-users.compo
     TranslocoRootModule,
     AppRoutingModule,
     NgScrollbarModule,
-    AdminUsersComponent,    // Standalone — admin user management panel
+    // AdminUsersComponent removed from imports (now in declarations)
   ],
   providers: [
     {

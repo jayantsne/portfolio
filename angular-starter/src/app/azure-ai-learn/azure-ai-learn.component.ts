@@ -115,6 +115,121 @@ export class AzureAiLearnComponent implements OnInit, OnDestroy {
   private _archTopic = '';
   private archSub:  Subscription | null = null;
 
+  // ── AI Playground ─────────────────────────────────────────────────────────
+  showPlayground      = false;
+  playgroundPrompt    = '';
+  playgroundOutput    = '';
+  playgroundError     = '';
+  playgroundLoading   = false;
+  playgroundTemperature = 0.7;
+  playgroundModel     = 'auto';
+  playgroundMs        = 0;
+  private playgroundSub: Subscription | null = null;
+  private _pgStart    = 0;
+
+  playgroundExamples = [
+    { label: '🤖 What is Azure Cognitive Services?',  prompt: 'Explain Azure Cognitive Services in 3 bullet points for the AI-102 exam.' },
+    { label: '👁️ Computer Vision vs Custom Vision',  prompt: 'What is the difference between Azure Computer Vision and Custom Vision? When should I use each?' },
+    { label: '🗣️ Speech Service key features',       prompt: 'List the key features of Azure Speech Service that appear in the AI-102 exam.' },
+    { label: '🛡️ Responsible AI principles',         prompt: 'Summarise Microsoft\'s 6 Responsible AI principles with one-sentence examples each.' },
+    { label: '🔍 LUIS vs CLU difference',             prompt: 'What is the difference between LUIS and Conversational Language Understanding (CLU) in Azure AI?' },
+  ];
+
+  // Navigate to topic and pre-open the AI Mentor panel
+  openTopicWithAiMentor(topic: Topic): void {
+    this.selectTopic(topic);
+    this.activePanelTab = 'mentor';
+  }
+
+  togglePlayground(): void {
+    this.showPlayground = !this.showPlayground;
+  }
+
+  useExample(prompt: string): void {
+    this.playgroundPrompt = prompt;
+  }
+
+  runPlayground(): void {
+    const q = this.playgroundPrompt.trim();
+    if (!q || this.playgroundLoading) return;
+    this.playgroundLoading = true;
+    this.playgroundOutput  = '';
+    this.playgroundError   = '';
+    this.playgroundMs      = 0;
+    this._pgStart          = Date.now();
+
+    const systemContext = 'System: You are an expert Azure AI-102 study assistant. Be concise and exam-focused. User: ';
+    this.playgroundSub?.unsubscribe();
+    this.playgroundSub = this.aiLearnService
+      .getSimplifiedExplanation(systemContext + q)
+      .subscribe({
+        next: (res: any) => {
+          this.playgroundLoading = false;
+          this.playgroundMs      = Date.now() - this._pgStart;
+          this.playgroundOutput  = res?.answer ?? res?.explanation ?? res?.text ?? JSON.stringify(res);
+        },
+        error: (err: any) => {
+          this.playgroundLoading = false;
+          this.playgroundMs      = Date.now() - this._pgStart;
+          this.playgroundError   = err?.message ?? 'An error occurred. Please try again.';
+        }
+      });
+  }
+
+  resetPlayground(): void {
+    this.playgroundSub?.unsubscribe();
+    this.playgroundPrompt  = '';
+    this.playgroundOutput  = '';
+    this.playgroundError   = '';
+    this.playgroundLoading = false;
+    this.playgroundMs      = 0;
+  }
+
+  // ── Workspace Panel (AI Mentor + Notes right panel) ───────────────────────
+  activePanelTab: string = 'mentor';
+  panelNoteText: string  = '';
+  panelNotes: { topic: string; text: string }[] = [];
+
+  switchPanelTab(tab: string): void {
+    this.activePanelTab = tab;
+  }
+
+  quickMentorAsk(prompt: string): void {
+    this.mentorInput = prompt;
+    this.sendMentorMessage();
+  }
+
+  savePanelNote(): void {
+    const text = this.panelNoteText.trim();
+    if (!text) return;
+    this.panelNotes.unshift({ topic: this.selectedTopic?.name ?? 'Note', text });
+    this.panelNoteText = '';
+  }
+
+  deletePanelNote(index: number): void {
+    this.panelNotes.splice(index, 1);
+  }
+
+  saveAllPanelNotesToService(): void {
+    if (this.panelNotes.length === 0) return;
+    const combined = this.panelNotes.map(n => `[${n.topic}] ${n.text}`).join('\n\n');
+    this.noteSaving = true;
+    this.noteSaved  = false;
+    this.notesService.saveNote(
+      `Azure AI-102 – ${this.selectedTopic?.name ?? 'Study Session'}`,
+      'azure-ai-102',
+      combined,
+      ['azure-ai-102']
+    ).then(() => {
+      this.noteSaving = false;
+      this.noteSaved  = true;
+      setTimeout(() => { this.noteSaved = false; }, 3000);
+    }).catch(() => {
+      this.noteSaving = false;
+      this.noteError  = 'Could not save. Try again.';
+    });
+  }
+
   // ── Inline Mentor Chat ───────────────────────────────────────────────────
   mentorMessages:   { role: 'user' | 'ai'; text: string }[] = [];
   mentorInput       = '';
@@ -145,6 +260,7 @@ export class AzureAiLearnComponent implements OnInit, OnDestroy {
     this.clearIntervals();
     this.archSub?.unsubscribe();
     this.mentorSub?.unsubscribe();
+    this.playgroundSub?.unsubscribe();
   }
   
   toggleDarkMode(): void {

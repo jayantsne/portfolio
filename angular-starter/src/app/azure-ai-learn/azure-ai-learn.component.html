@@ -1,45 +1,57 @@
 <div class="azure-ai-container">
   <!-- Roadmap View -->
   <div *ngIf="currentView === 'roadmap'" class="roadmap-view" @fadeInUp>
-    <!-- Hero Section -->
-    <div class="hero-section">
-      <div class="hero-icon">☁️</div>
-      <h1 class="hero-title">Azure AI-102 Certification</h1>
-      <p class="hero-subtitle">Master AI Engineering with Analogies & Real-World Examples</p>
-      
-      <!-- Progress Overview -->
-      <div class="progress-overview">
-        <div class="progress-card">
-          <div class="progress-icon">📈</div>
-          <div class="progress-info">
-            <div class="progress-label">Overall Progress</div>
-            <div class="progress-value">{{getOverallProgress()}}%</div>
-            <div class="progress-bar">
-              <div class="progress-fill" [style.width.%]="getOverallProgress()"></div>
-            </div>
+    <!-- Compact course header card — aligned with AI Learn dark theme -->
+    <div class="az-course-header">
+      <!-- Left: breadcrumb · title · meta pills · inline progress -->
+      <div>
+        <div class="az-course-breadcrumb">
+          <a routerLink="/ai-learn">AI Learn</a>
+          <span class="az-course-breadcrumb-sep">›</span>
+          <span>Certifications</span>
+          <span class="az-course-breadcrumb-sep">›</span>
+          <span>Azure AI-102</span>
+        </div>
+        <h1 class="az-course-title">☁️ Azure AI-102 Certification</h1>
+        <p class="az-course-subtitle">Master AI Engineering with Analogies &amp; Real-World Examples</p>
+        <div class="az-course-meta">
+          <span class="az-meta-pill az-meta-pill--azure">🔷 Microsoft Azure</span>
+          <span class="az-meta-pill">⏱️ {{modules.length * 10}} hours</span>
+          <span class="az-meta-pill">📖 {{modules.length}} modules</span>
+          <span class="az-meta-pill">{{getTotalTopics()}} topics</span>
+        </div>
+        <div class="az-header-progress">
+          <div class="az-header-progress-track">
+            <div class="az-header-progress-fill" [style.width.%]="getOverallProgress()"></div>
+          </div>
+          <span class="az-header-progress-pct">{{getOverallProgress()}}%</span>
+        </div>
+      </div>
+      <!-- Right: vertical stat pills -->
+      <div class="az-course-stats">
+        <div class="az-stat-pill">
+          <span class="az-stat-pill-icon">📚</span>
+          <div class="az-stat-pill-body">
+            <span class="az-stat-pill-value">{{getCompletedModules()}} / {{modules.length}}</span>
+            <span class="az-stat-pill-label">Modules complete</span>
           </div>
         </div>
-        
-        <div class="stats-grid">
-          <div class="stat-item">
-            <div class="stat-icon">📚</div>
-            <div class="stat-value">{{getCompletedModules()}} / {{modules.length}}</div>
-            <div class="stat-label">Modules Complete</div>
+        <div class="az-stat-pill">
+          <span class="az-stat-pill-icon">✅</span>
+          <div class="az-stat-pill-body">
+            <span class="az-stat-pill-value">{{getCompletedTopics()}} / {{getTotalTopics()}}</span>
+            <span class="az-stat-pill-label">Topics mastered</span>
           </div>
-          <div class="stat-item">
-            <div class="stat-icon">✅</div>
-            <div class="stat-value">{{getCompletedTopics()}} / {{getTotalTopics()}}</div>
-            <div class="stat-label">Topics Mastered</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-icon">🏆</div>
-            <div class="stat-value">{{modules.length * 10}}</div>
-            <div class="stat-label">Total Hours</div>
+        </div>
+        <div class="az-stat-pill">
+          <span class="az-stat-pill-icon">🏆</span>
+          <div class="az-stat-pill-body">
+            <span class="az-stat-pill-value">{{modules.length * 10}}h</span>
+            <span class="az-stat-pill-label">Study time</span>
           </div>
         </div>
       </div>
-    </div>
-
+    </div><!-- /az-course-header -->
     <!-- Learning Roadmap -->
     <div class="roadmap-section">
       <h2 class="section-title">
@@ -98,6 +110,109 @@
       </div>
     </div>
 
+    <!-- ── AI Playground section ── -->
+    <div class="az-playground-wrap">
+      <!-- Toggle trigger -->
+      <button class="az-playground-toggle" (click)="togglePlayground()">
+        <span>⚡</span>
+        <span>AI Playground</span>
+        <span style="font-size:0.78rem;color:rgba(255,255,255,0.35);font-weight:400;margin-left:4px;">Experiment with AI prompts while you learn</span>
+        <span class="az-playground-toggle-chevron" [class.open]="showPlayground">▾</span>
+      </button>
+
+      <!-- Playground panel -->
+      <div class="az-playground" *ngIf="showPlayground">
+        <div class="az-playground-inner">
+
+          <!-- ── LEFT: prompt input ── -->
+          <div class="az-pg-input-col">
+            <div class="az-pg-col-label">Prompt</div>
+
+            <!-- System context pill -->
+            <div class="az-pg-system">
+              <span class="az-pg-system-label">System</span>
+              <span class="az-pg-system-text">You are an expert Azure AI-102 study assistant. Be concise and exam-focused.</span>
+            </div>
+
+            <!-- User prompt textarea -->
+            <textarea class="az-pg-prompt"
+                      [(ngModel)]="playgroundPrompt"
+                      placeholder="Ask anything about Azure AI services, cognitive APIs, responsible AI…"
+                      (keydown.ctrl.enter)="runPlayground()"
+                      rows="7"></textarea>
+
+            <!-- Example prompts -->
+            <div class="az-pg-examples-label">Try an example</div>
+            <div class="az-pg-examples">
+              <button *ngFor="let ex of playgroundExamples"
+                      class="az-pg-example-chip"
+                      (click)="useExample(ex.prompt)">{{ ex.label }}</button>
+            </div>
+          </div>
+
+          <!-- ── RIGHT: config + output ── -->
+          <div class="az-pg-output-col">
+            <!-- Config params -->
+            <div class="az-pg-params">
+              <div class="az-pg-param">
+                <span class="az-pg-param-label">Model</span>
+                <select class="az-pg-select" [(ngModel)]="playgroundModel">
+                  <option value="gemini">Gemini Flash</option>
+                  <option value="groq">Groq Llama 3</option>
+                  <option value="auto">Auto (fastest)</option>
+                </select>
+              </div>
+              <div class="az-pg-param">
+                <span class="az-pg-param-label">Temperature &nbsp;<span class="az-pg-temp-val">{{playgroundTemperature | number:'1.1-1'}}</span></span>
+                <div class="az-pg-temp-row">
+                  <input type="range" min="0" max="1" step="0.1"
+                         [(ngModel)]="playgroundTemperature" />
+                </div>
+              </div>
+            </div>
+
+            <!-- Terminal-style output -->
+            <div class="az-pg-output">
+              <div class="az-pg-output-header">Output</div>
+              <div class="az-pg-output-body">
+                <div class="az-pg-loading" *ngIf="playgroundLoading">
+                  <span>Generating</span>
+                  <span class="az-pg-dots"><span></span><span></span><span></span></span>
+                </div>
+                <span class="az-pg-placeholder"
+                      *ngIf="!playgroundLoading && !playgroundOutput && !playgroundError">
+                  Response will appear here…
+                </span>
+                <span class="az-pg-error" *ngIf="playgroundError && !playgroundLoading">
+                  ⚠️ {{ playgroundError }}
+                </span>
+                <div *ngIf="playgroundOutput && !playgroundLoading"
+                     [innerHTML]="playgroundOutput | markdown"></div>
+              </div>
+            </div>
+
+            <!-- Run / Reset -->
+            <div class="az-pg-actions">
+              <button class="az-pg-run-btn"
+                      (click)="runPlayground()"
+                      [disabled]="playgroundLoading || !playgroundPrompt.trim()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                {{ playgroundLoading ? 'Generating…' : 'Run  ↵Ctrl+Enter' }}
+              </button>
+              <button class="az-pg-reset-btn" (click)="resetPlayground()">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer: token / timing info -->
+        <div class="az-pg-footer" *ngIf="playgroundOutput">
+          <span class="az-pg-footer-stat">⏱ <strong>{{ playgroundMs }}ms</strong></span>
+          <span class="az-pg-footer-stat" *ngIf="playgroundModel !== 'auto'">Model: <strong>{{ playgroundModel }}</strong></span>
+        </div>
+      </div><!-- /az-playground -->
+    </div><!-- /az-playground-wrap -->
+
+
     <!-- Action Buttons -->
     <div class="action-section">
       <button class="action-btn reset-btn" (click)="resetProgress()">
@@ -109,248 +224,399 @@
 
   <!-- Module View -->
   <div *ngIf="currentView === 'module' && selectedModule" class="module-view" @fadeInUp>
-    <!-- Module Header -->
-    <div class="module-header">
-      <button class="back-btn" (click)="backToRoadmap()">
-        <span>←</span> Back to Roadmap
-      </button>
-      
-      <div class="module-hero">
-        <div class="module-hero-icon">{{selectedModule.icon}}</div>
-        <div class="module-hero-content">
-          <h1 class="module-hero-title">{{selectedModule.title}}</h1>
-          <div class="module-hero-meta">
-            <span class="meta-item">⏱️ {{selectedModule.duration}}</span>
-            <span class="meta-item difficulty" [class]="selectedModule.difficulty.toLowerCase()">
-              {{selectedModule.difficulty}}
-            </span>
-            <span class="meta-item">📝 {{selectedModule.topics.length}} Topics</span>
-          </div>
-          
-          <!-- Module Progress -->
-          <div class="module-hero-progress">
-            <div class="progress-bar-large">
-              <div class="progress-fill-large" 
-                   [style.width.%]="selectedModule.progress"></div>
+
+    <!-- Module header card -->
+    <div class="az-module-header">
+      <div class="az-module-header-inner">
+        <div class="az-module-back-row">
+          <button class="az-module-back-btn" (click)="backToRoadmap()">
+            &#8592; All Modules
+          </button>
+          <span class="az-module-breadcrumb">
+            <span>Azure AI-102</span>
+            <span class="az-module-breadcrumb-sep">&#8250;</span>
+            <span>{{ selectedModule.title }}</span>
+          </span>
+        </div>
+
+        <div class="az-module-hero-card">
+          <!-- Module icon badge -->
+          <div class="az-module-icon-badge">{{ selectedModule.icon }}</div>
+
+          <!-- Title + meta -->
+          <div class="az-module-hero-body">
+            <h1 class="az-module-hero-title">{{ selectedModule.title }}</h1>
+            <div class="az-module-hero-pills">
+              <span class="az-meta-pill">&#9201;&#65039; {{ selectedModule.duration }}</span>
+              <span class="az-meta-pill az-meta-pill--diff-{{ selectedModule.difficulty.toLowerCase() }}">
+                {{ selectedModule.difficulty }}
+              </span>
+              <span class="az-meta-pill">&#128221; {{ selectedModule.topics.length }} Topics</span>
+              <span class="az-meta-pill az-meta-pill--progress">
+                {{ selectedModule.progress }}% Complete
+              </span>
             </div>
-            <span class="progress-label-large">{{selectedModule.progress}}% Complete</span>
+            <div class="az-module-hero-progress">
+              <div class="az-header-progress-track">
+                <div class="az-header-progress-fill" [style.width.%]="selectedModule.progress"></div>
+              </div>
+              <span class="az-header-progress-pct">{{ selectedModule.progress }}%</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Topics List -->
-    <div class="topics-section">
-      <h2 class="section-title">
-        <span class="title-icon">📖</span>
-        Topics to Master
-      </h2>
-      
-      <div class="topics-grid">
-        <div *ngFor="let topic of selectedModule.topics; let j = index" 
-             class="topic-card"
-             [class.completed]="topic.completed"
+    <!-- Topics list -->
+    <div class="az-topics-section">
+      <div class="az-topics-header">
+        <h2 class="az-topics-section-title">
+          <span>&#128218;</span> Topics to Master
+        </h2>
+        <span class="az-topics-count-badge">
+          {{ getCompletedTopicsForModule(selectedModule) }} / {{ selectedModule.topics.length }} done
+        </span>
+      </div>
+
+      <div class="az-topics-list">
+        <div *ngFor="let topic of selectedModule.topics; let j = index"
+             class="az-topic-row"
+             [class.az-topic-row--done]="topic.completed"
              @slideIn>
-          
-          <!-- Topic Number -->
-          <div class="topic-number">{{j + 1}}</div>
-          
-          <!-- Topic Content -->
-          <div class="topic-content" (click)="selectTopic(topic)">
-            <h3 class="topic-title">{{topic.name}}</h3>
-            <p class="topic-description">{{topic.description}}</p>
-            
-            <!-- Key Points Preview -->
-            <div class="topic-preview">
-              <span class="preview-label">📌 {{topic.keyPoints.length}} Key Points</span>
+
+          <!-- Number badge -->
+          <div class="az-topic-row-num"
+               [class.az-topic-row-num--done]="topic.completed">
+            <span *ngIf="!topic.completed">{{ j + 1 }}</span>
+            <span *ngIf="topic.completed">&#10003;</span>
+          </div>
+
+          <!-- Content -->
+          <div class="az-topic-row-body" (click)="selectTopic(topic)">
+            <div class="az-topic-row-title-row">
+              <h3 class="az-topic-row-title">{{ topic.name }}</h3>
+              <span *ngIf="topic.completed" class="az-topic-done-chip">&#10003; Done</span>
+            </div>
+            <p class="az-topic-row-desc">{{ topic.description }}</p>
+            <div class="az-topic-row-meta">
+              <span class="az-topic-meta-tag">&#128204; {{ topic.keyPoints.length }} key points</span>
+              <span *ngIf="topic.codeExample" class="az-topic-meta-tag">&#128187; Code example</span>
+              <span *ngIf="topic.stepByStep" class="az-topic-meta-tag">&#127919; Step-by-step</span>
             </div>
           </div>
-          
-          <!-- Action Buttons -->
-          <div class="topic-actions-inline">
-            <button class="ai-understand-btn" 
-                    (click)="understandWithAi(topic.name); $event.stopPropagation()"
-                    title="Get AI-powered explanation">
-              <span class="btn-icon">🤖</span>
-              <span class="btn-text">Understand with AI</span>
+
+          <!-- Actions -->
+          <div class="az-topic-row-actions">
+            <button class="az-topic-ai-btn"
+                    (click)="openTopicWithAiMentor(topic); $event.stopPropagation()"
+                    title="Open topic with AI Mentor panel">
+              &#129302; AI Mentor
             </button>
-            
-            <!-- Status Badge -->
-            <div class="topic-status">
-              <span *ngIf="topic.completed" class="status-badge completed-badge">✓ Completed</span>
-              <span *ngIf="!topic.completed" class="status-badge pending-badge" (click)="selectTopic(topic)">Start Learning</span>
-            </div>
+            <button class="az-topic-start-btn"
+                    (click)="selectTopic(topic); $event.stopPropagation()">
+              <span *ngIf="!topic.completed">Start &#8594;</span>
+              <span *ngIf="topic.completed">Review &#8594;</span>
+            </button>
           </div>
-          
-          <!-- Arrow -->
-          <div class="topic-arrow" (click)="selectTopic(topic)">→</div>
         </div>
       </div>
 
-      <!-- Take Quiz -->
-      <div class="al-quiz-launch" *ngIf="getModuleQuiz().length > 0">
-        <button class="al-quiz-launch-btn" (click)="startQuiz()">
-          <span>📝</span> Take Module Quiz
-          <span class="al-quiz-count-badge">{{ getModuleQuiz().length }} Qs</span>
+      <!-- Quiz CTA -->
+      <div class="az-quiz-cta" *ngIf="getModuleQuiz().length > 0">
+        <div class="az-quiz-cta-left">
+          <span class="az-quiz-cta-icon">&#128221;</span>
+          <div>
+            <p class="az-quiz-cta-title">Module Quiz</p>
+            <p class="az-quiz-cta-sub">Test your knowledge with {{ getModuleQuiz().length }} questions</p>
+          </div>
+        </div>
+        <button class="az-quiz-cta-btn" (click)="startQuiz()">
+          Take Quiz
+          <span class="az-quiz-count-badge">{{ getModuleQuiz().length }}Q</span>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Topic Detail View -->
-  <div *ngIf="currentView === 'topic' && selectedTopic && selectedModule" class="topic-view" @fadeInUp>
-    <!-- Topic Header -->
-    <div class="topic-header">
-      <button class="back-btn" (click)="backToModule()">
-        <span>←</span> Back to {{selectedModule.title}}
+  <!-- Topic Detail View — 3-column AI Learning Workspace -->
+  <div *ngIf="currentView === 'topic' && selectedTopic && selectedModule" class="topic-view workspace-layout" @fadeInUp>
+
+    <!-- ── LEFT: Topics sidebar ──────────────────────────────────────── -->
+    <nav class="ws-sidenav">
+      <button class="ws-back-btn" (click)="backToModule()">
+        <span>&#8592;</span> {{ selectedModule.title | slice:0:22 }}
       </button>
-      
-      <div class="topic-hero">
-        <div class="topic-hero-badge">
-          <span *ngIf="selectedTopic.completed">✓</span>
-          <span *ngIf="!selectedTopic.completed">📖</span>
-        </div>
-        <h1 class="topic-hero-title">{{selectedTopic.name}}</h1>
-      </div>
-    </div>
 
-    <!-- Topic Content -->
-    <div class="topic-content-section">
-      <!-- Overview -->
-      <div class="content-card overview-card">
-        <div class="card-icon">💡</div>
-        <h3 class="card-title">What is this?</h3>
-        <p class="card-text">{{selectedTopic.description}}</p>
+      <div class="ws-sidenav-head">
+        <span class="ws-sidenav-icon">{{ selectedModule.icon }}</span>
+        <span class="ws-sidenav-label">Topics in this module</span>
       </div>
 
-      <!-- Analogy -->
-      <div class="content-card analogy-card">
-        <div class="card-icon-large">{{selectedTopic.analogy.split(' ')[0]}}</div>
-        <h3 class="card-title">Think of it like this...</h3>
-        <div class="analogy-content">
-          <p class="card-text">{{selectedTopic.analogy.substring(selectedTopic.analogy.indexOf(' ') + 1)}}</p>
-        </div>
-      </div>
-
-      <!-- Key Points -->
-      <div class="content-card keypoints-card">
-        <div class="card-icon">📌</div>
-        <h3 class="card-title">Key Points to Remember</h3>
-        <ul class="keypoints-list">
-          <li *ngFor="let point of selectedTopic.keyPoints" class="keypoint-item">
-            <span class="keypoint-marker">✓</span>
-            <span class="keypoint-text">{{point}}</span>
-          </li>
-        </ul>
-      </div>
-
-      <!-- Example -->
-      <div class="content-card example-card">
-        <div class="card-icon">💼</div>
-        <h3 class="card-title">Real-World Example</h3>
-        <div class="example-content">
-          <p class="card-text">{{selectedTopic.example}}</p>
-        </div>
-      </div>
-      
-      <!-- Step-by-Step Guide (if available) -->
-      <div *ngIf="selectedTopic.stepByStep" class="content-card steps-card">
-        <div class="card-icon">🎯</div>
-        <h3 class="card-title">Step-by-Step Guide</h3>
-        <ol class="steps-list">
-          <li *ngFor="let step of selectedTopic.stepByStep" class="step-item">
-            <span class="step-text">{{step}}</span>
-          </li>
-        </ol>
-      </div>
-      
-      <!-- Code Example (if available) -->
-      <div *ngIf="selectedTopic.codeExample" class="content-card code-card">
-        <div class="card-icon">💻</div>
-        <h3 class="card-title">Code Example</h3>
-        <div class="code-container">
-          <pre><code>{{selectedTopic.codeExample}}</code></pre>
-          <button class="copy-btn" title="Copy code">📋</button>
-        </div>
-      </div>
-
-      <!-- Architecture Diagram -->
-      <div class="al-arch-section">
-        <button class="al-arch-btn" (click)="showArchitectureDiagram()" [disabled]="archDiagramLoading">
-          <span>🏗️</span>
-          {{ archDiagramLoading ? 'Generating…' : (archDiagramOpen ? 'Hide Diagram' : 'Show Architecture') }}
+      <div class="ws-topic-list">
+        <button *ngFor="let t of selectedModule.topics; let j = index"
+                class="ws-topic-item"
+                [class.ws-topic-item--active]="t.id === selectedTopic.id"
+                [class.ws-topic-item--done]="t.completed"
+                (click)="selectTopic(t)">
+          <span class="ws-topic-num">{{ j + 1 }}</span>
+          <span class="ws-topic-name">{{ t.name }}</span>
+          <span class="ws-topic-check" *ngIf="t.completed">&#10003;</span>
         </button>
-        <div class="al-arch-panel" *ngIf="archDiagramOpen || archDiagramLoading">
-          <div class="al-arch-panel-hd">
-            <span>📐 Architecture: {{ selectedTopic?.name }}</span>
-            <button class="al-arch-close" (click)="closeArchDiagram()">✕</button>
+      </div>
+
+      <button class="ws-quiz-btn" *ngIf="getModuleQuiz().length > 0" (click)="startQuiz()">
+        &#128221; Module Quiz
+        <span class="ws-quiz-badge">{{ getModuleQuiz().length }}Q</span>
+      </button>
+    </nav>
+
+    <!-- ── CENTER: Lesson content ─────────────────────────────────────── -->
+    <main class="ws-content">
+      <!-- Topic hero bar -->
+      <div class="ws-topic-hero">
+        <div class="ws-topic-hero-left">
+          <div class="ws-topic-hero-badge">
+            <span *ngIf="selectedTopic.completed">&#10003;</span>
+            <span *ngIf="!selectedTopic.completed">&#128218;</span>
           </div>
-          <div class="al-arch-skeleton" *ngIf="archDiagramLoading">
-            <div class="al-arch-skel-box"></div>
-            <div class="al-arch-skel-arrow">↓</div>
-            <div class="al-arch-skel-box"></div>
-            <div class="al-arch-skel-arrow">↓</div>
-            <div class="al-arch-skel-box"></div>
-            <p>AI is generating the architecture diagram…</p>
+          <div>
+            <h1 class="ws-topic-hero-title">{{ selectedTopic.name }}</h1>
+            <p class="ws-topic-hero-sub">{{ selectedTopic.description }}</p>
           </div>
-          <div class="al-arch-content" *ngIf="!archDiagramLoading && archDiagramHtml" [innerHTML]="archDiagramHtml"></div>
+        </div>
+        <div class="ws-topic-hero-right">
+          <button *ngIf="!selectedTopic.completed"
+                  class="ws-complete-btn"
+                  (click)="markTopicComplete(selectedTopic)">
+            &#10003; Mark Complete
+          </button>
+          <span *ngIf="selectedTopic.completed" class="ws-completed-badge">&#10003; Completed</span>
         </div>
       </div>
 
-      <!-- Inline AI Mentor Chat -->
-      <div class="al-chat-section">
-        <div class="al-chat-hd">
-          <span>🤖 Ask AI Mentor about {{ selectedTopic?.name }}</span>
-          <button class="al-chat-clear-btn" *ngIf="mentorMessages.length > 0" (click)="clearMentorChat()">Clear</button>
+      <!-- Content cards -->
+      <div class="ws-cards">
+
+        <!-- Analogy -->
+        <div class="content-card analogy-card">
+          <div class="card-icon-large">{{ selectedTopic.analogy.split(' ')[0] }}</div>
+          <h3 class="card-title">Think of it like this&#8230;</h3>
+          <p class="card-text">{{ selectedTopic.analogy.substring(selectedTopic.analogy.indexOf(' ') + 1) }}</p>
         </div>
-        <div class="al-chat-body" *ngIf="mentorMessages.length > 0">
-          <div *ngFor="let m of mentorMessages" class="al-chat-msg" [class.al-chat-msg--user]="m.role==='user'" [class.al-chat-msg--ai]="m.role==='ai'">
-            <span class="al-chat-msg-icon">{{ m.role === 'user' ? '👤' : '🤖' }}</span>
+
+        <!-- Key Points -->
+        <div class="content-card keypoints-card">
+          <div class="card-icon">&#128204;</div>
+          <h3 class="card-title">Key Points to Remember</h3>
+          <ul class="keypoints-list">
+            <li *ngFor="let point of selectedTopic.keyPoints" class="keypoint-item">
+              <span class="keypoint-marker">&#10003;</span>
+              <span class="keypoint-text">{{ point }}</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Example -->
+        <div class="content-card example-card">
+          <div class="card-icon">&#128188;</div>
+          <h3 class="card-title">Real-World Example</h3>
+          <p class="card-text">{{ selectedTopic.example }}</p>
+        </div>
+
+        <!-- Step-by-Step Guide -->
+        <div *ngIf="selectedTopic.stepByStep" class="content-card steps-card">
+          <div class="card-icon">&#127919;</div>
+          <h3 class="card-title">Step-by-Step Guide</h3>
+          <ol class="steps-list">
+            <li *ngFor="let step of selectedTopic.stepByStep" class="step-item">
+              <span class="step-text">{{ step }}</span>
+            </li>
+          </ol>
+        </div>
+
+        <!-- Code Example -->
+        <div *ngIf="selectedTopic.codeExample" class="content-card code-card">
+          <div class="card-icon">&#128187;</div>
+          <h3 class="card-title">Code Example</h3>
+          <div class="code-container">
+            <pre><code>{{ selectedTopic.codeExample }}</code></pre>
+            <button class="copy-btn" (click)="copyToClipboard(selectedTopic.codeExample || '', 'code')" title="Copy code">
+              {{ isCopied('code') ? '&#10003;' : '&#128203;' }}
+            </button>
+          </div>
+        </div>
+
+        <!-- Architecture Diagram -->
+        <div class="al-arch-section">
+          <button class="al-arch-btn" (click)="showArchitectureDiagram()" [disabled]="archDiagramLoading">
+            <span>&#127959;&#65039;</span>
+            {{ archDiagramLoading ? 'Generating&#8230;' : (archDiagramOpen ? 'Hide Diagram' : 'Show Architecture') }}
+          </button>
+          <div class="al-arch-panel" *ngIf="archDiagramOpen || archDiagramLoading">
+            <div class="al-arch-panel-hd">
+              <span>&#128208; Architecture: {{ selectedTopic?.name }}</span>
+              <button class="al-arch-close" (click)="closeArchDiagram()">&#10005;</button>
+            </div>
+            <div class="al-arch-skeleton" *ngIf="archDiagramLoading">
+              <div class="al-arch-skel-box"></div>
+              <div class="al-arch-skel-arrow">&#8595;</div>
+              <div class="al-arch-skel-box"></div>
+              <div class="al-arch-skel-arrow">&#8595;</div>
+              <div class="al-arch-skel-box"></div>
+              <p>AI is generating the architecture diagram&#8230;</p>
+            </div>
+            <div class="al-arch-content" *ngIf="!archDiagramLoading && archDiagramHtml" [innerHTML]="archDiagramHtml"></div>
+          </div>
+        </div>
+
+      </div><!-- /ws-cards -->
+
+      <!-- Prev / Next navigation -->
+      <div class="ws-nav-row">
+        <button class="ws-nav-btn ws-nav-btn--prev"
+                (click)="previousTopic()"
+                [disabled]="selectedModule.topics.indexOf(selectedTopic) === 0">
+          &#8592; Previous
+        </button>
+        <button class="ws-nav-btn ws-nav-btn--next" (click)="nextTopic()">
+          Next &#8594;
+        </button>
+      </div>
+    </main>
+
+    <!-- ── RIGHT: AI Mentor + Notes panel ────────────────────────────── -->
+    <aside class="ws-panel">
+
+      <!-- Tab bar -->
+      <div class="ws-panel-tabs">
+        <button class="ws-tab-btn"
+                [class.ws-tab-btn--active]="activePanelTab === 'mentor'"
+                (click)="switchPanelTab('mentor')">
+          &#129302; AI Mentor
+        </button>
+        <button class="ws-tab-btn"
+                [class.ws-tab-btn--active]="activePanelTab === 'notes'"
+                (click)="switchPanelTab('notes')">
+          &#128221; Notes
+        </button>
+      </div>
+
+      <!-- ─ Mentor tab ──────────────────────────────────────────────── -->
+      <div class="ws-panel-body" *ngIf="activePanelTab === 'mentor'">
+        <p class="ws-panel-hint">Ask about <strong>{{ selectedTopic?.name }}</strong></p>
+
+        <!-- Quick action chips -->
+        <div class="ws-mentor-chips">
+          <button class="ws-mentor-chip" (click)="quickMentorAsk('Explain ' + selectedTopic.name + ' in very simple terms for a beginner')">
+            &#128161; Explain Simply
+          </button>
+          <button class="ws-mentor-chip" (click)="quickMentorAsk('Give a real-world analogy for ' + selectedTopic.name)">
+            &#128279; Analogy
+          </button>
+          <button class="ws-mentor-chip" (click)="quickMentorAsk('Create an AI-102 exam interview question about ' + selectedTopic.name)">
+            &#10067; Interview Q
+          </button>
+          <button class="ws-mentor-chip" (click)="quickMentorAsk('What are common mistakes when working with ' + selectedTopic.name + ' in Azure?')">
+            &#9888;&#65039; Common Mistakes
+          </button>
+          <button class="ws-mentor-chip" (click)="quickMentorAsk('Show a practical code example using ' + selectedTopic.name)">
+            &#128104;&#8205;&#128187; Code Example
+          </button>
+          <button class="ws-mentor-chip" (click)="quickMentorAsk('How does ' + selectedTopic.name + ' appear in Azure AI-102 exam questions? Give tips.')">
+            &#128218; Exam Tips
+          </button>
+        </div>
+
+        <!-- Chat messages -->
+        <div class="al-chat-body ws-chat-body" *ngIf="mentorMessages.length > 0">
+          <div *ngFor="let m of mentorMessages"
+               class="al-chat-msg"
+               [class.al-chat-msg--user]="m.role === 'user'"
+               [class.al-chat-msg--ai]="m.role === 'ai'">
+            <span class="al-chat-msg-icon">{{ m.role === 'user' ? '&#128100;' : '&#129302;' }}</span>
             <div class="al-chat-msg-text" [innerHTML]="m.text"></div>
           </div>
           <div class="al-chat-typing" *ngIf="mentorLoading">
-            <span>🤖 AI Mentor is thinking</span>
+            <span>&#129302; AI Mentor is thinking</span>
             <span class="al-chat-dots"><span></span><span></span><span></span></span>
           </div>
         </div>
-        <div class="al-chat-input-row">
-          <input class="al-chat-input" type="text" [(ngModel)]="mentorInput"
+
+        <!-- Empty state -->
+        <div class="ws-mentor-empty" *ngIf="mentorMessages.length === 0 && !mentorLoading">
+          <div class="ws-mentor-empty-icon">&#129302;</div>
+          <p>Click a chip above or ask a question to start learning!</p>
+        </div>
+
+        <!-- Input row -->
+        <div class="al-chat-input-row ws-chat-input">
+          <input class="al-chat-input"
+                 type="text"
+                 [(ngModel)]="mentorInput"
                  placeholder="Ask about {{ selectedTopic?.name }}…"
-                 (keyup.enter)="sendMentorMessage()" [disabled]="mentorLoading" />
-          <button class="al-chat-send-btn" (click)="sendMentorMessage()" [disabled]="mentorLoading || !mentorInput.trim()">
+                 (keyup.enter)="sendMentorMessage()"
+                 [disabled]="mentorLoading" />
+          <button class="al-chat-send-btn"
+                  (click)="sendMentorMessage()"
+                  [disabled]="mentorLoading || !mentorInput.trim()">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
           </button>
         </div>
-      </div>
 
-      <!-- Action Buttons -->
-      <div class="topic-actions">
-        <button class="nav-btn prev-btn" 
-                (click)="previousTopic()"
-                [disabled]="selectedModule.topics.indexOf(selectedTopic) === 0">
-          <span>←</span> Previous Topic
+        <button class="ws-clear-chat-btn" *ngIf="mentorMessages.length > 0" (click)="clearMentorChat()">
+          Clear conversation
         </button>
-        
-        <button *ngIf="!selectedTopic.completed" 
-                class="action-btn complete-btn" 
-                (click)="markTopicComplete(selectedTopic)">
-          <span class="btn-icon">✓</span>
-          Mark as Complete
+      </div><!-- /mentor tab -->
+
+      <!-- ─ Notes tab ───────────────────────────────────────────────── -->
+      <div class="ws-panel-body" *ngIf="activePanelTab === 'notes'">
+        <p class="ws-panel-hint">Save insights while you learn</p>
+
+        <!-- Add note editor -->
+        <div class="ws-note-editor">
+          <textarea class="ws-note-textarea"
+                    [(ngModel)]="panelNoteText"
+                    placeholder="Write your note or insight here&#8230;"
+                    rows="4"></textarea>
+          <button class="ws-note-save-btn"
+                  (click)="savePanelNote()"
+                  [disabled]="!panelNoteText.trim()">
+            &#128190; Save Note
+          </button>
+        </div>
+
+        <!-- Saved notes list -->
+        <div class="ws-notes-list" *ngIf="panelNotes.length > 0">
+          <div class="ws-note-item" *ngFor="let note of panelNotes; let ni = index">
+            <div class="ws-note-item-header">
+              <span class="ws-note-topic-tag">{{ note.topic }}</span>
+              <button class="ws-note-delete-btn" (click)="deletePanelNote(ni)">&#10005;</button>
+            </div>
+            <p class="ws-note-text">{{ note.text }}</p>
+          </div>
+        </div>
+
+        <!-- Empty notes state -->
+        <div class="ws-mentor-empty" *ngIf="panelNotes.length === 0">
+          <div class="ws-mentor-empty-icon">&#128221;</div>
+          <p>No notes yet. Save insights as you learn!</p>
+        </div>
+
+        <!-- Save all to My Notes CTA -->
+        <button class="ws-save-all-btn"
+                *ngIf="panelNotes.length > 0 && isLoggedIn"
+                [disabled]="noteSaving"
+                (click)="saveAllPanelNotesToService()">
+          <span *ngIf="!noteSaving && !noteSaved">&#9925; Save all to My Notes</span>
+          <span *ngIf="noteSaving">&#8987; Saving&#8230;</span>
+          <span *ngIf="noteSaved">&#10003; Saved!</span>
         </button>
-        
-        <button *ngIf="selectedTopic.completed" 
-                class="action-btn completed-indicator">
-          <span class="btn-icon">✓</span>
-          Completed
-        </button>
-        
-        <button class="nav-btn next-btn" 
-                (click)="nextTopic()">
-          Next Topic <span>→</span>
-        </button>
-      </div>
-    </div>
+      </div><!-- /notes tab -->
+
+    </aside><!-- /ws-panel -->
+
   </div>
+
 </div>
 <!-- Quiz Overlay -->
 <div class="al-quiz-overlay" *ngIf="quizActive" @fadeInUp>

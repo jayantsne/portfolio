@@ -1,6 +1,7 @@
 <header #hdr
         class="site-header"
         [class.ai-learn-header]="isAILearnPage"
+        [class.menu-open]="isMenuOpen"
         [@fadeDown]
         [class.scrolled]="scrolled">
 
@@ -16,135 +17,255 @@
   <!-- Scroll progress bar -->
   <div class="scrollbar"></div>
 
-  <nav class="navbar navbar-expand-lg" id="header-nav" role="navigation">
-    <div class="container">
-      <a class="navbar-brand site-title mb-0 brand" [href]="brandHref">
-        <span class="brand-stack">
-          <span class="brand-text" aria-label="Site name">
-            <span class="brand-name" *ngIf="!isAILearnPage">{{ displayBrandName }}</span>
-            <span class="brand-name" *ngIf="isAILearnPage">🤖 AI Learn</span>
-            <span class="brand-caret" aria-hidden="true"></span>
-          </span>
+  <nav class="navbar" id="header-nav" role="navigation" aria-label="Main navigation">
+    <div class="nav-container">
 
-          <span class="brand-meta" *ngIf="metaText && !isAILearnPage" aria-label="Role and company">
-            <span class="meta-prompt" aria-hidden="true">&gt;</span>
-            <span class="meta-text">{{ metaText }}</span>
-            <span class="meta-caret" aria-hidden="true"></span>
-          </span>
-
-          <span class="brand-meta" *ngIf="isAILearnPage" aria-label="AI Learn subtitle">
-            <span class="meta-prompt" aria-hidden="true">&gt;</span>
-            <span class="meta-text">Master Programming & Interview Skills</span>
-            <span class="meta-caret" aria-hidden="true"></span>
-          </span>
+      <!-- ══════════════════════════════════════
+           LEFT: Brand — horizontal logo + tagline
+           ══════════════════════════════════════ -->
+      <a class="brand" [href]="brandHref" aria-label="AI Learn — go to home">
+        <span class="brand-logo">
+          <span class="brand-name" *ngIf="isAILearnPage">🤖 AI Learn</span>
+          <span class="brand-name" *ngIf="!isAILearnPage">{{ displayBrandName }}</span>
+          <span class="brand-caret" aria-hidden="true"></span>
         </span>
-        <span class="brand-badge" aria-hidden="true"></span>
+        <span class="brand-sep" aria-hidden="true">&#8739;</span>
+        <span class="brand-tagline" *ngIf="isAILearnPage">Learn Programming with AI</span>
+        <span class="brand-tagline" *ngIf="!isAILearnPage && metaText">{{ metaText }}</span>
       </a>
 
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
-              data-bs-target="#navbarSupportedContent"
-              aria-controls="navbarSupportedContent" aria-expanded="false"
-              aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
+      <!-- ══════════════════════════════════════
+           MOBILE TRAILING: mini avatar + hamburger
+           ══════════════════════════════════════ -->
+      <div class="mobile-trailing">
+        <div class="user-avatar-mini"
+             *ngIf="customAuth.isLoggedIn"
+             (click)="openSettings()"
+             role="button" tabindex="0"
+             aria-label="Open settings">
+          {{ customAuth.currentUser?.username?.[0]?.toUpperCase() || '?' }}
+        </div>
 
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav ms-auto me-2">
-          <!-- Portfolio Navigation - Only show when NOT on AI Learn pages -->
-          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('home', $event)" [class.active]="activeSection === 'home'" style="cursor: pointer;">Home</a></li>
-          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('about', $event)" [class.active]="activeSection === 'about'" style="cursor: pointer;">About</a></li>
-          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('skills', $event)" [class.active]="activeSection === 'skills'" style="cursor: pointer;">Skills</a></li>
-          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('experience', $event)" [class.active]="activeSection === 'experience'" style="cursor: pointer;">Experience</a></li>
-          <li class="nav-item" *ngIf="isPortfolioRoute && !isAILearnPage"><a class="nav-link" (click)="scrollToSection('contact', $event)" [class.active]="activeSection === 'contact'" style="cursor: pointer;">Contact</a></li>
-                    <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn" [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active" (click)="closeNavbar()">🏠 Home</a></li>
-          <!-- AI Learn Navigation - Only show on AI Learn pages -->
-          <li class="nav-item" *ngIf="customAuth.isLoggedIn"><a class="nav-link" routerLink="/roadmap" routerLinkActive="active" (click)="closeNavbar()">🗺️ My Roadmap</a></li>
-          <li class="nav-item" *ngIf="customAuth.isLoggedIn"><a class="nav-link" routerLink="/interview-prep" routerLinkActive="active" (click)="closeNavbar()">🎯 Interview Prep</a></li>
+        <button class="hamburger"
+                type="button"
+                (click)="toggleMenu()"
+                [attr.aria-expanded]="isMenuOpen"
+                aria-controls="main-nav-panel"
+                aria-label="Toggle navigation">
+          <span class="hamburger-bar bar-1"></span>
+          <span class="hamburger-bar bar-2"></span>
+          <span class="hamburger-bar bar-3"></span>
+        </button>
+      </div>
 
-          <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link" routerLink="/ai-learn/questions" routerLinkActive="active" (click)="closeNavbar()">📚 Interview Q&A</a></li> -->
-          <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/learn-quest" routerLinkActive="active" (click)="closeNavbar()">🎫 Learn Quest</a></li> -->
-          <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/dsa-game" routerLinkActive="active" (click)="closeNavbar()">🎮 DSA Game</a></li> -->
-          <!-- <li class="nav-item" *ngIf="isAILearnPage"><a class="nav-link game-link" routerLink="/memory-game" routerLinkActive="active" (click)="closeNavbar()">🧠 Memory Game</a></li> -->
-          <li class="nav-item" *ngIf="customAuth.isLoggedIn"><a class="nav-link certification-link" routerLink="/azure-ai-102" routerLinkActive="active" (click)="closeNavbar()">☁️ Azure AI-102</a></li>
-          
-          <!-- AI Learn Link - Show when NOT on AI Learn pages -->
-          <li class="nav-item" *ngIf="!isAILearnPage"><a class="nav-link ai-link" href="https://learnwithai.tech/" target="_blank" rel="noopener noreferrer">🤖 AI Learn</a></li>
+      <!-- ══════════════════════════════════════
+           CENTER + RIGHT: Collapsible nav panel
+           ══════════════════════════════════════ -->
+      <div class="nav-panel"
+           id="main-nav-panel"
+           [class.is-open]="isMenuOpen"
+           (click)="$event.stopPropagation()">
 
-          <!-- ── Custom Auth (all pages) ── -->
-          <!-- Notes link - visible when signed in -->
-          <li class="nav-item" *ngIf="customAuth.isLoggedIn">
-            <a class="nav-link notes-link" routerLink="/notes" routerLinkActive="active" (click)="closeNavbar()">
-              📓 My Notes
-            </a>
+        <!-- ── CENTER: Primary nav groups ── -->
+        <ul class="nav-links" role="list">
+
+          <!-- Portfolio sections (shown on portfolio route only) -->
+          <li *ngIf="isPortfolioRoute && !isAILearnPage">
+            <a class="nav-link" (click)="scrollToSection('home', $event); closeNavbar()"
+               [class.active]="activeSection === 'home'">Home</a>
+          </li>
+          <li *ngIf="isPortfolioRoute && !isAILearnPage">
+            <a class="nav-link" (click)="scrollToSection('about', $event); closeNavbar()"
+               [class.active]="activeSection === 'about'">About</a>
+          </li>
+          <li *ngIf="isPortfolioRoute && !isAILearnPage">
+            <a class="nav-link" (click)="scrollToSection('skills', $event); closeNavbar()"
+               [class.active]="activeSection === 'skills'">Skills</a>
+          </li>
+          <li *ngIf="isPortfolioRoute && !isAILearnPage">
+            <a class="nav-link" (click)="scrollToSection('experience', $event); closeNavbar()"
+               [class.active]="activeSection === 'experience'">Experience</a>
+          </li>
+          <li *ngIf="isPortfolioRoute && !isAILearnPage">
+            <a class="nav-link" (click)="scrollToSection('contact', $event); closeNavbar()"
+               [class.active]="activeSection === 'contact'">Contact</a>
           </li>
 
-          <!-- Subscription trial badge (never shown to admins) -->
-          <li class="nav-item" *ngIf="customAuth.isLoggedIn && subSvc.currentStatus && !customAuth.isAdmin">
-            <a class="sub-trial-badge"
-               [class.sub-trial-badge--trial]="subSvc.currentStatus?.isTrialActive"
-               [class.sub-trial-badge--active]="subSvc.currentStatus?.isSubscriptionActive"
-               [class.sub-trial-badge--expired]="subSvc.currentStatus?.subscriptionStatus === 'expired'"
-               routerLink="/subscribe"
-               (click)="closeNavbar()"
-               title="Subscription status">
-              <span *ngIf="subSvc.currentStatus?.isTrialActive">
-                ⏰ Trial – {{ subSvc.currentStatus?.trialDaysRemaining }}d left
-              </span>
-              <span *ngIf="subSvc.currentStatus?.isSubscriptionActive">✓ Pro</span>
-              <span *ngIf="subSvc.currentStatus?.subscriptionStatus === 'expired'">🔒 Subscribe</span>
-            </a>
+          <!-- ──────────── AI Learn navigation ──────────── -->
+
+          <!-- Home -->
+          <li *ngIf="isAILearnPage">
+            <a class="nav-link" routerLink="/ai-learn"
+               [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"
+               (click)="closeNavbar()">Home</a>
           </li>
 
-          <!-- Admin badge — only visible to admin users -->
-          <li class="nav-item" *ngIf="customAuth.isAdmin">
-            <span class="admin-badge" title="Admin account — full access enabled">
-              🛡️ Admin
-            </span>
-          </li>
-
-          <!-- User avatar chip -->
-          <li class="nav-item" *ngIf="customAuth.isLoggedIn">
-            <div class="user-chip">
-              <div class="user-chip-avatar user-chip-avatar-letter">
-                {{ customAuth.currentUser?.username?.[0]?.toUpperCase() || '?' }}
-              </div>
-              <span class="user-chip-name">{{ customAuth.currentUser?.username }}</span>
-              <button class="user-chip-settings" (click)="openSettings()" title="Settings">⚙️</button>
+          <!-- Learn ▾ dropdown -->
+          <li class="has-dropdown" *ngIf="isAILearnPage && customAuth.isLoggedIn"
+              (mouseenter)="openDropdown('learn')"
+              (mouseleave)="closeDropdowns()">
+            <button class="nav-link nav-link--dropdown"
+                    (click)="toggleDropdown('learn', $event)"
+                    [class.active]="activeDropdown === 'learn'"
+                    aria-haspopup="true"
+                    [attr.aria-expanded]="activeDropdown === 'learn'">
+              Learn <span class="nav-chevron" [class.open]="activeDropdown === 'learn'">▾</span>
+            </button>
+            <div class="dropdown-panel" [class.is-visible]="activeDropdown === 'learn'" role="menu">
+              <div class="dropdown-header">Learn</div>
+              <a class="dropdown-item" routerLink="/ai-learn"
+                 [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"
+                 (click)="closeNavbar()" role="menuitem">
+                <span class="di-icon">🤖</span>
+                <span class="di-body">
+                  <span class="di-label">AI Tutor</span>
+                  <span class="di-desc">Chat &amp; learn any concept with AI</span>
+                </span>
+              </a>
+              <a class="dropdown-item" routerLink="/roadmap" routerLinkActive="active"
+                 (click)="closeNavbar()" role="menuitem">
+                <span class="di-icon">🗺️</span>
+                <span class="di-body">
+                  <span class="di-label">My Roadmap</span>
+                  <span class="di-desc">Your personalized learning path</span>
+                </span>
+              </a>
+              <div class="dropdown-divider"></div>
+              <a class="dropdown-item" routerLink="/notes" routerLinkActive="active"
+                 (click)="closeNavbar()" role="menuitem">
+                <span class="di-icon">📓</span>
+                <span class="di-body">
+                  <span class="di-label">My Notes</span>
+                  <span class="di-desc">Review saved explanations</span>
+                </span>
+              </a>
             </div>
           </li>
 
-          <!-- Sign-in button - visible when not signed in -->
-          <li class="nav-item" *ngIf="!customAuth.isLoggedIn">
-            <button class="google-signin-nav-btn" (click)="openAuthModal('login')">🔐 Sign In</button>
+          <!-- Practice ▾ dropdown (Interview + Certifications merged) -->
+          <li class="has-dropdown" *ngIf="customAuth.isLoggedIn"
+              (mouseenter)="openDropdown('practice')"
+              (mouseleave)="closeDropdowns()">
+            <button class="nav-link nav-link--dropdown"
+                    (click)="toggleDropdown('practice', $event)"
+                    [class.active]="activeDropdown === 'practice'"
+                    aria-haspopup="true"
+                    [attr.aria-expanded]="activeDropdown === 'practice'">
+              Practice <span class="nav-chevron" [class.open]="activeDropdown === 'practice'">▾</span>
+            </button>
+            <div class="dropdown-panel" [class.is-visible]="activeDropdown === 'practice'" role="menu">
+              <div class="dropdown-header">Interview Practice</div>
+              <a class="dropdown-item" routerLink="/interview-prep" routerLinkActive="active"
+                 (click)="closeNavbar()" role="menuitem">
+                <span class="di-icon">🎯</span>
+                <span class="di-body">
+                  <span class="di-label">Interview Prep</span>
+                  <span class="di-desc">AI-powered mock interviews</span>
+                </span>
+              </a>
+              <a class="dropdown-item" routerLink="/ai-learn/questions" routerLinkActive="active"
+                 (click)="closeNavbar()" role="menuitem">
+                <span class="di-icon">📚</span>
+                <span class="di-body">
+                  <span class="di-label">Interview Q&amp;A</span>
+                  <span class="di-desc">Browse question bank</span>
+                </span>
+              </a>
+              <div class="dropdown-divider"></div>
+              <div class="dropdown-header">Certification Prep</div>
+              <a class="dropdown-item" routerLink="/azure-ai-102" routerLinkActive="active"
+                 (click)="closeNavbar()" role="menuitem">
+                <span class="di-icon">☁️</span>
+                <span class="di-body">
+                  <span class="di-label">Azure AI-102</span>
+                  <span class="di-desc">AI Engineer Associate</span>
+                </span>
+              </a>
+              <span class="dropdown-item dropdown-item--coming" role="menuitem" aria-disabled="true">
+                <span class="di-icon">⭐</span>
+                <span class="di-body">
+                  <span class="di-label">AI Fundamentals</span>
+                  <span class="di-badge">Coming soon</span>
+                </span>
+              </span>
+            </div>
           </li>
-          
-          <!-- <li class="nav-item" *ngIf="!authService.isAuthenticated() && !isAILearnPage">
-            <a class="nav-link login-btn" (click)="login()" style="cursor: pointer;">
-              🔐 Login
-            </a>
-          </li> -->
-          <!-- <li class="nav-item" *ngIf="authService.isAuthenticated()"><a class="nav-link" routerLink="/questions">📚 Q&A</a></li>
-          <li class="nav-item dropdown" *ngIf="authService.isAuthenticated()">
-            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-              🔒 Admin
-            </a>
-            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="adminDropdown">
-              <li><a class="dropdown-item" routerLink="/admin">🔐 Admin Panel</a></li>
-              <li><a class="dropdown-item" routerLink="/admin" fragment="portfolio">⚙️ Portfolio Settings</a></li>
-              <li><a class="dropdown-item" routerLink="/auth-management">🔐 Auth Management</a></li>
-              <li><hr class="dropdown-divider" style="border-color: rgba(102, 126, 234, 0.3);"></li>
-              <li><a class="dropdown-item" routerLink="/namespaces">🗄️ Database Namespaces</a></li>
-            </ul>
+
+          <!-- AI Learn link when NOT on AI Learn pages -->
+          <li *ngIf="!isAILearnPage">
+            <a class="nav-link ai-link" href="https://learnwithai.tech/"
+               target="_blank" rel="noopener noreferrer">🤖 AI Learn ↗</a>
           </li>
-          <li class="nav-item" *ngIf="authService.isAuthenticated()">
-            <a class="nav-link logout-btn" (click)="logout()" style="cursor: pointer;" title="Logout">
-              🚪 Logout
-            </a>
-          </li> -->
-        </ul>
-      </div>
-    </div>
+
+        </ul><!-- /nav-links -->
+
+        <!-- ── RIGHT: Account / controls ── -->
+        <div class="nav-controls">
+
+          <!-- Subscription trial badge -->
+          <a class="sub-trial-badge"
+             *ngIf="customAuth.isLoggedIn && subSvc.currentStatus && !customAuth.isAdmin"
+             [class.sub-trial-badge--trial]="subSvc.currentStatus?.isTrialActive"
+             [class.sub-trial-badge--active]="subSvc.currentStatus?.isSubscriptionActive"
+             [class.sub-trial-badge--expired]="subSvc.currentStatus?.subscriptionStatus === 'expired'"
+             routerLink="/subscribe" (click)="closeNavbar()"
+             title="Subscription status">
+            <span *ngIf="subSvc.currentStatus?.isTrialActive">⏰ {{ subSvc.currentStatus?.trialDaysRemaining }}d left</span>
+            <span *ngIf="subSvc.currentStatus?.isSubscriptionActive">✓ Pro</span>
+            <span *ngIf="subSvc.currentStatus?.subscriptionStatus === 'expired'">🔒 Subscribe</span>
+          </a>
+
+          <!-- Admin badge -->
+          <span class="admin-badge" *ngIf="customAuth.isAdmin"
+                title="Admin account — full access enabled">🛡️ Admin</span>
+
+          <!-- User avatar + dropdown -->
+          <div class="user-menu has-dropdown"
+               *ngIf="customAuth.isLoggedIn"
+               (mouseenter)="openDropdown('user')"
+               (mouseleave)="closeDropdowns()">
+            <button class="user-avatar-btn"
+                    (click)="toggleDropdown('user', $event)"
+                    [attr.aria-expanded]="activeDropdown === 'user'"
+                    aria-haspopup="true"
+                    aria-label="User menu">
+              <span class="user-avatar-letter">
+                {{ customAuth.currentUser?.username?.[0]?.toUpperCase() || '?' }}
+              </span>
+              <span class="user-display-name">{{ customAuth.currentUser?.username }}</span>
+              <span class="nav-chevron" [class.open]="activeDropdown === 'user'">▾</span>
+            </button>
+            <div class="dropdown-panel dropdown-panel--right"
+                 [class.is-visible]="activeDropdown === 'user'"
+                 role="menu">
+              <div class="dropdown-header">
+                {{ customAuth.currentUser?.username }}
+                <span class="user-email">{{ customAuth.currentUser?.email }}</span>
+              </div>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item" (click)="openSettings(); closeNavbar()" role="menuitem">
+                <span class="di-icon">⚙️</span>
+                <span class="di-body"><span class="di-label">Settings</span></span>
+              </button>
+              <div class="dropdown-divider"></div>
+              <button class="dropdown-item dropdown-item--danger"
+                      (click)="customAuth.logout(); closeNavbar()" role="menuitem">
+                <span class="di-icon">🚪</span>
+                <span class="di-body"><span class="di-label">Sign Out</span></span>
+              </button>
+            </div>
+          </div><!-- /user-menu -->
+
+          <!-- Sign-in button (logged out) -->
+          <button class="google-signin-nav-btn" *ngIf="!customAuth.isLoggedIn"
+                  (click)="openAuthModal('login')">🔐 Sign In</button>
+
+        </div><!-- /nav-controls -->
+
+      </div><!-- /nav-panel -->
+    </div><!-- /nav-container -->
   </nav>
+
 </header>
 
 <!-- Auth modal (login / signup) -->
@@ -158,6 +279,3 @@
 
 <!-- Admin master config panel -->
 <app-master-config #masterConfig></app-master-config>
-
-<!-- Put this spacer right after <app-header> in your app layout -->
-<!-- <div class="header-spacer"></div> -->

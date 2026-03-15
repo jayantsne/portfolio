@@ -6,9 +6,8 @@ export const environment = {
   production: false,
   apiUrl: '/api',
   apiKey: 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41',
-  groqApiKeys: [
-    // 'gsk_YOUR_ACTUAL_KEY_HERE',
-  ],
+  groqApiKeys: [] as string[],
+  // groqApiKeys: ['gsk_YOUR_ACTUAL_KEY_HERE'],  // Add your GROQ API keys here
   // ─── Firebase ──────────────────────────────────────────────────────
   // Google login will NOT work until you fill in the 3 values below.
   // Steps:

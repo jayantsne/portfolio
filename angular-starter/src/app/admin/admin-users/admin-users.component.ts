@@ -1,6 +1,4 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { CommonModule }   from '@angular/common';
-import { FormsModule }    from '@angular/forms';
 import { Subject }        from 'rxjs';
 import { debounceTime, distinctUntilChanged, takeUntil } from 'rxjs/operators';
 import {
@@ -13,8 +11,6 @@ type ModalAction = 'block' | 'unblock' | 'activate' | 'extend' | 'reset-trial' |
 
 @Component({
   selector: 'app-admin-users',
-  standalone: true,
-  imports: [CommonModule, FormsModule],
   templateUrl: './admin-users.component.html',
   styleUrls:   ['./admin-users.component.css']
 })

@@ -78,14 +78,54 @@ export class HeaderComponent implements AfterViewInit {
     this.isPortfolioRoute = (url === '/' || url.includes('/portfolio') || url.includes('/home')) && !this.isAILearnPage;
   }
 
-  closeNavbar(): void {
-    const navbarCollapse = document.getElementById('navbarSupportedContent');
-    const navbarToggler = document.querySelector('.navbar-toggler');
+  isMenuOpen = false;
+  activeDropdown: string | null = null;
+  private _closeTimer: ReturnType<typeof setTimeout> | null = null;
 
+  toggleMenu(): void {
+    this.isMenuOpen = !this.isMenuOpen;
+    if (!this.isMenuOpen) this.activeDropdown = null;
+  }
+
+  toggleDropdown(name: string, event: Event): void {
+    event.stopPropagation();
+    if (this._closeTimer) { clearTimeout(this._closeTimer); this._closeTimer = null; }
+    this.activeDropdown = this.activeDropdown === name ? null : name;
+  }
+
+  openDropdown(name: string): void {
+    if (this._closeTimer) { clearTimeout(this._closeTimer); this._closeTimer = null; }
+    this.activeDropdown = name;
+  }
+
+  /** Debounced close — prevents premature close when cursor crosses the hover gap. */
+  closeDropdowns(): void {
+    this._closeTimer = setTimeout(() => {
+      this._closeTimer = null;
+      this.activeDropdown = null;
+    }, 80);
+  }
+
+  closeNavbar(): void {
+    this.isMenuOpen = false;
+    this.activeDropdown = null;
+    const navbarCollapse = document.getElementById('navbarSupportedContent');
     if (navbarCollapse?.classList.contains('show')) {
       navbarCollapse.classList.remove('show');
-      navbarToggler?.setAttribute('aria-expanded', 'false');
     }
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscapeKey(): void {
+    if (this._closeTimer) { clearTimeout(this._closeTimer); this._closeTimer = null; }
+    this.activeDropdown = null;
+    if (this.isMenuOpen) this.isMenuOpen = false;
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    if (this._closeTimer) { clearTimeout(this._closeTimer); this._closeTimer = null; }
+    this.activeDropdown = null;
   }
 
   get displayBrandName(): string {

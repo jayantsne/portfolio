@@ -321,66 +321,81 @@
                     <!-- Main card -->
                     <div class="am-msg-card">
 
-                      <!-- Mentor card header -->
+                      <!-- Mentor card header — compact topic + depth strip -->
                       <div class="am-mentor-card-hd">
                         <span class="am-mentor-card-hd-avatar">🤖</span>
                         <div class="am-mentor-card-hd-text">
-                          <span class="am-mentor-card-hd-name">AI Mentor</span>
                           <span class="am-mentor-card-hd-topic">{{ currentTopicName }}</span>
                         </div>
                         <div class="am-mentor-card-hd-sections">
                           <span class="am-section-tag am-section-concept">📘 Concept</span>
-                          <span class="am-section-tag am-section-example">💻 Example</span>
-                          <span class="am-section-tag am-section-mistake">⚠️ Mistake</span>
-                          <span class="am-section-tag am-section-tip">🎯 Tip</span>
+                          <span class="am-section-tag am-section-example">💻 Code</span>
+                          <span class="am-section-tag am-section-tip">🎯 Tips</span>
                         </div>
                       </div>
 
                       <div class="am-msg-text md-content" [innerHTML]="msg.content | markdown"></div>
 
-                      <!-- Action buttons -->
-                      <div class="am-msg-actions">
-                        <button class="am-msg-action-btn"
-                                (click)="sendFollowUpQuestion('Explain ' + currentTopicName + ' in even simpler terms with a beginner-friendly analogy')"
-                                [disabled]="isLoadingAI || !!streamingText"
-                                title="Explain simpler">
-                          💡 Explain Simpler
-                        </button>
-                        <button class="am-msg-action-btn"
-                                (click)="sendFollowUpQuestion('Show me a complete real-world code example for ' + currentTopicName + ' that I would find in a production app')"
-                                [disabled]="isLoadingAI || !!streamingText"
-                                title="Show real example">
-                          🌍 Real Example
-                        </button>
-                        <button class="am-msg-action-btn"
-                                (click)="sendFollowUpQuestion('Give me a practice coding problem to test my understanding of ' + currentTopicName + ', then walk through the solution')"
-                                [disabled]="isLoadingAI || !!streamingText"
-                                title="Generate practice question">
-                          🧪 Practice Q
-                        </button>
-                        <button class="am-msg-action-btn"
-                                (click)="sendFollowUpQuestion('What is the ideal interview answer when asked about ' + currentTopicName + '? Include what to say and what to avoid')"
-                                [disabled]="isLoadingAI || !!streamingText"
-                                title="Interview answer">
-                          🎯 Interview Answer
-                        </button>
-                        <!-- Visual Diagram button — only on the last AI message -->
-                        <button class="am-msg-action-btn am-diagram-btn"
-                                *ngIf="last"
-                                (click)="showVisualDiagram()"
-                                [class.am-diagram-btn-active]="diagramOpen"
-                                [disabled]="diagramLoading"
-                                title="Show animated flow diagram">
-                          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
-                            <rect x="1" y="1" width="5" height="5" rx="1"/>
-                            <rect x="10" y="1" width="5" height="5" rx="1"/>
-                            <rect x="5.5" y="10" width="5" height="5" rx="1"/>
-                            <line x1="3.5" y1="6" x2="3.5" y2="8.5"/><line x1="12.5" y1="6" x2="12.5" y2="8.5"/>
-                            <line x1="3.5" y1="8.5" x2="8" y2="8.5"/><line x1="12.5" y1="8.5" x2="8" y2="8.5"/>
-                            <line x1="8" y1="8.5" x2="8" y2="10"/>
-                          </svg>
-                          {{ diagramLoading ? 'Generating…' : (diagramOpen ? 'Hide Diagram' : 'Visual Diagram') }}
-                        </button>
+                      <!-- ── Single-row action toolbar ── -->
+                      <div class="am-action-toolbar">
+                        <div class="am-toolbar-actions">
+                          <button class="am-tb-btn am-tb-btn--primary"
+                                  (click)="sendFollowUpQuestion('Explain ' + currentTopicName + ' in even simpler terms with a beginner-friendly analogy')"
+                                  [disabled]="isLoadingAI || !!streamingText"
+                                  title="Explain simpler">
+                            💡 Simpler
+                          </button>
+                          <button class="am-tb-btn am-tb-btn--primary"
+                                  (click)="sendFollowUpQuestion('Show me a complete real-world code example for ' + currentTopicName + ' that I would find in a production app')"
+                                  [disabled]="isLoadingAI || !!streamingText"
+                                  title="Show real example">
+                            💻 Code
+                          </button>
+                          <button class="am-tb-btn"
+                                  (click)="sendFollowUpQuestion('Give me a practice coding problem to test my understanding of ' + currentTopicName + ', then walk through the solution')"
+                                  [disabled]="isLoadingAI || !!streamingText"
+                                  title="Generate practice question">
+                            🧪 Practice
+                          </button>
+                          <button class="am-tb-btn"
+                                  (click)="sendFollowUpQuestion('What is the ideal interview answer when asked about ' + currentTopicName + '? Include what to say and what to avoid')"
+                                  [disabled]="isLoadingAI || !!streamingText"
+                                  title="Interview answer">
+                            🎯 Interview
+                          </button>
+                          <!-- Diagram button — only last message -->
+                          <button class="am-tb-btn am-tb-btn--diagram"
+                                  *ngIf="last"
+                                  (click)="showVisualDiagram()"
+                                  [class.am-tb-btn--diagram-active]="diagramOpen"
+                                  [disabled]="diagramLoading"
+                                  title="Show animated flow diagram">
+                            <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
+                              <rect x="1" y="1" width="5" height="5" rx="1"/>
+                              <rect x="10" y="1" width="5" height="5" rx="1"/>
+                              <rect x="5.5" y="10" width="5" height="5" rx="1"/>
+                              <line x1="3.5" y1="6" x2="3.5" y2="8.5"/><line x1="12.5" y1="6" x2="12.5" y2="8.5"/>
+                              <line x1="3.5" y1="8.5" x2="8" y2="8.5"/><line x1="12.5" y1="8.5" x2="8" y2="8.5"/>
+                              <line x1="8" y1="8.5" x2="8" y2="10"/>
+                            </svg>
+                            {{ diagramLoading ? 'Generating…' : (diagramOpen ? 'Hide' : 'Diagram') }}
+                          </button>
+                        </div>
+                        <!-- Save + timestamp on the right -->
+                        <div class="am-toolbar-right">
+                          <span class="am-toolbar-time">{{ msg.timestamp | date:'shortTime' }}</span>
+                          <button class="am-tb-save"
+                                  [class.saved]="savedMessageIds.has(msg.timestamp.getTime().toString())"
+                                  [class.saving]="savingMessageIds.has(msg.timestamp.getTime().toString())"
+                                  (click)="saveMessageNote(msg)"
+                                  [disabled]="savedMessageIds.has(msg.timestamp.getTime().toString()) || savingMessageIds.has(msg.timestamp.getTime().toString())"
+                                  title="Save as note">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0"><path d="M3 2h10a1 1 0 0 1 1 1v10.5l-6-2.5-6 2.5V3a1 1 0 0 1 1-1z"/></svg>
+                            <span *ngIf="!savingMessageIds.has(msg.timestamp.getTime().toString()) && !savedMessageIds.has(msg.timestamp.getTime().toString())">Save</span>
+                            <span *ngIf="savingMessageIds.has(msg.timestamp.getTime().toString())">…</span>
+                            <span *ngIf="savedMessageIds.has(msg.timestamp.getTime().toString())">✓</span>
+                          </button>
+                        </div>
                       </div>
 
                       <!-- Suggested chips (show on last AI message) -->
@@ -406,22 +421,6 @@
                                 [disabled]="isLoadingAI || !!streamingText">
                           🧪 Test me
                         </button>
-                      </div>
-
-                      <!-- Card footer — Save to Notes -->
-                      <div class="am-card-footer">
-                        <button class="am-msg-save-btn"
-                                [class.saved]="savedMessageIds.has(msg.timestamp.getTime().toString())"
-                                [class.saving]="savingMessageIds.has(msg.timestamp.getTime().toString())"
-                                (click)="saveMessageNote(msg)"
-                                [disabled]="savedMessageIds.has(msg.timestamp.getTime().toString()) || savingMessageIds.has(msg.timestamp.getTime().toString())"
-                                title="Save as note">
-                          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h10a1 1 0 0 1 1 1v10.5l-6-2.5-6 2.5V3a1 1 0 0 1 1-1z"/></svg>
-                          <span *ngIf="!savingMessageIds.has(msg.timestamp.getTime().toString()) && !savedMessageIds.has(msg.timestamp.getTime().toString())">📌 Save to Notes</span>
-                          <span *ngIf="savingMessageIds.has(msg.timestamp.getTime().toString())">Saving…</span>
-                          <span *ngIf="savedMessageIds.has(msg.timestamp.getTime().toString())">✓ Saved</span>
-                        </button>
-                        <span class="am-card-footer-time">{{ msg.timestamp | date:'shortTime' }}</span>
                       </div>
 
                       <!-- ══ Visual Animated Diagram Panel ══ -->
@@ -563,21 +562,39 @@
 
       <!-- Input Bar -->
       <div class="am-input-bar">
+
+        <!-- Quick-ask shortcuts (shown after first reply, when idle) -->
+        <div class="am-quick-asks" *ngIf="aiMessages.length > 0 && !isLoadingAI && !streamingText">
+          <button class="am-qa-chip" (click)="sendFollowUpQuestion('Summarize ' + currentTopicName + ' in 3 clear bullet points')">
+            📋 Summarize
+          </button>
+          <button class="am-qa-chip" (click)="sendFollowUpQuestion('Give me a simple real-world analogy for ' + currentTopicName)">
+            🎭 Analogy
+          </button>
+          <button class="am-qa-chip" (click)="sendFollowUpQuestion('What are the most common interview questions about ' + currentTopicName + '?')">
+            🎯 Interview Q
+          </button>
+          <button class="am-qa-chip" (click)="sendFollowUpQuestion('What concepts should I learn after mastering ' + currentTopicName + '?')">
+            🔭 What\'s next?
+          </button>
+        </div>
+
         <div class="am-input-row">
           <input class="am-input" type="text"
                  [(ngModel)]="currentQuestion"
                  (keyup.enter)="sendFollowUpQuestion(currentQuestion)"
-                 placeholder="Ask your AI mentor about this topic..."
+                 placeholder="Ask your AI mentor anything…"
                  [disabled]="isLoadingAI || !!streamingText">
           <button class="am-send-btn"
                   (click)="sendFollowUpQuestion(currentQuestion)"
                   [disabled]="isLoadingAI || !!streamingText || !currentQuestion.trim()"
-                  title="Send">
+                  title="Send (Enter)">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           </button>
         </div>
+        <div class="am-input-hint" *ngIf="!isLoadingAI && !streamingText">Press <kbd>Enter</kbd> to send</div>
       </div>
     </main>
 
@@ -587,9 +604,30 @@
       <div class="am-tools-hd">
         <span class="am-tools-hd-icon">🎯</span>
         <span class="am-tools-hd-title">Learning Tools</span>
+        <span class="am-tools-hd-count" *ngIf="aiMessages.length > 0">{{ (aiMessages.length / 2 | number:'1.0-0') }} Q&amp;A</span>
       </div>
 
       <div class="am-tools-body">
+
+        <!-- Session Progress Card (shown after first AI response) -->
+        <div class="am-session-card" *ngIf="aiMessages.length > 0">
+          <div class="am-session-meta">
+            <div class="am-session-topic-icon">✨</div>
+            <div class="am-session-info">
+              <div class="am-session-topic">{{ currentTopicName }}</div>
+              <div class="am-session-depth-label">{{ aiMessages.length }} messages · Session in progress</div>
+            </div>
+          </div>
+          <div class="am-session-bar-wrap">
+            <div class="am-session-bar-fill"
+                 [style.width]="(aiMessages.length > 12 ? 100 : aiMessages.length * 8) + '%'"></div>
+          </div>
+          <div class="am-session-bar-labels">
+            <span>Intro</span>
+            <span>Exploring</span>
+            <span>Deep dive</span>
+          </div>
+        </div>
 
         <!-- Follow-up Questions (appears after first AI response) -->
       <div class="am-tool-card am-tool-card-followups" *ngIf="followUpQuestions.length > 0">
