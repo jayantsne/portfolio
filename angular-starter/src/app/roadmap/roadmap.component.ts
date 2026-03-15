@@ -114,6 +114,75 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   lessonFollowUpLoading = false;
   lessonMessages:  { role: 'user' | 'ai'; text: string }[] = [];
 
+  // ── Right-panel tab ─────────────────────────────────────────────────────
+  mentorPanelTab: 'mentor' | 'notes' = 'mentor';
+
+  // ── Quick inline notes ───────────────────────────────────────────────────
+  inlineNotes: { topic: string; text: string }[] = [];
+  inlineNoteText = '';
+
+  addInlineNote(): void {
+    if (!this.inlineNoteText.trim()) return;
+    this.inlineNotes.unshift({ topic: this.expandedNode?.topic ?? 'Note', text: this.inlineNoteText.trim() });
+    this.inlineNoteText = '';
+  }
+  deleteInlineNote(i: number): void { this.inlineNotes.splice(i, 1); }
+
+  // ── AI Playground (bottom) ────────────────────────────────────────────────
+  pgOpen     = false;
+  pgLoading  = false;
+  pgPrompt   = '';
+  pgOutput   = '';
+  pgError    = '';
+  pgModel    = 'auto';
+  pgTemp     = 0.7;
+  pgMs       = 0;
+  private pgSub: Subscription | null = null;
+
+  togglePg(): void { this.pgOpen = !this.pgOpen; }
+
+  resetPg(): void {
+    this.pgSub?.unsubscribe();
+    this.pgPrompt = ''; this.pgOutput = ''; this.pgError = '';
+    this.pgLoading = false; this.pgMs = 0;
+  }
+
+  runPg(): void {
+    if (!this.pgPrompt.trim() || this.pgLoading) return;
+    this.pgSub?.unsubscribe();
+    this.pgOutput = ''; this.pgError = ''; this.pgLoading = true;
+    const t0 = Date.now();
+    this.pgSub = this.rmSvc.explainNode(
+      { topic: this.pgPrompt.trim(), description: '', order: 0, id: 'pg',
+        estMinutes: 0, status: 'active', icon: '' } as any,
+      (this.activeRoadmap?.language ?? 'AI') as any,
+      this.activeRoadmap?.level ?? 'intermediate'
+    ).subscribe({
+      next: (r: any) => { this.pgOutput = r?.explanation ?? r?.text ?? JSON.stringify(r); },
+      error: (e: any) => { this.pgError = e?.message ?? 'Error. Please try again.'; this.pgLoading = false; this.cdr.markForCheck(); },
+      complete: () => { this.pgMs = Date.now() - t0; this.pgLoading = false; this.cdr.markForCheck(); },
+    });
+  }
+
+  /** Add a quick mentor chip prompt as a user message and fetch the AI reply */
+  sendMentorChip(prompt: string): void { this.lessonQuestion = prompt; this.sendLessonQuestion(); }
+
+  /** Navigate to the previous topic in the roadmap */
+  prevTopicNode(): void {
+    if (!this.activeRoadmap || !this.expandedNode) return;
+    const idx = this.activeRoadmap.nodes.indexOf(this.expandedNode);
+    if (idx > 0) this.selectNodePanel(this.activeRoadmap.nodes[idx - 1]);
+  }
+
+  /** Navigate to the next topic in the roadmap */
+  nextTopicNode(): void {
+    if (!this.activeRoadmap || !this.expandedNode) return;
+    const idx = this.activeRoadmap.nodes.indexOf(this.expandedNode);
+    if (idx < this.activeRoadmap.nodes.length - 1) {
+      this.selectNodePanel(this.activeRoadmap.nodes[idx + 1]);
+    }
+  }
+
   @ViewChild('lessonBody')  lessonBodyEl?:  ElementRef<HTMLDivElement>;
   @ViewChild('mentorBody')  mentorBodyEl?:  ElementRef<HTMLDivElement>;
 
@@ -144,7 +213,7 @@ export class RoadmapComponent implements OnInit, OnDestroy {
     );
   }
 
-  ngOnDestroy(): void { this.subs.unsubscribe(); }
+  ngOnDestroy(): void { this.subs.unsubscribe(); this.pgSub?.unsubscribe(); }
 
   // ─── Navigation ─────────────────────────────────────────────────────────
 
