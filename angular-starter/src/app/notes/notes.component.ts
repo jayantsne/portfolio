@@ -5,6 +5,7 @@ import { CustomAuthService, AuthUser } from '../shared/custom-auth.service';
 import { NotesService, SavedNote } from '../shared/notes.service';
 import { NOTE_CATEGORIES } from '../shared/save-notes-modal/save-notes-modal.component';
 import { AI_BACKEND } from '../config/ai.config';
+import { AILearnService } from '../services/ai-learn.service';
 
 @Component({
   selector: 'app-notes',
@@ -58,6 +59,12 @@ export class NotesComponent implements OnInit, OnDestroy {
   aiActionError    = '';
   private aiXhr: XMLHttpRequest | null = null;
 
+  // ── AI streaming sub ──────────────────────────────────────────────────
+  private aiStreamSub: Subscription | null = null;
+  aiActionStreaming = false;        // true while SSE is in flight
+  aiTagSuggestions: string[] = [];  // tags suggested by AI
+  aiSavedToNote    = false;         // success toast
+
   // ── Mobile Editor ───────────────────────────────────────────────────
   mobileEditorOpen    = false;
   meFormatLoading     = false;
@@ -71,7 +78,8 @@ export class NotesComponent implements OnInit, OnDestroy {
   constructor(
     private authSvc:      CustomAuthService,
     private notesService: NotesService,
-    private router:       Router
+    private router:       Router,
+    private aiSvc:        AILearnService,
   ) {}
 
   ngOnInit(): void {
@@ -111,6 +119,7 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subs.forEach(s => s.unsubscribe());
+    this.aiStreamSub?.unsubscribe();
     this.formatXhr?.abort();
     this.aiXhr?.abort();
     this.meXhr?.abort();
@@ -331,57 +340,130 @@ export class NotesComponent implements OnInit, OnDestroy {
     }
   }
 
-  runAiAction(action: 'summarize' | 'explain' | 'quiz' | 'flashcards'): void {
+  runAiAction(action:
+    'summarize' | 'explain' | 'quiz' | 'flashcards' |
+    'simplify'  | 'expand'  | 'example' | 'code' | 'interview'
+  ): void {
     if (!this.activeNote || this.aiActionLoading) return;
-    this.aiActionLoading = true;
-    this.aiActionResult  = '';
-    this.aiActionError   = '';
+    this.aiStreamSub?.unsubscribe();
+    this.aiActionLoading  = true;
+    this.aiActionStreaming = true;
+    this.aiActionResult   = '';
+    this.aiActionError    = '';
+    this.aiTagSuggestions = [];
+    this.aiSavedToNote    = false;
 
+    const content = this.activeNote.content;
     const prompts: Record<string, string> = {
-      summarize:  `Summarize the following note in 3-5 concise bullet points:\n\n${this.activeNote.content}`,
-      explain:    `Explain the key concepts in the following note in simple, beginner-friendly terms:\n\n${this.activeNote.content}`,
-      quiz:       `Generate a short 3-question quiz based on this note. Use Q&A format with answers:\n\n${this.activeNote.content}`,
-      flashcards: `Convert the key concepts from this note into flashcard format. For each card write:\nQ: <question>\nA: <answer>\n\nGenerate 5-8 flashcards:\n\n${this.activeNote.content}`
+      summarize:  `Summarize the following note in 3-5 concise bullet points:\n\n${content}`,
+      explain:    `Explain the key concepts in the following note in simple, beginner-friendly terms:\n\n${content}`,
+      simplify:   `Re-write the following note using the simplest possible language (ELI5). Keep it accurate but very easy to understand:\n\n${content}`,
+      expand:     `Expand the following note with more detail, real-world context, and deeper explanation:\n\n${content}`,
+      example:    `Generate a clear, practical real-world example that illustrates the concept in this note:\n\n${content}`,
+      code:       `Write a well-commented code example that demonstrates the concept from this note. Include multiple small examples if helpful:\n\n${content}`,
+      interview:  `Convert this note into a strong interview answer. Use the STAR/PAR method where applicable, add key technical detail, and keep it concise:\n\n${content}`,
+      quiz:       `Generate a short 3-question quiz based on this note. Use Q&A format with answers:\n\n${content}`,
+      flashcards: `Convert the key concepts from this note into flashcard format. For each card write:\nQ: <question>\nA: <answer>\n\nGenerate 5-8 flashcards:\n\n${content}`,
     };
 
-    const apiBase = window.location.hostname === 'localhost' ? '' : 'https://learnwithai.tech';
-    const xhr     = new XMLHttpRequest();
-    this.aiXhr    = xhr;
-    xhr.open('POST', `${apiBase}/api/ai/stream`, true);
-    xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('X-API-Key', AI_BACKEND.API_KEY);
-    xhr.responseType = 'text';
+    this.aiStreamSub = this.aiSvc.getOllamaExplanation(prompts[action]).subscribe({
+      next: res => {
+        this.aiActionResult  = res.explanation;
+        if (res.done) {
+          this.aiActionLoading  = false;
+          this.aiActionStreaming = false;
+        }
+      },
+      error: () => {
+        this.aiActionLoading  = false;
+        this.aiActionStreaming = false;
+        this.aiActionError    = 'Connection error. Please try again.';
+      },
+      complete: () => {
+        this.aiActionLoading  = false;
+        this.aiActionStreaming = false;
+      },
+    });
+  }
 
-    let cursor = 0;
-    const parse = () => {
-      const newText = xhr.responseText.slice(cursor);
-      cursor = xhr.responseText.length;
-      for (const line of newText.split('\n')) {
-        if (!line.startsWith('data: ')) continue;
-        try {
-          const chunk = JSON.parse(line.slice(6));
-          if (chunk.done) {
-            this.aiActionLoading = false;
-            this.aiXhr = null;
-            if (chunk.error) this.aiActionError = `AI error: ${chunk.error}`;
-            return;
+  stopAiAction(): void {
+    this.aiStreamSub?.unsubscribe();
+    this.aiStreamSub      = null;
+    this.aiActionLoading  = false;
+    this.aiActionStreaming = false;
+  }
+
+  /** Append the current AI result as a new section of the active note */
+  async saveAiResultToNote(): Promise<void> {
+    if (!this.activeNote?.id || !this.aiActionResult.trim()) return;
+    try {
+      await this.notesService.mergeNote(this.activeNote.id, this.aiActionResult);
+      this.aiSavedToNote = true;
+      setTimeout(() => { this.aiSavedToNote = false; }, 2500);
+    } catch { /* ignore */ }
+  }
+
+  /** Use AI to suggest tags for the active note */
+  suggestTags(): void {
+    if (!this.activeNote || this.aiActionLoading) return;
+    this.aiStreamSub?.unsubscribe();
+    this.aiActionLoading  = true;
+    this.aiActionStreaming = true;
+    this.aiActionResult   = '';
+    this.aiTagSuggestions = [];
+    this.aiActionError    = '';
+
+    const prompt = `Based on the topic and content of the following note, suggest 5-8 relevant, specific programming/tech tags.
+Return ONLY a JSON array of lowercase strings, no explanation.
+Example output: ["javascript", "async", "promises", "es6"]
+
+Note title: ${this.activeNote.topic}
+Note content: ${this.activeNote.content.slice(0, 600)}`;
+
+    let accumulated = '';
+    this.aiStreamSub = this.aiSvc.getOllamaExplanation(prompt).subscribe({
+      next: res => {
+        accumulated = res.explanation;
+        if (res.done) {
+          this.aiActionLoading  = false;
+          this.aiActionStreaming = false;
+          // Try to parse JSON array from response
+          try {
+            const match = accumulated.match(/\[[\s\S]*?\]/);
+            if (match) {
+              const tags: string[] = JSON.parse(match[0]);
+              this.aiTagSuggestions = tags.filter(t => typeof t === 'string').map(t => t.toLowerCase().replace(/\s+/g,'-'));
+            }
+          } catch {
+            this.aiTagSuggestions = [];
+            this.aiActionError = 'Could not parse tag suggestions.';
           }
-          this.aiActionResult += chunk.token || '';
-        } catch { /* skip */ }
-      }
-    };
+        }
+      },
+      error: () => {
+        this.aiActionLoading  = false;
+        this.aiActionStreaming = false;
+        this.aiActionError = 'Tag suggestion failed.';
+      },
+      complete: () => {
+        this.aiActionLoading  = false;
+        this.aiActionStreaming = false;
+      },
+    });
+  }
 
-    xhr.onprogress = () => parse();
-    xhr.onload     = () => { parse(); this.aiActionLoading = false; this.aiXhr = null; };
-    xhr.onerror    = () => {
-      this.aiActionLoading = false;
-      this.aiXhr = null;
-      this.aiActionError = 'Connection error. Please try again.';
-    };
-
-    xhr.send(JSON.stringify({
-      question: prompts[action], provider: 'ollama', rawMode: true, maxTokens: 1024
-    }));
+  /** Apply a suggested tag to the active note */
+  async applySuggestedTag(tag: string): Promise<void> {
+    if (!this.activeNote?.id) return;
+    if ((this.activeNote.tags ?? []).includes(tag)) return;
+    const newTags = [...(this.activeNote.tags ?? []), tag];
+    try {
+      await this.notesService.updateNote(this.activeNote.id, {
+        content:  this.activeNote.content,
+        tags:     newTags,
+      });
+      this.aiTagSuggestions = this.aiTagSuggestions.filter(t => t !== tag);
+    } catch { /* ignore */ }
   }
 
   async deleteNote(note: SavedNote): Promise<void> {

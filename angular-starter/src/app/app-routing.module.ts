@@ -20,6 +20,7 @@ import { InterviewPrepComponent } from './interview-prep/interview-prep.componen
 import { LoginGuard }            from './shared/login.guard';
 import { SubscribeComponent }    from './subscribe/subscribe.component';
 import { SubscriptionGuard }     from './shared/subscription.guard';
+import { CodePlaygroundComponent } from './code-playground/code-playground.component';
 
 
 const routes: Routes = [
@@ -51,6 +52,7 @@ const routes: Routes = [
   { path: 'memory-game',  component: MemoryGameComponent,    canActivate: [SubscriptionGuard] },
   { path: 'azure-ai-102', component: AzureAiLearnComponent,  canActivate: [SubscriptionGuard] },
   { path: 'roadmap',      component: RoadmapComponent,       canActivate: [LoginGuard, SubscriptionGuard] },
+  { path: 'playground',   component: CodePlaygroundComponent, canActivate: [SubscriptionGuard] },
 
   // ── Practice (requires login + subscription) ─────────────────────
   { path: 'questions',      component: QuestionsListComponent,  canActivate: [SubscriptionGuard] },

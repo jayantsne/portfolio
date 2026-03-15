@@ -278,53 +278,93 @@
           <span class="nap-icon">🤖</span>
           <span class="nap-title">AI Actions</span>
         </div>
-        <span class="nap-subtitle">Powered by local AI</span>
+        <span class="nap-subtitle">Enhance your note with AI</span>
       </div>
 
+      <!-- ── Group 1: Transformations ── -->
+      <div class="nap-group-label">Transform</div>
       <div class="nap-btns">
         <button class="nap-btn" (click)="runAiAction('summarize')" [disabled]="aiActionLoading">
           <span class="nap-btn-icon">📋</span>
-          <div class="nap-btn-text">
-            <strong>Summarize</strong>
-            <span>Key points in bullets</span>
-          </div>
+          <div class="nap-btn-text"><strong>Summarize</strong><span>Key points in bullets</span></div>
         </button>
-        <button class="nap-btn" (click)="runAiAction('explain')" [disabled]="aiActionLoading">
+        <button class="nap-btn" (click)="runAiAction('simplify')" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">🔤</span>
+          <div class="nap-btn-text"><strong>Simplify</strong><span>ELI5 version</span></div>
+        </button>
+        <button class="nap-btn" (click)="runAiAction('expand')" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">🔭</span>
+          <div class="nap-btn-text"><strong>Expand</strong><span>Add more depth</span></div>
+        </button>
+      </div>
+
+      <!-- ── Group 2: Generate ── -->
+      <div class="nap-group-label">Generate</div>
+      <div class="nap-btns">
+        <button class="nap-btn" (click)="runAiAction('example')" [disabled]="aiActionLoading">
           <span class="nap-btn-icon">💡</span>
-          <div class="nap-btn-text">
-            <strong>Explain simpler</strong>
-            <span>ELI5 version</span>
-          </div>
+          <div class="nap-btn-text"><strong>Example</strong><span>Real-world scenario</span></div>
         </button>
+        <button class="nap-btn" (click)="runAiAction('code')" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">💻</span>
+          <div class="nap-btn-text"><strong>Code Example</strong><span>Working code snippet</span></div>
+        </button>
+        <button class="nap-btn" (click)="runAiAction('interview')" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">🎤</span>
+          <div class="nap-btn-text"><strong>Interview Answer</strong><span>Job-ready response</span></div>
+        </button>
+      </div>
+
+      <!-- ── Group 3: Practice ── -->
+      <div class="nap-group-label">Practice</div>
+      <div class="nap-btns">
         <button class="nap-btn" (click)="runAiAction('quiz')" [disabled]="aiActionLoading">
           <span class="nap-btn-icon">📝</span>
-          <div class="nap-btn-text">
-            <strong>Generate quiz</strong>
-            <span>Test your knowledge</span>
-          </div>
+          <div class="nap-btn-text"><strong>Quiz</strong><span>Self-test quiz</span></div>
         </button>
         <button class="nap-btn" (click)="runAiAction('flashcards')" [disabled]="aiActionLoading">
           <span class="nap-btn-icon">🗂</span>
-          <div class="nap-btn-text">
-            <strong>Flashcards</strong>
-            <span>Q&amp;A format</span>
-          </div>
+          <div class="nap-btn-text"><strong>Flashcards</strong><span>Q&amp;A format</span></div>
+        </button>
+        <button class="nap-btn" (click)="suggestTags()" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">🏷️</span>
+          <div class="nap-btn-text"><strong>Suggest Tags</strong><span>AI-recommended tags</span></div>
         </button>
       </div>
 
-      <!-- Loading state -->
+      <!-- Loading -->
       <div class="nap-loading-state" *ngIf="aiActionLoading && !aiActionResult">
         <span class="nap-spinner"></span>
         <span>Thinking…</span>
+        <button class="nap-stop-btn" (click)="stopAiAction()">■ Stop</button>
       </div>
 
-      <!-- Result -->
+      <!-- Tag suggestions -->
+      <div class="nap-tag-suggestions" *ngIf="aiTagSuggestions.length > 0">
+        <div class="nap-tag-header">✨ Suggested Tags — click to apply</div>
+        <div class="nap-suggested-tags">
+          <button *ngFor="let t of aiTagSuggestions" class="nap-sugg-tag"
+                  (click)="applySuggestedTag(t)">#{{ t }}</button>
+        </div>
+      </div>
+
+      <!-- Streaming result with markdown rendering -->
       <div class="nap-result-block" *ngIf="aiActionResult">
         <div class="nap-result-header">
-          <span class="nap-result-label">Result</span>
-          <button class="nap-clear-btn" (click)="aiActionResult = ''; aiActionError = ''">✕</button>
+          <span class="nap-result-label">
+            <span *ngIf="aiActionStreaming" class="nap-stream-dot"></span>
+            Result
+          </span>
+          <div class="nap-result-actions">
+            <button *ngIf="!aiActionStreaming && aiActionResult" class="nap-append-btn"
+                    (click)="saveAiResultToNote()"
+                    [title]="aiSavedToNote ? 'Saved!' : 'Append this result to the note'">
+              {{ aiSavedToNote ? '✅ Saved' : '+ Append to Note' }}
+            </button>
+            <button class="nap-clear-btn" (click)="aiActionResult = ''; aiActionError = ''; aiTagSuggestions = []">✕</button>
+          </div>
         </div>
-        <div class="nap-result-text">{{ aiActionResult }}</div>
+        <div class="nap-result-text md-content" [innerHTML]="aiActionResult | markdown"></div>
       </div>
 
       <!-- Error -->
@@ -333,10 +373,10 @@
         <button class="nap-clear-btn" (click)="aiActionError = ''">✕</button>
       </div>
 
-      <!-- Note context hint -->
+      <!-- Context hint -->
       <div class="nap-context-hint">
         <span class="nap-hint-icon">📌</span>
-        <span>Actions apply to: <strong>{{ activeNote.topic }}</strong></span>
+        <span>Acting on: <strong>{{ activeNote.topic }}</strong></span>
       </div>
     </aside>
 
@@ -394,24 +434,34 @@
       <div class="mr-ai-drawer" [class.open]="showAiActions">
         <div class="mr-ai-header">
           <span class="mr-ai-title">🤖 AI Actions</span>
-          <button class="mr-ai-close" (click)="showAiActions = false; aiActionResult = ''; aiActionError = ''">✕</button>
+          <button class="mr-ai-close" (click)="showAiActions = false; aiActionResult = ''; aiActionError = ''; aiTagSuggestions = []">✕</button>
         </div>
         <div class="mr-ai-btns">
-          <button class="mr-ai-btn" (click)="runAiAction('summarize')" [disabled]="aiActionLoading">
-            📋 Summarize
-          </button>
-          <button class="mr-ai-btn" (click)="runAiAction('explain')" [disabled]="aiActionLoading">
-            💡 Explain
-          </button>
-          <button class="mr-ai-btn" (click)="runAiAction('quiz')" [disabled]="aiActionLoading">
-            📝 Generate Quiz
-          </button>
+          <button class="mr-ai-btn" (click)="runAiAction('summarize')"  [disabled]="aiActionLoading">📋 Summarize</button>
+          <button class="mr-ai-btn" (click)="runAiAction('simplify')"   [disabled]="aiActionLoading">🔤 Simplify</button>
+          <button class="mr-ai-btn" (click)="runAiAction('expand')"     [disabled]="aiActionLoading">🔭 Expand</button>
+          <button class="mr-ai-btn" (click)="runAiAction('example')"    [disabled]="aiActionLoading">💡 Example</button>
+          <button class="mr-ai-btn" (click)="runAiAction('code')"       [disabled]="aiActionLoading">💻 Code</button>
+          <button class="mr-ai-btn" (click)="runAiAction('interview')"  [disabled]="aiActionLoading">🎤 Interview</button>
+          <button class="mr-ai-btn" (click)="runAiAction('quiz')"       [disabled]="aiActionLoading">📝 Quiz</button>
+          <button class="mr-ai-btn" (click)="runAiAction('flashcards')" [disabled]="aiActionLoading">🗂 Flashcards</button>
+          <button class="mr-ai-btn mr-ai-btn--tags" (click)="suggestTags()" [disabled]="aiActionLoading">🏷️ Suggest Tags</button>
         </div>
         <div class="mr-ai-result" *ngIf="aiActionResult || aiActionLoading || aiActionError">
           <div class="mr-ai-loading" *ngIf="aiActionLoading && !aiActionResult">
             <span class="mr-ai-spinner"></span> Thinking…
+            <button class="mr-ai-stop" (click)="stopAiAction()">■ Stop</button>
           </div>
-          <pre class="mr-ai-text" *ngIf="aiActionResult">{{ aiActionResult }}</pre>
+          <div class="mr-ai-text md-content" *ngIf="aiActionResult" [innerHTML]="aiActionResult | markdown"></div>
+          <div class="mr-ai-footer-actions" *ngIf="aiActionResult && !aiActionStreaming">
+            <button class="mr-ai-save-btn" (click)="saveAiResultToNote()">
+              {{ aiSavedToNote ? '✅ Saved' : '+ Append to Note' }}
+            </button>
+          </div>
+          <div class="mr-ai-tag-suggestions" *ngIf="aiTagSuggestions.length > 0">
+            <span>Tags:</span>
+            <button class="mr-tag-chip" *ngFor="let t of aiTagSuggestions" (click)="applySuggestedTag(t)">#{{ t }}</button>
+          </div>
           <div class="mr-ai-error" *ngIf="aiActionError">⚠️ {{ aiActionError }}</div>
         </div>
       </div>

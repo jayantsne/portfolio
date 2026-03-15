@@ -2316,3 +2316,176 @@
   .cn-tab         { padding: 5px 10px; font-size: 0.76rem; }
 }
 
+/* ════════════════════════════════════════════════════════════════════
+   PHASE 15 — Enhanced AI panel: group labels, streaming, tags, save
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Group section labels ── */
+.nap-group-label {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #6366f1;
+  padding: 0.55rem 0.75rem 0.15rem;
+  border-top: 1px solid #e5e9f5;
+}
+.nap-group-label:first-of-type { border-top: none; }
+
+/* ── Action button grid — 2-col → override existing single-col ── */
+.nap-btns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem 0.45rem;
+}
+
+/* ── Stop button ── */
+.nap-stop-btn {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  border-radius: 6px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.nap-stop-btn:hover { background: #fee2e2; }
+
+/* ── Streaming dot indicator ── */
+.nap-stream-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  background: #6366f1;
+  border-radius: 50%;
+  animation: nap-blink 0.8s ease-in-out infinite;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+@keyframes nap-blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+/* ── Tag suggestion strip ── */
+.nap-tag-suggestions {
+  padding: 0.55rem 0.75rem 0.3rem;
+  border-top: 1px solid #e5e9f5;
+}
+.nap-tag-header {
+  font-size: 0.67rem;
+  font-weight: 700;
+  color: #6366f1;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+.nap-suggested-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.nap-sugg-tag {
+  background: #ede9fe;
+  border: 1px solid #c4b5fd;
+  border-radius: 20px;
+  padding: 0.18rem 0.6rem;
+  font-size: 0.71rem;
+  font-weight: 700;
+  color: #5b21b6;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.nap-sugg-tag:hover { background: #ddd6fe; border-color: #8b5cf6; transform: translateY(-1px); }
+
+/* ── Result header row ── */
+.nap-result-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.nap-append-btn {
+  background: #ede9fe;
+  border: 1px solid #c4b5fd;
+  border-radius: 6px;
+  padding: 0.17rem 0.55rem;
+  font-size: 0.69rem;
+  font-weight: 700;
+  color: #5b21b6;
+  cursor: pointer;
+  transition: all 0.16s;
+  white-space: nowrap;
+}
+.nap-append-btn:hover { background: #ddd6fe; }
+
+/* ── Result body — markdown rendered ── */
+.nap-result-text.md-content {
+  font-size: 0.82rem;
+  max-height: 380px;
+  overflow-y: auto;
+  background: #f8faff;
+  border-radius: 8px;
+  padding: 0.7rem 0.9rem;
+}
+
+/* ── Mobile AI drawer enhancements ── */
+.mr-ai-btns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.35rem;
+}
+.mr-ai-btn--tags { grid-column: span 3; }
+
+.mr-ai-stop {
+  margin-left: auto;
+  background: none;
+  border: 1px solid #ef4444;
+  color: #ef4444;
+  border-radius: 4px;
+  padding: 0.12rem 0.4rem;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.mr-ai-footer-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.mr-ai-save-btn {
+  background: #ede9fe;
+  border: 1px solid #c4b5fd;
+  border-radius: 6px;
+  padding: 0.2rem 0.65rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #5b21b6;
+  cursor: pointer;
+  transition: all 0.16s;
+}
+.mr-ai-save-btn:hover { background: #ddd6fe; }
+
+.mr-ai-tag-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.45rem;
+  align-items: center;
+  font-size: 0.7rem;
+  color: #6b7280;
+}
+.mr-tag-chip {
+  background: #ede9fe;
+  border: 1px solid #c4b5fd;
+  border-radius: 20px;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #5b21b6;
+  cursor: pointer;
+}
+.mr-ai-text.md-content {
+  font-size: 0.82rem;
+  max-height: 260px;
+  overflow-y: auto;
+}
+

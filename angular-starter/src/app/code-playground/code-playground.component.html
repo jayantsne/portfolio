@@ -1,0 +1,146 @@
+<!-- Code Playground Page -->
+<div class="pg-page">
+
+  <!-- ── Top navigation bar ── -->
+  <div class="pg-topbar">
+    <div class="pg-topbar-left">
+      <span class="pg-topbar-icon">⚡</span>
+      <div>
+        <h1 class="pg-topbar-title">Code Playground</h1>
+        <p class="pg-topbar-sub">Write, run and ask AI to explain any code</p>
+      </div>
+    </div>
+
+    <!-- Language selector -->
+    <div class="pg-lang-row">
+      <button *ngFor="let l of langs"
+              class="pg-lang-btn"
+              [class.pg-lang-btn--active]="selectedLang.id === l.id"
+              (click)="selectLang(l)">
+        <span>{{ l.icon }}</span> {{ l.label }}
+      </button>
+    </div>
+
+    <!-- Editor actions -->
+    <div class="pg-header-actions">
+      <button class="pg-action-btn pg-action-btn--ghost" (click)="copyCode()" title="Copy code">
+        📋 Copy
+      </button>
+      <button class="pg-action-btn pg-action-btn--ghost" (click)="resetCode()" title="Reset to starter">
+        🔄 Reset
+      </button>
+      <button class="pg-action-btn pg-action-btn--run"
+              [disabled]="isRunning"
+              (click)="runCode()">
+        <span *ngIf="!isRunning">▶ Run</span>
+        <span *ngIf="isRunning" class="pg-spinner"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ── Main 2-column layout ── -->
+  <div class="pg-body">
+
+    <!-- ═══ LEFT: Editor + Output ═══ -->
+    <div class="pg-left">
+
+      <!-- Monaco container -->
+      <div class="pg-editor-wrap">
+        <div *ngIf="editorLoading" class="pg-editor-loading">
+          <div class="pg-loading-dots"><span></span><span></span><span></span></div>
+          <span>Loading Monaco Editor…</span>
+        </div>
+        <div #monacoContainer class="pg-monaco-container"
+             [style.display]="editorLoading ? 'none' : 'block'">
+        </div>
+      </div>
+
+      <!-- Output panel -->
+      <div class="pg-output">
+        <div class="pg-output-header">
+          <span class="pg-output-title">📤 Output</span>
+          <button class="pg-output-clear" *ngIf="outputLines.length > 0"
+                  (click)="outputLines = []">Clear</button>
+        </div>
+        <div class="pg-output-body" #outputScroll>
+          <div *ngIf="outputLines.length === 0" class="pg-output-empty">
+            <span>Run your code to see output here.</span>
+          </div>
+          <div *ngFor="let line of outputLines"
+               class="pg-output-line"
+               [class.pg-output-error]="line.type === 'error'"
+               [class.pg-output-warn]="line.type === 'warn'"
+               [class.pg-output-info]="line.type === 'info'">
+            <span class="pg-output-prefix">
+              {{ line.type === 'error' ? '✕' : line.type === 'warn' ? '⚠' : line.type === 'info' ? 'ℹ' : '›' }}
+            </span>
+            <pre class="pg-output-text">{{ line.text }}</pre>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /pg-left -->
+
+    <!-- ═══ RIGHT: AI Assistant ═══ -->
+    <div class="pg-right">
+
+      <div class="pg-ai-header">
+        <span class="pg-ai-title">🤖 AI Code Assistant</span>
+        <span class="pg-ai-sub">Select an action to analyse your code</span>
+      </div>
+
+      <!-- Action chips -->
+      <div class="pg-ai-actions">
+        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('explain')">
+          💡 Explain Code
+        </button>
+        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('improve')">
+          ✨ Improve Code
+        </button>
+        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('bugs')">
+          🔍 Find Bugs
+        </button>
+        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('tests')">
+          🧪 Generate Tests
+        </button>
+      </div>
+
+      <!-- AI result area -->
+      <div class="pg-ai-result-wrap" #aiScroll>
+
+        <!-- Idle state -->
+        <div *ngIf="aiPanel === 'idle'" class="pg-ai-idle">
+          <div class="pg-ai-idle-icon">🤖</div>
+          <p>Ask AI to explain, improve or test your code.<br>Results appear here as a streaming response.</p>
+        </div>
+
+        <!-- Loading / streaming -->
+        <div *ngIf="aiPanel === 'loading' || (aiPanel === 'result' && aiStreamText)">
+          <div *ngIf="aiActionLabel" class="pg-ai-action-label">
+            <span *ngIf="aiPanel === 'loading'" class="pg-spinner pg-spinner--sm"></span>
+            {{ aiActionLabel }}
+            <button *ngIf="aiPanel === 'loading'" class="pg-ai-stop" (click)="stopAi()">■ Stop</button>
+          </div>
+          <div class="pg-ai-stream md-content" [innerHTML]="aiStreamText | markdown"></div>
+        </div>
+
+      </div>
+
+      <!-- Save to Notes button -->
+      <div class="pg-ai-footer">
+        <div class="pg-save-feedback" *ngIf="saveSuccess">✅ Saved to Notes!</div>
+        <div class="pg-save-feedback pg-save-feedback--error" *ngIf="saveFail">
+          ⚠️ Could not save. Sign in first.
+        </div>
+        <button class="pg-save-btn"
+                [disabled]="!currentCode"
+                (click)="saveToNotes()">
+          💾 Save to Notes
+        </button>
+      </div>
+
+    </div><!-- /pg-right -->
+
+  </div><!-- /pg-body -->
+
+</div>
