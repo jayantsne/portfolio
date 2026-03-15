@@ -101,7 +101,10 @@
           [type]="s.type"
           [icon]="s.icon"
           [title]="s.title"
-          [htmlContent]="s.htmlContent">
+          [htmlContent]="s.htmlContent"
+          [rawContent]="s.rawContent"
+          [showPlayground]="hasPlayground && s.type === 'code'"
+          (sendToPlayground)="sendToPlayground.emit($event)">
         </app-lw-lesson-card>
       </div>
 

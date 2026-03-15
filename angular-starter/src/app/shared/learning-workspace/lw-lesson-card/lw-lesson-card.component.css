@@ -39,6 +39,29 @@
   color: var(--lw-muted, #64748b);
 }
 
+/* Run in Playground button — only shown on code sections */
+.lwc-pg-btn {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 3px 10px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--lw-violet, #8b5cf6);
+  background: rgba(139,92,246,0.08);
+  border: 1.5px solid rgba(139,92,246,0.25);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.lwc-pg-btn:hover {
+  background: rgba(139,92,246,0.18);
+  border-color: var(--lw-violet, #8b5cf6);
+  box-shadow: 0 2px 8px rgba(139,92,246,0.2);
+}
+
 /* ── Body ── */
 .lwc-body {
   padding: 1rem 1.15rem 1.1rem;

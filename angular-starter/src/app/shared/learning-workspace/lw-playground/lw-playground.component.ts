@@ -16,8 +16,11 @@ export class LwPlaygroundComponent implements OnChanges {
 
   // ── Inputs ──────────────────────────────────────────────────────────────
 
-  /** Written code (two-way bindable) */
+  /** Code editor content (two-way bindable via codeChange output) */
   @Input() code = '';
+
+  /** Incrementing counter: when it changes, the panel auto-opens (use for external code injection) */
+  @Input() loadToken = 0;
 
   /** AI-rendered output */
   @Input() output: SafeHtml | string = '';
@@ -79,8 +82,8 @@ export class LwPlaygroundComponent implements OnChanges {
     if (changes['lessonCodeBlocks'] && this.lessonCodeBlocks.length) {
       this.currentBlockIndex = 0;
     }
-    // Auto-open when parent injects a preloaded code block
-    if (changes['code'] && changes['code'].currentValue && !changes['code'].previousValue) {
+    // Open and scroll into view whenever the parent injects external code
+    if (changes['loadToken'] && !changes['loadToken'].firstChange) {
       this.open = true;
     }
   }

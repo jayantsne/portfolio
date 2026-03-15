@@ -12,6 +12,8 @@ export interface RenderedSection {
   icon: string;
   title: string;
   htmlContent: SafeHtml;
+  /** Original raw text — used to preload the AI Code Lab */
+  rawContent: string;
 }
 
 @Component({
@@ -56,6 +58,9 @@ export class LwLessonContentComponent implements OnChanges {
   /** Quick-action chips to show below lesson content */
   @Input() mentorChips: { label: string; icon: string; prompt: string }[] = [];
 
+  /** When true, code section cards show a “Run in Playground” button */
+  @Input() hasPlayground = false;
+
   // ── Outputs ─────────────────────────────────────────────────────────────
 
   @Output() markComplete = new EventEmitter<void>();
@@ -63,6 +68,8 @@ export class LwLessonContentComponent implements OnChanges {
   @Output() nextTopic    = new EventEmitter<void>();
   @Output() retry        = new EventEmitter<void>();
   @Output() mentorChip   = new EventEmitter<string>();
+  /** Fired when user clicks “Run in Playground” on a code section card */
+  @Output() sendToPlayground = new EventEmitter<string>();
 
   // ── Internal ─────────────────────────────────────────────────────────────
 
@@ -79,6 +86,7 @@ export class LwLessonContentComponent implements OnChanges {
           icon:        s.icon  || m.icon,
           title:       s.title || m.title,
           htmlContent: this.md.transform(s.content),
+          rawContent:  s.content,
         };
       });
     }

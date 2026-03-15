@@ -160,8 +160,8 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   pgOutput   = '';
   pgError    = '';
   pgMs       = 0;
-  pgAiMode: string = 'run';
-  private pgSub: Subscription | null = null;
+  pgAiMode: string = 'run';  /** Incrementing counter passed to playground to trigger auto-open on code injection */
+  pgLoadToken = 0;  private pgSub: Subscription | null = null;
 
   /** Whether to show the playground — all AI roadmaps are code-relevant */
   get pgHasPlayground(): boolean { return !!this.activeRoadmap; }
@@ -246,6 +246,14 @@ export class RoadmapComponent implements OnInit, OnDestroy {
       topic: `[Code Lab] ${this.expandedNode?.topic ?? this.activeRoadmap?.language ?? 'Playground'}`,
       text,
     });
+    this.cdr.markForCheck();
+  }
+
+  /** Called when user clicks “Run in Playground” on a lesson code section */
+  onRunInPlayground(code: string): void {
+    this.pgCode = code;
+    this.pgLoadToken++;  // triggers ngOnChanges in playground to auto-open
+    this.resetPg();
     this.cdr.markForCheck();
   }
 

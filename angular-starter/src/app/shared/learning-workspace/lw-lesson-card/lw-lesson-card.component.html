@@ -8,6 +8,13 @@
   <div class="lwc-hd">
     <span class="lwc-hd-icon">{{ meta.icon }}</span>
     <span class="lwc-hd-title">{{ meta.title }}</span>
+    <!-- Run in Playground button — only on code sections when playground is available -->
+    <button *ngIf="isCode && showPlayground"
+            class="lwc-pg-btn"
+            (click)="onRunInPlayground()"
+            title="Open this code in AI Code Lab">
+      ⚡ Run in Playground
+    </button>
   </div>
 
   <!-- Body — parent passes SafeHtml rendered from markdown (MarkdownPipe) -->

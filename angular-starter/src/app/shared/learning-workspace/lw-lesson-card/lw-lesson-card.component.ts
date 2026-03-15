@@ -1,5 +1,5 @@
 import {
-  Component, Input, ChangeDetectionStrategy,
+  Component, Input, Output, EventEmitter, ChangeDetectionStrategy,
 } from '@angular/core';
 import { SafeHtml } from '@angular/platform-browser';
 import { SectionType, SECTION_META } from '../learning-workspace.models';
@@ -21,11 +21,20 @@ export class LwLessonCardComponent {
    */
   @Input() htmlContent: SafeHtml = '';
 
+  /** Raw markdown/text content (used to populate the playground editor) */
+  @Input() rawContent = '';
+
+  /** When true, shows a "Run in Playground" button on code sections */
+  @Input() showPlayground = false;
+
   /** Override default section icon */
   @Input() icon = '';
 
   /** Override default section title */
   @Input() title = '';
+
+  /** Emitted when user clicks "Run in Playground" — carries the raw code text */
+  @Output() sendToPlayground = new EventEmitter<string>();
 
   get meta() {
     const m = SECTION_META[this.type] ?? { icon: '📋', title: 'Section' };
@@ -35,4 +44,13 @@ export class LwLessonCardComponent {
   get isCode():     boolean { return this.type === 'code'; }
   get isPractice(): boolean { return this.type === 'practice'; }
   get isExamTip():  boolean { return this.type === 'exam-tip'; }
+
+  onRunInPlayground(): void {
+    // Strip markdown fences and leading/trailing whitespace
+    const stripped = this.rawContent
+      .replace(/^```[\w]*\n?/m, '')
+      .replace(/```\s*$/m, '')
+      .trim();
+    this.sendToPlayground.emit(stripped || this.rawContent.trim());
+  }
 }

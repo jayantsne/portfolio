@@ -357,6 +357,7 @@
         [sections]="lwSections"
         [loading]="lessonLoading"
         [error]="lessonError"
+        [hasPlayground]="pgHasPlayground"
         [streamingText]="lessonStreamingText"
         [isStreaming]="lessonIsStreaming"
         [followUpMessages]="lwFollowUpMessages"
@@ -368,13 +369,15 @@
         (prevTopic)="prevTopicNode()"
         (nextTopic)="nextTopicNode()"
         (retry)="expandedNode && loadLesson(expandedNode)"
-        (mentorChip)="onMentorSend($event)">
+        (mentorChip)="onMentorSend($event)"
+        (sendToPlayground)="onRunInPlayground($event)">
       </app-lw-lesson-content>
 
       <!-- ── Col 2 bottom: AI Code Lab ── -->
       <app-lw-playground lwPlayground
         *ngIf="pgHasPlayground"
         [code]="pgCode"
+        [loadToken]="pgLoadToken"
         [output]="pgOutputSafe"
         [loading]="pgLoading"
         [error]="pgError"
