@@ -336,7 +336,8 @@
 
 .nap-context-hint {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 7px;
   margin: 14px 12px 0;
   padding: 9px 11px;
@@ -348,6 +349,23 @@
 }
 .nap-hint-icon { flex-shrink: 0; }
 .nap-context-hint strong { color: var(--n-text); font-weight: 600; }
+.nap-kbd-hint {
+  margin-left: auto;
+  font-size: 0.71rem;
+  color: var(--n-muted);
+  white-space: nowrap;
+}
+.nap-kbd-hint kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  border: 1px solid #c7d2fe;
+  border-radius: 4px;
+  background: #f0f4ff;
+  color: #4f46e5;
+  font-size: 0.7rem;
+  font-family: monospace;
+  font-style: normal;
+}
 
 /* Tag filter spacing */
 .notes-tag-filter { padding-top: 0; border-top: 1px dashed var(--n-border); margin: 0 14px 4px; padding: 8px 0 4px; }
@@ -677,6 +695,28 @@
 .notes-qitem-del:hover { color: #ef4444; }
 .notes-qitem-del.deleting { opacity: 1; cursor: wait; }
 
+/* ── Pin button in note list ── */
+.notes-qitem-pin {
+  background: transparent;
+  border: none;
+  font-size: 0.82rem;
+  cursor: pointer;
+  opacity: 0;
+  padding: 0 4px;
+  color: var(--n-muted);
+  transition: opacity 0.15s, color 0.15s;
+  flex-shrink: 0;
+  align-self: center;
+}
+.notes-qitem:hover .notes-qitem-pin { opacity: 1; }
+.notes-qitem-pin.pinned { opacity: 1; color: #7c6af7; }
+.notes-qitem-pin.pinned:hover { color: #ef4444; }
+.notes-qitem-pin-badge {
+  font-size: 0.72rem;
+  margin-left: 4px;
+  opacity: 0.75;
+}
+
 /* ═══ RIGHT PANEL ═════════════════════════════════════════════ */
 .notes-right {
   flex: 1;
@@ -939,6 +979,40 @@
   transition: all 0.18s;
 }
 .reader-edit-btn:hover { background: #e0e7ff; }
+
+/* ── Reader stats (word count / reading time) ── */
+.reader-stats {
+  font-size: 0.75rem;
+  color: var(--n-muted);
+  background: var(--n-bg);
+  border: 1px solid var(--n-border);
+  padding: 2px 9px;
+  border-radius: 20px;
+  white-space: nowrap;
+}
+
+/* ── Reader pin button ── */
+.reader-pin-btn {
+  background: transparent;
+  border: 1.5px solid var(--n-border);
+  color: var(--n-muted);
+  padding: 0.28rem 0.7rem;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.reader-pin-btn.pinned {
+  background: #ede9fe;
+  border-color: #7c6af7;
+  color: #7c6af7;
+}
+.reader-pin-btn:hover {
+  border-color: #7c6af7;
+  color: #7c6af7;
+}
 
 .reader-cat-badge {
   display: inline-block;

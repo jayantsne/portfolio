@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { CustomAuthService, AuthUser } from '../shared/custom-auth.service';
@@ -73,7 +73,40 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   readonly categories = NOTE_CATEGORIES;
 
-  private subs: Subscription[] = [];
+  // ── Pinned notes (client-side, persisted to localStorage) ────────────────
+  private pinnedIds = new Set<string>();
+  private get pinnedKey(): string {
+    return `notes_pinned_${this.user?.userId ?? 'anon'}`;
+  }
+  private loadPinned(): void {
+    try {
+      const raw = localStorage.getItem(this.pinnedKey);
+      this.pinnedIds = new Set(raw ? JSON.parse(raw) : []);
+    } catch { this.pinnedIds = new Set(); }
+  }
+  private savePinned(): void {
+    try { localStorage.setItem(this.pinnedKey, JSON.stringify([...this.pinnedIds])); } catch { /* ignore */ }
+  }
+  isPinned(note: SavedNote): boolean { return !!note.id && this.pinnedIds.has(note.id); }
+  togglePin(note: SavedNote): void {
+    if (!note.id) return;
+    if (this.pinnedIds.has(note.id)) this.pinnedIds.delete(note.id);
+    else this.pinnedIds.add(note.id);
+    this.savePinned();
+  }
+
+  // ── Word count / reading time ──────────────────────────────────────────
+  noteWordCount(note: SavedNote | null): number {
+    if (!note) return 0;
+    return note.content.trim().split(/\s+/).filter(w => w.length > 0).length;
+  }
+  noteReadingTime(note: SavedNote | null): string {
+    const wpm = 200;
+    const mins = Math.ceil(this.noteWordCount(note) / wpm);
+    return mins <= 1 ? '< 1 min read' : `${mins} min read`;
+  }
+
+  private readonly subs: Subscription[] = [];
 
   constructor(
     private authSvc:      CustomAuthService,
@@ -84,13 +117,14 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.user = this.authSvc.currentUser;
-    if (this.user) this.startLoadingNotes();
+    if (this.user) { this.loadPinned(); this.startLoadingNotes(); }
 
     this.subs.push(
       this.authSvc.currentUser$.subscribe(user => {
         const wasNull = !this.user;
         this.user = user;
         if (user && wasNull) {
+          this.loadPinned();
           this.startLoadingNotes();
         } else if (!user) {
           this.isLoading = false;
@@ -139,7 +173,7 @@ export class NotesComponent implements OnInit, OnDestroy {
   }
 
   get filteredNotes(): SavedNote[] {
-    return this.notes.filter(n => {
+    const result = this.notes.filter(n => {
       const matchesCat = this.filterCategory === 'All' ||
                          (n.category || 'Other') === this.filterCategory;
       const matchesTag = !this.filterTag ||
@@ -151,6 +185,11 @@ export class NotesComponent implements OnInit, OnDestroy {
         (n.tags ?? []).some(t => t.includes(q));
       return matchesCat && matchesTag && matchesSearch;
     });
+    // Pinned notes float to the top
+    return [
+      ...result.filter(n => n.id && this.pinnedIds.has(n.id)),
+      ...result.filter(n => !n.id || !this.pinnedIds.has(n.id)),
+    ];
   }
 
   get groupedNotes(): { category: string; notes: SavedNote[] }[] {
@@ -356,7 +395,7 @@ export class NotesComponent implements OnInit, OnDestroy {
     const content = this.activeNote.content;
     const prompts: Record<string, string> = {
       summarize:  `Summarize the following note in 3-5 concise bullet points:\n\n${content}`,
-      explain:    `Explain the key concepts in the following note in simple, beginner-friendly terms:\n\n${content}`,
+      explain:    `Explain the key concepts in the following note in simple, beginner-friendly terms. Use analogies and concrete examples:\n\n${content}`,
       simplify:   `Re-write the following note using the simplest possible language (ELI5). Keep it accurate but very easy to understand:\n\n${content}`,
       expand:     `Expand the following note with more detail, real-world context, and deeper explanation:\n\n${content}`,
       example:    `Generate a clear, practical real-world example that illustrates the concept in this note:\n\n${content}`,
@@ -601,6 +640,19 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
   // ── Misc ──────────────────────────────────────────────────────────────────
 
   goHome(): void { this.router.navigate(['/']); }
+
+  /** Keyboard shortcut: E = start edit, Escape = cancel edit */
+  @HostListener('document:keydown', ['$event'])
+  handleKey(e: KeyboardEvent): void {
+    const tag = (e.target as HTMLElement).tagName.toLowerCase();
+    const inInput = tag === 'input' || tag === 'textarea' || tag === 'select';
+    if (!inInput && e.key === 'e' && this.activeNote && !this.editMode && !this.createMode) {
+      this.startEdit();
+    }
+    if (e.key === 'Escape' && this.editMode) {
+      this.cancelEdit();
+    }
+  }
 
   formatDate(ms: number | undefined): string {
     if (!ms) return '';

@@ -130,6 +130,7 @@
               <div class="notes-qitem-top">
                 <span class="notes-qitem-num">#{{ i + 1 }}</span>
                 <span class="notes-qitem-cat">{{ note.category }}</span>
+                <span class="notes-qitem-pin-badge" *ngIf="isPinned(note)" title="Pinned">📌</span>
               </div>
               <p class="notes-qitem-text">{{ note.topic }}</p>
               <div class="notes-qitem-bottom" *ngIf="(note.tags ?? []).length > 0">
@@ -137,6 +138,9 @@
               </div>
               <span class="notes-qitem-date">{{ formatDate(note.savedAtMs) }}</span>
             </div>
+            <button class="notes-qitem-pin" [class.pinned]="isPinned(note)"
+                    (click)="$event.stopPropagation(); togglePin(note)"
+                    [title]="isPinned(note) ? 'Unpin note' : 'Pin note'">📌</button>
             <button class="notes-qitem-del" [class.deleting]="deletingId === note.id"
                     (click)="$event.stopPropagation(); deleteNote(note)" title="Delete">
               {{ deletingId === note.id ? '…' : '🗑' }}
@@ -206,13 +210,21 @@
           </div>
           <div class="reader-actions">
             <span class="reader-date">Saved {{ formatDate(activeNote.savedAtMs) }}</span>
+            <span class="reader-stats">
+              {{ noteWordCount(activeNote) }} words &middot; {{ noteReadingTime(activeNote) }}
+            </span>
             <div class="export-group">
               <span class="export-label">Export:</span>
               <button class="export-btn" title="Download as TXT" (click)="exportAsTxt()">TXT</button>
               <button class="export-btn" title="Download as Markdown" (click)="exportAsMd()">MD</button>
               <button class="export-btn" title="Print / Save as PDF" (click)="exportAsPdf()">PDF</button>
             </div>
-            <button class="reader-edit-btn" (click)="startEdit()"> Edit</button>
+            <button class="reader-pin-btn" [class.pinned]="isPinned(activeNote)"
+                    (click)="togglePin(activeNote)"
+                    [title]="isPinned(activeNote) ? 'Unpin note' : 'Pin to top'">
+              {{ isPinned(activeNote) ? '📌 Pinned' : '📌 Pin' }}
+            </button>
+            <button class="reader-edit-btn" (click)="startEdit()" title="Edit (E)"> Edit</button>
             <button class="reader-delete-btn" (click)="deleteNote(activeNote!)"> Delete</button>
           </div>
         </div>
@@ -287,6 +299,10 @@
         <button class="nap-btn" (click)="runAiAction('summarize')" [disabled]="aiActionLoading">
           <span class="nap-btn-icon">📋</span>
           <div class="nap-btn-text"><strong>Summarize</strong><span>Key points in bullets</span></div>
+        </button>
+        <button class="nap-btn" (click)="runAiAction('explain')" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">💡</span>
+          <div class="nap-btn-text"><strong>Explain</strong><span>Beginner-friendly</span></div>
         </button>
         <button class="nap-btn" (click)="runAiAction('simplify')" [disabled]="aiActionLoading">
           <span class="nap-btn-icon">🔤</span>
@@ -377,6 +393,7 @@
       <div class="nap-context-hint">
         <span class="nap-hint-icon">📌</span>
         <span>Acting on: <strong>{{ activeNote.topic }}</strong></span>
+        <span class="nap-kbd-hint" title="Keyboard shortcut">Press <kbd>E</kbd> to edit</span>
       </div>
     </aside>
 
