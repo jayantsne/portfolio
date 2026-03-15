@@ -371,20 +371,21 @@
         (mentorChip)="onMentorSend($event)">
       </app-lw-lesson-content>
 
-      <!-- ── Col 2 bottom: AI Playground ── -->
+      <!-- ── Col 2 bottom: AI Code Lab ── -->
       <app-lw-playground lwPlayground
-        [prompt]="pgPrompt"
+        *ngIf="pgHasPlayground"
+        [code]="pgCode"
         [output]="pgOutputSafe"
         [loading]="pgLoading"
         [error]="pgError"
         [ms]="pgMs"
-        [selectedModel]="pgModel"
-        [temperature]="pgTemp"
-        (promptChange)="pgPrompt = $event"
-        (selectedModelChange)="pgModel = $event"
-        (temperatureChange)="pgTemp = $event"
-        (run)="runPg()"
-        (reset)="resetPg()">
+        [language]="pgLanguage"
+        [topicTitle]="expandedNode?.topic || ''"
+        [lessonCodeBlocks]="pgLessonCodeBlocks"
+        (codeChange)="pgCode = $event"
+        (run)="onPgRun($event)"
+        (reset)="resetPg()"
+        (saveNote)="onPgSaveNote($event)">
       </app-lw-playground>
 
       <!-- ── Col 3: AI Mentor panel ── -->

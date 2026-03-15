@@ -154,40 +154,99 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   }
   deleteInlineNote(i: number): void { this.inlineNotes.splice(i, 1); }
 
-  // ── AI Playground (bottom) ────────────────────────────────────────────────
-  pgOpen     = false;
+  // ── AI Code Lab (Playground, bottom) ────────────────────────────────────────
+  pgCode     = '';        // code editor content
   pgLoading  = false;
-  pgPrompt   = '';
   pgOutput   = '';
   pgError    = '';
-  pgModel    = 'auto';
-  pgTemp     = 0.7;
   pgMs       = 0;
+  pgAiMode: string = 'run';
   private pgSub: Subscription | null = null;
 
-  togglePg(): void { this.pgOpen = !this.pgOpen; }
+  /** Whether to show the playground — all AI roadmaps are code-relevant */
+  get pgHasPlayground(): boolean { return !!this.activeRoadmap; }
+
+  /** Active roadmap language label for the playground header */
+  get pgLanguage(): string { return this.activeRoadmap?.language ?? ''; }
+
+  /** Extract plain-text code blocks from the rendered lesson HTML */
+  get pgLessonCodeBlocks(): string[] {
+    const html = this.lessonText;
+    if (!html) return [];
+    const blocks: string[] = [];
+    const re = /<code[^>]*>([\s\S]*?)<\/code>/gi;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(html)) !== null) {
+      const raw = m[1]
+        .replace(/&lt;/g, '<').replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&').replace(/&quot;/g, '"')
+        .replace(/<[^>]+>/g, '').trim();
+      if (raw.length > 10) blocks.push(raw);
+    }
+    return blocks;
+  }
+
+  /** SafeHtml version of pgOutput for the playground component */
+  get pgOutputSafe() {
+    return this.pgOutput
+      ? this.sanitizer.bypassSecurityTrustHtml(this.pgOutput)
+      : '';
+  }
 
   resetPg(): void {
     this.pgSub?.unsubscribe();
-    this.pgPrompt = ''; this.pgOutput = ''; this.pgError = '';
+    this.pgOutput = ''; this.pgError = '';
     this.pgLoading = false; this.pgMs = 0;
+    this.cdr.markForCheck();
   }
 
-  runPg(): void {
-    if (!this.pgPrompt.trim() || this.pgLoading) return;
+  /** Called when playground emits { code, mode } from Run / AI action buttons */
+  onPgRun(event: { code: string; mode: string }): void {
+    const { code, mode } = event;
+    const lang    = this.activeRoadmap?.language ?? 'code';
+    const topic   = this.expandedNode?.topic ?? 'this topic';
+    this.pgCode   = code;
+    this.pgAiMode = mode;
+
+    if (!code.trim() && mode !== 'challenge') return;
+    if (this.pgLoading) return;
+
     this.pgSub?.unsubscribe();
-    this.pgOutput = ''; this.pgError = ''; this.pgLoading = true;
+    this.pgOutput  = '';
+    this.pgError   = '';
+    this.pgLoading = true;
     const t0 = Date.now();
+
+    const prompts: Record<string, string> = {
+      run:       `Execute this ${lang} code and show exactly what the output/result would be. Return only the console output or result value, formatted clearly:\n\`\`\`\n${code}\n\`\`\``,
+      explain:   `Explain this ${lang} code step-by-step in simple terms. What does each part do?\n\`\`\`\n${code}\n\`\`\``,
+      debug:     `Find and fix all bugs in this ${lang} code. List each issue you found and show the corrected code:\n\`\`\`\n${code}\n\`\`\``,
+      optimize:  `Optimize this ${lang} code for better performance and readability. Show the improved version with a brief explanation of the changes:\n\`\`\`\n${code}\n\`\`\``,
+      comments:  `Add clear, detailed explanatory comments to every significant line or block of this ${lang} code. Return the fully commented code:\n\`\`\`\n${code}\n\`\`\``,
+      challenge: `Give me a hands-on coding challenge related to "${topic}" in ${lang}. Include:\n1. Clear problem statement\n2. Example input/output\n3. Hints\n4. Reference solution`,
+    };
+
+    const prompt = prompts[mode] ?? prompts['run'];
+
     this.pgSub = this.rmSvc.explainNode(
-      { topic: this.pgPrompt.trim(), description: '', order: 0, id: 'pg',
+      { topic: prompt, description: '', order: 0, id: 'pg',
         estMinutes: 0, status: 'active', icon: '' } as any,
-      (this.activeRoadmap?.language ?? 'AI') as any,
+      lang as any,
       this.activeRoadmap?.level ?? 'intermediate'
     ).subscribe({
-      next: (r: any) => { this.pgOutput = r?.explanation ?? r?.text ?? JSON.stringify(r); },
-      error: (e: any) => { this.pgError = e?.message ?? 'Error. Please try again.'; this.pgLoading = false; this.cdr.markForCheck(); },
+      next:     (r: any) => { this.pgOutput = r?.explanation ?? r?.text ?? JSON.stringify(r); },
+      error:    (e: any) => { this.pgError = e?.message ?? 'Error. Please try again.'; this.pgLoading = false; this.cdr.markForCheck(); },
       complete: () => { this.pgMs = Date.now() - t0; this.pgLoading = false; this.cdr.markForCheck(); },
     });
+  }
+
+  /** Save note emitted from playground */
+  onPgSaveNote(text: string): void {
+    this.inlineNotes.unshift({
+      topic: `[Code Lab] ${this.expandedNode?.topic ?? this.activeRoadmap?.language ?? 'Playground'}`,
+      text,
+    });
+    this.cdr.markForCheck();
   }
 
   /** Add a quick mentor chip prompt as a user message and fetch the AI reply */
@@ -269,13 +328,6 @@ export class RoadmapComponent implements OnInit, OnDestroy {
       text: n.text,
       createdAt: new Date(),
     }));
-  }
-
-  /** SafeHtml version of pgOutput for the playground component */
-  get pgOutputSafe() {
-    return this.pgOutput
-      ? this.sanitizer.bypassSecurityTrustHtml(this.pgOutput)
-      : '';
   }
 
   /** Handle topic selection from the LwSidebar */

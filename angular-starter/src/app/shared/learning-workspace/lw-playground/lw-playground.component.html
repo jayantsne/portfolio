@@ -1,82 +1,176 @@
-<!-- LW Playground — collapsible AI experiment panel -->
-<div class="lwpg-wrap">
+<!-- AI Code Lab — collapsible coding sandbox -->
+<div class="lwpg-wrap" [class.lwpg-wrap--open]="open">
 
-  <!-- Toggle header -->
+  <!-- ── Toggle header ── -->
   <button class="lwpg-toggle" (click)="toggle()" [attr.aria-expanded]="open">
     <span class="lwpg-toggle-icon">⚡</span>
-    <span class="lwpg-toggle-label">AI Playground</span>
-    <span class="lwpg-toggle-sub">Experiment with AI prompts</span>
-    <span class="lwpg-chevron" [class.lwpg-chevron--open]="open">›</span>
+    <span class="lwpg-toggle-label">AI Code Lab</span>
+    <span class="lwpg-toggle-sub">— Try code examples from this lesson</span>
+    <span class="lwpg-lang-badge" *ngIf="language">{{ language }}</span>
+    <span class="lwpg-saved-badge" *ngIf="savedCount > 0">{{ savedCount }} saved</span>
+    <span class="lwpg-spacer-auto"></span>
+    <span class="lwpg-chevron" [class.lwpg-chevron--open]="open">▲</span>
   </button>
 
-  <!-- Collapsible body -->
+  <!-- ── Expanded body ── -->
   <div class="lwpg-body" [class.lwpg-body--open]="open">
     <div class="lwpg-inner">
 
-      <!-- ── Editor column ── -->
-      <div class="lwpg-editor">
+      <!-- ══ LEFT: Code Editor Column ══ -->
+      <div class="lwpg-editor-col">
 
-        <!-- Controls row: model + temp -->
-        <div class="lwpg-controls">
-          <div class="lwpg-ctrl">
-            <label class="lwpg-label">Model</label>
-            <select class="lwpg-select"
-                    [value]="selectedModel"
-                    (change)="onModelChange($any($event.target).value)">
-              <option *ngFor="let m of models" [value]="m">{{ m }}</option>
-            </select>
-          </div>
-          <div class="lwpg-ctrl">
-            <label class="lwpg-label">Temp: {{ temperature.toFixed(1) }}</label>
-            <input type="range" class="lwpg-range"
-                   min="0" max="1" step="0.1"
-                   [value]="temperature"
-                   (input)="onTempChange(+$any($event.target).value)" />
-          </div>
+        <!-- Editor toolbar -->
+        <div class="lwpg-editor-hd">
+          <span class="lwpg-editor-title">📝 Code Editor</span>
+          <ng-container *ngIf="lessonCodeBlocks.length">
+            <button class="lwpg-load-btn"
+                    (click)="loadFromLesson()"
+                    [title]="'Load code from: ' + topicTitle">
+              📥 Load lesson code
+            </button>
+            <span class="lwpg-block-nav" *ngIf="lessonCodeBlocks.length > 1">
+              <button class="lwpg-nav-btn" (click)="prevBlock()" [disabled]="currentBlockIndex === 0">‹</button>
+              <span class="lwpg-block-count">{{ currentBlockIndex + 1 }}/{{ lessonCodeBlocks.length }}</span>
+              <button class="lwpg-nav-btn" (click)="nextBlock()" [disabled]="currentBlockIndex >= lessonCodeBlocks.length - 1">›</button>
+            </span>
+          </ng-container>
+          <span class="lwpg-spacer-auto"></span>
+          <button class="lwpg-clear-btn" (click)="clearCode()" title="Clear editor" [disabled]="!code.trim()">✕ Clear</button>
         </div>
 
-        <!-- Prompt textarea -->
-        <textarea class="lwpg-textarea"
-                  rows="5"
-                  placeholder="Enter an AI prompt to experiment with…"
-                  [value]="prompt"
-                  (input)="onPromptChange($any($event.target).value)">
-        </textarea>
+        <!-- Code textarea with line-number feel -->
+        <div class="lwpg-code-wrap">
+          <textarea class="lwpg-code-ta"
+                    [(ngModel)]="code"
+                    (ngModelChange)="onCodeChange($event)"
+                    spellcheck="false"
+                    autocomplete="off"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    placeholder="# Write or paste code here…
+# Click '📥 Load lesson code' to try examples from this lesson.
+# Then hit ▶ Run Code or use an AI action below."></textarea>
+        </div>
 
-        <!-- Action buttons -->
-        <div class="lwpg-actions">
+        <!-- Primary action bar -->
+        <div class="lwpg-action-row">
           <button class="lwpg-run-btn"
-                  [disabled]="!prompt.trim() || loading"
-                  (click)="run.emit()">
-            <span *ngIf="!loading">▶ Run</span>
-            <span *ngIf="loading">⏳ Running…</span>
+                  [disabled]="!code.trim() || loading"
+                  (click)="doRun('run')">
+            <span class="lwpg-run-icon">▶</span>
+            <span *ngIf="!(loading && aiMode === 'run')">Run Code</span>
+            <span *ngIf="loading && aiMode === 'run'">Running…</span>
           </button>
-          <button class="lwpg-reset-btn"
-                  [disabled]="loading"
-                  (click)="reset.emit()">
-            ↺ Reset
-          </button>
-          <span class="lwpg-ms" *ngIf="ms > 0">{{ ms }}ms</span>
-        </div>
-      </div>
 
-      <!-- ── Output column ── -->
-      <div class="lwpg-output">
-        <div class="lwpg-output-hd">
-          <span>Output</span>
-          <span class="lwpg-live" *ngIf="loading">
-            <span class="lwpg-live-dot"></span> Generating…
-          </span>
-        </div>
-        <div class="lwpg-output-body">
-          <div *ngIf="error" class="lwpg-err">{{ error }}</div>
-          <div *ngIf="!error && output" [innerHTML]="output" class="lwpg-result"></div>
-          <div *ngIf="!error && !output && !loading" class="lwpg-placeholder">
-            <span class="lwpg-ph-icon">💭</span>
-            <span>Output will appear here after you run a prompt.</span>
+          <div class="lwpg-divider-v"></div>
+
+          <!-- AI action buttons -->
+          <div class="lwpg-ai-btns">
+            <button class="lwpg-ai-btn"
+                    [class.lwpg-ai-btn--active]="aiMode === 'explain' && loading"
+                    [disabled]="!code.trim() || loading"
+                    (click)="doRun('explain')"
+                    title="Explain this code step-by-step">
+              🔍 Explain
+            </button>
+            <button class="lwpg-ai-btn"
+                    [class.lwpg-ai-btn--active]="aiMode === 'debug' && loading"
+                    [disabled]="!code.trim() || loading"
+                    (click)="doRun('debug')"
+                    title="Find and fix bugs">
+              🐛 Debug
+            </button>
+            <button class="lwpg-ai-btn"
+                    [class.lwpg-ai-btn--active]="aiMode === 'optimize' && loading"
+                    [disabled]="!code.trim() || loading"
+                    (click)="doRun('optimize')"
+                    title="Improve performance and readability">
+              ⚡ Optimize
+            </button>
+            <button class="lwpg-ai-btn"
+                    [class.lwpg-ai-btn--active]="aiMode === 'comments' && loading"
+                    [disabled]="!code.trim() || loading"
+                    (click)="doRun('comments')"
+                    title="Add explanatory comments">
+              💬 Comments
+            </button>
           </div>
         </div>
-      </div>
+
+        <!-- Secondary row: Practice + Save -->
+        <div class="lwpg-extra-row">
+          <button class="lwpg-practice-btn"
+                  [class.lwpg-practice-btn--active]="aiMode === 'challenge' && loading"
+                  [disabled]="loading"
+                  (click)="doRun('challenge')">
+            🎯 Practice Challenge
+          </button>
+          <span class="lwpg-spacer-auto"></span>
+          <button class="lwpg-save-btn"
+                  [disabled]="!output || !output.toString().trim()"
+                  (click)="saveAsNote()"
+                  title="Save code + output to My Notes">
+            💾 Save as Note
+          </button>
+          <span class="lwpg-saved-flash" [class.lwpg-saved-flash--show]="justSaved">✓ Saved to Notes!</span>
+        </div>
+
+      </div><!-- /editor col -->
+
+      <!-- ══ RIGHT: Output Console Column ══ -->
+      <div class="lwpg-output-col">
+
+        <!-- Console toolbar -->
+        <div class="lwpg-console-hd">
+          <span class="lwpg-console-title">🖥️ Console</span>
+          <span class="lwpg-console-mode" *ngIf="aiModeLabel && output && !loading">
+            {{ aiModeLabel }}
+          </span>
+          <span class="lwpg-live" *ngIf="loading">
+            <span class="lwpg-live-dot"></span> {{ aiModeLabel || 'Running…' }}
+          </span>
+          <span class="lwpg-spacer-auto"></span>
+          <span class="lwpg-ms" *ngIf="ms > 0 && !loading">⚡ {{ ms }}ms</span>
+          <button class="lwpg-clear-out" *ngIf="output && !loading" (click)="clearOutput()" title="Clear output">✕</button>
+        </div>
+
+        <!-- Console body -->
+        <div class="lwpg-console-body">
+
+          <!-- Error -->
+          <div *ngIf="error" class="lwpg-console-err">
+            <span class="lwpg-err-icon">❌</span>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- Output -->
+          <div *ngIf="!error && output"
+               [innerHTML]="output"
+               class="lwpg-console-out"></div>
+
+          <!-- Empty state -->
+          <div *ngIf="!error && !output && !loading" class="lwpg-console-empty">
+            <span class="lwpg-ph-icon">🖥️</span>
+            <p class="lwpg-ph-title">Ready to run</p>
+            <ul class="lwpg-ph-tips">
+              <li>Write code → <strong>▶ Run Code</strong> to see output</li>
+              <li>Paste code → <strong>🔍 Explain</strong> to understand it</li>
+              <li>Have a bug → <strong>🐛 Debug</strong> to fix it</li>
+              <li>Want a challenge → <strong>🎯 Practice Challenge</strong></li>
+              <li *ngIf="lessonCodeBlocks.length">Try <strong>📥 Load lesson code</strong> to start with an example</li>
+            </ul>
+          </div>
+
+          <!-- Loading skeleton -->
+          <div *ngIf="loading" class="lwpg-loading">
+            <div class="lwpg-loading-bar"></div>
+            <div class="lwpg-loading-bar lwpg-loading-bar--2"></div>
+            <div class="lwpg-loading-bar lwpg-loading-bar--3"></div>
+          </div>
+
+        </div><!-- /console body -->
+
+      </div><!-- /output col -->
 
     </div><!-- /lwpg-inner -->
   </div><!-- /lwpg-body -->
