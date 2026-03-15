@@ -127,22 +127,6 @@
         </div>
       </div>
 
-      <!-- ════════════════════════════════════════════
-           QUICK QUESTIONS CHIPS — inline below lesson
-      ════════════════════════════════════════════ -->
-      <div *ngIf="mentorChips.length && !loading && !isLocked && (sections.length || (!isStreaming && streamingText))"
-           class="lwl-chips-wrap">
-        <span class="lwl-chips-label">Quick Questions</span>
-        <div class="lwl-chips">
-          <button *ngFor="let c of mentorChips; trackBy: trackByIndex"
-                  class="lwl-chip"
-                  [disabled]="followUpLoading"
-                  (click)="mentorChip.emit(c.prompt)">
-            <span>{{ c.icon }}</span> {{ c.label }}
-          </button>
-        </div>
-      </div>
-
     </div><!-- /lwl-body -->
 
     <!-- ════════════════════════════════════════════
