@@ -1151,22 +1151,33 @@ One sentence: the single most important thing to remember about ${topic} in a te
           this.streamingText = '';
 
           const responseText: string = this.stripSystemPrompt(response.explanation || '');
-          if (!response.success || !responseText) {
+          // Extract follow-up chips from raw text BEFORE stripping, so the sidebar stays populated
+          const chips = this.extractFollowUpChips(responseText);
+          // Strip "Explore more:" block from the displayed bubble — questions appear in sidebar
+          const displayText = responseText
+            .replace(/\*\*Explore more[:\*]*\*\*[\s\S]*?(?=\n##|\n\*\*[A-Z]|$)/i, '')
+            .replace(/\s+$/, '');
+          if (!response.success || !displayText) {
             this.aiMessages.push({
               role: 'assistant',
-              content: responseText || '⚠️ The AI is currently unavailable. Please try again in a moment.',
+              content: displayText || '⚠️ The AI is currently unavailable. Please try again in a moment.',
               timestamp: new Date()
             });
           } else {
             this.aiMessages.push({
               role: 'assistant',
-              content: responseText,
+              content: displayText,
               timestamp: new Date()
             });
           }
 
           this.shouldScrollToBottom = true;
-          this.generateFollowUpQuestions();
+          if (chips.length > 0) {
+            this.followUpQuestions = chips;
+            this.showFollowUps = true;
+          } else {
+            this.generateFollowUpQuestions();
+          }
         },
         error: (error) => {
           console.error('Follow-up error:', error);
@@ -1469,9 +1480,16 @@ NOW CREATE THE COMPLETE DIAGRAM FOR: "${topic}"`;
     const codeExamples: Array<{title: string; code: string; language: string}> = [];
     const keyPoints: string[] = [];
     const followUpQuestions: string[] = [];
-    
+
+    // Strip "Explore more:" and "## Follow-up Questions" blocks from the text that will
+    // be rendered as lesson content — those questions are shown in the sidebar instead.
+    const contentText = rawResponse
+      .replace(/\*\*Explore more[:\*]*\*\*[\s\S]*?(?=\n##|\n\*\*[A-Z]|$)/i, '')
+      .replace(/##\s*Follow-up Questions[\s\S]*?(?=\n##|$)/i, '')
+      .replace(/\s+$/, '');
+
     // Split response into sections
-    const sections = this.splitIntoSections(rawResponse);
+    const sections = this.splitIntoSections(contentText);
     
     // Analyze each section and create content blocks
     sections.forEach((section, index) => {
@@ -1622,7 +1640,7 @@ NOW CREATE THE COMPLETE DIAGRAM FOR: "${topic}"`;
     
     return {
       concept: conceptName,
-      explanation: rawResponse,
+      explanation: contentText,
       codeExamples: codeExamples.length > 0 ? codeExamples : [{
         title: 'Example',
         code: '// AI-generated example would appear here',
