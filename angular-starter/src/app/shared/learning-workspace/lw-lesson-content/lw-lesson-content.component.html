@@ -89,7 +89,7 @@
           <span class="lwl-typing-label">AI Mentor is explaining…</span>
         </div>
         <!-- Accumulating stream -->
-        <div *ngIf="streamingText" class="lwl-stream-bubble md-content"
+        <div *ngIf="streamingText" class="lwl-stream-bubble md-content" appTryNow
              [innerHTML]="streamingText | markdown">
         </div>
       </ng-container>
@@ -117,6 +117,7 @@
           <div class="lwl-followup-bubble"
                [class.lwl-followup-bubble--user]="msg.role === 'user'"
                [class.md-content]="msg.role === 'ai'"
+               appTryNow
                [innerHTML]="msg.role === 'ai' ? (msg.text | markdown) : msg.text">
           </div>
         </div>

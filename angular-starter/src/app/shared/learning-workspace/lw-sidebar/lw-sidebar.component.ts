@@ -28,6 +28,12 @@ export class LwSidebarComponent {
   /** Emits the LwTopic the user clicked */
   @Output() topicSelect = new EventEmitter<LwTopic>();
 
+  /** Number of quiz questions — shows the quiz button when > 0 */
+  @Input() quizCount = 0;
+
+  /** Fired when user clicks the Module Quiz button */
+  @Output() quizClick = new EventEmitter<void>();
+
   /** Tracks which module indexes are expanded */
   expandedModules = new Set<string>();
 

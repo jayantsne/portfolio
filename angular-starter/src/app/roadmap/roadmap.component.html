@@ -348,7 +348,9 @@
         [roadmapIcon]="getLanguageIcon(activeRoadmap.language)"
         [topics]="lwTopics"
         [activeTopicId]="expandedNodeId"
-        (topicSelect)="onLwTopicSelect($event)">
+        [quizCount]="lwQuizCount"
+        (topicSelect)="onLwTopicSelect($event)"
+        (quizClick)="onQuizClick()">
       </app-lw-sidebar>
 
       <!-- ── Col 2: Lesson content ── -->
@@ -408,7 +410,12 @@
 
     </app-lw-workspace>
 
-
+    <!-- Toast notification -->
+    <div class="rm-toast" *ngIf="toast"
+         [class.rm-toast--error]="toast.type === 'error'"
+         [class.rm-toast--success]="toast.type === 'success'">
+      {{ toast.msg }}
+    </div>
 
     <!-- Full-width completion banner -->
     <div *ngIf="progress?.percent === 100" class="rm-completion-banner" @fadeIn>

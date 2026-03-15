@@ -1,5 +1,41 @@
 :host { display: block; height: 100%; }
 
+/* ── Module Quiz button ── */
+.lws-quiz-wrap {
+  padding: 0.75rem 0.5rem 0.25rem;
+  border-top: 1.5px solid var(--lw-border, #e5e9f5);
+  margin-top: 0.5rem;
+}
+.lws-quiz-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  background: linear-gradient(135deg, var(--lw-primary, #6366f1), var(--lw-violet, #8b5cf6));
+  color: #fff;
+  border: none;
+  border-radius: var(--lw-radius-sm, 8px);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.18s;
+  justify-content: flex-start;
+}
+.lws-quiz-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(99,102,241,0.35);
+}
+.lws-quiz-icon { font-size: 0.85rem; }
+.lws-quiz-label { flex: 1; text-align: left; }
+.lws-quiz-badge {
+  background: rgba(255,255,255,0.25);
+  border-radius: 20px;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
 .lws-inner {
   padding: 0.75rem 0.5rem 1.5rem;
   display: flex;

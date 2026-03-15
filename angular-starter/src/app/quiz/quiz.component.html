@@ -1,0 +1,115 @@
+<!-- ═══════════════════════════════════════════
+     QUIZ PAGE — Module knowledge check
+═══════════════════════════════════════════ -->
+<div class="qz-page">
+
+  <!-- Header -->
+  <div class="qz-header">
+    <button class="qz-back-btn" (click)="goBack()">← Back to Roadmap</button>
+    <div class="qz-header-info" *ngIf="roadmap">
+      <h1 class="qz-title">{{ roadmap.language }} Quiz</h1>
+      <p class="qz-subtitle">Test your knowledge — {{ questions.length || '...' }} questions</p>
+    </div>
+  </div>
+
+  <!-- ── LOADING ── -->
+  <div *ngIf="state === 'loading'" class="qz-loading">
+    <div class="qz-loading-orbs">
+      <div class="qz-orb"></div><div class="qz-orb"></div><div class="qz-orb"></div>
+    </div>
+    <p class="qz-loading-text">🧠 AI is generating your quiz…</p>
+    <p class="qz-loading-sub">Crafting questions based on your roadmap topics</p>
+  </div>
+
+  <!-- ── ERROR ── -->
+  <div *ngIf="state === 'error'" class="qz-error">
+    <div class="qz-error-icon">⚠️</div>
+    <h3>Could not load quiz</h3>
+    <p>Make sure you're connected and try again.</p>
+    <button class="qz-btn qz-btn--primary" (click)="retryGenerate()">🔄 Retry</button>
+  </div>
+
+  <!-- ── QUIZ ACTIVE ── -->
+  <div *ngIf="state === 'ready' && currentQ" class="qz-card-wrap">
+
+    <!-- Progress bar -->
+    <div class="qz-prog-bar">
+      <div class="qz-prog-fill" [style.width.%]="progress"></div>
+    </div>
+    <div class="qz-prog-label">
+      Question {{ current + 1 }} of {{ questions.length }}
+    </div>
+
+    <!-- Question card -->
+    <div class="qz-card">
+      <div class="qz-q-num">Q{{ current + 1 }}</div>
+      <h2 class="qz-question">{{ currentQ.question }}</h2>
+
+      <!-- Options -->
+      <div class="qz-options">
+        <button *ngFor="let opt of currentQ.options; let i = index; trackBy: trackByIndex"
+                [class]="getOptionClass(i)"
+                [disabled]="answered"
+                (click)="select(i)">
+          <span class="qz-opt-letter">{{ ['A','B','C','D'][i] }}</span>
+          <span class="qz-opt-text">{{ cleanOption(opt) }}</span>
+        </button>
+      </div>
+
+      <!-- Explanation (after answer) -->
+      <div *ngIf="answered" class="qz-explanation">
+        <span class="qz-exp-icon">💡</span>
+        <span>{{ currentQ.explanation }}</span>
+      </div>
+
+      <!-- Actions -->
+      <div class="qz-actions">
+        <button *ngIf="!answered"
+                class="qz-btn qz-btn--primary"
+                [disabled]="selected === -1"
+                (click)="confirm()">
+          Confirm Answer
+        </button>
+        <button *ngIf="answered && current < questions.length - 1"
+                class="qz-btn qz-btn--primary"
+                (click)="next()">
+          Next →
+        </button>
+        <button *ngIf="answered && current === questions.length - 1"
+                class="qz-btn qz-btn--success"
+                (click)="next()">
+          See Results 🏆
+        </button>
+      </div>
+    </div>
+
+    <!-- Score tracker (live) -->
+    <div class="qz-score-live">
+      Score: <strong>{{ score }}</strong> / {{ current + (answered ? 1 : 0) }}
+    </div>
+  </div>
+
+  <!-- ── RESULTS ── -->
+  <div *ngIf="state === 'done'" class="qz-results">
+    <div class="qz-results-icon">{{ scorePercent >= 70 ? '🏆' : '📘' }}</div>
+    <h2 class="qz-results-title">{{ scoreLabel }}</h2>
+    <div class="qz-results-score">
+      {{ score }} / {{ questions.length }}
+      <span class="qz-results-pct">({{ scorePercent }}%)</span>
+    </div>
+
+    <div class="qz-results-bar">
+      <div class="qz-results-bar-fill" [style.width.%]="scorePercent"
+           [class.qz-results-bar--good]="scorePercent >= 70"
+           [class.qz-results-bar--mid]="scorePercent >= 50 && scorePercent < 70"
+           [class.qz-results-bar--low]="scorePercent < 50">
+      </div>
+    </div>
+
+    <div class="qz-results-actions">
+      <button class="qz-btn qz-btn--primary" (click)="restart()">🔄 Retry Quiz</button>
+      <button class="qz-btn qz-btn--ghost"   (click)="goBack()">← Back to Roadmap</button>
+    </div>
+  </div>
+
+</div>

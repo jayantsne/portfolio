@@ -5,8 +5,7 @@ import {
 import {
   trigger, state, style, animate, transition, keyframes,
 } from '@angular/animations';
-import { DomSanitizer } from '@angular/platform-browser';
-import { Subscription } from 'rxjs';
+import { DomSanitizer } from '@angular/platform-browser';import { Router } from '@angular/router';import { Subscription } from 'rxjs';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService } from '../shared/notes.service';
 import { RoadmapService } from './roadmap.service';
@@ -126,6 +125,29 @@ export class RoadmapComponent implements OnInit, OnDestroy {
 
   // ── Right-panel tab ─────────────────────────────────────────────────────
   mentorPanelTab: 'mentor' | 'notes' = 'mentor';
+
+  // ── Toast notification state ────────────────────────────────────────────
+  toast: { msg: string; type: 'success' | 'error' | 'info' } | null = null;
+  private toastTimer: any;
+
+  showToast(msg: string, type: 'success' | 'error' | 'info' = 'info'): void {
+    clearTimeout(this.toastTimer);
+    this.toast = { msg, type };
+    this.cdr.markForCheck();
+    this.toastTimer = setTimeout(() => { this.toast = null; this.cdr.markForCheck(); }, 3500);
+  }
+
+  // ── Module Quiz navigation ───────────────────────────────────────────────
+  /** Quiz question count shown on the sidebar button */
+  get lwQuizCount(): number {
+    return this.activeRoadmap?.nodes?.length ?? 0;
+  }
+
+  onQuizClick(): void {
+    const id = this.activeRoadmap?.id;
+    if (!id) return;
+    this.router.navigate(['/quiz/module', id]);
+  }
 
   // ── Panel collapse + Focus Mode ──────────────────────────────────────────
   leftPanelCollapsed  = this.loadPanelState('rm_left_collapsed',  false);
@@ -372,6 +394,7 @@ export class RoadmapComponent implements OnInit, OnDestroy {
     private notesSvc:  NotesService,
     private sanitizer: DomSanitizer,
     private cdr:       ChangeDetectorRef,
+    private router:    Router,
   ) {}
 
   ngOnInit(): void {
@@ -388,7 +411,7 @@ export class RoadmapComponent implements OnInit, OnDestroy {
     );
   }
 
-  ngOnDestroy(): void { this.subs.unsubscribe(); this.pgSub?.unsubscribe(); this.lessonSub?.unsubscribe(); }
+  ngOnDestroy(): void { this.subs.unsubscribe(); this.pgSub?.unsubscribe(); this.lessonSub?.unsubscribe(); clearTimeout(this.toastTimer); }
 
   // ─── Navigation ─────────────────────────────────────────────────────────
 
@@ -624,6 +647,7 @@ export class RoadmapComponent implements OnInit, OnDestroy {
         this.lessonIsStreaming   = false;
         this.lessonStreamingText = '';
         this.lessonError         = true;
+        this.showToast('⚠️ Could not load lesson. Check your connection and retry.', 'error');
         this.cdr.markForCheck();
       },
     });
@@ -647,6 +671,7 @@ export class RoadmapComponent implements OnInit, OnDestroy {
       error: () => {
         this.lessonFollowUpLoading = false;
         this.lessonMessages.push({ role: 'ai', text: '⚠️ Could not get a response. Please try again.' });
+        this.showToast('⚠️ AI Mentor could not respond. Please try again.', 'error');
         this.cdr.markForCheck();
       },
       complete: () => {

@@ -53,7 +53,7 @@
 }
 
 /* ── Quick chips ── */
-.lwm-chips { display: flex; flex-direction: column; gap: 3px; }
+.lwm-chips { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .lwm-chip {
   display: flex;
   align-items: center;

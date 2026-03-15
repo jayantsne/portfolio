@@ -61,4 +61,13 @@
     </button>
   </ng-template>
 
+  <!-- Module Quiz button -->
+  <div class="lws-quiz-wrap" *ngIf="quizCount > 0">
+    <button class="lws-quiz-btn" (click)="quizClick.emit()">
+      <span class="lws-quiz-icon">📝</span>
+      <span class="lws-quiz-label">Module Quiz</span>
+      <span class="lws-quiz-badge">{{ quizCount }}Q</span>
+    </button>
+  </div>
+
 </div>

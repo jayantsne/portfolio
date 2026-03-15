@@ -57,6 +57,7 @@ import { SubscriptionWallComponent } from './shared/subscription-wall/subscripti
 import { AdminUsersComponent }       from './admin/admin-users/admin-users.component';
 import { LearningWorkspaceModule } from './shared/learning-workspace/learning-workspace.module';
 import { CodePlaygroundComponent } from './code-playground/code-playground.component';
+import { QuizComponent }          from './quiz/quiz.component';
 
 @NgModule({
   declarations: [
@@ -102,6 +103,7 @@ import { CodePlaygroundComponent } from './code-playground/code-playground.compo
     AnalyticsDashboardComponent, // Admin Analytics Dashboard
     RoadmapComponent,  // Personalized Learning Roadmap
     CodePlaygroundComponent, // Interactive Code Playground
+    QuizComponent, // AI-generated module quiz
     InterviewPrepComponent,  // AI-powered Interview Practice
     SaveNotesModalComponent,    // Save conversation to Notes modal
     SubscribeComponent,           // Subscription / payment page

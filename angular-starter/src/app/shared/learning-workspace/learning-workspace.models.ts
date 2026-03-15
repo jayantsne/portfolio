@@ -72,10 +72,10 @@ export const SECTION_META: Record<SectionType, { icon: string; title: string }> 
 
 /** Quick-action chips shown in the mentor panel */
 export const MENTOR_CHIPS: { label: string; icon: string; prompt: string }[] = [
-  { icon: '🔤', label: 'Explain simpler',      prompt: 'Please explain this concept in even simpler terms, as if I am a beginner.' },
-  { icon: '🔗', label: 'Give analogy',         prompt: 'Give me a real-world analogy that makes this concept easy to remember.' },
-  { icon: '📌', label: 'Show example',         prompt: 'Show me a concrete, practical example of this concept.' },
-  { icon: '💻', label: 'Show code',            prompt: 'Write a short code example demonstrating this concept.' },
-  { icon: '🎯', label: 'Key points only',      prompt: 'Summarise the key points of this topic in a short bullet list.' },
-  { icon: '🏆', label: 'Interview question',   prompt: 'Give me a typical interview question on this topic with a model answer.' },
+  { icon: '🔤', label: 'Explain Simply',   prompt: 'Please explain this concept in even simpler terms, as if I am a complete beginner. Use plain language and avoid jargon.' },
+  { icon: '🔗', label: 'Analogy',          prompt: 'Give me a memorable real-world analogy that makes this concept intuitive and easy to remember.' },
+  { icon: '❓', label: 'Interview Q',      prompt: 'Give me a typical interview question on this topic with a model answer I can practise.' },
+  { icon: '⚠️', label: 'Common Mistakes',  prompt: 'What are the most common mistakes and misconceptions learners have about this concept? How can I avoid them?' },
+  { icon: '💻', label: 'Code Example',     prompt: 'Write a short, practical, runnable code example that demonstrates this concept clearly.' },
+  { icon: '🏆', label: 'Exam Tips',        prompt: 'Give me the most important exam tips and key points to remember about this topic for a test or certification.' },
 ];

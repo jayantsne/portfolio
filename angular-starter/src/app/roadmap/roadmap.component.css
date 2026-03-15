@@ -735,11 +735,36 @@
 .rm-view {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 64px);   /* fill below navbar */
+  /* var(--header-h, 72px) matches the app header spacer height */
+  height: calc(100vh - var(--header-h, 72px));
   overflow: hidden;
 }
 
-/* ── Top navigation bar ── */
+/* ── Toast notification ── */
+.rm-toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0.65rem 1.25rem;
+  background: #1e1b4b;
+  color: #fff;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  z-index: 9000;
+  box-shadow: 0 4px 20px rgba(30,27,75,0.35);
+  animation: rmToastIn 0.25s cubic-bezier(0.4,0,0.2,1);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.rm-toast--error   { background: #dc2626; }
+.rm-toast--success { background: var(--rm-green, #10b981); }
+@keyframes rmToastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
 .rm-view-nav {
   display: flex;
   align-items: center;
