@@ -2,10 +2,12 @@ import {
   Component, OnInit, OnDestroy, AfterViewInit,
   ElementRef, ViewChild, ChangeDetectorRef, HostListener,
 } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Subscription } from 'rxjs';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService } from '../shared/notes.service';
 import { AILearnService } from '../services/ai-learn.service';
+import { environment } from '../../environments/environment';
 
 // Language definitions
 export interface PlaygroundLang {
@@ -134,6 +136,7 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
     private notesSvc: NotesService,
     private aiSvc:   AILearnService,
     private cdr:     ChangeDetectorRef,
+    private http:    HttpClient,
   ) {}
 
   ngOnInit(): void {}
@@ -245,15 +248,61 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
     this.isRunning = true;
     const code = this.currentCode;
 
-    if (this.selectedLang.id === 'javascript' || this.selectedLang.id === 'typescript') {
+    if (this.selectedLang.id === 'javascript') {
+      // JS runs instantly in browser without a network round-trip
       this.runJs(code);
-    } else if (this.selectedLang.id === 'python' || this.selectedLang.id === 'csharp') {
-      const lbl = this.selectedLang.label;
-      this.addOutput(`⚠️ ${lbl} execution requires a server-side sandbox. Use AI actions to analyse your code.`, 'warn');
-      this.addOutput('💡 Tip: Try "Explain", "Improve", or "Find Bugs" to get AI feedback on this code.', 'info');
-      this.isRunning = false;
+    } else {
+      // TypeScript, Python, C# → server-side sandbox
+      this.runSandbox(this.selectedLang.id, code);
     }
     this.cdr.detectChanges();
+  }
+
+  private runSandbox(language: string, code: string): void {
+    this.addOutput(`⏳ Running ${this.selectedLang.label} in sandbox…`, 'info');
+    this.cdr.detectChanges();
+
+    const url     = `${environment.apiUrl}/code/execute`;
+    const headers = new HttpHeaders({ 'X-API-Key': environment.apiKey });
+    const body    = { language, code };
+
+    this.http.post<{
+      stdout: string; stderr: string; compileOutput: string;
+      executionTime: string; status: string; success: boolean;
+    }>(url, body, { headers }).subscribe({
+      next: res => {
+        // Clear the ⏳ spinner line
+        this.outputLines = this.outputLines.filter(l => !l.text.startsWith('⏳'));
+
+        if (res.stdout) {
+          res.stdout.split('\n').filter(Boolean).forEach(line =>
+            this.addOutput(line, 'log'));
+        }
+
+        if (res.stderr) {
+          res.stderr.split('\n').filter(Boolean).forEach(line =>
+            this.addOutput(line, 'error'));
+        } else if (res.compileOutput && !res.success) {
+          res.compileOutput.split('\n').filter(Boolean).forEach(line =>
+            this.addOutput(line, 'error'));
+        }
+
+        const icon = res.success ? '✅' : '❌';
+        this.addOutput(`${icon} ${res.status}  ·  ⏱ ${res.executionTime}`, 'info');
+        this.isRunning = false;
+        this.cdr.detectChanges();
+        setTimeout(() => this.scrollOutput(), 50);
+      },
+      error: err => {
+        this.outputLines = this.outputLines.filter(l => !l.text.startsWith('⏳'));
+        const msg = err.error?.error ?? err.message ?? 'Unknown error';
+        this.addOutput(`❌ Sandbox error: ${msg}`, 'error');
+        this.addOutput('💡 Tip: Make sure the backend is running and a Judge0 API key is configured.', 'info');
+        this.isRunning = false;
+        this.cdr.detectChanges();
+        setTimeout(() => this.scrollOutput(), 50);
+      },
+    });
   }
 
   private runJs(code: string): void {
