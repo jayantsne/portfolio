@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { Router } from '@angular/router';
-import { Subscription } from 'rxjs';
+import { Subject, Subscription } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { CustomAuthService, AuthUser } from '../shared/custom-auth.service';
 import { NotesService, SavedNote } from '../shared/notes.service';
 import { NOTE_CATEGORIES } from '../shared/save-notes-modal/save-notes-modal.component';
@@ -22,7 +23,16 @@ export class NotesComponent implements OnInit, OnDestroy {
   // ── Filters ──────────────────────────────────────────────────────────────
   filterCategory = 'All';
   filterTag      = '';
-  searchQuery    = '';
+
+  // Search with debounce
+  private _searchQuery   = '';
+  private searchSubject$ = new Subject<string>();
+  get searchQuery(): string { return this._searchQuery; }
+  set searchQuery(v: string) {
+    this._searchQuery = v;  // update immediately for the input value
+    this.searchSubject$.next(v);
+  }
+  private _filterQuery = '';  // debounced value used for filtering
 
   // ── Edit mode ─────────────────────────────────────────────────────────────
   editMode       = false;
@@ -73,26 +83,30 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   readonly categories = NOTE_CATEGORIES;
 
-  // ── Pinned notes (client-side, persisted to localStorage) ────────────────
-  private pinnedIds = new Set<string>();
-  private get pinnedKey(): string {
-    return `notes_pinned_${this.user?.userId ?? 'anon'}`;
+  // ── Toast notifications ──────────────────────────────────────────────────
+  toast: { msg: string; type: 'success' | 'error' } | null = null;
+  private toastTimer: any;
+
+  showToast(msg: string, type: 'success' | 'error' = 'success'): void {
+    clearTimeout(this.toastTimer);
+    this.toast = { msg, type };
+    this.toastTimer = setTimeout(() => { this.toast = null; }, 3000);
   }
-  private loadPinned(): void {
-    try {
-      const raw = localStorage.getItem(this.pinnedKey);
-      this.pinnedIds = new Set(raw ? JSON.parse(raw) : []);
-    } catch { this.pinnedIds = new Set(); }
-  }
-  private savePinned(): void {
-    try { localStorage.setItem(this.pinnedKey, JSON.stringify([...this.pinnedIds])); } catch { /* ignore */ }
-  }
-  isPinned(note: SavedNote): boolean { return !!note.id && this.pinnedIds.has(note.id); }
-  togglePin(note: SavedNote): void {
+
+  // ── Pinned notes (server-persisted via PATCH /api/notes/{id}/pin) ─────────
+  isPinned(note: SavedNote): boolean { return note.isPinned === true; }
+
+  async togglePin(note: SavedNote): Promise<void> {
     if (!note.id) return;
-    if (this.pinnedIds.has(note.id)) this.pinnedIds.delete(note.id);
-    else this.pinnedIds.add(note.id);
-    this.savePinned();
+    // Optimistic update
+    note.isPinned = !note.isPinned;
+    try {
+      await this.notesService.togglePin(note.id);
+    } catch {
+      // Revert on error
+      note.isPinned = !note.isPinned;
+      this.showToast('Could not update pin state.', 'error');
+    }
   }
 
   // ── Word count / reading time ──────────────────────────────────────────
@@ -117,14 +131,20 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.user = this.authSvc.currentUser;
-    if (this.user) { this.loadPinned(); this.startLoadingNotes(); }
+    if (this.user) { this.startLoadingNotes(); }
+
+    // Debounce search so the list doesn't re-filter on every keystroke
+    this.subs.push(
+      this.searchSubject$.pipe(debounceTime(250), distinctUntilChanged()).subscribe((q: string) => {
+        this._filterQuery = q;
+      })
+    );
 
     this.subs.push(
       this.authSvc.currentUser$.subscribe(user => {
         const wasNull = !this.user;
         this.user = user;
         if (user && wasNull) {
-          this.loadPinned();
           this.startLoadingNotes();
         } else if (!user) {
           this.isLoading = false;
@@ -157,6 +177,7 @@ export class NotesComponent implements OnInit, OnDestroy {
     this.formatXhr?.abort();
     this.aiXhr?.abort();
     this.meXhr?.abort();
+    clearTimeout(this.toastTimer);
   }
 
   // ── Derived lists ─────────────────────────────────────────────────────────
@@ -173,12 +194,12 @@ export class NotesComponent implements OnInit, OnDestroy {
   }
 
   get filteredNotes(): SavedNote[] {
+    const q = this._filterQuery.trim().toLowerCase();
     const result = this.notes.filter(n => {
       const matchesCat = this.filterCategory === 'All' ||
                          (n.category || 'Other') === this.filterCategory;
       const matchesTag = !this.filterTag ||
                          (n.tags ?? []).includes(this.filterTag);
-      const q = this.searchQuery.trim().toLowerCase();
       const matchesSearch = !q ||
         n.topic.toLowerCase().includes(q) ||
         n.content.toLowerCase().includes(q) ||
@@ -187,8 +208,8 @@ export class NotesComponent implements OnInit, OnDestroy {
     });
     // Pinned notes float to the top
     return [
-      ...result.filter(n => n.id && this.pinnedIds.has(n.id)),
-      ...result.filter(n => !n.id || !this.pinnedIds.has(n.id)),
+      ...result.filter(n => n.isPinned === true),
+      ...result.filter(n => n.isPinned !== true),
     ];
   }
 
@@ -438,8 +459,11 @@ export class NotesComponent implements OnInit, OnDestroy {
     try {
       await this.notesService.mergeNote(this.activeNote.id, this.aiActionResult);
       this.aiSavedToNote = true;
+      this.showToast('AI result appended to note.');
       setTimeout(() => { this.aiSavedToNote = false; }, 2500);
-    } catch { /* ignore */ }
+    } catch {
+      this.showToast('Failed to append result to note.', 'error');
+    }
   }
 
   /** Use AI to suggest tags for the active note */
@@ -512,6 +536,9 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
     try {
       await this.notesService.deleteNote(note.id);
       if (this.activeNote?.id === note.id) { this.activeNote = null; this.editMode = false; }
+      this.showToast('Note deleted.');
+    } catch {
+      this.showToast('Failed to delete note.', 'error');
     } finally {
       this.deletingId = null;
     }
@@ -564,6 +591,7 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
         content:  finalContent
       });
       this.editMode = false;
+      this.showToast('Note saved successfully.');
     } catch (e: any) {
       this.updateError = e?.error?.message || 'Failed to save changes.';
     } finally {
@@ -809,6 +837,7 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
         this.createTags
       );
       this.createSaveSuccess = true;
+      this.showToast(`Note "${this.createTopic.trim()}" saved successfully.`);
       setTimeout(() => { this.createMode = false; this.createSaveSuccess = false; }, 1500);
     } catch (e: any) {
       this.createError = e?.error?.message || 'Failed to save note. Please try again.';

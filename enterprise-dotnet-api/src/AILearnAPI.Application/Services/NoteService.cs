@@ -56,6 +56,16 @@ namespace AILearnAPI.Application.Services
             return ToDto(updated);
         }
 
+        public async Task<NoteDto?> TogglePinAsync(string userId, string noteId)
+        {
+            var note = await _repo.GetByIdAndUserIdAsync(noteId, userId);
+            if (note == null) return null;
+
+            note.IsPinned = !note.IsPinned;
+            var updated = await _repo.UpdateAsync(noteId, note);
+            return ToDto(updated);
+        }
+
         // ── Mapping ──────────────────────────────────────────────────────────
         private static NoteDto ToDto(Note n) => new()
         {
@@ -65,7 +75,8 @@ namespace AILearnAPI.Application.Services
             tags      = n.Tags,
             content   = n.Content,
             savedAt   = n.SavedAt,
-            savedAtMs = new DateTimeOffset(n.SavedAt, TimeSpan.Zero).ToUnixTimeMilliseconds()
+            savedAtMs = new DateTimeOffset(n.SavedAt, TimeSpan.Zero).ToUnixTimeMilliseconds(),
+            isPinned  = n.IsPinned,
         };
     }
 }

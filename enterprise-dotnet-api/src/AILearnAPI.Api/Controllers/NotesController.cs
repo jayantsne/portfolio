@@ -94,6 +94,22 @@ namespace AILearnAPI.Api.Controllers
             return Ok(updated);
         }
 
+        // PATCH /api/notes/{id}/pin
+        /// <summary>Toggles the pinned state of a note.</summary>
+        [HttpPatch("{id}/pin")]
+        public async Task<ActionResult<NoteDto>> TogglePin(string id)
+        {
+            var userId = GetUserId();
+            if (string.IsNullOrEmpty(userId))
+                return Unauthorized(new { message = "Token missing userId claim" });
+
+            var updated = await _svc.TogglePinAsync(userId, id);
+            if (updated == null)
+                return NotFound(new { message = "Note not found or not owned by you" });
+
+            return Ok(updated);
+        }
+
         // ── helpers ─────────────────────────────────────────────────────────
         private string GetUserId() =>
             User.FindFirstValue(JwtRegisteredClaimNames.Sub)

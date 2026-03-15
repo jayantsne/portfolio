@@ -1,5 +1,12 @@
 ﻿<div class="notes-page">
 
+  <!-- Global toast notification -->
+  <div class="notes-toast" *ngIf="toast" [class.notes-toast--error]="toast.type === 'error'"
+       role="alert" aria-live="assertive">
+    <span>{{ toast.type === 'success' ? '\u2705' : '\u26a0\ufe0f' }}</span>
+    {{ toast.msg }}
+  </div>
+
   <!-- Header bar -->
   <!-- <div class="notes-header">
     <button class="back-home-btn" (click)="goHome()"> AI Mentor</button>
@@ -228,7 +235,7 @@
             <button class="reader-delete-btn" (click)="deleteNote(activeNote!)"> Delete</button>
           </div>
         </div>
-        <div class="reader-body md-content" [innerHTML]="activeNote.content | markdown"></div>
+        <div class="reader-body md-content" [innerHTML]="activeNote.content | markdown" appTryNow></div>
       </div>
 
       <!-- EDIT MODE -->
@@ -380,7 +387,7 @@
             <button class="nap-clear-btn" (click)="aiActionResult = ''; aiActionError = ''; aiTagSuggestions = []">✕</button>
           </div>
         </div>
-        <div class="nap-result-text md-content" [innerHTML]="aiActionResult | markdown"></div>
+        <div class="nap-result-text md-content" [innerHTML]="aiActionResult | markdown" appTryNow></div>
       </div>
 
       <!-- Error -->
@@ -441,7 +448,7 @@
         <div class="mr-divider"></div>
 
         <!-- Markdown body -->
-        <div class="mr-body md-content" [innerHTML]="activeNote.content | markdown"></div>
+        <div class="mr-body md-content" [innerHTML]="activeNote.content | markdown" appTryNow></div>
 
         <!-- Spacer so content isn't hidden behind bottom bar / AI drawer -->
         <div class="mr-scroll-spacer"></div>
@@ -469,7 +476,7 @@
             <span class="mr-ai-spinner"></span> Thinking…
             <button class="mr-ai-stop" (click)="stopAiAction()">■ Stop</button>
           </div>
-          <div class="mr-ai-text md-content" *ngIf="aiActionResult" [innerHTML]="aiActionResult | markdown"></div>
+          <div class="mr-ai-text md-content" *ngIf="aiActionResult" [innerHTML]="aiActionResult | markdown" appTryNow></div>
           <div class="mr-ai-footer-actions" *ngIf="aiActionResult && !aiActionStreaming">
             <button class="mr-ai-save-btn" (click)="saveAiResultToNote()">
               {{ aiSavedToNote ? '✅ Saved' : '+ Append to Note' }}
@@ -633,7 +640,7 @@
       </textarea>
 
       <div *ngIf="createPreviewMode && createContent.trim()"
-           class="cn-preview md-content" [innerHTML]="createContent | markdown">
+           class="cn-preview md-content" [innerHTML]="createContent | markdown" appTryNow>
       </div>
       <div class="cn-preview-empty" *ngIf="createPreviewMode && !createContent.trim()">
         Nothing to preview yet.

@@ -10,6 +10,7 @@ namespace AILearnAPI.Shared.DTOs.Notes
         public string        content   { get; set; } = string.Empty;
         public DateTime      savedAt   { get; set; }
         public long          savedAtMs { get; set; }  // epoch ms — used by frontend
+        public bool          isPinned  { get; set; }
     }
 
     /// <summary>Body expected when creating a new note.</summary>

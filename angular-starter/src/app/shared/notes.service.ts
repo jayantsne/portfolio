@@ -9,6 +9,7 @@ export interface SavedNote {
   category:   string;   // e.g. Frontend, Backend, AI, DevOps
   tags:       string[];  // user-defined tags
   content:    string;
+  isPinned?:  boolean;
   savedAt?:   string;   // ISO date string from backend
   savedAtMs?: number;   // epoch ms for display/sorting
 }
@@ -72,6 +73,17 @@ export class NotesService {
       .delete(`${this.url}/${noteId}`, { headers: this.authSvc.getAuthHeaders() })
       .toPromise();
     this._notes.next(this._notes.getValue().filter(n => n.id !== noteId));
+  }
+
+  /** Toggle pin state for a note — persisted to server. */
+  async togglePin(noteId: string): Promise<void> {
+    const updated = await this.http
+      .patch<SavedNote>(`${this.url}/${noteId}/pin`, {}, { headers: this.authSvc.getAuthHeaders() })
+      .toPromise();
+    const current = this._notes.getValue();
+    if (updated) {
+      this._notes.next(current.map(n => n.id === noteId ? this.normalize(updated) : n));
+    }
   }
 
   // ── Duplicate Detection ────────────────────────────────────────────────────
@@ -140,7 +152,8 @@ export class NotesService {
   private normalize(n: SavedNote): SavedNote {
     return {
       ...n,
-      tags:     n.tags ?? [],
+      tags:      n.tags ?? [],
+      isPinned:  n.isPinned ?? false,
       savedAtMs: n.savedAtMs ?? (n.savedAt ? new Date(n.savedAt).getTime() : Date.now())
     };
   }

@@ -32,5 +32,8 @@ namespace AILearnAPI.Domain.Entities
         [BsonElement("savedAt")]
         [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
         public DateTime SavedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonElement("isPinned")]
+        public bool IsPinned { get; set; } = false;
     }
 }

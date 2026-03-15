@@ -10,5 +10,7 @@ namespace AILearnAPI.Application.Interfaces
         Task<NoteDto?>      UpdateAsync(string userId, string noteId, UpdateNoteDto dto);
         /// <summary>Deletes a note only if it belongs to userId. Returns false if not found / not owned.</summary>
         Task<bool>          DeleteAsync(string userId, string noteId);
+        /// <summary>Toggles the isPinned flag. Returns updated note, or null if not found / not owned.</summary>
+        Task<NoteDto?>      TogglePinAsync(string userId, string noteId);
     }
 }
