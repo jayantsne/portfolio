@@ -595,6 +595,10 @@ One sentence: the single most important thing to remember about ${topic} in a te
     };
   }
 
+  // ── Focus Mode ────────────────────────────────────────────────────────
+  isFocusMode = false;
+  toggleFocusMode(): void { this.isFocusMode = !this.isFocusMode; }
+
   // ── AI Playground (bottom section) ─────────────────────────────────────
   pgOpen     = false;
   pgLoading  = false;
@@ -763,6 +767,7 @@ One sentence: the single most important thing to remember about ${topic} in a te
     this.lessonLoading = false;
     this.lessonSub?.unsubscribe();
     this.pgOpen = false;
+    this.isFocusMode = false;
   }
 
   toggleTopicAccordion(): void {

@@ -4495,6 +4495,42 @@ html {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+/* ── Focus Mode: hide left sidebar, expand chat column ── */
+.am-shell.am-focus-mode {
+  grid-template-columns: 1fr var(--am-tools-w);
+  transition: grid-template-columns 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+/* ── Focus Mode toggle button ── */
+.am-focus-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: transparent;
+  border: 1.5px solid var(--am-border);
+  color: var(--am-muted);
+  padding: 0.3rem 0.65rem;
+  border-radius: 8px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  white-space: nowrap;
+}
+.am-focus-btn:hover {
+  background: #f0f1ff;
+  color: var(--am-purple);
+  border-color: var(--am-purple);
+}
+.am-focus-btn--active {
+  background: #ede9fe;
+  color: var(--am-purple);
+  border-color: var(--am-purple);
+}
+.am-focus-btn-label {
+  font-size: 0.72rem;
+}
+
 /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
    COL 1 — LEFT NAVIGATION SIDEBAR
    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
