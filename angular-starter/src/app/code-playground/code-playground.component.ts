@@ -142,13 +142,43 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
   ) {}
 
   private pendingRequest: PlaygroundRequest | null = null;
+  private pgRequestSub: Subscription | null = null;
 
   ngOnInit(): void {
-    this.pendingRequest = this.pgSvc.consume();
-    if (this.pendingRequest) {
-      const match = LANGS.find(l => l.id === this.pendingRequest!.language);
-      if (match) this.selectedLang = match;
+    // Subscribe to Try Now / Open-in-Playground requests.
+    // Using a live subscription (not one-shot consume) so the editor reacts
+    // even when the user is already on the /playground route and the component
+    // is NOT recreated by the router.
+    this.pgRequestSub = this.pgSvc.request$.subscribe(req => {
+      if (!req) return;
+      // If Monaco is already up, apply immediately; otherwise cache for initEditor()
+      if (this.editor) {
+        this.applyRequest(req);
+      } else {
+        // Pre-select language so Monaco initialises with the right mode
+        const match = LANGS.find(l => l.id === req.language);
+        if (match) this.selectedLang = match;
+        this.pendingRequest = req;
+      }
+    });
+  }
+
+  /** Apply a PlaygroundRequest once Monaco is ready. */
+  private applyRequest(req: PlaygroundRequest): void {
+    const match = LANGS.find(l => l.id === req.language) ?? this.selectedLang;
+    this.selectedLang = match;
+    if (this.editor && (window as any).monaco) {
+      const model = this.editor.getModel();
+      if (model) {
+        (window as any).monaco.editor.setModelLanguage(model, match.monacoId);
+      }
+      this.editor.setValue(req.code);
+      this.editor.focus();
     }
+    this.pgSvc.clear();
+    this.pendingRequest = null;
+    this.clearOutput();
+    this.cdr.detectChanges();
   }
 
   @HostListener('document:keydown', ['$event'])
@@ -218,17 +248,9 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
 
     this.cdr.detectChanges();
 
-    // Apply any pending request from PlaygroundService ("Try Now" flow)
+    // Apply any pending request that arrived before Monaco was ready
     if (this.pendingRequest) {
-      this.editor.setValue(this.pendingRequest.code);
-      if ((window as any).monaco) {
-        const model = this.editor.getModel();
-        if (model) {
-          (window as any).monaco.editor.setModelLanguage(model, this.selectedLang.monacoId);
-        }
-      }
-      this.pgSvc.clear();
-      this.pendingRequest = null;
+      this.applyRequest(this.pendingRequest);
     }
   }
 
@@ -515,6 +537,7 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
 
   ngOnDestroy(): void {
     this.aiSub?.unsubscribe();
+    this.pgRequestSub?.unsubscribe();
     clearTimeout(this.saveTimer);
     if (this.editor) {
       this.editor.dispose();

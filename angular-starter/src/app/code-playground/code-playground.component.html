@@ -150,7 +150,7 @@
             {{ aiActionLabel }}
             <button *ngIf="aiPanel === 'loading'" class="pg-ai-stop" (click)="stopAi()">■ Stop</button>
           </div>
-          <div class="pg-ai-stream md-content" [innerHTML]="aiStreamText | markdown"></div>
+          <div class="pg-ai-stream md-content" [innerHTML]="aiStreamText | markdown" appTryNow></div>
         </div>
 
       </div>

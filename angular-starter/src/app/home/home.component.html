@@ -916,7 +916,7 @@
           </div>
           <div class="am-pg-output-body">
             <div class="am-pg-error" *ngIf="pgError">{{ pgError }}</div>
-            <div class="am-pg-result md-content" *ngIf="pgOutput && !pgError" [innerHTML]="pgOutput | markdown"></div>
+            <div class="am-pg-result md-content" *ngIf="pgOutput && !pgError" [innerHTML]="pgOutput | markdown" appTryNow></div>
             <div class="am-pg-placeholder" *ngIf="!pgOutput && !pgError && !pgLoading">
               <span class="am-pg-placeholder-icon">⚡</span>
               <span>Run a prompt to see the output here</span>
