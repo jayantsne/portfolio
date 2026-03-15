@@ -179,7 +179,8 @@
       </div>
 
       <div class="am-nav-body">
-        <div class="am-nav-section">
+        <!-- Current topic indicator -->
+        <div class="am-nav-section" *ngIf="currentTopicName">
           <div class="am-nav-label">Current Topic</div>
           <div class="am-nav-current-item">
             <span class="am-nav-active-dot"></span>
@@ -187,15 +188,33 @@
           </div>
         </div>
 
-        <div class="am-nav-section am-nav-topics-section">
-          <div class="am-nav-label">Explore More</div>
-          <button class="am-nav-topic"
-                  *ngFor="let c of popularConcepts"
-                  [class.am-nav-topic-active]="c.name === currentTopicName"
-                  (click)="searchQuery = c.name; onSearchEnter()">
-            <span class="am-nav-topic-icon">{{ c.icon }}</span>
-            <span class="am-nav-topic-name">{{ c.name }}</span>
-          </button>
+        <!-- Curriculum modules tree -->
+        <div class="am-nav-section">
+          <div class="am-nav-label">Learning Curriculum</div>
+          <div class="am-curriculum-tree">
+            <div class="am-module" *ngFor="let mod of learningModules">
+              <!-- Module header (collapsible) -->
+              <button class="am-module-hd" (click)="toggleModule(mod.name)"
+                      [class.am-module-hd--open]="mod.expanded">
+                <span class="am-module-icon">{{ mod.icon }}</span>
+                <span class="am-module-name">{{ mod.name }}</span>
+                <svg class="am-module-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9"/>
+                </svg>
+              </button>
+              <!-- Module topics list -->
+              <div class="am-module-topics" [class.am-module-topics--open]="mod.expanded">
+                <button class="am-mod-topic"
+                        *ngFor="let t of mod.topics"
+                        [class.am-mod-topic--active]="t.name === currentTopicName"
+                        (click)="openTopicLesson(t.name)">
+                  <span class="am-mod-topic-icon">{{ t.icon }}</span>
+                  <span class="am-mod-topic-name">{{ t.name }}</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -270,8 +289,107 @@
         <!-- Centred feed column -->
         <div class="am-chat-inner">
 
-          <!-- Welcome / Empty State -->
-          <div class="am-welcome" *ngIf="!isAIMode || (aiMessages.length === 0 && !isLoadingAI && !streamingText)">
+          <!-- ── Structured Lesson View ── (shown when topic selected from nav) -->
+          <div class="am-lesson-view"
+               *ngIf="(lessonView || lessonLoading) && (aiMessages.length === 0 && !isLoadingAI && !streamingText)">
+
+            <!-- Lesson Loading Skeleton -->
+            <div class="am-lesson-skeleton" *ngIf="lessonLoading">
+              <div class="am-lesson-sk-header">
+                <div class="am-lesson-sk-badge"></div>
+                <div class="am-lesson-sk-title"></div>
+              </div>
+              <div class="am-lesson-sk-card"></div>
+              <div class="am-lesson-sk-card am-lesson-sk-card--short"></div>
+              <div class="am-lesson-sk-card"></div>
+              <p class="am-lesson-sk-label">AI is preparing your lesson…</p>
+            </div>
+
+            <!-- Lesson Content -->
+            <ng-container *ngIf="!lessonLoading && lessonData">
+              <!-- Lesson header -->
+              <div class="am-lesson-header">
+                <div class="am-lesson-badge">📖 Lesson</div>
+                <h2 class="am-lesson-title">{{ lessonData.topic }}</h2>
+                <p class="am-lesson-subtitle">AI-generated structured lesson · scroll to read, then chat below</p>
+              </div>
+
+              <!-- Overview card -->
+              <div class="am-lcard am-lcard--overview">
+                <div class="am-lcard-label">
+                  <span class="am-lcard-icon">📘</span> Overview
+                </div>
+                <p class="am-lcard-text">{{ lessonData.overview }}</p>
+              </div>
+
+              <!-- Analogy card -->
+              <div class="am-lcard am-lcard--analogy" *ngIf="lessonData.analogy">
+                <div class="am-lcard-label">
+                  <span class="am-lcard-icon">💡</span> Real-World Analogy
+                </div>
+                <p class="am-lcard-text am-lcard-text--italic">{{ lessonData.analogy }}</p>
+              </div>
+
+              <!-- Code example card -->
+              <div class="am-lcard am-lcard--code" *ngIf="lessonData.codeExample">
+                <div class="am-lcard-label">
+                  <span class="am-lcard-icon">💻</span> Code Example
+                </div>
+                <div class="am-lcard-code-wrap">
+                  <div class="am-lcard-code-bar">
+                    <span class="am-lcard-lang-badge">{{ lessonData.codeLanguage }}</span>
+                  </div>
+                  <pre class="am-lcard-pre"><code>{{ lessonData.codeExample }}</code></pre>
+                </div>
+              </div>
+
+              <!-- Key points card -->
+              <div class="am-lcard am-lcard--keypoints" *ngIf="lessonData.keyPoints && lessonData.keyPoints.length">
+                <div class="am-lcard-label">
+                  <span class="am-lcard-icon">🎯</span> Key Points
+                </div>
+                <ul class="am-lcard-list">
+                  <li *ngFor="let kp of lessonData.keyPoints">
+                    <span class="am-lcard-check">✓</span> {{ kp }}
+                  </li>
+                </ul>
+              </div>
+
+              <!-- Exam tip -->
+              <div class="am-lcard am-lcard--tip" *ngIf="lessonData.examTip">
+                <div class="am-lcard-label">
+                  <span class="am-lcard-icon">⚡</span> Exam Tip
+                </div>
+                <p class="am-lcard-text">{{ lessonData.examTip }}</p>
+              </div>
+
+              <!-- Practice question -->
+              <div class="am-lcard am-lcard--practice" *ngIf="lessonData.practiceQuestion">
+                <div class="am-lcard-label">
+                  <span class="am-lcard-icon">🧪</span> Practice Question
+                </div>
+                <p class="am-lcard-text">{{ lessonData.practiceQuestion }}</p>
+                <button class="am-lcard-chat-btn"
+                        (click)="sendFollowUpQuestion('Walk me through the solution to: ' + lessonData.practiceQuestion)">
+                  Solve with AI Mentor →
+                </button>
+              </div>
+
+              <!-- Continue in chat CTA -->
+              <div class="am-lesson-chat-cta">
+                <p class="am-lesson-chat-cta-text">Want to go deeper? Ask the AI Mentor anything about <strong>{{ lessonData.topic }}</strong></p>
+                <div class="am-lesson-cta-chips">
+                  <button class="am-lc-chip" (click)="sendFollowUpQuestion('Explain ' + lessonData.topic + ' in even simpler terms with a beginner-friendly analogy')">💡 Explain simpler</button>
+                  <button class="am-lc-chip" (click)="sendFollowUpQuestion('What are the most common mistakes with ' + lessonData.topic + '?')">⚠️ Common mistakes</button>
+                  <button class="am-lc-chip" (click)="sendFollowUpQuestion('Give me the top interview questions about ' + lessonData.topic)">🎯 Interview prep</button>
+                  <button class="am-lc-chip" (click)="sendFollowUpQuestion('What should I learn after ' + lessonData.topic + '?')">🔭 What\'s next?</button>
+                </div>
+              </div>
+            </ng-container>
+          </div>
+
+          <!-- Welcome / Empty State (shown when no lesson loaded yet) -->
+          <div class="am-welcome" *ngIf="!lessonView && !lessonLoading && (!isAIMode || (aiMessages.length === 0 && !isLoadingAI && !streamingText))">
             <div class="am-welcome-avatar">🤖
               <span class="am-welcome-pulse"></span>
             </div>
@@ -609,6 +727,58 @@
 
       <div class="am-tools-body">
 
+        <!-- ── AI Mentor Quick Actions ── -->
+        <div class="am-mentor-actions">
+          <div class="am-mentor-actions-hd">
+            <span class="am-mentor-actions-icon">⚡</span>
+            <span class="am-mentor-actions-title">Quick Actions</span>
+          </div>
+          <div class="am-mentor-chips">
+            <button class="am-mentor-chip"
+                    (click)="sendFollowUpQuestion('Explain ' + currentTopicName + ' in the simplest possible terms with a real-world analogy')"
+                    [disabled]="isLoadingAI || !!streamingText">
+              💡 Explain simpler
+            </button>
+            <button class="am-mentor-chip"
+                    (click)="sendFollowUpQuestion('Give me a memorable real-world analogy for ' + currentTopicName + ' that makes it crystal clear')"
+                    [disabled]="isLoadingAI || !!streamingText">
+              🎭 Give analogy
+            </button>
+            <button class="am-mentor-chip"
+                    (click)="sendFollowUpQuestion('Show me a complete, production-quality code example of ' + currentTopicName + ' with inline comments')"
+                    [disabled]="isLoadingAI || !!streamingText">
+              💻 Show code
+            </button>
+            <button class="am-mentor-chip"
+                    (click)="sendFollowUpQuestion('Give me the top 3 interview questions about ' + currentTopicName + ' with model answers')"
+                    [disabled]="isLoadingAI || !!streamingText">
+              🎯 Interview Q&amp;A
+            </button>
+            <button class="am-mentor-chip"
+                    (click)="sendFollowUpQuestion('What are the most common mistakes developers make with ' + currentTopicName + ' and how to avoid them?')"
+                    [disabled]="isLoadingAI || !!streamingText">
+              ⚠️ Common mistakes
+            </button>
+            <button class="am-mentor-chip"
+                    (click)="sendFollowUpQuestion('Give me 5 bullet-point exam tips about ' + currentTopicName + ' that I must remember')"
+                    [disabled]="isLoadingAI || !!streamingText">
+              📋 Exam tips
+            </button>
+          </div>
+        </div>
+
+        <!-- Lesson Load Button (if no lesson loaded) -->
+        <div class="am-load-lesson-card" *ngIf="!lessonView && !lessonLoading && currentTopicName">
+          <div class="am-load-lesson-icon">📖</div>
+          <div class="am-load-lesson-body">
+            <div class="am-load-lesson-title">Structured Lesson</div>
+            <p class="am-load-lesson-sub">Get an AI-generated lesson for <strong>{{ currentTopicName }}</strong></p>
+            <button class="am-load-lesson-btn" (click)="loadStructuredLesson(currentTopicName)">
+              Load Lesson →
+            </button>
+          </div>
+        </div>
+
         <!-- Session Progress Card (shown after first AI response) -->
         <div class="am-session-card" *ngIf="aiMessages.length > 0">
           <div class="am-session-meta">
@@ -707,5 +877,77 @@
     </aside>
 
   </div><!-- end am-shell -->
+
+  <!-- ══ AI Playground (bottom, full-width) ══ -->
+  <div class="am-playground-wrap" *ngIf="showModal">
+    <!-- Toggle bar -->
+    <button class="am-pg-toggle" (click)="togglePlayground()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+      <span>AI Playground</span>
+      <span class="am-pg-toggle-sub">Experiment with prompts freely</span>
+      <svg class="am-pg-chevron" [class.am-pg-chevron--open]="pgOpen" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+
+    <!-- Playground body -->
+    <div class="am-pg-body" [class.am-pg-body--open]="pgOpen">
+      <div class="am-pg-inner">
+
+        <!-- Left: Prompt editor -->
+        <div class="am-pg-editor">
+          <div class="am-pg-editor-controls">
+            <div class="am-pg-control-group">
+              <label class="am-pg-label">Model</label>
+              <select class="am-pg-select" [(ngModel)]="pgModel">
+                <option value="auto">Auto (best available)</option>
+                <option value="fast">Fast</option>
+                <option value="creative">Creative</option>
+              </select>
+            </div>
+            <div class="am-pg-control-group">
+              <label class="am-pg-label">Temperature: {{ pgTemp }}</label>
+              <input class="am-pg-range" type="range" min="0" max="1" step="0.1" [(ngModel)]="pgTemp">
+            </div>
+          </div>
+          <label class="am-pg-label">Prompt</label>
+          <textarea class="am-pg-textarea"
+                    [(ngModel)]="pgPrompt"
+                    placeholder="Enter any prompt… e.g. 'Explain closures with a code example'"
+                    rows="5"
+                    [disabled]="pgLoading">
+          </textarea>
+          <div class="am-pg-editor-actions">
+            <button class="am-pg-run-btn" (click)="runPlayground()"
+                    [disabled]="pgLoading || !pgPrompt.trim()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+              {{ pgLoading ? 'Running…' : 'Run' }}
+            </button>
+            <button class="am-pg-reset-btn" (click)="resetPlayground()" [disabled]="pgLoading">
+              ↺ Reset
+            </button>
+            <span class="am-pg-ms" *ngIf="pgMs > 0">{{ pgMs }}ms</span>
+          </div>
+        </div>
+
+        <!-- Right: Output -->
+        <div class="am-pg-output">
+          <div class="am-pg-output-hd">
+            <span>Output</span>
+            <span class="am-pg-output-status" *ngIf="pgLoading">
+              <span class="am-pg-loading-dot"></span> Generating…
+            </span>
+          </div>
+          <div class="am-pg-output-body">
+            <div class="am-pg-error" *ngIf="pgError">{{ pgError }}</div>
+            <div class="am-pg-result md-content" *ngIf="pgOutput && !pgError" [innerHTML]="pgOutput | markdown"></div>
+            <div class="am-pg-placeholder" *ngIf="!pgOutput && !pgError && !pgLoading">
+              <span class="am-pg-placeholder-icon">⚡</span>
+              <span>Run a prompt to see the output here</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div><!-- end am-playground-wrap -->
 
 </div><!-- end ai-learning-home -->

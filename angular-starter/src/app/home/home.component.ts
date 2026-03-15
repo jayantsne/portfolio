@@ -390,6 +390,247 @@ const pool = new ThreadPool(4);`,
     { icon: '🧪', name: 'Testing Strategies', desc: 'Unit and integration tests' },
   ];
 
+  // ── Structured Curriculum Modules ──────────────────────────────────────
+  learningModules = [
+    {
+      name: 'AI Fundamentals',
+      icon: '🧠',
+      expanded: true,
+      topics: [
+        { icon: '🤖', name: 'Machine Learning Basics', desc: 'Supervised & unsupervised learning' },
+        { icon: '🕸️', name: 'Neural Networks', desc: 'Layers, weights, activations' },
+        { icon: '🔬', name: 'Deep Learning', desc: 'CNNs, RNNs, transformers' },
+        { icon: '💬', name: 'Natural Language Processing', desc: 'Text understanding & generation' },
+        { icon: '👁️', name: 'Computer Vision', desc: 'Image recognition & object detection' },
+      ]
+    },
+    {
+      name: 'Cloud & Architecture',
+      icon: '☁️',
+      expanded: false,
+      topics: [
+        { icon: '🏗️', name: 'Cloud Architecture', desc: 'Scalable cloud design patterns' },
+        { icon: '🧩', name: 'Microservices', desc: 'Service decomposition strategies' },
+        { icon: '⚡', name: 'Serverless Functions', desc: 'Event-driven compute model' },
+        { icon: '🐳', name: 'Containers & Docker', desc: 'Containerization fundamentals' },
+        { icon: '☸️', name: 'Kubernetes', desc: 'Container orchestration at scale' },
+      ]
+    },
+    {
+      name: 'APIs & Web',
+      icon: '🔌',
+      expanded: false,
+      topics: [
+        { icon: '🌐', name: 'REST APIs', desc: 'HTTP verbs, status codes, design' },
+        { icon: '📊', name: 'GraphQL', desc: 'Query language for APIs' },
+        { icon: '🔁', name: 'WebSockets', desc: 'Real-time bidirectional communication' },
+        { icon: '🔐', name: 'Authentication & OAuth', desc: 'JWT, OAuth2 flows, security' },
+        { icon: '📐', name: 'API Design Patterns', desc: 'Versioning, pagination, error handling' },
+      ]
+    },
+    {
+      name: 'Model Training',
+      icon: '⚙️',
+      expanded: false,
+      topics: [
+        { icon: '🔢', name: 'Data Preprocessing', desc: 'Cleaning, normalising, encoding' },
+        { icon: '🧮', name: 'Feature Engineering', desc: 'Selecting & creating features' },
+        { icon: '📏', name: 'Model Evaluation', desc: 'Metrics, confusion matrix, F1' },
+        { icon: '🎛️', name: 'Hyperparameter Tuning', desc: 'Grid search, Bayesian optimisation' },
+        { icon: '🔄', name: 'Transfer Learning', desc: 'Pre-trained models & fine-tuning' },
+      ]
+    },
+    {
+      name: 'AI Terminology',
+      icon: '📚',
+      expanded: false,
+      topics: [
+        { icon: '🪙', name: 'Tokens & Embeddings', desc: 'How text becomes numbers' },
+        { icon: '🎯', name: 'Attention Mechanism', desc: 'Transformers & self-attention' },
+        { icon: '🔧', name: 'Fine-tuning LLMs', desc: 'Adapting pre-trained models' },
+        { icon: '🗄️', name: 'RAG & Vector Databases', desc: 'Retrieval-augmented generation' },
+        { icon: '✍️', name: 'Prompt Engineering', desc: 'Crafting effective AI prompts' },
+      ]
+    },
+    {
+      name: 'JavaScript & Angular',
+      icon: '⚡',
+      expanded: false,
+      topics: [
+        { icon: '🔄', name: 'Closures', desc: 'Scope, lexical environment' },
+        { icon: '⏳', name: 'Async/Await', desc: 'Promises and async patterns' },
+        { icon: '👁', name: 'Observables & RxJS', desc: 'Reactive streams in Angular' },
+        { icon: '🧱', name: 'Angular Components', desc: 'Lifecycle, inputs, outputs' },
+        { icon: '📘', name: 'TypeScript Basics', desc: 'Types, interfaces, generics' },
+      ]
+    },
+  ];
+
+  toggleModule(moduleName: string): void {
+    const mod = this.learningModules.find(m => m.name === moduleName);
+    if (mod) mod.expanded = !mod.expanded;
+  }
+
+  openTopicLesson(topicName: string): void {
+    // Open the workspace and show a structured lesson (no chat started yet)
+    this.currentTopicName = topicName;
+    this.showModal = true;
+    this.isAIMode = false;
+    this.aiMessages = [];
+    this.followUpQuestions = [];
+    this.searchQuery = '';
+    this.showSearchResults = false;
+    this.streamingText = '';
+    this.diagramOpen = false;
+    this.loadStructuredLesson(topicName);
+  }
+
+  // ── Structured Lesson State ─────────────────────────────────────────────
+  lessonView = false;
+  lessonLoading = false;
+  lessonData: {
+    topic: string;
+    overview: string;
+    analogy: string;
+    codeExample: string;
+    codeLanguage: string;
+    keyPoints: string[];
+    practiceQuestion: string;
+    examTip: string;
+  } | null = null;
+
+  private lessonSub: Subscription | null = null;
+
+  loadStructuredLesson(topic: string): void {
+    if (this.lessonData?.topic === topic && !this.lessonLoading) return;
+    this.lessonLoading = true;
+    this.lessonData = null;
+    this.lessonView = true;
+    this.lessonSub?.unsubscribe();
+
+    const prompt = `Explain "${topic}" for a developer learning this concept. Structure your response with exactly these labeled sections:
+
+## OVERVIEW
+2-3 sentence plain-English explanation of what ${topic} is.
+
+## ANALOGY
+One clear real-world analogy (2-3 sentences) that makes ${topic} intuitive for a non-expert.
+
+## CODE EXAMPLE
+A concise, practical code snippet (10-20 lines) demonstrating ${topic}. Use JavaScript/TypeScript unless the topic is language-specific. Add brief inline comments.
+
+## KEY POINTS
+Exactly 4 bullet points summarising the most important facts about ${topic}.
+
+## PRACTICE QUESTION
+One concrete coding challenge or conceptual question to test understanding of ${topic}.
+
+## EXAM TIP
+One sentence: the single most important thing to remember about ${topic} in a technical interview.`;
+
+    this.lessonSub = this.aiLearnService.getSimplifiedExplanation(prompt).subscribe({
+      next: (res: any) => {
+        const raw: string = res?.explanation || res?.text || (typeof res === 'string' ? res : '');
+        this.lessonData = this.parseStructuredLesson(topic, raw);
+        this.lessonLoading = false;
+      },
+      error: () => {
+        this.lessonLoading = false;
+        this.lessonData = {
+          topic,
+          overview: `${topic} is a core concept in software development. Start a chat with the AI Mentor below to learn more.`,
+          analogy: 'The AI Mentor will provide an analogy when you start chatting.',
+          codeExample: `// Example for ${topic}\n// Click "Start Chat" below to request code examples`,
+          codeLanguage: 'javascript',
+          keyPoints: ['Ask the AI Mentor for key points', 'Use the quick-action chips on the right', 'Save important notes as you learn', 'Practice with the AI Playground below'],
+          practiceQuestion: `Ask the AI Mentor: "Give me a practice question about ${topic}"`,
+          examTip: 'Start a conversation with the AI Mentor for interview tips.',
+        };
+      }
+    });
+  }
+
+  private parseStructuredLesson(topic: string, raw: string): typeof this.lessonData {
+    const section = (label: string): string => {
+      const re = new RegExp(`##\\s*${label}[\\s\\S]*?\\n([\\s\\S]*?)(?=\\n##|$)`, 'i');
+      const m = raw.match(re);
+      return m ? m[1].trim() : '';
+    };
+
+    const overview = section('OVERVIEW') || raw.substring(0, 200);
+    const analogy  = section('ANALOGY') || '';
+    const codeRaw  = section('CODE EXAMPLE');
+    const kpRaw    = section('KEY POINTS');
+    const pqRaw    = section('PRACTICE QUESTION');
+    const etRaw    = section('EXAM TIP');
+
+    // Strip fenced code block markers
+    const codeMatch = codeRaw.match(/```(?:\w+)?\n?([\s\S]*?)```/);
+    const codeExample = codeMatch ? codeMatch[1].trim() : codeRaw.replace(/```\w*/g, '').trim();
+
+    const keyPoints = kpRaw
+      .split('\n')
+      .filter(l => /^\s*[-*•]\s/.test(l))
+      .map(l => l.replace(/^\s*[-*•]\s+/, '').replace(/\*\*/g, '').trim())
+      .filter(l => l.length > 0)
+      .slice(0, 4);
+
+    return {
+      topic,
+      overview,
+      analogy,
+      codeExample: codeExample || `// ${topic} example`,
+      codeLanguage: 'javascript',
+      keyPoints: keyPoints.length ? keyPoints : ['See the AI Mentor chat for detailed key points'],
+      practiceQuestion: pqRaw.replace(/\*\*/g, '').trim() || `Ask the AI Mentor for a practice question about ${topic}`,
+      examTip: etRaw.replace(/\*\*/g, '').trim() || '',
+    };
+  }
+
+  // ── AI Playground (bottom section) ─────────────────────────────────────
+  pgOpen     = false;
+  pgLoading  = false;
+  pgPrompt   = '';
+  pgOutput   = '';
+  pgError    = '';
+  pgModel    = 'auto';
+  pgTemp     = 0.7;
+  pgTokens   = 512;
+  pgMs       = 0;
+  private pgSub: Subscription | null = null;
+
+  togglePlayground(): void { this.pgOpen = !this.pgOpen; }
+
+  resetPlayground(): void {
+    this.pgSub?.unsubscribe();
+    this.pgPrompt  = '';
+    this.pgOutput  = '';
+    this.pgError   = '';
+    this.pgLoading = false;
+    this.pgMs      = 0;
+  }
+
+  runPlayground(): void {
+    if (!this.pgPrompt.trim() || this.pgLoading) return;
+    this.pgSub?.unsubscribe();
+    this.pgOutput  = '';
+    this.pgError   = '';
+    this.pgLoading = true;
+    const t0 = Date.now();
+
+    this.pgSub = this.aiLearnService.getSimplifiedExplanation(this.pgPrompt.trim()).subscribe({
+      next: (res: any) => {
+        this.pgOutput  = res?.explanation || res?.text || (typeof res === 'string' ? res : JSON.stringify(res));
+        this.pgMs      = Date.now() - t0;
+        this.pgLoading = false;
+      },
+      error: (err: any) => {
+        this.pgError   = err?.message || 'An error occurred. Please try again.';
+        this.pgLoading = false;
+      }
+    });
+  }
+
   ngOnInit(): void {
     // Generate particles for background animation
     this.particles = Array.from({ length: 30 }, () => ({
@@ -411,6 +652,8 @@ const pool = new ThreadPool(4);`,
 
   ngOnDestroy(): void {
     this.followUpSub?.unsubscribe();
+    this.lessonSub?.unsubscribe();
+    this.pgSub?.unsubscribe();
     clearTimeout(this.noteSavedTimer);
     clearInterval(this._playInterval);
   }
@@ -495,6 +738,11 @@ const pool = new ThreadPool(4);`,
     this.showModal = false;
     this.currentStep = 0;
     this.isTopicAccordionOpen = false;
+    this.lessonView = false;
+    this.lessonData = null;
+    this.lessonLoading = false;
+    this.lessonSub?.unsubscribe();
+    this.pgOpen = false;
   }
 
   toggleTopicAccordion(): void {
