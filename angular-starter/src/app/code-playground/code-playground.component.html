@@ -1,5 +1,5 @@
 <!-- Code Playground Page -->
-<div class="pg-page">
+<div class="pg-page" [class.pg-fullscreen]="isFullscreen">
 
   <!-- ── Top navigation bar ── -->
   <div class="pg-topbar">
@@ -31,9 +31,23 @@
       </button>
       <button class="pg-action-btn pg-action-btn--run"
               [disabled]="isRunning"
-              (click)="runCode()">
+              (click)="runCode()"
+              title="Run code (Ctrl+Enter)">
         <span *ngIf="!isRunning">▶ Run</span>
         <span *ngIf="isRunning" class="pg-spinner"></span>
+      </button>
+      <button class="pg-action-btn pg-action-btn--ghost pg-action-btn--fs"
+              (click)="toggleFullscreen()"
+              [title]="isFullscreen ? 'Exit fullscreen (Esc)' : 'Enter fullscreen'">
+        <svg *ngIf="!isFullscreen" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline>
+          <line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line>
+        </svg>
+        <svg *ngIf="isFullscreen" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <polyline points="4 14 10 14 10 20"></polyline><polyline points="20 10 14 10 14 4"></polyline>
+          <line x1="10" y1="14" x2="3" y2="21"></line><line x1="21" y1="3" x2="14" y2="10"></line>
+        </svg>
+        {{ isFullscreen ? 'Exit' : 'Full' }}
       </button>
     </div>
   </div>
@@ -102,6 +116,21 @@
         </button>
         <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('tests')">
           🧪 Generate Tests
+        </button>
+        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('refactor')">
+          🔧 Refactor Code
+        </button>
+        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('comments')">
+          💬 Add Comments
+        </button>
+        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('convert')">
+          🔄 Convert Language
+        </button>
+        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('optimize')">
+          ⚡ Optimise
+        </button>
+        <button class="pg-ai-chip pg-ai-chip--exercise" [disabled]="aiPanel === 'loading'" (click)="runAiAction('exercise')">
+          🎯 Generate Exercise
         </button>
       </div>
 

@@ -1,6 +1,6 @@
 import {
   Component, OnInit, OnDestroy, AfterViewInit,
-  ElementRef, ViewChild, ChangeDetectorRef,
+  ElementRef, ViewChild, ChangeDetectorRef, HostListener,
 } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CustomAuthService } from '../shared/custom-auth.service';
@@ -9,7 +9,7 @@ import { AILearnService } from '../services/ai-learn.service';
 
 // Language definitions
 export interface PlaygroundLang {
-  id:    'javascript' | 'typescript' | 'python';
+  id:    'javascript' | 'typescript' | 'python' | 'csharp';
   label: string;
   icon:  string;
   monacoId: string;
@@ -63,6 +63,31 @@ print(greet("World"))
 print("Fibonacci:", fibonacci(8))
 `,
   },
+  {
+    id: 'csharp', label: 'C#', icon: '🔵', monacoId: 'csharp',
+    starter:
+`// C# Playground
+// Note: Use AI actions to analyze, refactor, or explain your code.
+using System;
+
+class Program {
+    static void Main() {
+        Console.WriteLine(Greet("World"));
+
+        // Fibonacci
+        int a = 0, b = 1;
+        Console.Write("Fibonacci: ");
+        for (int i = 0; i < 8; i++) {
+            Console.Write(a + " ");
+            int tmp = a + b; a = b; b = tmp;
+        }
+        Console.WriteLine();
+    }
+
+    static string Greet(string name) => $"Hello, {name}! 👋";
+}
+`,
+  },
 ];
 
 declare const require: any;
@@ -96,6 +121,9 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
   aiActionLabel = '';
   private aiSub: Subscription | null = null;
 
+  // ── Fullscreen ─────────────────────────────────────────────────────────────
+  isFullscreen = false;
+
   // ── Save to Notes ─────────────────────────────────────────────────────────
   saveSuccess = false;
   saveFail    = false;
@@ -109,6 +137,12 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
   ) {}
 
   ngOnInit(): void {}
+
+  @HostListener('document:keydown', ['$event'])
+  handleKeydown(e: KeyboardEvent): void {
+    if (e.ctrlKey && e.key === 'Enter') { e.preventDefault(); this.runCode(); }
+    if (e.key === 'Escape' && this.isFullscreen) { this.isFullscreen = false; this.cdr.detectChanges(); }
+  }
 
   // ── Load Monaco from CDN ─────────────────────────────────────────────────
   ngAfterViewInit(): void {
@@ -152,7 +186,7 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
     this.editorLoading = false;
 
     this.editor = monaco.editor.create(this.monacoContainer.nativeElement, {
-      value:              this.selectedLang.starter,
+      value:              this.loadSession(this.selectedLang.id) ?? this.selectedLang.starter,
       language:           this.selectedLang.monacoId,
       theme:              'vs-dark',
       fontSize:           14,
@@ -175,17 +209,16 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
   // ── Language switching ────────────────────────────────────────────────────
   selectLang(lang: PlaygroundLang): void {
     if (this.selectedLang.id === lang.id) return;
+    // Persist current session before switching
+    if (this.editor) this.saveSession(this.selectedLang.id, this.editor.getValue());
     this.selectedLang = lang;
     if (this.editor && (window as any).monaco) {
       const monaco = (window as any).monaco;
       const model  = this.editor.getModel();
       if (model) {
         monaco.editor.setModelLanguage(model, lang.monacoId);
-        // Offer starter code only if editor is basically empty
-        const val = this.editor.getValue().trim();
-        if (!val || val === this.langs.find(l => l.id !== lang.id)?.starter?.trim()) {
-          this.editor.setValue(lang.starter);
-        }
+        const saved = this.loadSession(lang.id);
+        this.editor.setValue(saved ?? lang.starter);
       }
     }
     this.clearOutput();
@@ -214,9 +247,10 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
 
     if (this.selectedLang.id === 'javascript' || this.selectedLang.id === 'typescript') {
       this.runJs(code);
-    } else if (this.selectedLang.id === 'python') {
-      this.addOutput('⚠️ Python execution requires a server-side sandbox. Click "Explain Code" to analyse your code with AI.', 'warn');
-      this.addOutput('💡 Tip: Use browser JS/TS to run code interactively here.', 'info');
+    } else if (this.selectedLang.id === 'python' || this.selectedLang.id === 'csharp') {
+      const lbl = this.selectedLang.label;
+      this.addOutput(`⚠️ ${lbl} execution requires a server-side sandbox. Use AI actions to analyse your code.`, 'warn');
+      this.addOutput('💡 Tip: Try "Explain", "Improve", or "Find Bugs" to get AI feedback on this code.', 'info');
       this.isRunning = false;
     }
     this.cdr.detectChanges();
@@ -278,25 +312,40 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
   // ── AI actions ────────────────────────────────────────────────────────────
 
   private readonly AI_PROMPTS: Record<string, (code: string, lang: string) => string> = {
-    explain: (c, l) =>
+    explain:  (c, l) =>
       `Explain the following ${l} code step by step. Describe what it does, how it works, and highlight any interesting patterns:\n\n\`\`\`${l}\n${c}\n\`\`\``,
-    improve: (c, l) =>
+    improve:  (c, l) =>
       `Review this ${l} code and suggest improvements for readability, performance, and best practices. Show the improved version with comments:\n\n\`\`\`${l}\n${c}\n\`\`\``,
-    bugs: (c, l) =>
+    bugs:     (c, l) =>
       `Analyze this ${l} code for bugs, errors, edge cases, and potential runtime issues. List each problem and how to fix it:\n\n\`\`\`${l}\n${c}\n\`\`\``,
-    tests: (c, l) =>
+    tests:    (c, l) =>
       `Generate comprehensive unit tests for the following ${l} code. Cover happy paths, edge cases, and error scenarios:\n\n\`\`\`${l}\n${c}\n\`\`\``,
+    refactor: (c, l) =>
+      `Refactor the following ${l} code to improve its structure, reduce complexity, and follow clean code principles. Show the refactored version with a brief explanation:\n\n\`\`\`${l}\n${c}\n\`\`\``,
+    comments: (c, l) =>
+      `Add clear, concise inline comments to the following ${l} code. Explain what each section does, document function parameters and return values, and clarify any non-obvious logic:\n\n\`\`\`${l}\n${c}\n\`\`\``,
+    convert:  (c, l) =>
+      `Convert the following ${l} code to a different language. Suggest the most appropriate target language for this code, provide the full converted version, and note key differences:\n\n\`\`\`${l}\n${c}\n\`\`\``,
+    optimize: (c, l) =>
+      `Analyze and optimize the following ${l} code for performance. Identify bottlenecks, memory issues, and algorithmic inefficiencies, then provide an optimized version with explanations:\n\n\`\`\`${l}\n${c}\n\`\`\``,
+    exercise: (c, l) =>
+      `Based on the concepts used in the following ${l} code, generate a coding exercise or challenge. Include a clear problem statement, sample inputs/outputs, hints, and a model solution:\n\n\`\`\`${l}\n${c}\n\`\`\``,
   };
 
-  runAiAction(action: 'explain' | 'improve' | 'bugs' | 'tests'): void {
+  runAiAction(action: 'explain' | 'improve' | 'bugs' | 'tests' | 'refactor' | 'comments' | 'convert' | 'optimize' | 'exercise'): void {
     const code = this.currentCode.trim();
     if (!code) return;
 
     const labels: Record<string, string> = {
-      explain: '💡 Explaining Code…',
-      improve: '✨ Improving Code…',
-      bugs:    '🔍 Analysing Bugs…',
-      tests:   '🧪 Generating Tests…',
+      explain:  '💡 Explaining Code…',
+      improve:  '✨ Improving Code…',
+      bugs:     '🔍 Analysing Bugs…',
+      tests:    '🧪 Generating Tests…',
+      refactor: '🔧 Refactoring Code…',
+      comments: '💬 Adding Comments…',
+      convert:  '🔄 Converting Language…',
+      optimize: '⚡ Optimising Performance…',
+      exercise: '🎯 Generating Exercise…',
     };
 
     this.clearAi();
@@ -375,6 +424,19 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
       this.saveTimer = setTimeout(() => { this.saveFail = false; this.cdr.detectChanges(); }, 3000);
     });
     this.cdr.detectChanges();
+  }
+
+  toggleFullscreen(): void {
+    this.isFullscreen = !this.isFullscreen;
+    this.cdr.detectChanges();
+  }
+
+  private saveSession(langId: string, code: string): void {
+    try { localStorage.setItem(`pg_session_${langId}`, code); } catch {}
+  }
+
+  private loadSession(langId: string): string | null {
+    try { return localStorage.getItem(`pg_session_${langId}`); } catch { return null; }
   }
 
   get isLoggedIn(): boolean { return !!this.auth.currentUser; }

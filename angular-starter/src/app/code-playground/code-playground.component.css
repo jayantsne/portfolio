@@ -13,6 +13,14 @@
   overflow: hidden;
 }
 
+/* Fullscreen overlay */
+.pg-page.pg-fullscreen {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  z-index: 9999;
+}
+
 /* ── Top bar ── */
 .pg-topbar {
   display: flex;
@@ -104,6 +112,15 @@
   box-shadow: 0 4px 14px rgba(46,160,67,0.4);
 }
 .pg-action-btn--run:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Fullscreen button */
+.pg-action-btn--fs {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.38rem 0.65rem;
+}
+.pg-action-btn--fs svg { flex-shrink: 0; }
 
 /* ── Main body ── */
 .pg-body {
@@ -240,6 +257,10 @@
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #21262d;
   flex-shrink: 0;
+}
+/* Generate Exercise spans full width */
+.pg-ai-chip--exercise {
+  grid-column: 1 / -1;
 }
 .pg-ai-chip {
   display: flex;
