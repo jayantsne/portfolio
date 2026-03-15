@@ -147,6 +147,10 @@ builder.Services.AddMemoryCache();
 // Configure HttpClient for Ollama
 builder.Services.AddHttpClient<IOllamaService, OllamaService>();
 
+// Configure HttpClient for Judge0 (code execution sandbox)
+builder.Services.AddHttpClient("Judge0");
+builder.Services.AddScoped<ICodeExecutionService, CodeExecutionService>();
+
 // Register services
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IUserProgressService, UserProgressService>();
