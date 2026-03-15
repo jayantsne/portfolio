@@ -1,6 +1,6 @@
 import { Component, HostListener, ElementRef, ViewChild, AfterViewInit, Input } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AuthService }      from '../shared/auth.service';
 import { ApiService }       from '../shared/api.service';
@@ -47,6 +47,7 @@ export class HeaderComponent implements AfterViewInit {
     private el: ElementRef,
     public authService: AuthService,
     private router: Router,
+    private route: ActivatedRoute,
     private apiService: ApiService,
     public customAuth: CustomAuthService,
     public subSvc: SubscriptionService
@@ -447,7 +448,12 @@ export class HeaderComponent implements AfterViewInit {
 
   /** Called when auth-modal emits loggedIn */
   onLoggedIn(): void {
-    console.log('✅ User logged in:', this.customAuth.currentUser?.username);
+    // Navigate to the page the user was trying to reach before the login wall.
+    // Guards encode the intended path in the ?returnUrl= query param.
+    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    if (returnUrl) {
+      this.router.navigateByUrl(returnUrl);
+    }
   }
 
   /** Called when user-settings emits signedOut */

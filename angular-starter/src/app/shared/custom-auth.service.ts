@@ -109,14 +109,28 @@ export class CustomAuthService {
     }
   }
 
-  /** Decode JWT payload and compare exp claim against current time. */
+  /** Decode JWT payload and compare exp claim against current time.
+   *  IMPORTANT: JWT uses base64url (RFC 4648 §5) which replaces + with -
+   *  and / with _. Standard atob() does not handle this encoding, so we
+   *  must normalise the string first or atob() throws on production tokens
+   *  that happen to contain those characters — silently logging users out.
+   */
   private isTokenExpired(token: string): boolean {
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      const base64Url = token.split('.')[1];
+      if (!base64Url) return false;
+      // Normalise base64url → standard base64
+      const base64 = base64Url
+        .replace(/-/g, '+')
+        .replace(/_/g, '/')
+        .padEnd(base64Url.length + (4 - base64Url.length % 4) % 4, '=');
+      const payload = JSON.parse(atob(base64));
       // exp is in seconds; Date.now() is in ms
       return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
     } catch {
-      return true; // unparseable token → treat as expired
+      // Cannot parse → assume valid; server will reject stale tokens with 401
+      // which AuthInterceptor handles by calling logout()
+      return false;
     }
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable }   from '@angular/core';
-import { CanActivate, Router } from '@angular/router';
+import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
 import { CustomAuthService }   from './custom-auth.service';
 import { SubscriptionService } from './subscription.service';
 
@@ -18,9 +18,12 @@ export class SubscriptionGuard implements CanActivate {
     private router:      Router
   ) {}
 
-  async canActivate(): Promise<boolean> {
+  async canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean> {
     if (!this.auth.isLoggedIn) {
-      this.router.navigate(['/']);
+      // Pass returnUrl so the header can navigate back after login
+      this.router.navigate(['/'], {
+        queryParams: { login: 'required', returnUrl: state.url }
+      });
       return false;
     }
 

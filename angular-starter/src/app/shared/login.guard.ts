@@ -14,8 +14,11 @@ export class LoginGuard implements CanActivate {
     if (this.auth.isLoggedIn) {
       return true;
     }
-    // Not logged in — redirect to home and trigger login modal
-    this.router.navigate(['/'], { queryParams: { login: 'required' } });
+    // Not logged in — redirect home, pass the intended URL as a return param
+    // so the header can re-navigate there after successful login.
+    this.router.navigate(['/'], {
+      queryParams: { login: 'required', returnUrl: state.url }
+    });
     return false;
   }
 }
