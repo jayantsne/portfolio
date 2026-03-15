@@ -138,10 +138,16 @@
           </div>
         </div>
         <div class="ip-stack-grid">
-          <button class="ip-stack-btn" *ngFor="let s of techStacks" (click)="selectStack(s)">
+          <button class="ip-stack-btn" *ngFor="let s of techStacks" (click)="selectStack(s)"
+            [class.ip-stack-btn-progress]="hasSavedRoadmap(s.id)">
             <span class="ip-stack-icon">{{ s.icon }}</span>
             <span class="ip-stack-name">{{ s.name }}</span>
-            <span class="ip-stack-resume" *ngIf="hasSavedRoadmap(s.id)">Resume</span>
+            <ng-container *ngIf="hasSavedRoadmap(s.id)">
+              <div class="ip-stack-prog-bar">
+                <div class="ip-stack-prog-fill" [style.width.%]="getStackProgress(s.id) ?? 0"></div>
+              </div>
+              <span class="ip-stack-resume">{{ getStackProgress(s.id) }}% · Resume</span>
+            </ng-container>
           </button>
         </div>
       </div>
@@ -343,6 +349,25 @@
       </div>
 
     </div><!-- /ip-messages -->
+
+    <!-- Quick action chips -->
+    <div class="ip-quick-chips" *ngIf="selectedQuestion && aiMessages.length > 0 && !isLoadingAI && !isFollowUpLoading">
+      <button class="ip-chip" (click)="sendChipAction('show-solution')">
+        <span>✅</span> Show Solution
+      </button>
+      <button class="ip-chip" (click)="sendChipAction('explain-simpler')">
+        <span>🔎</span> Explain Simpler
+      </button>
+      <button class="ip-chip" (click)="sendChipAction('common-mistakes')">
+        <span>⚠️</span> Common Mistakes
+      </button>
+      <button class="ip-chip" (click)="sendChipAction('code-example')">
+        <span>💻</span> Code Example
+      </button>
+      <button class="ip-chip" (click)="sendChipAction('best-practices')">
+        <span>🏆</span> Best Practices
+      </button>
+    </div>
 
     <!-- Sticky input -->
     <div class="ip-input-area">

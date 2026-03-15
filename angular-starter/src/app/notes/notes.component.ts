@@ -331,16 +331,17 @@ export class NotesComponent implements OnInit, OnDestroy {
     }
   }
 
-  runAiAction(action: 'summarize' | 'explain' | 'quiz'): void {
+  runAiAction(action: 'summarize' | 'explain' | 'quiz' | 'flashcards'): void {
     if (!this.activeNote || this.aiActionLoading) return;
     this.aiActionLoading = true;
     this.aiActionResult  = '';
     this.aiActionError   = '';
 
     const prompts: Record<string, string> = {
-      summarize: `Summarize the following note in 3-5 concise bullet points:\n\n${this.activeNote.content}`,
-      explain:   `Explain the key concepts in the following note in simple, beginner-friendly terms:\n\n${this.activeNote.content}`,
-      quiz:      `Generate a short 3-question quiz based on this note. Use Q&A format with answers:\n\n${this.activeNote.content}`
+      summarize:  `Summarize the following note in 3-5 concise bullet points:\n\n${this.activeNote.content}`,
+      explain:    `Explain the key concepts in the following note in simple, beginner-friendly terms:\n\n${this.activeNote.content}`,
+      quiz:       `Generate a short 3-question quiz based on this note. Use Q&A format with answers:\n\n${this.activeNote.content}`,
+      flashcards: `Convert the key concepts from this note into flashcard format. For each card write:\nQ: <question>\nA: <answer>\n\nGenerate 5-8 flashcards:\n\n${this.activeNote.content}`
     };
 
     const apiBase = window.location.hostname === 'localhost' ? '' : 'https://learnwithai.tech';

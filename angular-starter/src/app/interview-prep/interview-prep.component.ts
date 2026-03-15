@@ -157,6 +157,20 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     this.sendFollowUp();
   }
 
+  /** Send a predefined quick-action follow-up about the current question */
+  sendChipAction(type: string): void {
+    const map: Record<string, string> = {
+      'show-solution':    'Can you show me a complete solution or implementation with well-commented code?',
+      'explain-simpler':  'Can you explain this concept in simpler terms, using a real-world analogy a junior developer would understand?',
+      'common-mistakes':  'What are the most common mistakes developers make when answering or implementing this in an interview? How can I avoid them?',
+      'code-example':     'Please provide a detailed, runnable code example with step-by-step explanation of each part.',
+      'best-practices':   'What are the senior-level best practices and architectural insights for this topic that would impress an interviewer?',
+    };
+    if (!map[type]) return;
+    this.followUpText = map[type];
+    this.sendFollowUp();
+  }
+
   @ViewChild('msgContainer') msgContainer!: ElementRef;
 
   private sub!: Subscription;
@@ -397,6 +411,21 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   /** Whether a generated roadmap is already stored for this stack */
   hasSavedRoadmap(stackId: string): boolean {
     return !!localStorage.getItem(`ip_roadmap_sections_${stackId}`);
+  }
+
+  /** Get the saved progress percentage for a stack (null if none) */
+  getStackProgress(stackId: string): number | null {
+    const structureRaw = localStorage.getItem(`ip_roadmap_sections_${stackId}`);
+    if (!structureRaw) return null;
+    try {
+      const sections: RoadmapSection[] = JSON.parse(structureRaw);
+      const progressRaw = localStorage.getItem(`ip_roadmap_${stackId}`);
+      const doneIds: string[] = progressRaw ? JSON.parse(progressRaw) : [];
+      const total = sections.reduce((acc, s) => acc + s.topics.length, 0);
+      if (!total) return null;
+      const done = doneIds.length;
+      return Math.round((done / total) * 100);
+    } catch { return null; }
   }
 
   private saveRoadmapStructure(stackId: string): void {

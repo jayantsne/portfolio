@@ -34,7 +34,7 @@
   </div>
 
   <!-- MAIN CONTENT — IP-style split layout -->
-  <div class="notes-shell" *ngIf="user && !isLoading && !createMode">
+  <div class="notes-shell" *ngIf="user && !isLoading && !createMode" [class.has-ai]="activeNote && !editMode">
 
     <!-- ═══════════════════ LEFT PANEL (30%) ═══════════════════ -->
     <section class="notes-left">
@@ -75,6 +75,20 @@
             <button class="notes-pill" *ngFor="let cat of categories"
               [class.notes-pill-active]="filterCategory === cat"
               (click)="filterCategory = cat">{{ cat }}</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tag filter -->
+      <div class="notes-filters notes-tag-filter" *ngIf="allTags.length > 0">
+        <div class="notes-filter-group">
+          <span class="notes-filter-label">Tags</span>
+          <div class="notes-pill-track">
+            <button class="notes-pill" [class.notes-pill-active]="filterTag === ''"
+              (click)="filterTag = ''">All</button>
+            <button class="notes-pill" *ngFor="let tag of allTags"
+              [class.notes-pill-active]="filterTag === tag"
+              (click)="filterTag = tag">#{{ tag }}</button>
           </div>
         </div>
       </div>
@@ -256,6 +270,75 @@
       </div>
 
     </main><!-- /notes-right -->
+
+    <!-- ═══════════════ DESKTOP AI ACTIONS PANEL ═══════════════ -->
+    <aside class="notes-ai-panel" *ngIf="activeNote && !editMode">
+      <div class="nap-header">
+        <div class="nap-title-row">
+          <span class="nap-icon">🤖</span>
+          <span class="nap-title">AI Actions</span>
+        </div>
+        <span class="nap-subtitle">Powered by local AI</span>
+      </div>
+
+      <div class="nap-btns">
+        <button class="nap-btn" (click)="runAiAction('summarize')" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">📋</span>
+          <div class="nap-btn-text">
+            <strong>Summarize</strong>
+            <span>Key points in bullets</span>
+          </div>
+        </button>
+        <button class="nap-btn" (click)="runAiAction('explain')" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">💡</span>
+          <div class="nap-btn-text">
+            <strong>Explain simpler</strong>
+            <span>ELI5 version</span>
+          </div>
+        </button>
+        <button class="nap-btn" (click)="runAiAction('quiz')" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">📝</span>
+          <div class="nap-btn-text">
+            <strong>Generate quiz</strong>
+            <span>Test your knowledge</span>
+          </div>
+        </button>
+        <button class="nap-btn" (click)="runAiAction('flashcards')" [disabled]="aiActionLoading">
+          <span class="nap-btn-icon">🗂</span>
+          <div class="nap-btn-text">
+            <strong>Flashcards</strong>
+            <span>Q&amp;A format</span>
+          </div>
+        </button>
+      </div>
+
+      <!-- Loading state -->
+      <div class="nap-loading-state" *ngIf="aiActionLoading && !aiActionResult">
+        <span class="nap-spinner"></span>
+        <span>Thinking…</span>
+      </div>
+
+      <!-- Result -->
+      <div class="nap-result-block" *ngIf="aiActionResult">
+        <div class="nap-result-header">
+          <span class="nap-result-label">Result</span>
+          <button class="nap-clear-btn" (click)="aiActionResult = ''; aiActionError = ''">✕</button>
+        </div>
+        <div class="nap-result-text">{{ aiActionResult }}</div>
+      </div>
+
+      <!-- Error -->
+      <div class="nap-error-block" *ngIf="aiActionError">
+        ⚠️ {{ aiActionError }}
+        <button class="nap-clear-btn" (click)="aiActionError = ''">✕</button>
+      </div>
+
+      <!-- Note context hint -->
+      <div class="nap-context-hint">
+        <span class="nap-hint-icon">📌</span>
+        <span>Actions apply to: <strong>{{ activeNote.topic }}</strong></span>
+      </div>
+    </aside>
 
     <!-- ══════════════════ MOBILE READER OVERLAY ══════════════════ -->
     <div class="mobile-reader" *ngIf="mobileReaderOpen && activeNote && !editMode">
