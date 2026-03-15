@@ -10,7 +10,7 @@
     <span class="lwc-hd-title">{{ meta.title }}</span>
   </div>
 
-  <!-- Body — parent passes SafeHtml rendered from markdown -->
-  <div class="lwc-body" [innerHTML]="htmlContent"></div>
+  <!-- Body — parent passes SafeHtml rendered from markdown (MarkdownPipe) -->
+  <div class="lwc-body md-content" [innerHTML]="htmlContent"></div>
 
 </div>

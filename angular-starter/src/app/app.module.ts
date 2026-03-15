@@ -26,7 +26,7 @@ import { RevealOnScrollDirective } from './shared/reveal-on-scroll.directive';
 import { InterviewQuestionsComponent } from './interview-questions/interview-questions.component';
 import { QuestionsPublicComponent } from './questions-public/questions-public.component';
 import { AiQaComponent } from './ai-qa/ai-qa.component';
-import { MarkdownPipe } from './shared/markdown.pipe';
+// MarkdownPipe is now declared + exported by LearningWorkspaceModule (imported below)
 // import { LoginComponent } from './login/login.component'; // Temporarily disabled
 // import { NamespaceManagementComponent } from './namespace-management/namespace-management.component'; // Temporarily disabled
 // import { AuthManagementComponent } from './auth-management/auth-management.component'; // Temporarily disabled
@@ -77,7 +77,7 @@ import { LearningWorkspaceModule } from './shared/learning-workspace/learning-wo
     InterviewQuestionsComponent,
     QuestionsPublicComponent,
     AiQaComponent,
-    MarkdownPipe,
+    // MarkdownPipe — now via LearningWorkspaceModule
     // LoginComponent, // Temporarily disabled - FormsModule issues
     // NamespaceManagementComponent, // Temporarily disabled - FormsModule/DatePipe issues
     // AuthManagementComponent, // Temporarily disabled - FormsModule issues

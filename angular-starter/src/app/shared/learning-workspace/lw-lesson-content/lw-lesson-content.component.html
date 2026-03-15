@@ -35,7 +35,7 @@
       <!-- Inline Mark Complete -->
       <div class="lwl-hero-actions">
         <button class="lwl-btn lwl-btn--complete"
-                *ngIf="!isCompleted && !loading && sections.length"
+                *ngIf="!isCompleted && !loading && (sections.length || (!isStreaming && streamingText))"
                 (click)="markComplete.emit()">
           ✓ Mark Complete
         </button>
@@ -90,7 +90,7 @@
         </div>
         <!-- Accumulating stream -->
         <div *ngIf="streamingText" class="lwl-stream-bubble md-content"
-             [innerHTML]="streamingHtml">
+             [innerHTML]="streamingText | markdown">
         </div>
       </ng-container>
 
@@ -113,7 +113,8 @@
           <div class="lwl-followup-avatar">{{ msg.role === 'user' ? '👤' : '🤖' }}</div>
           <div class="lwl-followup-bubble"
                [class.lwl-followup-bubble--user]="msg.role === 'user'"
-               [innerHTML]="msg.text">
+               [class.md-content]="msg.role === 'ai'"
+               [innerHTML]="msg.role === 'ai' ? (msg.text | markdown) : msg.text">
           </div>
         </div>
       </ng-container>

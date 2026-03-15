@@ -173,16 +173,14 @@
 }
 
 .lwl-stream-bubble {
-  padding: 1rem 1.15rem;
+  padding: 1.1rem 1.2rem 1rem;
   border-radius: 14px;
   background: var(--lw-surface, #fff);
   border: 1.5px solid rgba(99,102,241,0.18);
-  box-shadow: 0 2px 12px rgba(99,102,241,0.06);
-  font-size: 0.88rem;
-  line-height: 1.75;
-  color: var(--lw-text, #1e1b4b);
+  box-shadow: 0 2px 12px rgba(99,102,241,0.07);
   animation: lwsFadeIn 0.2s ease;
   position: relative;
+  /* Global md-content styles supply all the typography */
 }
 .lwl-stream-bubble::before {
   content: '🤖';
@@ -197,32 +195,6 @@
 @keyframes lwsFadeIn {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-
-/* - md-content inside stream bubble - */
-.lwl-stream-bubble.md-content p:first-child { margin-top: 0; }
-.lwl-stream-bubble.md-content p:last-child  { margin-bottom: 0; }
-.lwl-stream-bubble.md-content .ai-heading   { font-size: 0.95rem; margin: 0.8rem 0 0.35rem; }
-.lwl-stream-bubble.md-content .md-pre {
-  background: rgba(15,23,42,0.04);
-  border-radius: 8px;
-  padding: 0.65rem 0.9rem;
-  overflow-x: auto;
-  font-size: 0.8rem;
-  margin: 0.5rem 0;
-}
-.lwl-stream-bubble.md-content .md-inline {
-  background: rgba(99,102,241,0.1);
-  color: var(--lw-primary, #6366f1);
-  padding: 0.1rem 0.35rem;
-  border-radius: 4px;
-  font-size: 0.82rem;
-  font-family: monospace;
-}
-.lwl-stream-bubble.md-content li {
-  margin-left: 1.1rem;
-  margin-bottom: 0.2rem;
-  list-style: disc;
 }
 
 

@@ -2,9 +2,9 @@ import {
   Component, Input, Output, EventEmitter,
   ChangeDetectionStrategy, OnChanges, SimpleChanges,
 } from '@angular/core';
-import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { SafeHtml } from '@angular/platform-browser';
 import { LwTopic, LwSection, LwMessage, SECTION_META, SectionType } from '../learning-workspace.models';
-
+import { MarkdownPipe } from '../../markdown.pipe';
 
 /** A rendered lesson section — content already converted to SafeHtml */
 export interface RenderedSection {
@@ -19,6 +19,7 @@ export interface RenderedSection {
   templateUrl: './lw-lesson-content.component.html',
   styleUrls: ['./lw-lesson-content.component.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  providers: [MarkdownPipe],
 })
 export class LwLessonContentComponent implements OnChanges {
 
@@ -63,76 +64,25 @@ export class LwLessonContentComponent implements OnChanges {
 
   rendered: RenderedSection[] = [];
 
-  constructor(private sanitizer: DomSanitizer) {}
+  constructor(private md: MarkdownPipe) {}
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['sections']) {
       this.rendered = this.sections.map(s => {
         const m = SECTION_META[s.type] ?? { icon: '📋', title: 'Section' };
-        // If content starts with '<' it's already HTML (from formatExplanation),
-        // otherwise treat as markdown and convert it.
-        const isHtml = s.content.trim().startsWith('<');
-        const html   = isHtml ? s.content : this.toHtml(s.content);
         return {
-          type: s.type,
-          icon: s.icon || m.icon,
-          title: s.title || m.title,
-          htmlContent: this.sanitizer.bypassSecurityTrustHtml(html),
+          type:        s.type,
+          icon:        s.icon  || m.icon,
+          title:       s.title || m.title,
+          htmlContent: this.md.transform(s.content),
         };
       });
     }
   }
 
-  get isCompleted(): boolean {
-    return this.topic?.status === 'completed';
-  }
-
-  get isLocked(): boolean {
-    return this.topic?.status === 'locked';
-  }
-
-  get isEmpty(): boolean {
-    return !this.topic && !this.loading;
-  }
+  get isCompleted(): boolean { return this.topic?.status === 'completed'; }
+  get isLocked():    boolean { return this.topic?.status === 'locked'; }
+  get isEmpty():     boolean { return !this.topic && !this.loading; }
 
   trackByIndex(i: number): number { return i; }
-
-  /** SafeHtml rendered from the progressive streaming text */
-  get streamingHtml(): SafeHtml {
-    if (!this.streamingText) return '';
-    return this.sanitizer.bypassSecurityTrustHtml(this.toHtml(this.streamingText));
-  }
-
-  /** Lightweight markdown → HTML conversion used only for streaming display */
-  private toHtml(text: string): string {
-    // Close unclosed code fence so the partial stream renders safely
-    if ((text.match(/```/g) ?? []).length % 2 !== 0) text += '\n```';
-
-    // Code blocks first (before other substitutions)
-    let html = text.replace(/```(\w*)\n?([\s\S]*?)```/g,
-      (_m, _lang, code) =>
-        `<pre class="md-pre"><code>${code.replace(/</g, '&lt;').replace(/>/g, '&gt;').trim()}</code></pre>`
-    );
-
-    // Headings
-    html = html.replace(/^###\s+(.+)$/gm, '<h3 class="ai-heading">$1</h3>');
-    html = html.replace(/^##\s+(.+)$/gm,  '<h3 class="ai-heading">$1</h3>');
-    html = html.replace(/^#\s+(.+)$/gm,   '<h2 class="ai-heading">$1</h2>');
-
-    // Bold
-    html = html.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
-
-    // Inline code
-    html = html.replace(/`([^`\n]+)`/g, '<code class="md-inline">$1</code>');
-
-    // Numbered & bullet lists
-    html = html.replace(/^(\d+)\.\s+(.+)$/gm, '<li>$2</li>');
-    html = html.replace(/^[-*]\s+(.+)$/gm, '<li>$1</li>');
-
-    // Paragraph breaks and line breaks
-    html = html.replace(/\n\n+/g, '</p><p>');
-    html = html.replace(/\n/g, '<br>');
-
-    return `<p>${html}</p>`;
-  }
 }

@@ -561,6 +561,65 @@ body::-webkit-scrollbar,
 .md-content strong { color: #1a202c; font-weight: 700; }
 .md-content em { color: #553c9a; font-style: italic; }
 
+/* ═══════════════════════════════════════════════════════════════════
+   LW LESSON CARD — md-content overrides (compact card context)
+   Class applied: .lwc-body.md-content inside lw-lesson-card
+   ═══════════════════════════════════════════════════════════════════ */
+.lwc-body.md-content { font-size: 0.875rem; }
+
+.lwc-body.md-content .md-h1 { font-size: 1.05rem; margin: 0.7rem 0 0.3rem; border-bottom-width: 1px; }
+.lwc-body.md-content .md-h2 { font-size: 0.97rem; margin: 0.65rem 0 0.25rem; }
+.lwc-body.md-content .md-h3 { font-size: 0.9rem;  margin: 0.55rem 0 0.2rem; color: #374151; }
+.lwc-body.md-content .md-h4 { font-size: 0.85rem; margin: 0.45rem 0 0.15rem; }
+
+.lwc-body.md-content .md-p  { font-size: 0.875rem; margin: 0.3rem 0; line-height: 1.75; color: #374151; }
+.lwc-body.md-content .md-p:first-child { margin-top: 0; }
+.lwc-body.md-content .md-p:last-child  { margin-bottom: 0; }
+
+.lwc-body.md-content .md-ul,
+.lwc-body.md-content .md-ol  { margin: 0.3rem 0; padding-left: 1.25rem; }
+.lwc-body.md-content .md-li  { font-size: 0.875rem; line-height: 1.7; margin-bottom: 0.18rem; }
+
+.lwc-body.md-content .md-code-block { margin: 0.6rem 0; }
+.lwc-body.md-content .md-blockquote { margin: 0.5rem 0; font-size: 0.85rem; }
+.lwc-body.md-content .md-spacer { height: 0.25rem; }
+
+/* ── Inline code in cards ── */
+.lwc-body.md-content .md-inline {
+  background: rgba(99,102,241,0.10);
+  color: #5b21b6;
+  border-color: rgba(99,102,241,0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   LW STREAMING BUBBLE — md-content overrides (live stream context)
+   Class applied: .lwl-stream-bubble.md-content inside lw-lesson-content
+   ═══════════════════════════════════════════════════════════════════ */
+.lwl-stream-bubble.md-content { font-size: 0.875rem; }
+
+.lwl-stream-bubble.md-content .md-h1 { font-size: 1.05rem; margin: 0.75rem 0 0.3rem; }
+.lwl-stream-bubble.md-content .md-h2 { font-size: 0.97rem; margin: 0.7rem 0 0.25rem; }
+.lwl-stream-bubble.md-content .md-h3 { font-size: 0.9rem;  margin: 0.6rem 0 0.2rem; }
+.lwl-stream-bubble.md-content .md-h1:first-child,
+.lwl-stream-bubble.md-content .md-h2:first-child,
+.lwl-stream-bubble.md-content .md-h3:first-child { margin-top: 0; }
+
+.lwl-stream-bubble.md-content .md-p       { font-size: 0.875rem; margin: 0.3rem 0; line-height: 1.75; }
+.lwl-stream-bubble.md-content .md-ul,
+.lwl-stream-bubble.md-content .md-ol      { margin: 0.3rem 0; padding-left: 1.25rem; }
+.lwl-stream-bubble.md-content .md-li      { font-size: 0.875rem; line-height: 1.7; margin-bottom: 0.18rem; }
+.lwl-stream-bubble.md-content .md-code-block { margin: 0.6rem 0; }
+.lwl-stream-bubble.md-content .md-spacer  { height: 0.25rem; }
+
+/* ── Follow-up AI bubble markdown ── */
+.lwl-followup-bubble.md-content { font-size: 0.84rem; }
+.lwl-followup-bubble.md-content .md-p  { margin: 0.2rem 0; font-size: 0.84rem; }
+.lwl-followup-bubble.md-content .md-h3 { font-size: 0.88rem; margin: 0.5rem 0 0.15rem; }
+.lwl-followup-bubble.md-content .md-code-block { margin: 0.45rem 0; }
+.lwl-followup-bubble.md-content .md-ul,
+.lwl-followup-bubble.md-content .md-ol { margin: 0.2rem 0; padding-left: 1.1rem; }
+
+
 
 /* 
    Diagram Box  global animation rules

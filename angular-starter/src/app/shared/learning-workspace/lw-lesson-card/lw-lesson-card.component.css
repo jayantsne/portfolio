@@ -41,34 +41,10 @@
 
 /* ── Body ── */
 .lwc-body {
-  padding: 0.85rem 1rem;
+  padding: 1rem 1.15rem 1.1rem;
   font-size: 0.875rem;
   line-height: 1.75;
   color: var(--lw-text, #1e1b4b);
+  /* Override md-content defaults to match card context */
+  --md-font-size: 0.875rem;
 }
-
-/* Markdown-rendered content hygiene */
-.lwc-body :is(p, ul, ol) { margin: 0 0 0.65rem; }
-.lwc-body :is(p, ul, ol):last-child { margin-bottom: 0; }
-.lwc-body li { margin-bottom: 0.2rem; }
-.lwc-body strong { font-weight: 700; color: var(--lw-text, #1e1b4b); }
-.lwc-body code {
-  font-family: 'Fira Code', 'Consolas', monospace;
-  font-size: 0.82em;
-  background: rgba(99,102,241,0.08);
-  padding: 0.12em 0.35em;
-  border-radius: 4px;
-  color: var(--lw-primary, #6366f1);
-}
-
-/* Code blocks inside body */
-.lwc-body :is(pre, .md-code-block) {
-  background: #0f172a;
-  border-radius: 8px;
-  padding: 0.85rem 1rem;
-  overflow-x: auto;
-  font-size: 0.82rem;
-  line-height: 1.6;
-  margin: 0.5rem 0;
-}
-.lwc-body :is(pre, .md-code-block) code { background: none; color: #e2e8f0; padding: 0; }
