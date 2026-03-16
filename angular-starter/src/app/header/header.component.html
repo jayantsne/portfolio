@@ -39,7 +39,7 @@
            ══════════════════════════════════════ -->
       <div class="mobile-trailing">
         <div class="user-avatar-mini"
-             *ngIf="customAuth.isLoggedIn"
+             *ngIf="isSignedIn"
              (click)="openSettings()"
              role="button" tabindex="0"
              aria-label="Open settings">
@@ -101,7 +101,7 @@
           </li>
 
           <!-- Learn ▾ dropdown -->
-          <li class="has-dropdown" *ngIf="isAILearnPage && customAuth.isLoggedIn"
+          <li class="has-dropdown" *ngIf="isAILearnPage && isSignedIn"
               (mouseenter)="openDropdown('learn')"
               (mouseleave)="closeDropdowns()">
             <button class="nav-link nav-link--dropdown"
@@ -113,7 +113,7 @@
             </button>
             <div class="dropdown-panel" [class.is-visible]="activeDropdown === 'learn'" role="menu">
               <div class="dropdown-header">Learn</div>
-              <a class="dropdown-item" routerLink="/home"
+              <!-- <a class="dropdown-item" routerLink="/home"
                  [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"
                  (click)="closeNavbar()" role="menuitem">
                 <span class="di-icon">🤖</span>
@@ -121,7 +121,7 @@
                   <span class="di-label">AI Tutor</span>
                   <span class="di-desc">Chat &amp; learn any concept with AI</span>
                 </span>
-              </a>
+              </a> -->
               <a class="dropdown-item" routerLink="/roadmap" routerLinkActive="active"
                  (click)="closeNavbar()" role="menuitem">
                 <span class="di-icon">🗺️</span>
@@ -151,7 +151,7 @@
           </li>
 
           <!-- Practice ▾ dropdown (Interview + Certifications merged) -->
-          <li class="has-dropdown" *ngIf="customAuth.isLoggedIn"
+          <li class="has-dropdown" *ngIf="isSignedIn"
               (mouseenter)="openDropdown('practice')"
               (mouseleave)="closeDropdowns()">
             <button class="nav-link nav-link--dropdown"
@@ -171,14 +171,14 @@
                   <span class="di-desc">AI-powered mock interviews</span>
                 </span>
               </a>
-              <a class="dropdown-item" routerLink="/questions" routerLinkActive="active"
+              <!-- <a class="dropdown-item" routerLink="/questions" routerLinkActive="active"
                  (click)="closeNavbar()" role="menuitem">
                 <span class="di-icon">📚</span>
                 <span class="di-body">
                   <span class="di-label">Interview Q&amp;A</span>
                   <span class="di-desc">Browse question bank</span>
                 </span>
-              </a>
+              </a> -->
               <div class="dropdown-divider"></div>
               <div class="dropdown-header">Certification Prep</div>
               <a class="dropdown-item" routerLink="/azure-ai-102" routerLinkActive="active"
@@ -253,7 +253,7 @@
 
           <!-- Subscription trial badge -->
           <a class="sub-trial-badge"
-             *ngIf="customAuth.isLoggedIn && subSvc.currentStatus && !customAuth.isAdmin"
+             *ngIf="isSignedIn && subSvc.currentStatus && !customAuth.isAdmin"
              [class.sub-trial-badge--trial]="subSvc.currentStatus?.isTrialActive"
              [class.sub-trial-badge--active]="subSvc.currentStatus?.isSubscriptionActive"
              [class.sub-trial-badge--expired]="subSvc.currentStatus?.subscriptionStatus === 'expired'"
@@ -270,7 +270,7 @@
 
           <!-- User avatar + dropdown -->
           <div class="user-menu has-dropdown"
-               *ngIf="customAuth.isLoggedIn"
+               *ngIf="isSignedIn"
                (mouseenter)="openDropdown('user')"
                (mouseleave)="closeDropdowns()">
             <button class="user-avatar-btn"
@@ -306,7 +306,7 @@
           </div><!-- /user-menu -->
 
           <!-- Sign-in button (logged out) -->
-          <button class="google-signin-nav-btn" *ngIf="!customAuth.isLoggedIn"
+          <button class="google-signin-nav-btn" *ngIf="!isSignedIn"
                   (click)="openAuthModal('login')">🔐 Sign In</button>
 
         </div><!-- /nav-controls -->

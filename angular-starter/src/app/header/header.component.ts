@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, HostListener, ElementRef, NgZone, OnDestroy, ViewChild, AfterViewInit, Input } from '@angular/core';
+import { ApplicationRef, ChangeDetectorRef, Component, HostListener, ElementRef, NgZone, OnDestroy, ViewChild, AfterViewInit, Input } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -33,6 +33,16 @@ declare global {
 })
 export class HeaderComponent implements AfterViewInit, OnDestroy {
   private authSub?: Subscription;
+
+  /**
+   * Local mirror of customAuth.isLoggedIn.
+   * Using a plain boolean property instead of reading the getter directly in
+   * the template makes Angular's dirty-checking reliable in production AOT
+   * builds — Angular does NOT track property accesses on injected services
+   * during its diffing pass, but it DOES track changes to component properties.
+   */
+  isSignedIn = false;
+
   @Input() brandText = 'My Portfolio';
   @Input() brandHref = '#';
   @Input() brandSubText = 'Portfolio';
@@ -54,7 +64,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     public customAuth: CustomAuthService,
     public subSvc: SubscriptionService,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private appRef: ApplicationRef
   ) {
     // Check initial route
     this.checkRoute(this.router.url);
@@ -210,13 +221,22 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     // keep nav link active state in sync with visible sections
     this.setupSectionObserver();
 
-    // Re-render the header whenever auth state changes. Using detectChanges()
-    // (not markForCheck()) because detectChanges() runs CD synchronously and
-    // unconditionally — it does not depend on NgZone scheduling a cycle.
-    // ngZone.run() wraps the call to ensure we're back inside Angular's zone
-    // even if the emission originated from an out-of-zone context.
-    this.authSub = this.customAuth.currentUser$.subscribe(() => {
-      this.ngZone.run(() => this.cdr.detectChanges());
+    // Seed the local flag from current BehaviorSubject value so the template
+    // renders correctly on first paint (before any subscribe fires).
+    this.isSignedIn = this.customAuth.isLoggedIn;
+
+    // Re-render whenever auth state changes.
+    // Strategy: update a tracked local property (isSignedIn), then call
+    // ApplicationRef.tick() — the only API that triggers a FULL application-
+    // wide change-detection pass. This is far more reliable in production AOT
+    // builds than cdr.detectChanges(), which only checks the component subtree
+    // and can silently throw if called mid-cycle.
+    // We defer tick() one microtask (Promise.resolve) so it never runs inside
+    // an already-executing CD cycle, eliminating the
+    // "detectChanges called recursively" error.
+    this.authSub = this.customAuth.currentUser$.subscribe(user => {
+      this.isSignedIn = !!user;
+      Promise.resolve().then(() => this.ngZone.run(() => this.appRef.tick()));
     });
   }
 
@@ -471,8 +491,10 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     if (returnUrl) {
       this.router.navigateByUrl(returnUrl);
     } else {
-      // No guard redirect — send the user to the main content page
-      this.router.navigate(['/questions']);
+      // Stay on /home — avoids navigating to a guard-protected route
+      // (/questions) which could silently redirect back and race with
+      // the header's CD update, making the Sign-In button reappear.
+      this.router.navigate(['/home']);
     }
   }
 
