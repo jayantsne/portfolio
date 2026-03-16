@@ -344,27 +344,27 @@
 
     <div class="login-body">
       <form (submit)="login(); $event.preventDefault()" class="login-form">
-        <!-- Username Field with Floating Label -->
+        <!-- Email Field with Floating Label -->
         <div class="form-group floating-label">
           <div class="input-container">
             <div class="input-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
               </svg>
             </div>
             <input
               id="username"
-              type="text"
+              type="email"
               [(ngModel)]="username"
               name="username"
               placeholder=" "
-              autocomplete="username"
+              autocomplete="email"
               [disabled]="isLoading"
               required
               class="futuristic-input"
             />
-            <label for="username" class="floating-label-text">Username</label>
+            <label for="username" class="floating-label-text">Email</label>
             <div class="input-border"></div>
           </div>
         </div>

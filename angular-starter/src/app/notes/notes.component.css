@@ -198,20 +198,20 @@
   --n-dim:      rgba(99,102,241,0.08);
 }
 
-/* ─── Shell: 30/70 split grid ─────────────────────────────────── */
+/* ─── Shell: fixed-left + fluid-main split grid ────────────────── */
 .notes-shell {
   display: grid;
-  grid-template-columns: 30% 70%;
+  grid-template-columns: 280px 1fr;
   grid-template-rows: 100%;
   flex: 1;
-  height: calc(100vh - 61px);
+  height: calc(100vh - var(--header-h, 72px));
   overflow: hidden;
   background: var(--n-bg);
 }
 
 /* 3-column layout when AI panel is active */
 .notes-shell.has-ai {
-  grid-template-columns: 280px 1fr 260px;
+  grid-template-columns: 280px 1fr 300px;
 }
 
 /* ═══ DESKTOP AI ACTIONS PANEL ══════════════════════════════════ */
@@ -253,17 +253,17 @@
 }
 
 .nap-btns {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
   padding: 12px 12px 0;
 }
 
 .nap-btn {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 10px;
   border-radius: 10px;
   border: 1.5px solid var(--n-border);
   background: var(--n-surface);
@@ -271,6 +271,7 @@
   transition: all 0.18s;
   text-align: left;
   width: 100%;
+  min-width: 0;
 }
 .nap-btn:hover:not(:disabled) {
   border-color: var(--n-purple);
@@ -279,9 +280,9 @@
 }
 .nap-btn:disabled { opacity: 0.5; cursor: wait; }
 .nap-btn-icon { font-size: 1.1rem; flex-shrink: 0; }
-.nap-btn-text { display: flex; flex-direction: column; gap: 1px; }
-.nap-btn-text strong { font-size: 0.82rem; font-weight: 700; color: var(--n-text); }
-.nap-btn-text span { font-size: 0.7rem; color: var(--n-muted); }
+.nap-btn-text { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.nap-btn-text strong { font-size: 0.78rem; font-weight: 700; color: var(--n-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nap-btn-text span { font-size: 0.67rem; color: var(--n-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 .nap-loading-state {
   display: flex;
@@ -699,10 +700,11 @@
 .notes-qitem-bottom { display: flex; flex-wrap: wrap; gap: 4px; }
 .notes-tag {
   font-size: 0.68rem;
-  color: var(--n-muted);
-  background: #f1f5f9;
-  border-radius: 4px;
-  padding: 1px 6px;
+  color: #5b21b6;
+  background: #ede9fe;
+  border-radius: 6px;
+  padding: 2px 7px;
+  font-weight: 500;
 }
 .notes-qitem-date { font-size: 0.68rem; color: var(--n-muted); }
 .notes-qitem-del {
@@ -836,6 +838,18 @@
 }
 .notes-welcome-cta:hover { opacity: 0.9; transform: translateY(-1px); }
 
+/* ─── Responsive — Tablet (≤ 1024px) ─────────────────────────── */
+@media (max-width: 1024px) {
+  /* Hide right AI panel on tablets — keep 2-column left+content */
+  .notes-ai-panel {
+    display: none;
+  }
+  .notes-shell.has-ai {
+    grid-template-columns: 280px 1fr;
+  }
+  /* nap-btns back to single-col on tablets since panel is hidden */
+}
+
 /* ─── Responsive — Mobile (≤ 768px) ──────────────────────────── */
 @media (max-width: 768px) {
 
@@ -944,13 +958,12 @@
   min-width: 0;
 }
 
-.reader-content { padding: 1.75rem 2rem; max-width: 860px; }
+.reader-content { padding: 1.75rem 2rem; max-width: 860px; margin: 0 auto; }
 
 .reader-header {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.75rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid #e2e8f0;
   margin-bottom: 1.5rem;
@@ -970,8 +983,8 @@
 .reader-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  white-space: nowrap;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 .reader-date {
   font-size: 0.8rem;
@@ -1108,11 +1121,14 @@
   color: #7c3aed;
 }
 .md-content pre {
-  background: #1e293b;
+  background: #1e1e2e;
   border-radius: 10px;
-  padding: 16px 18px;
+  padding: 1rem 1.25rem;
   overflow-x: auto;
   margin: 1em 0;
+  line-height: 1.6;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.18);
+  border: 1px solid rgba(255,255,255,0.06);
 }
 .md-content pre code {
   background: transparent;
