@@ -1,4 +1,4 @@
-import { ChangeDetectorRef, Component, HostListener, ElementRef, OnDestroy, ViewChild, AfterViewInit, Input } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, ElementRef, NgZone, OnDestroy, ViewChild, AfterViewInit, Input } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs/operators';
@@ -53,7 +53,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     private apiService: ApiService,
     public customAuth: CustomAuthService,
     public subSvc: SubscriptionService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) {
     // Check initial route
     this.checkRoute(this.router.url);
@@ -209,10 +210,13 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     // keep nav link active state in sync with visible sections
     this.setupSectionObserver();
 
-    // Re-render the header whenever auth state changes. This is the safety net
-    // that guarantees Sign In ↔ avatar swap even if NgZone misses the emission.
+    // Re-render the header whenever auth state changes. Using detectChanges()
+    // (not markForCheck()) because detectChanges() runs CD synchronously and
+    // unconditionally — it does not depend on NgZone scheduling a cycle.
+    // ngZone.run() wraps the call to ensure we're back inside Angular's zone
+    // even if the emission originated from an out-of-zone context.
     this.authSub = this.customAuth.currentUser$.subscribe(() => {
-      this.cdr.markForCheck();
+      this.ngZone.run(() => this.cdr.detectChanges());
     });
   }
 

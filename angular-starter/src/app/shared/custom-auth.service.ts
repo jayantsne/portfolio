@@ -1,8 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
 export interface AuthUser {
@@ -29,11 +29,14 @@ export class CustomAuthService {
   private _user = new BehaviorSubject<AuthUser | null>(this.loadFromStorage());
   /** Emits the current user or null when logged out. */
   currentUser$: Observable<AuthUser | null> = this._user.asObservable();
-  isLoggedIn$:  Observable<boolean>         = new Observable(obs =>
-    this._user.subscribe(u => obs.next(!!u))
-  );
+  /** Emits true when logged in, false when logged out. No inner subscription leak. */
+  isLoggedIn$:  Observable<boolean>         = this._user.pipe(map(u => !!u));
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http:   HttpClient,
+    private router: Router,
+    private ngZone: NgZone
+  ) {}
 
   // ─── Public getters ─────────────────────────────────────────────────────
 
@@ -73,7 +76,8 @@ export class CustomAuthService {
         { headers: this.getAuthHeaders() }).subscribe();
     }
     localStorage.removeItem(TOKEN_KEY);
-    this._user.next(null);
+    // Always emit inside NgZone so Angular's CD is guaranteed to run
+    this.ngZone.run(() => this._user.next(null));
     this.router.navigate(['/']);
   }
 
@@ -88,7 +92,11 @@ export class CustomAuthService {
       token:    r.token
     };
     localStorage.setItem(TOKEN_KEY, JSON.stringify(user));
-    this._user.next(user);
+    // Wrap in ngZone.run() so the BehaviorSubject emission ALWAYS happens
+    // inside Angular's zone — even if the HTTP response callback ran outside
+    // (e.g. AOT/production builds, service-worker proxies, fetch-based HttpClient).
+    // Without this, markForCheck/detectChanges on the header never gets a CD cycle.
+    this.ngZone.run(() => this._user.next(user));
   }
 
   private loadFromStorage(): AuthUser | null {
