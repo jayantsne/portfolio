@@ -57,9 +57,13 @@ export class CustomAuthService {
   // ─── Auth methods ────────────────────────────────────────────────────────
 
   login(email: string, password: string): Observable<AuthResponse> {
+    console.log('[Auth] Sending login request to', `${this.apiBase}/auth/login`);
     return this.http
       .post<AuthResponse>(`${this.apiBase}/auth/login`, { email, password })
-      .pipe(tap(r => this.persist(r)));
+      .pipe(tap(r => {
+        console.log('[Auth] Login response received, userId:', r?.userId, 'token present:', !!r?.token);
+        this.persist(r);
+      }));
   }
 
   signup(email: string, password: string, username?: string): Observable<AuthResponse> {
@@ -70,6 +74,7 @@ export class CustomAuthService {
 
   logout(): void {
     const userId = this._user.value?.userId;
+    console.log('[Auth] logout() called, userId:', userId, '| caller stack:', new Error().stack?.split('\n')[2]?.trim());
     if (userId) {
       // Fire-and-forget — no need to block UI
       this.http.post(`${this.apiBase}/auth/logout`, { userId },
@@ -92,11 +97,15 @@ export class CustomAuthService {
       token:    r.token
     };
     localStorage.setItem(TOKEN_KEY, JSON.stringify(user));
+    console.log('[Auth] User persisted to localStorage, emitting to BehaviorSubject');
     // Wrap in ngZone.run() so the BehaviorSubject emission ALWAYS happens
     // inside Angular's zone — even if the HTTP response callback ran outside
     // (e.g. AOT/production builds, service-worker proxies, fetch-based HttpClient).
     // Without this, markForCheck/detectChanges on the header never gets a CD cycle.
-    this.ngZone.run(() => this._user.next(user));
+    this.ngZone.run(() => {
+      this._user.next(user);
+      console.log('[Auth] BehaviorSubject updated, isLoggedIn now:', this.isLoggedIn);
+    });
   }
 
   private loadFromStorage(): AuthUser | null {

@@ -90,12 +90,17 @@ export class AuthModalComponent implements OnInit, OnDestroy {
       next: () => {
         this.isLoading  = false;
         this.successMsg = 'Welcome back!';
+        console.log('[AuthModal] Login API success. Starting 800ms timer before close+emit.');
         // Run inside NgZone so Angular change detection fires after the delay,
         // ensuring the header re-renders and reflects the authenticated state.
-        setTimeout(() => this.ngZone.run(() => { this.close(); this.loggedIn.emit(); }), 800);
+        setTimeout(() => this.ngZone.run(() => {
+          console.log('[AuthModal] Timer fired — closing modal and emitting loggedIn.');
+          this.close(); this.loggedIn.emit();
+        }), 800);
       },
       error: err => {
         this.isLoading = false;
+        console.error('[AuthModal] Login API error:', err?.status, err?.error?.message);
         this.errorMsg  = err?.error?.message ?? 'Invalid email or password.';
       }
     });

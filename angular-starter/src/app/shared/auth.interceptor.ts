@@ -41,6 +41,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(authReq).pipe(
       catchError((err: HttpErrorResponse) => {
+        console.warn(`[AuthInterceptor] ${err.status} on ${req.url} | isAuth:${isAuthEndpoint} | isAux:${isAuxiliaryEndpoint} | hasToken:${!!token}`);
         if (err.status === 401 && !isAuthEndpoint && !isAuxiliaryEndpoint && token) {
           // Token WAS sent but was rejected (expired/invalid) — clear session.
           // If no token was sent (unauthenticated request to a protected endpoint),

@@ -236,6 +236,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     // "detectChanges called recursively" error.
     this.authSub = this.customAuth.currentUser$.subscribe(user => {
       this.isSignedIn = !!user;
+      console.log('[Header] currentUser$ fired, isSignedIn:', this.isSignedIn, 'user:', user?.username ?? null);
       Promise.resolve().then(() => this.ngZone.run(() => this.appRef.tick()));
     });
   }
