@@ -25,7 +25,7 @@
 
 /*  CSS layout tokens — matches Mentor's 3-column workspace architecture  */
 .ip-shell {
-  --ip-nav-w: 200px;
+  --ip-nav-w: 240px;
   --ip-tools-w: 244px;
   display: grid;
   grid-template-columns: var(--ip-nav-w) 1fr var(--ip-tools-w);
@@ -37,7 +37,7 @@
 /* ≤ 1200px — maintain standard widths */
 @media (max-width: 1200px) {
   .ip-shell { 
-    --ip-nav-w: 200px;
+    --ip-nav-w: 224px;
     --ip-tools-w: 220px;
   }
 }
@@ -45,7 +45,7 @@
 /* ≤ 1000px — compress sidebar and tools panel */
 @media (max-width: 1000px) {
   .ip-shell { 
-    --ip-nav-w: 180px;
+    --ip-nav-w: 200px;
     --ip-tools-w: 200px;
   }
 }
@@ -232,15 +232,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 12px 10px 0;
+  margin: 10px 10px 0;
   padding: 0 10px;
   background: var(--bg);
-  border: 1.5px solid var(--border);
+  border: 1.5px solid #d1d8ea;
   border-radius: 11px;
   transition: border-color 0.15s;
   flex-shrink: 0;
 }
-.ip-search-box:focus-within { border-color: rgba(99,102,241,0.5); background: #fff; }
+.ip-search-box:focus-within { border-color: rgba(99,102,241,0.5); background: #fff; box-shadow: 0 0 0 3px rgba(99,102,241,0.07); }
 .ip-search-ico { color: var(--muted); flex-shrink: 0; }
 .ip-search-input {
   flex: 1;
@@ -269,22 +269,22 @@
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  padding: 10px 10px 8px;
+  padding: 8px 10px 6px;
   flex-shrink: 0;
 }
 .ip-pill {
-  padding: 4px 11px;
+  padding: 3px 10px;
   border-radius: 99px;
-  border: 1.5px solid var(--border);
+  border: 1.5px solid #c8d0e4;   /* darker than var(--border) — visually clear on white */
   background: transparent;
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.73rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
   white-space: nowrap;
 }
-.ip-pill:hover { border-color: rgba(99,102,241,0.4); color: var(--purple); }
+.ip-pill:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-dim); }
 .ip-pill-on {
   background: var(--purple) !important;
   border-color: var(--purple) !important;
@@ -339,13 +339,14 @@
   padding: 10px 10px 10px 8px;
   border-radius: 10px;
   cursor: pointer;
-  transition: background 0.15s;
+  transition: background 0.15s, box-shadow 0.15s;
   border: 1.5px solid transparent;
 }
-.ip-qitem:hover { background: var(--purple-dim); }
+.ip-qitem:hover { background: var(--purple-dim); box-shadow: 0 1px 4px rgba(99,102,241,0.08); }
 .ip-qitem-active {
   background: var(--purple-dim) !important;
-  border-color: rgba(99,102,241,0.25) !important;
+  border-color: rgba(99,102,241,0.28) !important;
+  box-shadow: 0 1px 6px rgba(99,102,241,0.1) !important;
 }
 .ip-qitem-left {
   display: flex;
@@ -1094,49 +1095,51 @@
 
 .ip-roadmap-intro {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
-  padding: 12px 14px;
+  padding: 10px 12px;
   background: var(--purple-dim);
   border: 1.5px solid rgba(99,102,241,0.18);
   border-radius: var(--radius);
   color: var(--purple);
 }
-.ip-roadmap-intro svg { flex-shrink: 0; margin-top: 2px; }
-.ip-roadmap-intro strong { display: block; font-size: 0.88rem; color: var(--text); margin-bottom: 2px; }
-.ip-roadmap-intro span  { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+.ip-roadmap-intro svg { flex-shrink: 0; width: 18px; height: 18px; }
+.ip-roadmap-intro strong { display: block; font-size: 0.84rem; color: var(--text); margin-bottom: 1px; }
+.ip-roadmap-intro span  { font-size: 0.73rem; color: var(--muted); line-height: 1.35; }
 
 /* ── Stack selection grid ───────────────────────────────────── */
 .ip-stack-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   gap: 8px;
 }
 .ip-stack-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 14px 8px 12px;
+  gap: 5px;
+  padding: 14px 6px 11px;
   border: 1.5px solid var(--border);
   border-radius: var(--radius);
   background: var(--surface);
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s, transform 0.12s;
+  transition: border-color 0.15s, background 0.15s, box-shadow 0.15s, transform 0.12s;
 }
 .ip-stack-btn:hover {
   border-color: var(--purple);
   background: var(--purple-dim);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(99,102,241,0.12);
 }
 .ip-stack-btn:active { transform: scale(0.97); }
-.ip-stack-icon { font-size: 1.9rem; line-height: 1; }
+.ip-stack-icon { font-size: 2rem; line-height: 1; }
 .ip-stack-name {
   font-size: 0.76rem;
   font-weight: 700;
   color: var(--text);
   text-align: center;
-  line-height: 1.2;
+  line-height: 1.25;
+  word-break: break-word;
 }
 .ip-stack-resume {
   font-size: 0.62rem;
