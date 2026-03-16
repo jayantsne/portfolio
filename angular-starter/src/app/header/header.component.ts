@@ -448,11 +448,17 @@ export class HeaderComponent implements AfterViewInit {
 
   /** Called when auth-modal emits loggedIn */
   onLoggedIn(): void {
-    // Navigate to the page the user was trying to reach before the login wall.
-    // Guards encode the intended path in the ?returnUrl= query param.
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    // Read query params from the live router state — more reliable than
+    // ActivatedRoute.snapshot in a non-routed component like the header.
+    const returnUrl =
+      this.router.routerState.snapshot.root.queryParamMap.get('returnUrl') ??
+      this.route.snapshot.queryParamMap.get('returnUrl');
+
     if (returnUrl) {
       this.router.navigateByUrl(returnUrl);
+    } else {
+      // No guard redirect — send the user to the main content page
+      this.router.navigate(['/questions']);
     }
   }
 
