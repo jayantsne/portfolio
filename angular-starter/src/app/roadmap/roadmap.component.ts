@@ -87,6 +87,19 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   goals         = GOALS;
   commitments   = COMMITMENTS;
 
+  /** Labels used in the labeled step stepper */
+  readonly wizardSteps = ['Domain', 'Skill Level', 'Goal', 'Commitment', 'Preview'];
+
+  // ── Generation stage animation ──────────────────────────────────────────
+  generationStage = 0;
+  readonly generationStageList = [
+    { icon: '🔍', label: 'Analyzing your domain',        sub: 'Identifying core concepts and dependencies' },
+    { icon: '🏗️', label: 'Designing learning structure',  sub: 'Ordering topics for optimal comprehension' },
+    { icon: '🔢', label: 'Generating topic sequence',     sub: 'Crafting descriptions and time estimates' },
+    { icon: '📚', label: 'Preparing learning resources',  sub: 'Finalizing your personalized roadmap' },
+  ];
+  private _stageTimer: any;
+
   // ── View state ──────────────────────────────────────────────────────────
   view: ViewMode = 'auth-gate';
 
@@ -411,7 +424,7 @@ export class RoadmapComponent implements OnInit, OnDestroy {
     );
   }
 
-  ngOnDestroy(): void { this.subs.unsubscribe(); this.pgSub?.unsubscribe(); this.lessonSub?.unsubscribe(); clearTimeout(this.toastTimer); }
+  ngOnDestroy(): void { this.subs.unsubscribe(); this.pgSub?.unsubscribe(); this.lessonSub?.unsubscribe(); clearTimeout(this.toastTimer); clearInterval(this._stageTimer); }
 
   // ─── Navigation ─────────────────────────────────────────────────────────
 
@@ -488,6 +501,11 @@ export class RoadmapComponent implements OnInit, OnDestroy {
     this.isGenerating  = true;
     this.generateError = false;
     this.wizardStep    = 5;   // preview step (loading state)
+    this.generationStage = 0;
+    clearInterval(this._stageTimer);
+    this._stageTimer = setInterval(() => {
+      if (this.generationStage < 3) { this.generationStage++; this.cdr.markForCheck(); }
+    }, 2400);
 
     let rawText = '';
     this.rmSvc.generateRoadmap(this.wizard).subscribe({
@@ -495,12 +513,16 @@ export class RoadmapComponent implements OnInit, OnDestroy {
         if (res?.explanation) rawText = res.explanation;
       },
       error: () => {
+        clearInterval(this._stageTimer);
+        this.generationStage = 3;
         this.isGenerating  = false;
         this.generateError = true;
         this.generatedNodes = this.rmSvc.parseNodes('');   // fallback nodes
         this.cdr.markForCheck();
       },
       complete: () => {
+        clearInterval(this._stageTimer);
+        this.generationStage = 3;
         this.isGenerating   = false;
         this.generatedNodes = this.rmSvc.parseNodes(rawText);
         this.cdr.markForCheck();
@@ -780,4 +802,44 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   get wizardGoalLabel():     string { return GOALS.find(g => g.value === this.wizard.goal)?.label ?? ''; }
   get wizardCommitLabel():   string { return COMMITMENTS.find(c => c.value === this.wizard.commitment)?.label ?? ''; }
   get wizardCommitHours():   string { return COMMITMENTS.find(c => c.value === this.wizard.commitment)?.hours ?? ''; }
+
+  // ── Dashboard stats ──────────────────────────────────────────────────────
+  get statsTotalRoadmaps():   number { return this.savedRoadmaps.length; }
+  get statsActiveRoadmaps():  number {
+    return this.savedRoadmaps.filter(r => {
+      const p = this.getProgress(r);
+      return p.percent > 0 && p.percent < 100;
+    }).length;
+  }
+  get statsCompletedTopics(): number {
+    return this.savedRoadmaps.reduce((sum, r) => sum + this.getProgress(r).completedCount, 0);
+  }
+  get statsBestStreak(): number {
+    return this.savedRoadmaps.reduce((max, r) => Math.max(max, r.streakDays), 0);
+  }
+
+  /** Returns the next unlocked/active topic title for a roadmap card */
+  getNextTopic(roadmap: Roadmap): string | null {
+    const active = roadmap.nodes.find(n => n.status === 'active');
+    return active?.topic ?? null;
+  }
+
+  /** Assigns a display type to a preview topic based on its position in the sequence */
+  getTopicType(index: number): 'concept' | 'hands-on' | 'project' | 'review' {
+    const cycle = index % 4;
+    if (cycle === 0) return 'concept';
+    if (cycle === 1) return 'hands-on';
+    if (cycle === 2) return 'project';
+    return 'review';
+  }
+
+  getTopicTypeLabel(index: number): string {
+    const map: Record<string, string> = {
+      'concept':  '📖 Concept',
+      'hands-on': '🛠️ Hands-on',
+      'project':  '🔨 Project',
+      'review':   '✅ Review',
+    };
+    return map[this.getTopicType(index)];
+  }
 }

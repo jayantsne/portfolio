@@ -2131,3 +2131,415 @@
   .rm-lc-hero { flex-wrap: wrap; }
   .rm-lc-hero-actions { width: 100%; justify-content: flex-end; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   DASHBOARD STATS BAR
+══════════════════════════════════════════════════════════════ */
+.rm-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  padding: 1.25rem 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.rm-stat-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--rm-surface);
+  border: 1px solid var(--rm-border);
+  border-radius: 16px;
+  padding: 0.875rem 1.25rem;
+  box-shadow: var(--rm-shadow-sm);
+  min-width: 130px;
+  transition: transform 0.18s, box-shadow 0.18s;
+}
+.rm-stat-pill:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--rm-shadow-md);
+}
+.rm-stat-pill-icon { font-size: 1.4rem; flex-shrink: 0; }
+.rm-stat-pill-body { display: flex; flex-direction: column; }
+.rm-stat-pill-num  { font-size: 1.25rem; font-weight: 900; color: var(--rm-text); line-height: 1; }
+.rm-stat-pill-lbl  { font-size: 0.72rem; color: var(--rm-text-muted); font-weight: 600; margin-top: 0.1rem; text-transform: uppercase; letter-spacing: 0.04em; }
+
+.rm-stat-pill--indigo { border-color: #c7d2fe; background: linear-gradient(135deg, #eef2ff, #ffffff); }
+.rm-stat-pill--indigo .rm-stat-pill-num { color: var(--rm-purple); }
+
+.rm-stat-pill--green  { border-color: #a7f3d0; background: linear-gradient(135deg, #ecfdf5, #ffffff); }
+.rm-stat-pill--green  .rm-stat-pill-num { color: var(--rm-green); }
+
+.rm-stat-pill--orange { border-color: #fed7aa; background: linear-gradient(135deg, #fff7ed, #ffffff); }
+.rm-stat-pill--orange .rm-stat-pill-num { color: #ea580c; }
+
+/* ══════════════════════════════════════════════════════════════
+   ROADMAP CARD — improvements
+══════════════════════════════════════════════════════════════ */
+/* Hover lift + colour accent */
+.rm-card:hover {
+  transform: translateY(-6px);
+  box-shadow: var(--rm-shadow-lg);
+  border-color: #a5b4fc;
+}
+
+/* Next topic chip */
+.rm-card-next-topic {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  padding: 0.45rem 0.8rem;
+  font-size: 0.75rem;
+}
+.rm-next-topic-label {
+  color: #16a34a;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.rm-next-topic-title {
+  color: #166534;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Enhanced new-roadmap card */
+.rm-card-new {
+  border: 2px dashed #c7d2fe;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  min-height: 200px;
+  background: linear-gradient(145deg, #f8f7ff, #f5f3ff);
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  text-align: center;
+  padding: 1.75rem 1rem;
+}
+.rm-card-new:hover {
+  border-color: #818cf8;
+  background: linear-gradient(145deg, #eef2ff, #ede9fe);
+  transform: translateY(-6px);
+  box-shadow: var(--rm-shadow-md);
+}
+.rm-card-new-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+  transition: transform 0.22s, box-shadow 0.22s;
+}
+.rm-card-new:hover .rm-card-new-icon {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+}
+.rm-card-new-plus  { font-size: 1.75rem; color: white; line-height: 1; }
+.rm-card-new-title { font-size: 0.95rem; font-weight: 800; color: var(--rm-text); }
+.rm-card-new-sub   { font-size: 0.75rem; color: var(--rm-text-sub); }
+
+/* ══════════════════════════════════════════════════════════════
+   WIZARD — LABELED STEPPER
+══════════════════════════════════════════════════════════════ */
+.rm-wizard-stepper {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  width: 100%;
+  padding: 0.25rem 0;
+}
+
+.rm-step-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+  position: relative;
+}
+
+.rm-step-dot {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  color: #9ca3af;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  flex-shrink: 0;
+}
+.rm-step-item.rm-step-done .rm-step-dot {
+  background: var(--rm-green);
+  border-color: var(--rm-green);
+  color: white;
+  box-shadow: 0 2px 8px rgba(16,185,129,0.3);
+}
+.rm-step-item.rm-step-active .rm-step-dot {
+  background: var(--rm-purple);
+  border-color: var(--rm-purple);
+  color: white;
+  box-shadow: 0 2px 12px rgba(99,102,241,0.4);
+  transform: scale(1.12);
+}
+.rm-step-check { font-size: 0.9rem; font-weight: 900; }
+
+.rm-step-label {
+  font-size: 0.63rem;
+  font-weight: 600;
+  color: #9ca3af;
+  text-align: center;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+.rm-step-item.rm-step-done   .rm-step-label { color: var(--rm-green); }
+.rm-step-item.rm-step-active .rm-step-label { color: var(--rm-purple); font-weight: 800; }
+
+.rm-step-connector {
+  flex: 1;
+  height: 2px;
+  background: #e5e7eb;
+  margin: 15px 0 auto;  /* aligns to center of 32px dot */
+  transition: background 0.3s;
+  min-width: 14px;
+}
+.rm-step-connector-done { background: var(--rm-green); }
+
+/* ══════════════════════════════════════════════════════════════
+   WIZARD — DOMAIN CARDS (Step 1)
+══════════════════════════════════════════════════════════════ */
+.rm-domain-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(152px, 1fr));
+  gap: 0.875rem;
+}
+
+.rm-domain-card {
+  background: var(--rm-surface);
+  border: 2px solid var(--rm-border);
+  border-radius: 16px;
+  padding: 1.1rem 0.85rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  position: relative;
+  transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+  color: var(--rm-text);
+  box-shadow: var(--rm-shadow-sm);
+  text-align: left;
+}
+.rm-domain-card:hover {
+  border-color: #a5b4fc;
+  background: #f5f3ff;
+  transform: translateY(-3px);
+  box-shadow: var(--rm-shadow-md);
+}
+.rm-domain-card.selected {
+  border-color: var(--rm-purple);
+  background: #eef2ff;
+  box-shadow: 0 4px 18px rgba(99,102,241,0.18);
+}
+.rm-domain-icon  { font-size: 1.75rem; margin-bottom: 0.1rem; }
+.rm-domain-label { font-size: 0.88rem; font-weight: 800; color: var(--rm-text); line-height: 1.2; }
+.rm-domain-desc  { font-size: 0.72rem; color: #6b7280; line-height: 1.35; }
+.rm-domain-footer{
+  margin-top: auto;
+  padding-top: 0.5rem;
+  width: 100%;
+  border-top: 1px solid var(--rm-border);
+}
+.rm-domain-topics {
+  font-size: 0.68rem;
+  color: var(--rm-text-sub);
+  font-weight: 700;
+}
+.rm-domain-card.selected .rm-domain-footer { border-top-color: #c7d2fe; }
+.rm-domain-card.selected .rm-domain-topics { color: var(--rm-purple); }
+
+/* ══════════════════════════════════════════════════════════════
+   WIZARD — SKILL LEVEL / GOAL / COMMITMENT ROWS
+══════════════════════════════════════════════════════════════ */
+.rm-level-knowledge {
+  font-size: 0.7rem;
+  color: var(--rm-text-sub);
+  margin-top: 0.15rem;
+  font-style: italic;
+}
+.rm-option-row.selected .rm-level-knowledge { color: var(--rm-purple); }
+
+/* ══════════════════════════════════════════════════════════════
+   GENERATION — STAGED PROGRESS
+══════════════════════════════════════════════════════════════ */
+.rm-gen-stages {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  width: 100%;
+  max-width: 360px;
+  background: var(--rm-surface2);
+  border: 1px solid var(--rm-border);
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.rm-gen-stage {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1.1rem;
+  border-bottom: 1px solid var(--rm-border);
+  opacity: 0.35;
+  transition: opacity 0.4s, background 0.3s;
+}
+.rm-gen-stage:last-child { border-bottom: none; }
+.rm-gen-stage.rm-gen-stage-done   { opacity: 1; background: #f0fdf4; }
+.rm-gen-stage.rm-gen-stage-active { opacity: 1; background: #eef2ff; }
+
+.rm-gen-stage-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rm-gen-stage-done-check {
+  width: 22px;
+  height: 22px;
+  background: var(--rm-green);
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 900;
+}
+
+.rm-gen-stage-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2.5px solid #c7d2fe;
+  border-top-color: var(--rm-purple);
+  border-radius: 50%;
+  animation: rm-spin 0.8s linear infinite;
+  display: inline-block;
+}
+@keyframes rm-spin { to { transform: rotate(360deg); } }
+
+.rm-gen-stage-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #d1d5db;
+  margin: auto;
+  display: block;
+}
+
+.rm-gen-stage-body { display: flex; flex-direction: column; gap: 0.05rem; }
+.rm-gen-stage-label { font-size: 0.82rem; font-weight: 700; color: var(--rm-text); }
+.rm-gen-stage-sub   { font-size: 0.7rem; color: #9ca3af; }
+.rm-gen-stage.rm-gen-stage-done .rm-gen-stage-label { color: var(--rm-green-dark); }
+.rm-gen-stage.rm-gen-stage-active .rm-gen-stage-label { color: var(--rm-purple); }
+
+/* ══════════════════════════════════════════════════════════════
+   PREVIEW — METADATA CARD
+══════════════════════════════════════════════════════════════ */
+.rm-preview-meta-card {
+  background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+  border: 1px solid #c7d2fe;
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+.rm-preview-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.rm-preview-meta-label { font-size: 0.78rem; color: var(--rm-text-sub); font-weight: 600; }
+.rm-preview-meta-val   { font-size: 0.8rem; color: var(--rm-text); font-weight: 800; text-align: right; }
+
+/* ══════════════════════════════════════════════════════════════
+   PREVIEW — NODE LIST improvements
+══════════════════════════════════════════════════════════════ */
+.rm-preview-node-num {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  border: 1.5px solid #e5e7eb;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #6b7280;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.rm-preview-node-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+/* Topic type tags */
+.rm-topic-type-tag {
+  font-size: 0.64rem;
+  font-weight: 700;
+  border-radius: 20px;
+  padding: 0.1rem 0.55rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.rm-topic-type-concept  { background: #dbeafe; color: #1d4ed8; border: 1px solid #bfdbfe; }
+.rm-topic-type-hands-on { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+.rm-topic-type-project  { background: #ede9fe; color: #5b21b6; border: 1px solid #c4b5fd; }
+.rm-topic-type-review   { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+
+/* ══════════════════════════════════════════════════════════════
+   RESPONSIVE — Dashboard
+══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .rm-stats-bar { padding: 1rem 1.25rem; gap: 0.5rem; }
+  .rm-stat-pill { min-width: unset; padding: 0.65rem 0.9rem; gap: 0.5rem; flex: 1; }
+  .rm-stat-pill-num { font-size: 1.05rem; }
+  .rm-cards-grid { padding: 1rem; grid-template-columns: 1fr; }
+  .rm-domain-grid { grid-template-columns: repeat(2, 1fr); }
+  .rm-wizard-stepper { overflow-x: auto; padding-bottom: 0.25rem; }
+  .rm-step-label { display: none; }
+  .rm-step-connector { min-width: 20px; }
+}
+@media (max-width: 480px) {
+  .rm-domain-grid { grid-template-columns: 1fr 1fr; }
+  .rm-preview-meta-row { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+  .rm-preview-meta-val { text-align: left; }
+}

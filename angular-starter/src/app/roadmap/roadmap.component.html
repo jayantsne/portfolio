@@ -50,6 +50,38 @@
       </div>
     </div>
 
+    <!-- Stats header -->
+    <div *ngIf="savedRoadmaps.length > 0" class="rm-stats-bar" @fadeIn>
+      <div class="rm-stat-pill">
+        <span class="rm-stat-pill-icon">🗺️</span>
+        <div class="rm-stat-pill-body">
+          <span class="rm-stat-pill-num">{{ statsTotalRoadmaps }}</span>
+          <span class="rm-stat-pill-lbl">Roadmaps</span>
+        </div>
+      </div>
+      <div class="rm-stat-pill rm-stat-pill--indigo">
+        <span class="rm-stat-pill-icon">▶️</span>
+        <div class="rm-stat-pill-body">
+          <span class="rm-stat-pill-num">{{ statsActiveRoadmaps }}</span>
+          <span class="rm-stat-pill-lbl">In Progress</span>
+        </div>
+      </div>
+      <div class="rm-stat-pill rm-stat-pill--green">
+        <span class="rm-stat-pill-icon">✅</span>
+        <div class="rm-stat-pill-body">
+          <span class="rm-stat-pill-num">{{ statsCompletedTopics }}</span>
+          <span class="rm-stat-pill-lbl">Topics Done</span>
+        </div>
+      </div>
+      <div class="rm-stat-pill rm-stat-pill--orange" *ngIf="statsBestStreak > 0">
+        <span class="rm-stat-pill-icon">🔥</span>
+        <div class="rm-stat-pill-body">
+          <span class="rm-stat-pill-num">{{ statsBestStreak }}</span>
+          <span class="rm-stat-pill-lbl">Day Streak</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Empty state -->
     <div *ngIf="savedRoadmaps.length === 0" class="rm-empty" @fadeIn>
       <div class="rm-empty-icon">🗺️</div>
@@ -126,6 +158,12 @@
             </div>
           </div>
 
+          <!-- Next topic chip -->
+          <div *ngIf="getNextTopic(roadmap) as nextTopic" class="rm-card-next-topic">
+            <span class="rm-next-topic-label">▶ Next:</span>
+            <span class="rm-next-topic-title">{{ nextTopic }}</span>
+          </div>
+
           <button class="rm-btn rm-btn-primary rm-btn-full rm-btn-continue"
                   (click)="openRoadmap(roadmap)">
             {{ getProgress(roadmap).percent === 0 ? '🚀 Start Learning' :
@@ -137,8 +175,11 @@
 
       <!-- Add new card -->
       <button class="rm-card rm-card-new" (click)="openCreateWizard()" @fadeUp>
-        <span class="rm-card-new-plus">＋</span>
-        <span>New Roadmap</span>
+        <div class="rm-card-new-icon">
+          <span class="rm-card-new-plus">＋</span>
+        </div>
+        <span class="rm-card-new-title">Create New Roadmap</span>
+        <span class="rm-card-new-sub">Personalized AI learning path</span>
       </button>
     </div>
   </div>
@@ -151,10 +192,20 @@
     <!-- Header -->
     <div class="rm-create-header">
       <button class="rm-back-btn" (click)="wizardBack()">← Back</button>
-      <div class="rm-wizard-progress">
-        <div *ngFor="let s of [1,2,3,4,5]" class="rm-wizard-dot"
-             [class.active]="s === wizardStep"
-             [class.done]="s < wizardStep"></div>
+      <div class="rm-wizard-stepper">
+        <ng-container *ngFor="let step of wizardSteps; let i = index">
+          <div class="rm-step-item"
+               [class.rm-step-done]="i + 1 < wizardStep"
+               [class.rm-step-active]="i + 1 === wizardStep">
+            <div class="rm-step-dot">
+              <span *ngIf="i + 1 < wizardStep" class="rm-step-check">✓</span>
+              <span *ngIf="i + 1 >= wizardStep">{{ i + 1 }}</span>
+            </div>
+            <span class="rm-step-label">{{ step }}</span>
+          </div>
+          <div *ngIf="i < wizardSteps.length - 1" class="rm-step-connector"
+               [class.rm-step-connector-done]="i + 1 < wizardStep"></div>
+        </ng-container>
       </div>
       <h2 class="rm-create-title">
         {{ wizardStep === 1 ? '🤖 Choose AI Domain'   :
@@ -167,12 +218,16 @@
 
     <!-- Step 1: Language -->
     <div *ngIf="wizardStep === 1" class="rm-wizard-step" @fadeUp>
-      <div class="rm-option-grid">
+      <div class="rm-domain-grid">
         <button *ngFor="let lang of languages"
-                class="rm-option-card" [class.selected]="wizard.language === lang.value"
+                class="rm-domain-card" [class.selected]="wizard.language === lang.value"
                 (click)="selectLanguage(lang.value)">
-          <span class="rm-option-icon">{{ lang.icon }}</span>
-          <span class="rm-option-label">{{ lang.label }}</span>
+          <span class="rm-domain-icon">{{ lang.icon }}</span>
+          <span class="rm-domain-label">{{ lang.label }}</span>
+          <span class="rm-domain-desc">{{ lang.desc }}</span>
+          <span class="rm-domain-footer">
+            <span class="rm-domain-topics">~{{ lang.topicCount }} topics</span>
+          </span>
           <span class="rm-option-check" *ngIf="wizard.language === lang.value">✔</span>
         </button>
       </div>
@@ -188,6 +243,7 @@
           <div class="rm-option-text">
             <span class="rm-option-label">{{ level.label }}</span>
             <span class="rm-option-desc">{{ level.desc }}</span>
+            <span class="rm-level-knowledge">📌 {{ level.knowledge }}</span>
           </div>
           <span class="rm-option-check" *ngIf="wizard.level === level.value">✔</span>
         </button>
@@ -237,10 +293,23 @@
           <div class="rm-orb rm-orb-3"></div>
         </div>
         <div class="rm-generating-brain">🧠</div>
-        <div class="rm-generating-dots">
-          <span></span><span></span><span></span>
+        <p class="rm-generating-text">Building your roadmap…</p>
+        <div class="rm-gen-stages">
+          <div *ngFor="let stage of generationStageList; let i = index"
+               class="rm-gen-stage"
+               [class.rm-gen-stage-done]="i < generationStage"
+               [class.rm-gen-stage-active]="i === generationStage">
+            <div class="rm-gen-stage-indicator">
+              <span *ngIf="i < generationStage" class="rm-gen-stage-done-check">✓</span>
+              <span *ngIf="i === generationStage" class="rm-gen-stage-spinner"></span>
+              <span *ngIf="i > generationStage" class="rm-gen-stage-dot"></span>
+            </div>
+            <div class="rm-gen-stage-body">
+              <span class="rm-gen-stage-label">{{ stage.label }}</span>
+              <span class="rm-gen-stage-sub">{{ stage.sub }}</span>
+            </div>
+          </div>
         </div>
-        <p class="rm-generating-text">AI is building your personalized roadmap…</p>
         <p class="rm-generating-sub">Analyzing {{ wizardLanguageLabel }} · {{ wizardLevelLabel }} · {{ wizardGoalLabel }}</p>
       </div>
 
@@ -259,13 +328,33 @@
         <span class="rm-preview-chip">{{ wizardCommitLabel }} ({{ wizardCommitHours }})</span>
       </div>
 
+      <!-- Preview metadata card -->
+      <div *ngIf="!isGenerating && generatedNodes.length" class="rm-preview-meta-card" @fadeIn>
+        <div class="rm-preview-meta-row">
+          <span class="rm-preview-meta-label">📅 Estimated Duration</span>
+          <span class="rm-preview-meta-val">~{{ generatedNodes.length * 2 }} weeks at {{ wizardCommitHours }}</span>
+        </div>
+        <div class="rm-preview-meta-row">
+          <span class="rm-preview-meta-label">📚 Topics</span>
+          <span class="rm-preview-meta-val">{{ generatedNodes.length }} learning topics</span>
+        </div>
+        <div class="rm-preview-meta-row">
+          <span class="rm-preview-meta-label">⏱️ Total Time</span>
+          <span class="rm-preview-meta-val">~{{ generatedNodes.length * 45 }} minutes of focused study</span>
+        </div>
+      </div>
+
       <!-- Nodes list -->
       <div *ngIf="!isGenerating && generatedNodes.length" class="rm-preview-nodes" @fadeIn>
         <div *ngFor="let node of generatedNodes; let i = index"
              class="rm-preview-node-row">
+          <div class="rm-preview-node-num">{{ node.order }}</div>
           <div class="rm-preview-node-badge" [class.first]="i===0">{{ node.icon }}</div>
           <div class="rm-preview-node-info">
-            <span class="rm-preview-node-title">{{ node.order }}. {{ node.topic }}</span>
+            <div class="rm-preview-node-title-row">
+              <span class="rm-preview-node-title">{{ node.topic }}</span>
+              <span class="rm-topic-type-tag rm-topic-type-{{ getTopicType(i) }}">{{ getTopicTypeLabel(i) }}</span>
+            </div>
             <span class="rm-preview-node-desc">{{ node.description }}</span>
           </div>
           <span class="rm-preview-est">~{{ node.estMinutes }}m</span>
@@ -376,7 +465,7 @@
       </app-lw-lesson-content>
 
       <!-- ── Col 2 bottom: AI Code Lab ── -->
-      <app-lw-playground lwPlayground
+      <!-- <app-lw-playground lwPlayground
         *ngIf="pgHasPlayground"
         [code]="pgCode"
         [loadToken]="pgLoadToken"
@@ -391,7 +480,7 @@
         (run)="onPgRun($event)"
         (reset)="resetPg()"
         (saveNote)="onPgSaveNote($event)">
-      </app-lw-playground>
+      </app-lw-playground> -->
 
       <!-- ── Col 3: AI Mentor panel ── -->
       <app-lw-mentor-panel lwMentor
