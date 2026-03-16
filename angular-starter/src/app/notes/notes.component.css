@@ -338,12 +338,11 @@
 .nap-clear-btn:hover { color: var(--n-text); }
 .nap-result-text {
   padding: 10px;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   line-height: 1.7;
   color: var(--n-text);
-  white-space: pre-wrap;
   word-break: break-word;
-  max-height: 320px;
+  max-height: 420px;
   overflow-y: auto;
 }
 
@@ -748,10 +747,16 @@
 /* ═══ RIGHT PANEL ═════════════════════════════════════════════ */
 .notes-right {
   flex: 1;
+  height: 100%;
   overflow-y: auto;
+  overflow-x: hidden;
   background: var(--n-bg);
   min-width: 0;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99,102,241,0.2) transparent;
 }
+.notes-right::-webkit-scrollbar { width: 5px; }
+.notes-right::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.2); border-radius: 99px; }
 
 /* ─── Welcome / placeholder ──────────────────────────────────── */
 .notes-welcome {
@@ -2536,12 +2541,20 @@
 /* ── Result body — markdown rendered ── */
 .nap-result-text.md-content {
   font-size: 0.82rem;
-  max-height: 380px;
+  max-height: 420px;
   overflow-y: auto;
-  background: #f8faff;
-  border-radius: 8px;
-  padding: 0.7rem 0.9rem;
+  background: transparent;
+  padding: 0.5rem 0.75rem;
 }
+/* Tighten code blocks inside the narrow AI panel */
+.nap-result-text.md-content .md-code-block { margin: 0.5rem 0; }
+.nap-result-text.md-content .md-pre { font-size: 0.78rem; }
+.nap-result-text.md-content h1,
+.nap-result-text.md-content h2,
+.nap-result-text.md-content h3,
+.nap-result-text.md-content h4 { margin-top: 0.9em; margin-bottom: 0.25em; font-size: 0.9rem; }
+.nap-result-text.md-content p { margin: 0.4em 0; font-size: 0.82rem; line-height: 1.65; }
+.nap-result-text.md-content li { font-size: 0.82rem; margin: 0.15em 0; }
 
 /* ── Mobile AI drawer enhancements ── */
 .mr-ai-btns {
