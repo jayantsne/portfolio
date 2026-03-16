@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient }  from '@angular/common/http';
 import { BehaviorSubject, Observable, of } from 'rxjs';
-import { catchError, tap }  from 'rxjs/operators';
+import { catchError, tap, timeout }  from 'rxjs/operators';
 import { CustomAuthService } from './custom-auth.service';
+import { environment } from '../../environments/environment';
 
 // ── Shared interfaces ──────────────────────────────────────────────────────
 export interface SubscriptionStatus {
@@ -45,7 +46,7 @@ export interface PaymentVerifiedResponse {
 @Injectable({ providedIn: 'root' })
 export class SubscriptionService {
 
-  private readonly base = '/api/subscription';
+  private readonly base = `${environment.apiUrl}/subscription`;
 
   private _status = new BehaviorSubject<SubscriptionStatus | null>(null);
   /** Live subscription status — components can subscribe to this. */
@@ -89,7 +90,13 @@ export class SubscriptionService {
     this.http
       .get<SubscriptionStatus>(`${this.base}/status/${userId}`,
                                { headers: this.authSvc.getAuthHeaders() })
-      .pipe(catchError(() => of(null)))
+      .pipe(
+        timeout(8000),                   // don't block the UI if subscription service is slow
+        catchError(err => {
+          console.warn('SubscriptionService: status check failed —', err?.status ?? err?.message ?? err);
+          return of(null);
+        })
+      )
       .subscribe(s => this._status.next(s));
   }
 

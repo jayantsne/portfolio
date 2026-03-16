@@ -27,6 +27,13 @@ export class AuthInterceptor implements HttpInterceptor {
     const isAuthEndpoint = req.url.includes('/auth/register') ||
                            req.url.includes('/auth/login');
 
+    // Subscription / payment endpoints may be hosted on a separate service with a
+    // different JWT-validation setup.  A 401 from these does NOT mean the user's
+    // core session is invalid — callers already handle the error with catchError.
+    // Auto-logging-out on their 401 would sign the user out immediately after login.
+    const isAuxiliaryEndpoint = req.url.includes('/subscription') ||
+                                req.url.includes('/payment');
+
     const token = this.auth.getToken();
     const authReq = (token && !isAuthEndpoint)
       ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
@@ -34,7 +41,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     return next.handle(authReq).pipe(
       catchError((err: HttpErrorResponse) => {
-        if (err.status === 401 && !isAuthEndpoint && token) {
+        if (err.status === 401 && !isAuthEndpoint && !isAuxiliaryEndpoint && token) {
           // Token WAS sent but was rejected (expired/invalid) — clear session.
           // If no token was sent (unauthenticated request to a protected endpoint),
           // do NOT log the user out — just let the error propagate to the caller.
@@ -44,6 +51,9 @@ export class AuthInterceptor implements HttpInterceptor {
         } else if (err.status === 401 && !isAuthEndpoint && !token) {
           // Public endpoint returned 401 with no token — ignore, don't touch session.
           console.warn('AuthInterceptor: 401 on unauthenticated request — ignoring.');
+        } else if (err.status === 401 && isAuxiliaryEndpoint) {
+          // Subscription/payment service 401 — let the caller's catchError handle it.
+          console.warn('AuthInterceptor: 401 from auxiliary endpoint — suppressing auto-logout.');
         } else if (err.status === 403) {
           console.warn('AuthInterceptor: 403 Forbidden — redirecting home.');
           this.router.navigate(['/']);
