@@ -20,14 +20,38 @@
   --rm-shadow-sm:   0 2px 8px rgba(99,102,241,0.08);
   --rm-shadow-md:   0 6px 24px rgba(99,102,241,0.12);
   --rm-shadow-lg:   0 16px 48px rgba(99,102,241,0.16);
+
+  /* Make this component fill the viewport below the fixed header */
+  display: block;
+  height: calc(100vh - var(--header-h, 72px));
 }
 
 /* ── Page wrapper ─────────────────────────────────────────────── */
 .rm-page {
-  min-height: 100vh;
+  height: 100%;
+  overflow-y: auto;
   background: var(--rm-bg);
   color: var(--rm-text);
   font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+
+  /* Show a thin scrollbar inside the roadmap page,
+     overriding the global *::-webkit-scrollbar { display:none } */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(99, 102, 241, 0.45) transparent;
+}
+.rm-page::-webkit-scrollbar {
+  display: block;
+  width: 5px;
+}
+.rm-page::-webkit-scrollbar-track {
+  background: transparent;
+}
+.rm-page::-webkit-scrollbar-thumb {
+  background: rgba(99, 102, 241, 0.45);
+  border-radius: 4px;
+}
+.rm-page::-webkit-scrollbar-thumb:hover {
+  background: rgba(99, 102, 241, 0.7);
 }
 
 /* ── Shared buttons ───────────────────────────────────────────── */
@@ -159,7 +183,7 @@
    AUTH GATE
 ══════════════════════════════════════════════════════════════ */
 .rm-auth-gate {
-  min-height: 100vh;
+  min-height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -451,7 +475,7 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  min-height: 100vh;
+  min-height: 100%;
 }
 
 .rm-create-header { display: flex; flex-direction: column; gap: 0.875rem; }
@@ -1496,7 +1520,7 @@
 @media (max-width: 640px) {
   .rm-view {
     height: auto;
-    min-height: 100vh;
+    min-height: 100%;
   }
 
   .rm-split-layout {
