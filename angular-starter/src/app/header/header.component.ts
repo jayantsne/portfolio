@@ -1,7 +1,8 @@
-import { Component, HostListener, ElementRef, ViewChild, AfterViewInit, Input } from '@angular/core';
+import { ChangeDetectorRef, Component, HostListener, ElementRef, OnDestroy, ViewChild, AfterViewInit, Input } from '@angular/core';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs/operators';
+import { Subscription } from 'rxjs';
 import { AuthService }      from '../shared/auth.service';
 import { ApiService }       from '../shared/api.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
@@ -30,7 +31,8 @@ declare global {
     ]),
   ]
 })
-export class HeaderComponent implements AfterViewInit {
+export class HeaderComponent implements AfterViewInit, OnDestroy {
+  private authSub?: Subscription;
   @Input() brandText = 'My Portfolio';
   @Input() brandHref = '#';
   @Input() brandSubText = 'Portfolio';
@@ -50,7 +52,8 @@ export class HeaderComponent implements AfterViewInit {
     private route: ActivatedRoute,
     private apiService: ApiService,
     public customAuth: CustomAuthService,
-    public subSvc: SubscriptionService
+    public subSvc: SubscriptionService,
+    private cdr: ChangeDetectorRef
   ) {
     // Check initial route
     this.checkRoute(this.router.url);
@@ -205,9 +208,16 @@ export class HeaderComponent implements AfterViewInit {
 
     // keep nav link active state in sync with visible sections
     this.setupSectionObserver();
+
+    // Re-render the header whenever auth state changes. This is the safety net
+    // that guarantees Sign In ↔ avatar swap even if NgZone misses the emission.
+    this.authSub = this.customAuth.currentUser$.subscribe(() => {
+      this.cdr.markForCheck();
+    });
   }
 
   ngOnDestroy() {
+    this.authSub?.unsubscribe();
     this.sectionObserver?.disconnect();
 
     if (this.scrollListener) {

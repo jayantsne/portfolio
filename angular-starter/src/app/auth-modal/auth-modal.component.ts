@@ -1,5 +1,5 @@
 import {
-  Component, EventEmitter, Output, OnInit, OnDestroy
+  Component, EventEmitter, NgZone, Output, OnInit, OnDestroy
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { CustomAuthService } from '../shared/custom-auth.service';
@@ -29,7 +29,8 @@ export class AuthModalComponent implements OnInit, OnDestroy {
 
   constructor(
     private fb:      FormBuilder,
-    private authSvc: CustomAuthService
+    private authSvc: CustomAuthService,
+    private ngZone:  NgZone
   ) {}
 
   ngOnInit(): void {
@@ -89,7 +90,9 @@ export class AuthModalComponent implements OnInit, OnDestroy {
       next: () => {
         this.isLoading  = false;
         this.successMsg = 'Welcome back!';
-        setTimeout(() => { this.close(); this.loggedIn.emit(); }, 800);
+        // Run inside NgZone so Angular change detection fires after the delay,
+        // ensuring the header re-renders and reflects the authenticated state.
+        setTimeout(() => this.ngZone.run(() => { this.close(); this.loggedIn.emit(); }), 800);
       },
       error: err => {
         this.isLoading = false;
@@ -110,7 +113,7 @@ export class AuthModalComponent implements OnInit, OnDestroy {
       next: () => {
         this.isLoading  = false;
         this.successMsg = 'Account created! Welcome 🎉';
-        setTimeout(() => { this.close(); this.loggedIn.emit(); }, 900);
+        setTimeout(() => this.ngZone.run(() => { this.close(); this.loggedIn.emit(); }), 900);
       },
       error: err => {
         this.isLoading = false;
