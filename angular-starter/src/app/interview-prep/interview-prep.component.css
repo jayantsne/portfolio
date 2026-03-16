@@ -479,7 +479,7 @@
   align-items: center;
   gap: 10px;
   width: 100%;
-  max-width: 1000px;
+  max-width: 900px;
 }
 .ip-back-btn {
   width: 34px;
@@ -551,7 +551,7 @@
   color: var(--text);
   line-height: 1.5;
   letter-spacing: -0.01em;
-  max-width: 1000px;
+  max-width: 900px;
   width: 100%;
 }
 
@@ -568,10 +568,10 @@
   scrollbar-width: thin;
   scrollbar-color: rgba(99,102,241,0.15) transparent;
   
-  /* Match Mentor's effective content width (~1000px).
-     Mentor: 200px nav + ~996px content + 244px tools = 1440px
-     Interview Prep: match the ~996px content width with max-width + auto margins */
-  max-width: 1000px;
+  /* Match Mentor's visual content width.
+     Mentor: 200px nav + 996px chat (932px content after padding) + 244px tools
+     Interview Prep: 900px container = 836px content after padding (narrower for visual parity) */
+  max-width: 900px;
   margin-left: auto;
   margin-right: auto;
   width: 100%;
@@ -754,7 +754,7 @@
   border-radius: 999px;
   padding: 0.3rem 0.35rem 0.3rem 1rem;
   transition: border-color 0.2s, box-shadow 0.2s;
-  max-width: 1000px;
+  max-width: 900px;
   width: 100%;
 }
 .ip-input-wrap:focus-within {
