@@ -26,6 +26,7 @@ export class AppComponent implements OnInit {
   showInstallPrompt = false;
   isAppInstalled = false;
   showPortfolioHeader = true; // Always show header, but conditionally hide portfolio sections
+  isHomePage = false;
 
   constructor(
     private analyticsService: AnalyticsService,
@@ -33,7 +34,12 @@ export class AppComponent implements OnInit {
     private router: Router,
     private devToolsGuard: DevToolsGuardService
   ) {
-    // No longer need to track route changes for header visibility
+    this.router.events
+      .pipe(filter(e => e instanceof NavigationEnd))
+      .subscribe((e: any) => {
+        const url: string = (e as NavigationEnd).urlAfterRedirects || e.url;
+        this.isHomePage = url === '/' || url === '/home' || url.startsWith('/home?');
+      });
   }
 
   ngOnInit(): void {
