@@ -777,4 +777,58 @@ Please answer concisely and with interview-prep focus.`;
   toggleNotesDrawer(): void {
     this.showNotesDrawer = !this.showNotesDrawer;
   }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     TOOLS PANEL METHODS
+     ───────────────────────────────────────────────────────────────────────── */
+
+  /** Get related questions based on current question's category */
+  getRelatedQuestions(): InterviewQuestion[] {
+    if (!this.selectedQuestion) return [];
+    
+    return this.filteredQuestions
+      .filter(q => 
+        q.id !== this.selectedQuestion!.id && 
+        q.category === this.selectedQuestion!.category
+      )
+      .slice(0, 8); // Return up to 8 related questions
+  }
+
+  /** Quick action: Explain in simpler terms */
+  explainSimpler(): void {
+    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
+    this.followUpText = `Explain "${this.selectedQuestion.question}" in the simplest possible terms, as if teaching a beginner. Use a clear real-world analogy.`;
+    this.sendFollowUp();
+  }
+
+  /** Quick action: Give analogy */
+  giveAnalogy(): void {
+    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
+    this.followUpText = `Give me a memorable real-world analogy that makes "${this.selectedQuestion.question}" crystal clear and easy to understand.`;
+    this.sendFollowUp();
+  }
+
+  /** Quick action: Show code example */
+  showCode(): void {
+    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
+    this.followUpText = `Show me a complete code example for "${this.selectedQuestion.question}" with inline comments explaining each part.`;
+    this.sendFollowUp();
+  }
+
+  /** Quick action: Common mistakes */
+  commonMistakes(): void {
+    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
+    this.followUpText = `What are the most common mistakes developers make when answering "${this.selectedQuestion.question}" in technical interviews? How can I avoid them?`;
+    this.sendFollowUp();
+  }
+
+  /** Get expert interview tips */
+  getInterviewTips(): void {
+    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
+    this.followUpText = `Give me expert tips for answering "${this.selectedQuestion.question}" in a technical interview. Include what interviewers look for and how to structure my answer.`;
+    this.sendFollowUp();
+  }
+
+  /** Expose Math for template */
+  Math = Math;
 }
