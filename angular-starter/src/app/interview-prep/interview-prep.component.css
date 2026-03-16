@@ -23,19 +23,28 @@
   overflow: hidden;
 }
 
-/*  Shell  */
+/*  CSS layout token — mirrors Mentor's --am-nav-w / --am-tools-w pattern  */
+.ip-shell {
+  --ip-nav-w: 220px;
+}
+
+/*  Shell — 2-column WorkspaceLayout: sidebar | chat (Mentor uses 3-col with tools panel)  */
 .ip-shell {
   display: grid;
-  grid-template-columns: 340px 1fr;
+  grid-template-columns: var(--ip-nav-w) 1fr;
   height: 100%;
   overflow: hidden;
   background: var(--bg);
 }
 
-/* ≤ 900px — collapse to single chat column (tools panel hidden, desktop still usable) */
-@media (max-width: 900px) and (min-width: 861px) {
-  .ip-shell { grid-template-columns: 1fr; }
-  .ip-shell.ip-split .ip-sidebar { display: none; }
+/* ≤ 1200px — soft-compress sidebar (mirrors Mentor's ≤1400px step) */
+@media (max-width: 1200px) {
+  .ip-shell { --ip-nav-w: 200px; }
+}
+
+/* ≤ 1000px — further compress sidebar (mirrors Mentor's ≤1100px step) */
+@media (max-width: 1000px) {
+  .ip-shell { --ip-nav-w: 180px; }
 }
 
 /*  SIDEBAR  */
@@ -213,8 +222,8 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 12px 14px 0;
-  padding: 0 12px;
+  margin: 12px 10px 0;
+  padding: 0 10px;
   background: var(--bg);
   border: 1.5px solid var(--border);
   border-radius: 11px;
@@ -250,7 +259,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  padding: 10px 14px 8px;
+  padding: 10px 10px 8px;
   flex-shrink: 0;
 }
 .ip-pill {
@@ -308,7 +317,7 @@
 .ip-qlist {
   list-style: none;
   margin: 0;
-  padding: 0 8px;
+  padding: 0 6px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -406,7 +415,7 @@
 /*  Suggestions  */
 .ip-suggestions {
   flex-shrink: 0;
-  padding: 10px 12px 14px;
+  padding: 10px 10px 12px;
   border-top: 1.5px solid var(--border);
   display: flex;
   flex-direction: column;
@@ -442,16 +451,13 @@
 }
 
 
-/*  CHAT AREA  */
+/*  CHAT AREA — fills whatever the grid column provides, just like Mentor's .am-chat  */
 .ip-chat {
   display: flex;
   flex-direction: column;
   height: 100%;
   overflow: hidden;
   background: var(--bg);
-  max-width: 900px;
-  margin: 0 auto;
-  width: 100%;
 }
 
 /*  Chat header  */
