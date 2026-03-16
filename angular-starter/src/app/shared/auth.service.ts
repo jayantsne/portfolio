@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { CustomAuthService } from './custom-auth.service';
+import { AuthResponse } from './custom-auth.service';
 
 @Injectable({
   providedIn: 'root'
@@ -13,15 +14,28 @@ export class AuthService {
   private username = '';
 
   constructor(private apiService: ApiService, private customAuth: CustomAuthService) {
-    this.isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
+    // Initialise immediately from the current CustomAuthService state (handles page refresh)
+    const initial = customAuth.currentUser;
+    this.isAuthenticatedSubject = new BehaviorSubject<boolean>(!!initial);
     this.isAuthenticated$ = this.isAuthenticatedSubject.asObservable();
-    // If there is already a stored JWT session (e.g. page refresh), reflect that
-    if (customAuth.isLoggedIn) {
-      const u = customAuth.currentUser!;
-      this.isAuthenticatedSubject.next(true);
-      this.userId   = u.userId;
-      this.username = u.username;
+    if (initial) {
+      this.userId   = initial.userId;
+      this.username = initial.username;
     }
+
+    // Stay in sync with CustomAuthService for ALL future login / logout events
+    // (modal login, page-level login, auto-logout on 401, token expiry, etc.)
+    this.customAuth.currentUser$.subscribe(user => {
+      this.isAuthenticatedSubject.next(!!user);
+      if (user) {
+        this.userId   = user.userId;
+        this.username = user.username;
+        this.apiService.setUserId(user.userId);
+      } else {
+        this.userId   = 'default-user';
+        this.username = '';
+      }
+    });
   }
 
   private checkAuthStatus(): void {
@@ -37,25 +51,13 @@ export class AuthService {
   }
 
   /**
-   * Login method - delegates to CustomAuthService which sends the correct
-   * { email, password } payload, handles JWT storage, and uses the right API URL.
+   * Login method — delegates to CustomAuthService (correct API URL, JWT storage).
+   * Returns the Observable so callers can react to success/error.
+   * AuthService state is kept in sync automatically via the currentUser$ subscription.
    */
-  login(username: string, password: string): void {
+  login(username: string, password: string): Observable<any> {
     console.log('🔐 Attempting login for:', username);
-    // username field on the form contains the user's email address
-    this.customAuth.login(username, password).subscribe({
-      next: (response) => {
-        console.log('✅ Login successful:', response.username);
-        this.isAuthenticatedSubject.next(true);
-        this.userId   = response.userId;
-        this.username = response.username;
-        this.apiService.setUserId(response.userId);
-      },
-      error: (error) => {
-        console.error('❌ Login error:', error);
-        this.isAuthenticatedSubject.next(false);
-      }
-    });
+    return this.customAuth.login(username, password);
   }
 
   /**

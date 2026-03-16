@@ -281,8 +281,8 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
 
-    // Call CustomAuthService directly so we get a real Observable with success/error callbacks
-    this.customAuth.login(this.username, this.password).subscribe({
+    // Call AuthService.login() which delegates to CustomAuthService and keeps both states in sync
+    this.authService.login(this.username, this.password).subscribe({
       next: () => {
         this.isLoading = false;
         this.showAiScanner = false;

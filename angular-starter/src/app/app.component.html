@@ -28,4 +28,6 @@
 <router-outlet></router-outlet>
 <!-- <app-ai-chat></app-ai-chat> -->
 
-<app-footer *ngIf="isHomePage"></app-footer>
+<!-- Footer is embedded inside home component when on home page;
+     show it here for all other routes -->
+<app-footer *ngIf="!isHomePage"></app-footer>
