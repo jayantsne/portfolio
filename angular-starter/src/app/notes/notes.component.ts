@@ -69,6 +69,11 @@ export class NotesComponent implements OnInit, OnDestroy {
   aiActionError    = '';
   private aiXhr: XMLHttpRequest | null = null;
 
+  // ── Desktop AI panel ─────────────────────────────────────────────────────
+  showExportMenu             = false;
+  aiAskQuery                 = '';
+  aiGroupOpen: string | null = null;
+
   // ── AI streaming sub ──────────────────────────────────────────────────
   private aiStreamSub: Subscription | null = null;
   aiActionStreaming = false;        // true while SSE is in flight
@@ -80,6 +85,12 @@ export class NotesComponent implements OnInit, OnDestroy {
   meFormatLoading     = false;
   mePreFormatContent: string | null = null;
   private meXhr: XMLHttpRequest | null = null;
+
+  // ── Delete flow ─────────────────────────────────────────────────────────
+  deleteModal: SavedNote | null = null;   // note awaiting modal confirmation
+  isDeleting                    = false;  // spinner inside modal
+  pendingDeleteId: string | null = null;  // list-item inline confirm
+  undoPending: { note: SavedNote; timer: ReturnType<typeof setTimeout> } | null = null;
 
   readonly categories = NOTE_CATEGORIES;
 
@@ -151,6 +162,8 @@ export class NotesComponent implements OnInit, OnDestroy {
           this.notes     = [];
           this.activeNote = null;
           this.editMode  = false;
+          // User logged out while on this protected page — navigate away
+          this.router.navigate(['/'], { queryParams: { login: 'required', returnUrl: '/notes' } });
         }
       })
     );
@@ -178,6 +191,7 @@ export class NotesComponent implements OnInit, OnDestroy {
     this.aiXhr?.abort();
     this.meXhr?.abort();
     clearTimeout(this.toastTimer);
+    if (this.undoPending) clearTimeout(this.undoPending.timer);
   }
 
   // ── Derived lists ─────────────────────────────────────────────────────────
@@ -335,17 +349,7 @@ export class NotesComponent implements OnInit, OnDestroy {
     this.updateError        = '';
     this.editContent        = '';
 
-    const prompt =
-      `You are a note formatter. Your ONLY job is to return clean, well-structured markdown. No matter what the input is, always produce formatted output.\n\n` +
-      `STRICT RULES:\n` +
-      `- ALWAYS return formatted markdown. Never refuse, never explain, never say text is meaningless.\n` +
-      `- If input is very short, random, or unclear, wrap it as-is under a ## Notes heading.\n` +
-      `- Use ## or ### for headings, bullet points for lists, code blocks for code.\n` +
-      `- Keep paragraphs short and readable.\n` +
-      `- Add [ ] checklists where action items appear.\n` +
-      `- Return ONLY the formatted markdown — zero commentary, zero preamble.\n` +
-      `- Do NOT write things like: "This text is meaningless", "Please provide", "I cannot", etc.\n\n` +
-      `Raw text:\n\n${this.mePreFormatContent}`;
+    const prompt = this.buildFormatPrompt(this.mePreFormatContent!);
 
     const apiBase = window.location.hostname === 'localhost' ? '' : 'https://learnwithai.tech';
     const xhr     = new XMLHttpRequest();
@@ -388,6 +392,54 @@ export class NotesComponent implements OnInit, OnDestroy {
     xhr.send(JSON.stringify({ question: prompt, provider: 'ollama', rawMode: true, maxTokens: 2048 }));
   }
 
+  /**
+   * Builds the strict "structure-only" formatting prompt.
+   * CRITICAL: The AI must NEVER rewrite, rephrase, or change any word.
+   * It may ONLY apply markdown structure, spacing, and code-block wrapping.
+   */
+  private buildFormatPrompt(rawText: string): string {
+    return (
+      `You are a Markdown formatter. Your ONLY job is to apply structure and formatting to the exact text you receive.\n\n` +
+      `============================\n` +
+      `🔴 ABSOLUTE RULES (never break these):\n` +
+      `============================\n` +
+      `1. DO NOT change, replace, rephrase, improve, or rewrite any word.\n` +
+      `2. DO NOT summarise or shorten any content.\n` +
+      `3. DO NOT fix grammar, spelling, or vocabulary.\n` +
+      `4. DO NOT add new sentences, explanations, or commentary.\n` +
+      `5. Return ONLY the formatted markdown — no preamble, no "Here is...", no apologies.\n\n` +
+      `============================\n` +
+      `✅ WHAT YOU ARE ALLOWED TO DO:\n` +
+      `============================\n` +
+      `- Add blank lines between paragraphs for readability.\n` +
+      `- Convert list-like lines into markdown bullet points (- item).\n` +
+      `- Add ## or ### headings ONLY when the first line is clearly a standalone title.\n` +
+      `- Detect code (keywords: let/const/var/function/def/class/if/for/while, braces {}, arrows =>, indented blocks) and wrap it in a fenced code block with the correct language tag.\n` +
+      `- Preserve ALL code exactly — do not re-indent, rename variables, or change any character inside a code block.\n` +
+      `- Add [ ] checklist markers ONLY to lines that are already action items in the original text.\n\n` +
+      `============================\n` +
+      `❌ BAD EXAMPLE (FORBIDDEN):\n` +
+      `============================\n` +
+      `Input:  "promise in js is object that handle async operation"\n` +
+      `Wrong:  "Promise in JavaScript is an object that handles asynchronous operations."\n` +
+      `Correct: "promise in js is object that handle async operation"\n` +
+      `(same words — only add spacing/structure if content warrants it)\n\n` +
+      `============================\n` +
+      `✅ CODE BLOCK EXAMPLE:\n` +
+      `============================\n` +
+      `Input:  "let x=10\\nfunction test(){return x}"\n` +
+      `Output:\n` +
+      `\`\`\`javascript\n` +
+      `let x=10\n` +
+      `function test(){return x}\n` +
+      `\`\`\`\n\n` +
+      `============================\n` +
+      `Raw text to format (DO NOT CHANGE THE WORDS):\n` +
+      `============================\n` +
+      `${rawText}\n`
+    );
+  }
+
   shareNote(): void {
     if (!this.activeNote) return;
     const text = `${this.activeNote.topic}\n\n${this.activeNote.content.slice(0, 300)}\u2026`;
@@ -398,6 +450,42 @@ export class NotesComponent implements OnInit, OnDestroy {
         .then(() => alert('Note copied to clipboard!'))
         .catch(() => {});
     }
+  }
+
+  onAskKeydown(e: KeyboardEvent): void {
+    if (!e.shiftKey) { e.preventDefault(); this.askAiAboutNote(); }
+  }
+
+  toggleAiGroup(group: string): void {
+    this.aiGroupOpen = this.aiGroupOpen === group ? null : group;
+  }
+
+  askAiAboutNote(): void {
+    const q = this.aiAskQuery.trim();
+    if (!q || !this.activeNote || this.aiActionLoading) return;
+    this.aiStreamSub?.unsubscribe();
+    this.aiActionLoading  = true;
+    this.aiActionStreaming = true;
+    this.aiActionResult   = '';
+    this.aiActionError    = '';
+    this.aiTagSuggestions = [];
+    this.aiSavedToNote    = false;
+
+    const prompt = `Answer the following question about this note. Be concise and helpful.\n\nNote title: ${this.activeNote.topic}\nNote content:\n${this.activeNote.content}\n\nQuestion: ${q}`;
+    this.aiAskQuery = '';
+
+    this.aiStreamSub = this.aiSvc.getOllamaExplanation(prompt).subscribe({
+      next: res => {
+        this.aiActionResult  = res.explanation;
+        if (res.done) { this.aiActionLoading = false; this.aiActionStreaming = false; }
+      },
+      error: () => {
+        this.aiActionLoading  = false;
+        this.aiActionStreaming = false;
+        this.aiActionError    = 'Connection error. Please try again.';
+      },
+      complete: () => { this.aiActionLoading = false; this.aiActionStreaming = false; },
+    });
   }
 
   runAiAction(action:
@@ -527,6 +615,111 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
       });
       this.aiTagSuggestions = this.aiTagSuggestions.filter(t => t !== tag);
     } catch { /* ignore */ }
+  }
+
+  /** Open the modal-confirmation dialog (reader header / mobile reader) */
+  requestDelete(note: SavedNote): void {
+    if (!note.id) return;
+    this.deleteModal = note;
+  }
+
+  cancelDelete(): void {
+    this.deleteModal = null;
+    this.isDeleting  = false;
+  }
+
+  /** Called when the user clicks Confirm inside the modal */
+  async confirmDelete(): Promise<void> {
+    const note = this.deleteModal;
+    if (!note?.id) return;
+    this.isDeleting = true;
+    try {
+      await this.notesService.deleteNote(note.id);
+      this.deleteModal = null;
+      this.isDeleting  = false;
+      if (this.activeNote?.id === note.id) { this.activeNote = null; this.editMode = false; }
+      this._showUndoToast(note);
+    } catch {
+      this.isDeleting = false;
+      this.showToast('Failed to delete note.', 'error');
+    }
+  }
+
+  /**
+   * Two-step inline delete for sidebar list items.
+   * First click sets pendingDeleteId; second click deletes directly with undo toast.
+   */
+  requestListDelete(e: MouseEvent, note: SavedNote): void {
+    e.stopPropagation();
+    if (!note.id) return;
+    if (this.pendingDeleteId !== note.id) {
+      // First tap — request confirmation inline
+      this.pendingDeleteId = note.id;
+      // Auto-cancel after 3 seconds
+      setTimeout(() => {
+        if (this.pendingDeleteId === note.id) this.pendingDeleteId = null;
+      }, 3000);
+      return;
+    }
+    // Second tap — confirmed
+    this.pendingDeleteId = null;
+    this._doInlineDelete(note);
+  }
+
+  cancelListDelete(e: MouseEvent): void {
+    e.stopPropagation();
+    this.pendingDeleteId = null;
+  }
+
+  private async _doInlineDelete(note: SavedNote): Promise<void> {
+    this.deletingId = note.id!;
+    try {
+      await this.notesService.deleteNote(note.id!);
+      if (this.activeNote?.id === note.id) { this.activeNote = null; this.editMode = false; }
+      this._showUndoToast(note);
+    } catch {
+      this.showToast('Failed to delete note.', 'error');
+    } finally {
+      this.deletingId = null;
+    }
+  }
+
+  private _showUndoToast(note: SavedNote): void {
+    // Cancel any previous undo window
+    if (this.undoPending) {
+      clearTimeout(this.undoPending.timer);
+      this.undoPending = null;
+    }
+    const timer = setTimeout(() => { this.undoPending = null; }, 6000);
+    this.undoPending = { note, timer };
+    // Override the normal toast with the undo toast (custom rendering in HTML)
+    clearTimeout(this.toastTimer);
+    this.toast = null; // undo toast is rendered separately
+  }
+
+  async undoDelete(): Promise<void> {
+    if (!this.undoPending) return;
+    const { note, timer } = this.undoPending;
+    clearTimeout(timer);
+    this.undoPending = null;
+    try {
+      await this.notesService.saveNote(
+        note.topic,
+        note.category || 'Other',
+        note.content,
+        note.tags ?? []
+      );
+      this.showToast(`"${note.topic}" restored.`);
+    } catch {
+      this.showToast('Could not restore note.', 'error');
+    }
+  }
+
+  dismissUndoToast(): void {
+    if (this.undoPending) {
+      clearTimeout(this.undoPending.timer);
+      this.undoPending = null;
+    }
   }
 
   async deleteNote(note: SavedNote): Promise<void> {
@@ -669,7 +862,7 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
 
   goHome(): void { this.router.navigate(['/']); }
 
-  /** Keyboard shortcut: E = start edit, Escape = cancel edit */
+  /** Keyboard shortcut: E = start edit, Escape = cancel edit, Ctrl/Cmd+Shift+F = Format with AI */
   @HostListener('document:keydown', ['$event'])
   handleKey(e: KeyboardEvent): void {
     const tag = (e.target as HTMLElement).tagName.toLowerCase();
@@ -679,6 +872,15 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
     }
     if (e.key === 'Escape' && this.editMode) {
       this.cancelEdit();
+    }
+    // Ctrl+Shift+F / Cmd+Shift+F — Format with AI in whichever mode is active
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'F') {
+      e.preventDefault();
+      if (this.createMode && this.createContent.trim() && !this.isFormatting) {
+        this.formatNoteWithAI();
+      } else if (this.editMode && this.editContent.trim() && !this.meFormatLoading) {
+        this.formatMobileWithAI();
+      }
     }
   }
 
@@ -745,21 +947,7 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
     this.createError   = '';
     this.createContent = '';
 
-    const formattingPrompt =
-      `You are a note formatter. Your ONLY job is to return clean, well-structured markdown. No matter what the input is, always produce formatted output.\n\n` +
-      `STRICT RULES — follow every one of them:\n` +
-      `- ALWAYS return formatted markdown. Never refuse, never explain, never say text is meaningless.\n` +
-      `- If input is very short, random, or unclear, wrap it as-is under a ## Notes heading — still return markdown.\n` +
-      `- Use ## or ### for clear headings when content warrants it.\n` +
-      `- Use bullet points (- or *) for list-like content.\n` +
-      `- Use code blocks (\`\`\`) for any code or technical snippets.\n` +
-      `- Keep paragraphs short and readable.\n` +
-      `- Add [ ] checklists where action items appear.\n` +
-      `- Return ONLY the formatted markdown — zero commentary, zero preamble, zero apologies.\n` +
-      `- Do not change the meaning of the content.\n` +
-      `- Do NOT write things like: "This text is meaningless", "Please provide", "I cannot", etc.\n\n` +
-      `Example for unclear input "gbgfhfhgfhgf":\n## Notes\ngbgfhfhgfhgf\n\n` +
-      `Raw text to format:\n\n${this.preAIContent}`;
+    const formattingPrompt = this.buildFormatPrompt(this.preAIContent!);
 
     const apiBase = window.location.hostname === 'localhost' ? '' : 'https://learnwithai.tech';
     const xhr     = new XMLHttpRequest();

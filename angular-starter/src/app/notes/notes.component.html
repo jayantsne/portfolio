@@ -7,6 +7,14 @@
     {{ toast.msg }}
   </div>
 
+  <!-- Undo-delete toast -->
+  <div class="notes-undo-toast" *ngIf="undoPending" role="alert" aria-live="assertive">
+    <span class="nut-icon">🗑</span>
+    <span class="nut-msg">Note deleted</span>
+    <button class="nut-undo-btn" (click)="undoDelete()">Undo</button>
+    <button class="nut-dismiss" (click)="dismissUndoToast()" aria-label="Dismiss">✕</button>
+  </div>
+
   <!-- Header bar -->
   <!-- <div class="notes-header">
     <button class="back-home-btn" (click)="goHome()"> AI Mentor</button>
@@ -148,10 +156,20 @@
             <button class="notes-qitem-pin" [class.pinned]="isPinned(note)"
                     (click)="$event.stopPropagation(); togglePin(note)"
                     [title]="isPinned(note) ? 'Unpin note' : 'Pin note'">📌</button>
-            <button class="notes-qitem-del" [class.deleting]="deletingId === note.id"
-                    (click)="$event.stopPropagation(); deleteNote(note)" title="Delete">
-              {{ deletingId === note.id ? '…' : '🗑' }}
-            </button>
+            <!-- Inline two-step delete for list items -->
+            <ng-container *ngIf="pendingDeleteId !== note.id">
+              <button class="notes-qitem-del" [class.deleting]="deletingId === note.id"
+                      (click)="requestListDelete($event, note)" title="Delete">
+                {{ deletingId === note.id ? '…' : '🗑' }}
+              </button>
+            </ng-container>
+            <ng-container *ngIf="pendingDeleteId === note.id">
+              <div class="notes-qitem-confirm" (click)="$event.stopPropagation()">
+                <span class="nqc-label">Delete?</span>
+                <button class="nqc-yes" (click)="requestListDelete($event, note)" title="Confirm delete">✓</button>
+                <button class="nqc-no"  (click)="cancelListDelete($event)" title="Cancel">✕</button>
+              </div>
+            </ng-container>
           </li>
         </ul>
 
@@ -216,23 +234,31 @@
             <span class="reader-tag" *ngFor="let t of (activeNote.tags ?? [])">#{{ t }}</span>
           </div>
           <div class="reader-actions">
-            <span class="reader-date">Saved {{ formatDate(activeNote.savedAtMs) }}</span>
-            <span class="reader-stats">
-              {{ noteWordCount(activeNote) }} words &middot; {{ noteReadingTime(activeNote) }}
-            </span>
-            <div class="export-group">
-              <span class="export-label">Export:</span>
-              <button class="export-btn" title="Download as TXT" (click)="exportAsTxt()">TXT</button>
-              <button class="export-btn" title="Download as Markdown" (click)="exportAsMd()">MD</button>
-              <button class="export-btn" title="Print / Save as PDF" (click)="exportAsPdf()">PDF</button>
+            <div class="reader-meta">
+              <span class="reader-date">{{ formatDate(activeNote.savedAtMs) }}</span>
+              <span class="reader-meta-sep">·</span>
+              <span class="reader-stats">{{ noteWordCount(activeNote) }} words · {{ noteReadingTime(activeNote) }}</span>
             </div>
-            <button class="reader-pin-btn" [class.pinned]="isPinned(activeNote)"
-                    (click)="togglePin(activeNote)"
-                    [title]="isPinned(activeNote) ? 'Unpin note' : 'Pin to top'">
-              {{ isPinned(activeNote) ? '📌 Pinned' : '📌 Pin' }}
-            </button>
-            <button class="reader-edit-btn" (click)="startEdit()" title="Edit (E)"> Edit</button>
-            <button class="reader-delete-btn" (click)="deleteNote(activeNote!)"> Delete</button>
+            <div class="reader-btns">
+              <div class="export-menu-wrap">
+                <button class="reader-icon-btn" title="Export" (click)="showExportMenu = !showExportMenu">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Export
+                </button>
+                <div class="export-dropdown" *ngIf="showExportMenu">
+                  <button (click)="exportAsTxt(); showExportMenu=false">📄 TXT</button>
+                  <button (click)="exportAsMd(); showExportMenu=false">📝 MD</button>
+                  <button (click)="exportAsPdf(); showExportMenu=false">🖨 PDF</button>
+                </div>
+              </div>
+              <button class="reader-icon-btn" [class.reader-icon-btn--active]="isPinned(activeNote)"
+                      (click)="togglePin(activeNote)"
+                      [title]="isPinned(activeNote) ? 'Unpin note' : 'Pin to top'">
+                {{ isPinned(activeNote) ? '📌 Pinned' : '📌 Pin' }}
+              </button>
+              <button class="reader-edit-btn" (click)="startEdit()">✏️ Edit</button>
+              <button class="reader-icon-btn reader-icon-btn--danger" (click)="requestDelete(activeNote!)" title="Delete note">🗑</button>
+            </div>
           </div>
         </div>
         <div class="reader-body md-content" [innerHTML]="activeNote.content | markdown" appTryNow></div>
@@ -280,11 +306,30 @@
         </div>
         <div class="editor-error" *ngIf="updateError">{{ updateError }}</div>
         <div class="editor-footer">
-          <button class="editor-cancel-btn" type="button" (click)="cancelEdit()" [disabled]="isUpdating">Cancel</button>
-          <button class="editor-save-btn" type="button" (click)="saveEdit()"
-            [disabled]="isUpdating || !editTopic.trim()">
-            {{ isUpdating ? 'Saving…' : '💾 Save Changes' }}
-          </button>
+          <!-- Format with AI: left-aligned, uses same handler as mobile editor -->
+          <div class="editor-footer-ai">
+            <button class="editor-undo-btn" type="button"
+              *ngIf="mePreFormatContent !== null && !meFormatLoading"
+              (click)="undoMeFormat()" title="Undo AI formatting">
+              ↩ Undo
+            </button>
+            <button class="editor-format-btn" type="button"
+              (click)="formatMobileWithAI()"
+              [disabled]="meFormatLoading || isUpdating || !editContent.trim()"
+              [class.loading]="meFormatLoading"
+              title="Format with AI (Ctrl+Shift+F)">
+              <span class="editor-format-spinner" *ngIf="meFormatLoading"></span>
+              <span *ngIf="!meFormatLoading">✨ Format with AI</span>
+              <span *ngIf="meFormatLoading">Formatting…</span>
+            </button>
+          </div>
+          <div class="editor-footer-actions">
+            <button class="editor-cancel-btn" type="button" (click)="cancelEdit()" [disabled]="isUpdating || meFormatLoading">Cancel</button>
+            <button class="editor-save-btn" type="button" (click)="saveEdit()"
+              [disabled]="isUpdating || meFormatLoading || !editTopic.trim()">
+              {{ isUpdating ? 'Saving…' : '💾 Save Changes' }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -292,68 +337,78 @@
 
     <!-- ═══════════════ DESKTOP AI ACTIONS PANEL ═══════════════ -->
     <aside class="notes-ai-panel" *ngIf="activeNote && !editMode">
+
+      <!-- Header -->
       <div class="nap-header">
         <div class="nap-title-row">
           <span class="nap-icon">🤖</span>
-          <span class="nap-title">AI Actions</span>
+          <span class="nap-title">AI Assistant</span>
         </div>
-        <span class="nap-subtitle">Enhance your note with AI</span>
+        <span class="nap-subtitle">Ask anything about this note</span>
       </div>
 
-      <!-- ── Group 1: Transformations ── -->
-      <div class="nap-group-label">Transform</div>
-      <div class="nap-btns">
-        <button class="nap-btn" (click)="runAiAction('summarize')" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">📋</span>
-          <div class="nap-btn-text"><strong>Summarize</strong><span>Key points in bullets</span></div>
-        </button>
-        <button class="nap-btn" (click)="runAiAction('explain')" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">💡</span>
-          <div class="nap-btn-text"><strong>Explain</strong><span>Beginner-friendly</span></div>
-        </button>
-        <button class="nap-btn" (click)="runAiAction('simplify')" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">🔤</span>
-          <div class="nap-btn-text"><strong>Simplify</strong><span>ELI5 version</span></div>
-        </button>
-        <button class="nap-btn" (click)="runAiAction('expand')" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">🔭</span>
-          <div class="nap-btn-text"><strong>Expand</strong><span>Add more depth</span></div>
+      <!-- ── Ask AI free-text input ── -->
+      <div class="nap-ask-wrap">
+        <textarea class="nap-ask-input" [(ngModel)]="aiAskQuery"
+                  placeholder="Ask anything about this note…"
+                  rows="2"
+                  (keydown.enter)="onAskKeydown($event)"
+                  [disabled]="aiActionLoading"></textarea>
+        <button class="nap-ask-btn" (click)="askAiAboutNote()"
+                [disabled]="aiActionLoading || !aiAskQuery.trim()">
+          {{ aiActionLoading ? '…' : 'Ask' }}
         </button>
       </div>
 
-      <!-- ── Group 2: Generate ── -->
-      <div class="nap-group-label">Generate</div>
-      <div class="nap-btns">
-        <button class="nap-btn" (click)="runAiAction('example')" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">💡</span>
-          <div class="nap-btn-text"><strong>Example</strong><span>Real-world scenario</span></div>
-        </button>
-        <button class="nap-btn" (click)="runAiAction('code')" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">💻</span>
-          <div class="nap-btn-text"><strong>Code Example</strong><span>Working code snippet</span></div>
-        </button>
-        <button class="nap-btn" (click)="runAiAction('interview')" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">🎤</span>
-          <div class="nap-btn-text"><strong>Interview Answer</strong><span>Job-ready response</span></div>
-        </button>
+      <!-- ── Quick action groups ── -->
+      <div class="nap-groups">
+
+        <!-- Understand -->
+        <div class="nap-group">
+          <button class="nap-group-toggle" (click)="toggleAiGroup('understand')"
+                  [class.open]="aiGroupOpen === 'understand'">
+            <span>💡 Understand</span>
+            <span class="nap-chevron">{{ aiGroupOpen === 'understand' ? '▲' : '▼' }}</span>
+          </button>
+          <div class="nap-group-items" *ngIf="aiGroupOpen === 'understand'">
+            <button class="nap-chip" (click)="runAiAction('summarize')" [disabled]="aiActionLoading">📋 Summarize</button>
+            <button class="nap-chip" (click)="runAiAction('explain')"   [disabled]="aiActionLoading">🗣 Explain</button>
+          </div>
+        </div>
+
+        <!-- Improve -->
+        <div class="nap-group">
+          <button class="nap-group-toggle" (click)="toggleAiGroup('improve')"
+                  [class.open]="aiGroupOpen === 'improve'">
+            <span>🔧 Improve</span>
+            <span class="nap-chevron">{{ aiGroupOpen === 'improve' ? '▲' : '▼' }}</span>
+          </button>
+          <div class="nap-group-items" *ngIf="aiGroupOpen === 'improve'">
+            <button class="nap-chip" (click)="runAiAction('simplify')" [disabled]="aiActionLoading">🔤 Simplify</button>
+            <button class="nap-chip" (click)="runAiAction('expand')"   [disabled]="aiActionLoading">🔭 Expand</button>
+            <button class="nap-chip" (click)="runAiAction('example')"  [disabled]="aiActionLoading">💡 Example</button>
+            <button class="nap-chip" (click)="runAiAction('code')"     [disabled]="aiActionLoading">💻 Code</button>
+          </div>
+        </div>
+
+        <!-- Practice -->
+        <div class="nap-group">
+          <button class="nap-group-toggle" (click)="toggleAiGroup('practice')"
+                  [class.open]="aiGroupOpen === 'practice'">
+            <span>📝 Practice</span>
+            <span class="nap-chevron">{{ aiGroupOpen === 'practice' ? '▲' : '▼' }}</span>
+          </button>
+          <div class="nap-group-items" *ngIf="aiGroupOpen === 'practice'">
+            <button class="nap-chip" (click)="runAiAction('quiz')"       [disabled]="aiActionLoading">📝 Quiz</button>
+            <button class="nap-chip" (click)="runAiAction('flashcards')" [disabled]="aiActionLoading">🗂 Flashcards</button>
+            <button class="nap-chip" (click)="runAiAction('interview')"  [disabled]="aiActionLoading">🎤 Interview Answer</button>
+          </div>
+        </div>
+
       </div>
 
-      <!-- ── Group 3: Practice ── -->
-      <div class="nap-group-label">Practice</div>
-      <div class="nap-btns">
-        <button class="nap-btn" (click)="runAiAction('quiz')" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">📝</span>
-          <div class="nap-btn-text"><strong>Quiz</strong><span>Self-test quiz</span></div>
-        </button>
-        <button class="nap-btn" (click)="runAiAction('flashcards')" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">🗂</span>
-          <div class="nap-btn-text"><strong>Flashcards</strong><span>Q&amp;A format</span></div>
-        </button>
-        <button class="nap-btn" (click)="suggestTags()" [disabled]="aiActionLoading">
-          <span class="nap-btn-icon">🏷️</span>
-          <div class="nap-btn-text"><strong>Suggest Tags</strong><span>AI-recommended tags</span></div>
-        </button>
-      </div>
+      <!-- Suggest Tags link -->
+      <button class="nap-tags-link" (click)="suggestTags()" [disabled]="aiActionLoading">🏷️ Suggest Tags</button>
 
       <!-- Loading -->
       <div class="nap-loading-state" *ngIf="aiActionLoading && !aiActionResult">
@@ -371,7 +426,7 @@
         </div>
       </div>
 
-      <!-- Streaming result with markdown rendering -->
+      <!-- Streaming result -->
       <div class="nap-result-block" *ngIf="aiActionResult">
         <div class="nap-result-header">
           <span class="nap-result-label">
@@ -396,12 +451,12 @@
         <button class="nap-clear-btn" (click)="aiActionError = ''">✕</button>
       </div>
 
-      <!-- Context hint -->
+      <!-- Context pill -->
       <div class="nap-context-hint">
         <span class="nap-hint-icon">📌</span>
         <span>Acting on: <strong>{{ activeNote.topic }}</strong></span>
-        <span class="nap-kbd-hint" title="Keyboard shortcut">Press <kbd>E</kbd> to edit</span>
       </div>
+
     </aside>
 
     <!-- ══════════════════ MOBILE READER OVERLAY ══════════════════ -->
@@ -417,7 +472,7 @@
           <button class="mr-more-btn" (click)="showMoreMenu = !showMoreMenu" aria-label="More options">⋮</button>
           <div class="mr-more-menu" *ngIf="showMoreMenu">
             <button (click)="openMobileEditor(); showMoreMenu = false">✏️ Edit</button>
-            <button class="danger" (click)="deleteNote(activeNote!); showMoreMenu = false">🗑 Delete</button>
+            <button class="danger" (click)="requestDelete(activeNote!); showMoreMenu = false">🗑 Delete</button>
           </div>
         </div>
       </div>
@@ -557,6 +612,30 @@
     </div><!-- /mobile-editor -->
 
   </div><!-- /notes-shell -->
+
+  <!-- ════════════════ DELETE CONFIRMATION MODAL ════════════════ -->
+  <div class="del-modal-backdrop" *ngIf="deleteModal" (click)="cancelDelete()" aria-modal="true" role="dialog">
+    <div class="del-modal" (click)="$event.stopPropagation()">
+
+      <!-- Icon + title -->
+      <div class="del-modal-icon">🗑</div>
+      <h3 class="del-modal-title">Delete this note?</h3>
+      <p class="del-modal-body">
+        <strong>"{{ deleteModal.topic }}"</strong> will be removed from your notes.
+        <span class="del-modal-hint">You can undo this for a few seconds after deletion.</span>
+      </p>
+
+      <!-- Actions -->
+      <div class="del-modal-actions">
+        <button class="del-modal-cancel" (click)="cancelDelete()" [disabled]="isDeleting">Keep Note</button>
+        <button class="del-modal-confirm" (click)="confirmDelete()" [disabled]="isDeleting">
+          <span *ngIf="isDeleting" class="del-modal-spinner"></span>
+          {{ isDeleting ? 'Deleting…' : 'Yes, Delete' }}
+        </button>
+      </div>
+
+    </div>
+  </div>
 
   <!-- ─────────────────────── CREATE NOTE PANEL ─────────────────────── -->
   <div class="create-note-fullpage" *ngIf="user && !isLoading && createMode">

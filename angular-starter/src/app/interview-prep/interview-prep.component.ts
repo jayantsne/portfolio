@@ -1,14 +1,17 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef } from '@angular/core';
+import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { trigger, state, style, animate, transition } from '@angular/animations';
 import { QuestionsDataService, InterviewQuestion } from '../shared/questions-data.service';
 import { AILearnService } from '../services/ai-learn.service';
 import { InterviewRoadmapService } from '../services/interview-roadmap.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
+import { AuthTriggerService } from '../shared/auth-trigger.service';
 
 interface AIMessage {
   role: 'user' | 'ai';
-  text: string;
+  text: string;           // Display text shown in the UI
+  _sendContent?: string;  // Full prompt/context sent to AI (never rendered)
   timestamp: Date;
 }
 
@@ -80,6 +83,8 @@ export const TECH_STACKS: TechStack[] = [
 export class InterviewPrepComponent implements OnInit, OnDestroy {
   /* ─── View mode ─────────────────────────────────────────── */
   sidebarTab: 'questions' | 'roadmap' = 'questions';
+  /** Tab the guest was trying to open — auto-activated after login. */
+  pendingTab:  'roadmap' | null       = null;
 
   /* ─── Data ─────────────────────────────────────────────── */
   allQuestions: InterviewQuestion[] = [];
@@ -104,6 +109,21 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   savedNotes: SavedNote[] = [];
   noteSaved = false;
   showNotesDrawer = false;
+  /** Shown when a guest tries to save — prompts them to sign in. */
+  showLoginPrompt = false;
+
+  /** Active answer mode — controls what style of structured prompt is sent to the AI. */
+  answerMode: string = 'normal';
+
+  readonly MODE_LABELS = [
+    { key: 'normal',         label: '📋 Standard'      },
+    { key: 'simple',         label: '🧩 Simple'         },
+    { key: 'analogy',        label: '🎭 Analogy'        },
+    { key: 'code',           label: '💻 Code'           },
+    { key: 'mistakes',       label: '❌ Mistakes'       },
+    { key: 'best_practices', label: '⭐ Best Practices'  },
+    { key: 'interview_tips', label: '🎯 Interview Tips'  },
+  ] as const;
 
   /* ─── Roadmap state ──────────────────────────────────────── */
   readonly techStacks = TECH_STACKS;
@@ -139,10 +159,36 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     return 0; // future feature
   }
 
-  /** Extract follow-up questions from the last AI message (## Common Follow-up Questions section) */
+  /**
+   * Detects student intent so the follow-up prompt takes the right angle.
+   */
+  private detectIntent(text: string): 'confused' | 'why' | 'how' | 'example' | 'normal' {
+    const t = text.trim().toLowerCase();
+    const confused =
+      (t.length <= 20 && !t.includes('?')) ||
+      /\b(not getting|don't get|dont get|confused|lost|unclear|still don.t|makes no sense|huh|what does that mean|no idea|can.t follow)\b/.test(t);
+    if (confused) return 'confused';
+    if (/^why\b/.test(t) || /\bwhy (is|does|do|did|would|should)\b/.test(t)) return 'why';
+    if (/^how\b/.test(t) || /\bhow (do|does|did|can|would|to)\b/.test(t)) return 'how';
+    if (/\b(show me|example|code|demo|snippet|write|implement)\b/.test(t)) return 'example';
+    return 'normal';
+  }
+
+  /** Extract follow-up suggestions from the AI message — supports both rigid and flexible formats */
   get suggestedFollowUps(): string[] {
     const lastAi = [...this.aiMessages].reverse().find(m => m.role === 'ai');
     if (!lastAi) return [];
+
+    // Try new flexible "**Explore more:**" block first
+    const flexMatch = lastAi.text.match(/\*{0,2}Explore more[:\*]*\*{0,2}[\s\S]*?\n(([\s\S]*?)(?=\n##|\n\*\*[A-Z]|$))/i);
+    if (flexMatch) {
+      const lines = flexMatch[1].split('\n')
+        .map(l => l.replace(/^\s*[-*\d.\[\]]+\s*/, '').replace(/[\[\]]/g, '').trim())
+        .filter(l => l.length > 10 && l.length < 160 && !l.startsWith('#'));
+      if (lines.length > 0) return lines.slice(0, 3);
+    }
+
+    // Fallback: legacy "## Common Follow-up Questions" section
     const match = lastAi.text.match(/##\s*Common Follow-up Questions[\s\S]*?\n(([\s\S]*?)(?=\n##|$))/);
     if (!match) return [];
     return match[1]
@@ -152,23 +198,94 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
       .slice(0, 3);
   }
 
-  sendSuggestedFollowUp(text: string): void {
-    this.followUpText = text;
-    this.sendFollowUp();
+  sendSuggestedFollowUp(question: string): void {
+    // Suggested follow-up chips: pass question as display text,
+    // build a context-aware prompt as _sendContent so it continues the conversation
+    const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'ai')?.text?.slice(0, 800) ?? '';
+    const q = this.selectedQuestion;
+    const ctxPrompt =
+      `You are a senior technical interview coach. Keep the conversation flowing naturally.\n` +
+      `No filler phrases. Don't repeat what was already covered.\n\n` +
+      (q ? `Current interview topic: "${q.question}" (${q.category})\n\n` : '') +
+      (lastAI ? `What was just explained:\n${lastAI}\n\n` : '') +
+      `The student asks a follow-up: "${question}"\n\n` +
+      `Answer conversationally (2-4 short paragraphs). Use code only if it genuinely helps. ` +
+      `Wrap code in fenced blocks. Bold key terms on first use. ` +
+      `End with one natural check-in: "Does that make sense?" or "Want to dig deeper?"\n\n` +
+      `After your answer add EXACTLY:\n**Explore more:**\n- [follow-up question 1?]\n- [follow-up question 2?]`;
+    this.followUpText = question;
+    this._sendFollowUpWithContext(question, ctxPrompt);
   }
 
-  /** Send a predefined quick-action follow-up about the current question */
+  /** Context-aware chip actions — each one modifies/extends the last AI response */
   sendChipAction(type: string): void {
-    const map: Record<string, string> = {
-      'show-solution':    'Can you show me a complete solution or implementation with well-commented code?',
-      'explain-simpler':  'Can you explain this concept in simpler terms, using a real-world analogy a junior developer would understand?',
-      'common-mistakes':  'What are the most common mistakes developers make when answering or implementing this in an interview? How can I avoid them?',
-      'code-example':     'Please provide a detailed, runnable code example with step-by-step explanation of each part.',
-      'best-practices':   'What are the senior-level best practices and architectural insights for this topic that would impress an interviewer?',
+    const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'ai')?.text?.slice(0, 1000) ?? '';
+    const q = this.selectedQuestion;
+    const topic = q?.question ?? 'this topic';
+    const cat   = q ? ` (${q.category})` : '';
+
+    const SYS =
+      `You are a brilliant technical interview coach. Natural, direct tone.\n` +
+      `Never start with filler ("Sure!", "Certainly!", "Great question!"). ` +
+      `Build on what was already explained — don't repeat it, extend it.\n\n`;
+    const prevCtx = lastAI
+      ? `The student just read this about "${topic}"${cat}:\n---\n${lastAI}\n---\n\n`
+      : `The student is preparing for an interview question: "${topic}"${cat}\n\n`;
+    const EXPLORE =
+      `\n\nAfter your response add EXACTLY:\n` +
+      `**Explore more:**\n- [follow-up question 1?]\n- [follow-up question 2?]`;
+
+    const labels: Record<string, string> = {
+      'show-solution':   '💻 Show me the code',
+      'explain-simpler': '💡 Explain simpler',
+      'common-mistakes': '❌ Common mistakes',
+      'code-example':    '⚡ Code example',
+      'best-practices':  '⭐ Best practices',
     };
-    if (!map[type]) return;
-    this.followUpText = map[type];
-    this.sendFollowUp();
+    const label = labels[type] ?? type;
+
+    const prompts: Record<string, string> = {
+      'show-solution':
+        SYS + prevCtx +
+        `Give a complete, well-commented code solution for "${topic}".\n` +
+        `ONE realistic example (15-30 lines). Every non-obvious line has an inline comment. ` +
+        `After the code, 2-3 sentences on what to highlight when explaining it to an interviewer. ` +
+        `Wrap in fenced block with language identifier.` + EXPLORE,
+
+      'explain-simpler':
+        SYS + prevCtx +
+        `The student didn't fully get the explanation above. Re-explain from scratch using a completely different angle.\n` +
+        `- Open with ONE sentence that captures the whole idea in plain English\n` +
+        `- Use a real-world non-tech analogy (coffee shop, traffic light, restaurant — anything relatable)\n` +
+        `- ONE tiny code example (≤8 lines) showing the simplest possible usage\n` +
+        `- Close with: "Does that click? What part is still fuzzy?"\n` +
+        `Short paragraphs (2-3 sentences max). Zero jargon unless you define it.` + EXPLORE,
+
+      'common-mistakes':
+        SYS + prevCtx +
+        `Show the 3 most common mistakes developers make with "${topic}" in interviews and production.\n` +
+        `For each mistake: broken code (4-8 lines) → fixed code (4-8 lines), inline comments showing WHY. ` +
+        `One memorable rule after each. Conversational tone — "the sneaky thing here is...". ` +
+        `Close with the single most dangerous misconception about this topic.` + EXPLORE,
+
+      'code-example':
+        SYS + prevCtx +
+        `Give ONE realistic, self-contained code example for "${topic}" that extends the explanation above.\n` +
+        `15-20 lines, real use case, every non-trivial line commented. ` +
+        `After the code: point out the 2-3 things to notice in 2-3 sentences. ` +
+        `No rigid walkthrough headers — weave the explanation naturally.` + EXPLORE,
+
+      'best-practices':
+        SYS + prevCtx +
+        `Share the senior-level best practices for "${topic}" that would impress an interviewer.\n` +
+        `3-4 practices, each as a short story (not a bullet dump): what junior devs do, what seniors do, why it matters. ` +
+        `Include a code snippet only when it makes the difference concrete. ` +
+        `End with one thing that would make an interviewer immediately trust the candidate’s experience.` + EXPLORE,
+    };
+
+    if (!prompts[type]) return;
+    this.followUpText = label;
+    this._sendFollowUpWithContext(label, prompts[type]);
   }
 
   @ViewChild('msgContainer') msgContainer!: ElementRef;
@@ -176,11 +293,16 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   private sub!: Subscription;
   private aiSub?: Subscription;
 
+  /** Whether the current visitor is authenticated. */
+  get isLoggedIn(): boolean { return this.customAuth.isLoggedIn; }
+
   constructor(
     private questionsData: QuestionsDataService,
     private aiLearnService: AILearnService,
     private roadmapBackend: InterviewRoadmapService,
     private customAuth: CustomAuthService,
+    private router: Router,
+    private authTrigger: AuthTriggerService,
   ) {}
 
   ngOnInit(): void {
@@ -192,6 +314,14 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     if (stored) {
       try { this.savedNotes = JSON.parse(stored); } catch { this.savedNotes = []; }
     }
+
+    // When a guest logs in, automatically restore the tab they were trying to open
+    this.customAuth.currentUser$.subscribe(user => {
+      if (user && this.pendingTab) {
+        this.sidebarTab = this.pendingTab;
+        this.pendingTab = null;
+      }
+    });
   }
 
   ngOnDestroy(): void {
@@ -502,6 +632,9 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
 
   /** Serialise the current roadmap as a markdown note and save to the notes drawer */
   saveRoadmapAsNote(): void {
+    // Guest — show sign-in prompt instead of saving
+    if (!this.isLoggedIn) { this.showLoginPrompt = true; return; }
+
     if (!this.selectedStack || !this.roadmapSections.length) return;
     const stack = this.selectedStack;
 
@@ -526,6 +659,29 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     localStorage.setItem('ip_saved_notes', JSON.stringify(this.savedNotes));
     this.roadmapNoteSaved = true;
     setTimeout(() => (this.roadmapNoteSaved = false), 2500);
+  }
+
+  /** Open the login modal instantly — works even when already on /interview-prep.
+   * Uses AuthTriggerService so same-URL navigation is never needed. */
+  promptLogin(): void {
+    this.showLoginPrompt = false;
+    this.authTrigger.requestLogin();
+  }
+
+  dismissLoginPrompt(): void { this.showLoginPrompt = false; }
+
+  /**
+   * Controlled tab switcher — Roadmap is login-gated.
+   * Guests see the lock overlay; after login the tab auto-restores.
+   */
+  selectTab(tab: 'questions' | 'roadmap'): void {
+    if (tab === 'roadmap' && !this.isLoggedIn) {
+      this.pendingTab = 'roadmap';   // remember intent for post-login restore
+      this.sidebarTab = 'roadmap';   // visually select so lock gate renders
+      this.promptLogin();
+      return;
+    }
+    this.sidebarTab = tab;
   }
 
   /* ─── Filtering ─────────────────────────────────────────── */
@@ -564,6 +720,7 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     this.aiMessages = [];
     this.streamingText = '';
     this.followUpText = '';
+    this.answerMode = 'normal'; // reset mode for each new question
     this.loadAIExplanation(q);
   }
 
@@ -587,31 +744,7 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
       timestamp: new Date(),
     });
 
-    const prompt = `You are an expert software engineer and technical interviewer helping a candidate prepare for job interviews.
-
-QUESTION: "${q.question}"
-Category: ${q.category} | Difficulty: ${q.difficulty || 'Medium'}
-
-Please provide a comprehensive answer structured as follows:
-
-## Core Answer
-A clear, concise, structured answer (2-4 sentences to open, then depth).
-
-## Key Concepts to Mention
-- Bullet list of the most important terms / concepts the interviewer expects you to cover
-
-## Code Example
-\`\`\`
-// Provide a short, relevant code snippet if applicable
-\`\`\`
-
-## Common Follow-up Questions
-The 2-3 most common follow-up questions interviewers ask on this topic.
-
-## Pro Tips
-What separates a good answer from a great answer — real-world insights or senior-level nuance.
-
-Keep your answer focused and interview-ready. Avoid generic filler.`;
+    const prompt = this.buildInterviewPrompt(q, this.answerMode);
 
     this.aiSub?.unsubscribe();
     this.aiSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
@@ -646,13 +779,30 @@ Keep your answer focused and interview-ready. Avoid generic filler.`;
     });
   }
 
-  /** Strip any echoed prompt/preamble — real answer begins at the first ## heading */
+  /** Strip echoed preamble AND the Explore-more block from rendered bubbles.
+   * Handles both ## and ### style headings (used by different prompt modes). */
   private cleanResponse(text: string): string {
-    const idx = text.indexOf('\n## ');
-    if (idx !== -1 && idx < 1200) {
-      return text.slice(idx + 1);
+    if (!text) return text;
+    let t = text;
+
+    // Strip echoed prompt preamble — real answer starts at first heading (## or ###)
+    const idx2 = t.indexOf('\n## ');
+    const idx3 = t.indexOf('\n### ');
+    const headingIdx =
+      idx2 !== -1 && idx3 !== -1 ? Math.min(idx2, idx3)
+      : idx2 !== -1 ? idx2
+      : idx3 !== -1 ? idx3
+      : -1;
+    if (headingIdx !== -1 && headingIdx < 1400) {
+      t = t.slice(headingIdx + 1);
     }
-    return text;
+
+    // Strip "**Explore more:**" block — surfaces as suggestedFollowUps chips instead
+    t = t
+      .replace(/\*{0,2}Explore more[:\*]*\*{0,2}[\s\S]*?(?=\n##|\n###|\n\*\*[A-Z]|\n---+|$)/i, '')
+      .replace(/\s+$/, '');
+
+    return t;
   }
 
   retryExplanation(): void {
@@ -661,34 +811,112 @@ Keep your answer focused and interview-ready. Avoid generic filler.`;
     this.loadAIExplanation(this.selectedQuestion);
   }
 
-  /* ─── Follow-up ─────────────────────────────────────────── */
-  sendFollowUp(): void {
-    const text = this.followUpText.trim();
-    if (!text || this.isFollowUpLoading || !this.selectedQuestion) return;
+  /** Switch the answer mode and reload the explanation for the current question. */
+  setMode(mode: string): void {
+    if (this.answerMode === mode) return;
+    this.answerMode = mode;
+    if (this.selectedQuestion) {
+      this.aiMessages = [];
+      this.streamingText = '';
+      this.loadAIExplanation(this.selectedQuestion);
+    }
+  }
 
-    this.aiMessages.push({ role: 'user', text, timestamp: new Date() });
+  /**
+   * Builds the structured interview-coach prompt based on the selected mode.
+   * Produces a ChatGPT-style answer with fixed sections:
+   * ✅ Definition → 🚀 Key Points → 🧠 Simple Explanation → 🏢 Real-world Example → 🎯 Interview Tip
+   */
+  private buildInterviewPrompt(q: InterviewQuestion, mode: string): string {
+    const SYSTEM =
+      `You are an expert software engineer and interview coach.\n` +
+      `Your job is to generate HIGH-QUALITY, structured answers — accurate, clean, easy to scan.\n\n` +
+      `Category: ${q.category} | Difficulty: ${q.difficulty || 'Medium'}\n` +
+      `Interview question: "${q.question}"\n\n`;
+
+    const RULES =
+      `STRICT RULES (must follow):\n` +
+      `- NEVER write long paragraphs\n` +
+      `- NEVER include incorrect info — prefer correctness over verbosity\n` +
+      `- NEVER add fluff or vague analogies\n` +
+      `- Bold key terms on first use (inline, not as headers)\n` +
+      `- Wrap code in fenced blocks with language identifier\n` +
+      `- Never start with filler ("Sure!", "Certainly!", "Great question!")\n` +
+      `- Conversational tone, high clarity, easy to scan\n\n`;
+
+    const STRUCTURE =
+      `Structure your answer with EXACTLY these sections:\n\n` +
+      `### ✅ Definition\n` +
+      `2–3 lines — clear, correct, no padding\n\n` +
+      `### 🚀 Key Points\n` +
+      `Bullet points only (max 5–6), short and impactful\n\n` +
+      `### 🧠 Simple Explanation\n` +
+      `Explain like teaching a beginner, no unnecessary jargon\n\n` +
+      `### 🏢 Real-world Example\n` +
+      `Practical use case — concrete and relatable\n\n` +
+      `### 🎯 Interview Tip\n` +
+      `What interviewers actually look for — 1–3 lines\n\n`;
+
+    const MODE_ADDONS: Record<string, string> = {
+      normal: '',
+      simple:
+        `MODE: simple\n` +
+        `Explain in very easy terms throughout. Avoid all technical jargon. Use everyday language.\n\n`,
+      analogy:
+        `MODE: analogy\n` +
+        `In "🧠 Simple Explanation", lead with a strong, memorable real-world analogy for the core concept.\n\n`,
+      code:
+        `MODE: code\n` +
+        `In "🏢 Real-world Example", include a clean, well-commented code snippet (10–20 lines) that demonstrates the concept.\n\n`,
+      mistakes:
+        `MODE: mistakes\n` +
+        `In "🏢 Real-world Example", show the 2–3 most common mistakes developers make and how to fix them.\n\n`,
+      best_practices:
+        `MODE: best_practices\n` +
+        `In "🚀 Key Points" and "🏢 Real-world Example", focus on senior-level practical best practices.\n\n`,
+      interview_tips:
+        `MODE: interview_tips\n` +
+        `Expand "🎯 Interview Tip" to 3–4 bullet points covering what interviewers specifically want to hear.\n\n`,
+    };
+
+    const EXPLORE =
+      `After your answer add EXACTLY:\n` +
+      `**Explore more:**\n` +
+      `- [most common interviewer follow-up question 1?]\n` +
+      `- [most common interviewer follow-up question 2?]\n` +
+      `- [practical or senior-level follow-up question 3?]`;
+
+    return SYSTEM + (MODE_ADDONS[mode] ?? '') + RULES + STRUCTURE + EXPLORE;
+  }
+
+  /* ─── Follow-up ─────────────────────────────────────────── */
+
+  /**
+   * Internal: push user message and fire AI call with a separate send-prompt.
+   * displayText is what renders in the chat bubble; sendPrompt is what goes to the LLM.
+   */
+  private _sendFollowUpWithContext(displayText: string, sendPrompt: string): void {
+    if (this.isFollowUpLoading) return;
+    this.aiMessages.push({
+      role: 'user',
+      text: displayText,
+      ...(displayText !== sendPrompt ? { _sendContent: sendPrompt } : {}),
+      timestamp: new Date(),
+    });
     this.followUpText = '';
     this.isFollowUpLoading = true;
 
-    const context = `The candidate is practicing interview questions. The current question is: "${this.selectedQuestion.question}" (${this.selectedQuestion.category}).
-
-The candidate asks a follow-up: "${text}"
-
-Please answer concisely and with interview-prep focus.`;
-
-    this.aiSub = this.aiLearnService.getOllamaExplanation(context).subscribe({
+    this.aiSub?.unsubscribe();
+    this.aiSub = this.aiLearnService.getOllamaExplanation(sendPrompt).subscribe({
       next: (res: any) => {
         if (res.done) {
-          this.aiMessages.push({
-            role: 'ai',
-            text: res.explanation,
-            timestamp: new Date(),
-          });
+          const cleaned = this.cleanResponse(res.explanation);
+          this.aiMessages.push({ role: 'ai', text: cleaned, timestamp: new Date() });
           this.streamingText = '';
           this.isFollowUpLoading = false;
           this.scrollToBottom();
         } else {
-          this.streamingText = res.explanation;
+          this.streamingText = this.cleanResponse(res.explanation);
           this.isFollowUpLoading = false;
           this.scrollToBottom();
         }
@@ -696,14 +924,82 @@ Please answer concisely and with interview-prep focus.`;
       error: () => {
         this.streamingText = '';
         this.isFollowUpLoading = false;
-        this.aiMessages.push({
-          role: 'ai',
-          text: '⚠️ Could not get an answer. Try again.',
-          timestamp: new Date(),
-        });
+        this.aiMessages.push({ role: 'ai', text: '⚠️ Could not get an answer. Try again.', timestamp: new Date() });
         this.scrollToBottom();
       },
     });
+  }
+
+  sendFollowUp(): void {
+    const text = this.followUpText.trim();
+    if (!text || this.isFollowUpLoading || !this.selectedQuestion) return;
+
+    const q = this.selectedQuestion;
+    const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'ai')?.text?.slice(0, 800) ?? '';
+    const intent = this.detectIntent(text);
+
+    // Build conversation history (last 6 messages)
+    const historyLines = this.aiMessages
+      .slice(-6)
+      .map(m => {
+        const content = m._sendContent ?? m.text;
+        return `${m.role === 'user' ? 'Candidate' : 'Coach'}: ${content.slice(0, 500)}`;
+      })
+      .join('\n\n');
+
+    const SYS =
+      `You are a senior technical interview coach. Natural tone — like a mentor in a Slack thread.\n` +
+      `Never start with filler. Don't repeat what was already covered.\n\n`;
+    const topicCtx = `Interview topic: "${q.question}" (${q.category})\n\n`;
+    const EXPLORE =
+      `\n\nAfter your response add EXACTLY:\n` +
+      `**Explore more:**\n- [follow-up question 1?]\n- [follow-up question 2?]`;
+
+    let context: string;
+
+    if (intent === 'confused') {
+      context =
+        SYS + topicCtx +
+        `The candidate is confused. They said: "${text}"\n\n` +
+        `What was just explained:\n${lastAI}\n\n` +
+        `Re-explain from scratch using a completely different angle:\n` +
+        `1. ONE ultra-simple sentence capturing the whole idea\n` +
+        `2. A real-world non-tech analogy\n` +
+        `3. ONE tiny code example (≤8 lines), simplest possible usage\n` +
+        `4. Close with: "Does that make more sense? What part is still fuzzy?"\n` +
+        `Short paragraphs. Zero jargon unless defined.` + EXPLORE;
+    } else if (intent === 'why') {
+      context =
+        SYS + topicCtx +
+        `Conversation so far:\n${historyLines}\n\n` +
+        `Candidate asks: "${text}"\n\n` +
+        `Focus on the WHY — the problem this solves, when engineers actually need it. ` +
+        `Concrete before/after scenario. 2-3 short paragraphs. No rigid headers.` + EXPLORE;
+    } else if (intent === 'how') {
+      context =
+        SYS + topicCtx +
+        `Conversation so far:\n${historyLines}\n\n` +
+        `Candidate asks: "${text}"\n\n` +
+        `Walk through HOW step by step — conversational prose, not a numbered list unless steps are genuinely sequential. ` +
+        `Mix explanation + code naturally. ≤20 lines of code max.` + EXPLORE;
+    } else if (intent === 'example') {
+      context =
+        SYS + topicCtx +
+        `Conversation so far:\n${historyLines}\n\n` +
+        `Candidate wants an example for: "${text}"\n\n` +
+        `ONE realistic, self-contained code example (15-20 lines). ` +
+        `Introduce in 1-2 sentences. Inline comments on non-obvious lines. ` +
+        `After the code: 2-3 sentences on what to notice. No rigid headers.` + EXPLORE;
+    } else {
+      context =
+        SYS + topicCtx +
+        `Conversation so far:\n${historyLines}\n\n` +
+        `Candidate asks: "${text}"\n\n` +
+        `Answer naturally — continuing the conversation, not starting a new lesson. ` +
+        `Match length to the question. Bold key terms. Wrap code in fenced blocks.` + EXPLORE;
+    }
+
+    this._sendFollowUpWithContext(text, context);
   }
 
   onFollowUpKeydown(event: KeyboardEvent): void {
@@ -743,6 +1039,9 @@ Please answer concisely and with interview-prep focus.`;
   }
 
   saveCurrentNote(): void {
+    // Guest — show sign-in prompt instead of saving
+    if (!this.isLoggedIn) { this.showLoginPrompt = true; return; }
+
     if (!this.selectedQuestion) return;
     const aiTexts = this.aiMessages.filter(m => m.role === 'ai').map(m => m.text);
     const answer = aiTexts.join('\n\n') || this.streamingText;
@@ -794,39 +1093,75 @@ Please answer concisely and with interview-prep focus.`;
       .slice(0, 8); // Return up to 8 related questions
   }
 
-  /** Quick action: Explain in simpler terms */
+  /** Quick action: Explain in simpler terms — re-explains the last response from scratch */
   explainSimpler(): void {
-    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
-    this.followUpText = `Explain "${this.selectedQuestion.question}" in the simplest possible terms, as if teaching a beginner. Use a clear real-world analogy.`;
-    this.sendFollowUp();
+    if (!this.selectedQuestion || this.isLoadingAI || this.isFollowUpLoading) return;
+    const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'ai')?.text?.slice(0, 1000) ?? '';
+    const q = this.selectedQuestion;
+    const prompt =
+      `You are a senior technical interview coach. Natural tone — like a patient mentor.\n` +
+      `The candidate didn't fully get the explanation. Re-explain from scratch using a completely different angle.\n\n` +
+      `Topic: "${q.question}" (${q.category})\n\n` +
+      (lastAI ? `What was just explained:\n${lastAI}\n\n` : '') +
+      `Your re-explanation must:\n` +
+      `- Open with ONE sentence that captures the whole idea in plain English\n` +
+      `- Use a real-world non-tech analogy (coffee shop, restaurant, traffic light — anything relatable)\n` +
+      `- ONE tiny code example (≤8 lines) showing the simplest possible usage\n` +
+      `- Close with: "Does that click? What part is still fuzzy?"\n` +
+      `Short paragraphs (2-3 sentences max). Zero jargon unless you define it.\n\n` +
+      `After your response add EXACTLY:\n**Explore more:**\n- [follow-up question 1?]\n- [follow-up question 2?]`;
+    this._sendFollowUpWithContext('💡 Explain simpler', prompt);
   }
 
-  /** Quick action: Give analogy */
+  /** Quick action: Give analogy — converts last explanation into a memorable real-world story */
   giveAnalogy(): void {
-    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
-    this.followUpText = `Give me a memorable real-world analogy that makes "${this.selectedQuestion.question}" crystal clear and easy to understand.`;
-    this.sendFollowUp();
+    if (!this.selectedQuestion || this.isLoadingAI || this.isFollowUpLoading) return;
+    const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'ai')?.text?.slice(0, 1000) ?? '';
+    const q = this.selectedQuestion;
+    const prompt =
+      `You are a senior technical interview coach.\n` +
+      `Topic: "${q.question}" (${q.category})\n\n` +
+      (lastAI ? `What was just explained:\n${lastAI}\n\n` : '') +
+      `Create ONE memorable real-world analogy that makes this concept impossible to forget.\n` +
+      `- The analogy should be non-technical (avoid tech metaphors)\n` +
+      `- Explain the analogy in 2-3 sentences\n` +
+      `- Map each part of the analogy back to the technical concept explicitly\n` +
+      `- Then give a tiny code snippet (≤8 lines) that proves the analogy holds\n` +
+      `- End with: "Does that mental model help?"\n\n` +
+      `After your response add EXACTLY:\n**Explore more:**\n- [follow-up question 1?]\n- [follow-up question 2?]`;
+    this._sendFollowUpWithContext('🎠 Give me an analogy', prompt);
   }
 
   /** Quick action: Show code example */
   showCode(): void {
-    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
-    this.followUpText = `Show me a complete code example for "${this.selectedQuestion.question}" with inline comments explaining each part.`;
-    this.sendFollowUp();
+    if (!this.selectedQuestion || this.isLoadingAI || this.isFollowUpLoading) return;
+    this.sendChipAction('code-example');
   }
 
   /** Quick action: Common mistakes */
   commonMistakes(): void {
-    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
-    this.followUpText = `What are the most common mistakes developers make when answering "${this.selectedQuestion.question}" in technical interviews? How can I avoid them?`;
-    this.sendFollowUp();
+    if (!this.selectedQuestion || this.isLoadingAI || this.isFollowUpLoading) return;
+    this.sendChipAction('common-mistakes');
   }
 
-  /** Get expert interview tips */
+  /** Get expert interview tips — contextual coaching based on last explanation */
   getInterviewTips(): void {
-    if (!this.selectedQuestion || this.isLoadingAI || this.streamingText) return;
-    this.followUpText = `Give me expert tips for answering "${this.selectedQuestion.question}" in a technical interview. Include what interviewers look for and how to structure my answer.`;
-    this.sendFollowUp();
+    if (!this.selectedQuestion || this.isLoadingAI || this.isFollowUpLoading) return;
+    const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'ai')?.text?.slice(0, 800) ?? '';
+    const q = this.selectedQuestion;
+    const prompt =
+      `You are a brilliant technical interview coach helping a candidate nail their interviews.\n` +
+      `Never start with filler. Build on what was already explained.\n\n` +
+      `Interview topic: "${q.question}" (${q.category})\n\n` +
+      (lastAI ? `What was just covered:\n${lastAI}\n\n` : '') +
+      `Give interview-specific coaching for this exact topic:\n` +
+      `- How to START the answer (the opening line that makes an interviewer nod)\n` +
+      `- What keywords/concepts to mention to signal senior knowledge\n` +
+      `- One common mistake candidates make when answering this — and how to avoid it\n` +
+      `- How to end the answer to invite follow-up (not just trail off)\n` +
+      `Conversational tone. 3-4 short paragraphs. No rigid header sections.\n\n` +
+      `After your response add EXACTLY:\n**Explore more:**\n- [follow-up question 1?]\n- [follow-up question 2?]`;
+    this._sendFollowUpWithContext('🎯 Interview tips', prompt);
   }
 
   /** Expose Math for template */

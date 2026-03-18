@@ -24,16 +24,25 @@
     <!-- Tab switcher: Questions | Roadmap -->
     <div class="ip-tab-bar">
       <button class="ip-tab" [class.ip-tab-active]="sidebarTab === 'questions'"
-        (click)="sidebarTab = 'questions'">
+        (click)="selectTab('questions')">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 4.78 2.83c-.67.37-1.07.85-1.07 1.67v.5"></path><circle cx="12" cy="17.5" r=".5" fill="currentColor"></circle></svg>
         Questions
       </button>
       <button class="ip-tab" [class.ip-tab-active]="sidebarTab === 'roadmap'"
-        (click)="sidebarTab = 'roadmap'">
+        (click)="selectTab('roadmap')"
+        [title]="isLoggedIn ? 'AI Prep Roadmap' : 'Sign in to access Roadmap'">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
         Roadmap
-        <span class="ip-tab-badge">NEW</span>
+        <span class="ip-tab-badge" *ngIf="isLoggedIn">NEW</span>
+        <svg *ngIf="!isLoggedIn" class="ip-tab-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
       </button>
+    </div>
+
+    <!-- Guest CTA — only shown when not logged in -->
+    <div class="ip-guest-cta" *ngIf="!isLoggedIn">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+      <span>Sign in to save notes &amp; track progress</span>
+      <button class="ip-guest-cta-btn" (click)="promptLogin()">Sign in →</button>
     </div>
 
     <!-- Notes drawer -->
@@ -128,7 +137,20 @@
     <!-- ═══ ROADMAP TAB ════════════════════════════════════════ -->
     <ng-container *ngIf="sidebarTab === 'roadmap'">
 
+      <!-- Lock gate: shown to guests instead of roadmap content -->
+      <div class="ip-roadmap-lock" *ngIf="!isLoggedIn">
+        <div class="ip-roadmap-lock-icon">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </div>
+        <h3 class="ip-roadmap-lock-title">Roadmap requires sign-in</h3>
+        <p class="ip-roadmap-lock-desc">Get a personalised AI-generated prep plan with progress tracking for any tech stack.</p>
+        <button class="ip-roadmap-lock-btn" (click)="promptLogin()">Sign in to unlock →</button>
+        <button class="ip-link-btn ip-roadmap-lock-back" (click)="selectTab('questions')">← Back to questions</button>
+      </div>
+
       <!-- Stack selection (before roadmap generated) -->
+      <ng-container *ngIf="isLoggedIn">
+
       <div class="ip-roadmap-pane" *ngIf="!selectedStack && !isGeneratingRoadmap">
         <div class="ip-roadmap-intro">
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
@@ -200,7 +222,8 @@
               ⚠ Sync failed
             </span>
 
-            <button class="ip-rh-save-btn" (click)="saveRoadmapAsNote()" title="Save roadmap to notes">
+            <button class="ip-rh-save-btn" (click)="saveRoadmapAsNote()"
+              [title]="isLoggedIn ? 'Save roadmap to notes' : 'Sign in to save'">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
@@ -272,6 +295,8 @@
 
       </div><!-- /ip-roadmap-view -->
 
+      </ng-container><!-- /isLoggedIn roadmap guard -->
+
     </ng-container><!-- /roadmap tab -->
 
   </section><!-- /ip-sidebar -->
@@ -295,7 +320,8 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
           </button>
           <button class="ip-hdr-btn" [class.ip-hdr-btn-saved]="isNoteSaved()"
-            title="Save note" (click)="saveCurrentNote()"
+            [title]="isLoggedIn ? (isNoteSaved() ? 'Saved!' : 'Save note') : 'Sign in to save'"
+            (click)="saveCurrentNote()"
             [disabled]="isLoadingAI || (!aiMessages.length && !streamingText)">
             <svg *ngIf="!isNoteSaved()" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
             <svg *ngIf="isNoteSaved()" width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
@@ -307,6 +333,18 @@
     <!-- Question title banner -->
     <div class="ip-question-banner">
       <h2 class="ip-question-text">{{ selectedQuestion.question }}</h2>
+      <!-- Answer mode selector -->
+      <div class="ip-mode-bar">
+        <button
+          *ngFor="let m of MODE_LABELS"
+          class="ip-mode-btn"
+          [class.ip-mode-btn-active]="answerMode === m.key"
+          (click)="setMode(m.key)"
+          [disabled]="isLoadingAI || isFollowUpLoading"
+          [title]="m.label">
+          {{ m.label }}
+        </button>
+      </div>
     </div>
 
     <!-- Messages -->
@@ -357,8 +395,11 @@
       <button class="ip-chip" (click)="sendChipAction('show-solution')">
         <span>✅</span> Show Solution
       </button>
-      <button class="ip-chip" (click)="sendChipAction('explain-simpler')">
-        <span>🔎</span> Explain Simpler
+      <button class="ip-chip" (click)="explainSimpler()">
+        <span>💡</span> Explain Simpler
+      </button>
+      <button class="ip-chip" (click)="giveAnalogy()">
+        <span>🎭</span> Give Analogy
       </button>
       <button class="ip-chip" (click)="sendChipAction('common-mistakes')">
         <span>⚠️</span> Common Mistakes
@@ -368,6 +409,9 @@
       </button>
       <button class="ip-chip" (click)="sendChipAction('best-practices')">
         <span>🏆</span> Best Practices
+      </button>
+      <button class="ip-chip" (click)="getInterviewTips()">
+        <span>🎯</span> Interview Tips
       </button>
     </div>
 
@@ -430,5 +474,56 @@
       <div class="ip-welcome-arrow"> Select a question or open the Roadmap tab</div>
     </div>
   </main>
+
+  <!--  RIGHT TOOLS PANEL  -->
+  <aside class="ip-tools" *ngIf="selectedQuestion">
+    <div class="ip-tools-hd">
+      <span class="ip-tools-hd-icon">🎯</span>
+      <span class="ip-tools-hd-title">Interview Tools</span>
+      <span class="ip-tools-hd-count" *ngIf="aiMessages.length > 0">{{ aiMessages.length }}</span>
+    </div>
+
+    <div class="ip-tools-body">
+
+      <!-- Session Depth (shown after first AI response) -->
+      <div class="ip-session-card" *ngIf="aiMessages.length > 0">
+        <div class="ip-session-meta">
+          <div class="ip-session-icon">✨</div>
+          <div class="ip-session-info">
+            <div class="ip-session-depth">{{ aiMessages.length }} messages · Active</div>
+          </div>
+        </div>
+        <div class="ip-session-bar-wrap">
+          <div class="ip-session-bar-fill" 
+               [style.width]="Math.min(aiMessages.length * 15, 100) + '%'"></div>
+        </div>
+      </div>
+
+      <!-- Related Questions -->
+      <div class="ip-tool-card" *ngIf="getRelatedQuestions().length > 0">
+        <div class="ip-tool-card-title">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 4.78 2.83c-.67.37-1.07.85-1.07 1.67v.5"></path><circle cx="12" cy="17.5" r=".5" fill="currentColor"></circle></svg>
+          Related Questions
+        </div>
+        <div class="ip-related-list">
+          <button class="ip-related-item"
+                  *ngFor="let q of getRelatedQuestions().slice(0, 5)"
+                  (click)="selectQuestion(q)">
+            <span class="ip-related-cat">{{ q.category }}</span>
+            <div class="ip-related-text">{{ q.question }}</div>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </aside>
+
+  <!-- Login-required snackbar — shown when a guest presses a save button -->
+  <div class="ip-login-toast" *ngIf="showLoginPrompt" role="alert">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+    <span>Sign in to save your progress</span>
+    <button class="ip-login-toast-btn" (click)="promptLogin()">Sign in →</button>
+    <button class="ip-login-toast-close" (click)="dismissLoginPrompt()" aria-label="Dismiss">✕</button>
+  </div>
 
 </div>
