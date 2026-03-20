@@ -6,6 +6,7 @@ import { Subscription } from 'rxjs';
 import { AuthService }      from '../shared/auth.service';
 import { ApiService }       from '../shared/api.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
+import { AuthTriggerService } from '../shared/auth-trigger.service';
 import { SubscriptionService } from '../shared/subscription.service';
 import { AuthModalComponent } from '../auth-modal/auth-modal.component';
 import { UserSettingsComponent } from '../user-settings/user-settings.component';
@@ -65,7 +66,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     public subSvc: SubscriptionService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
-    private appRef: ApplicationRef
+    private appRef: ApplicationRef,
+    private authTrigger: AuthTriggerService
   ) {
     // Check initial route
     this.checkRoute(this.router.url);
@@ -81,6 +83,11 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
       if (event.url.includes('login=required')) {
         setTimeout(() => this.authModal?.open('login'), 300);
       }
+    });
+
+    // Direct trigger from AuthTriggerService — works without navigation (same-URL safe)
+    this.authTrigger.login$.subscribe(() => {
+      this.authModal?.open('login');
     });
   }
   

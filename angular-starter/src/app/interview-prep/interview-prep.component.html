@@ -1,7 +1,21 @@
 ﻿<div class="ip-shell" [class.ip-split]="selectedQuestion">
 
+  <!-- Mobile header bar -->
+  <div class="ip-mobile-bar">
+    <button class="ip-mobile-menu-btn" (click)="showMobileSidebar = !showMobileSidebar" aria-label="Menu">
+      <svg *ngIf="!showMobileSidebar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      <svg *ngIf="showMobileSidebar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+    </button>
+    <span class="ip-mobile-title">Interview Prep</span>
+    <button class="ip-notes-toggle-btn ip-mobile-notes-btn" (click)="toggleNotesDrawer()"
+      [class.ip-notes-toggle-active]="showNotesDrawer" title="Saved notes">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+      <span class="ip-notes-badge" *ngIf="savedNotes.length">{{ savedNotes.length }}</span>
+    </button>
+  </div>
+
   <!--  SIDEBAR  -->
-  <section class="ip-sidebar" aria-label="Interview questions list">
+  <section class="ip-sidebar" [class.ip-sidebar-mobile-open]="showMobileSidebar" aria-label="Interview questions list">
 
     <!-- Brand header -->
     <div class="ip-sidebar-header">
@@ -205,7 +219,7 @@
             <span class="ip-rh-icon">{{ selectedStack?.icon }}</span>
             <div>
               <strong class="ip-rh-title">{{ selectedStack?.name }} Roadmap</strong>
-              <span class="ip-rh-sub">{{ roadmapDoneCount }}/{{ roadmapTotalCount }} topics done</span>
+              <span class="ip-rh-sub">{{ roadmapDoneCount }} of {{ roadmapTotalCount }} topics complete</span>
             </div>
           </div>
           <div class="ip-rh-actions">
@@ -224,25 +238,37 @@
 
             <button class="ip-rh-save-btn" (click)="saveRoadmapAsNote()"
               [title]="isLoggedIn ? 'Save roadmap to notes' : 'Sign in to save'">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
                 <polyline points="7 3 7 8 15 8"></polyline>
               </svg>
-              {{ roadmapNoteSaved ? '✓ Saved!' : 'Save to Notes' }}
+              {{ roadmapNoteSaved ? '✓ Saved!' : 'Save' }}
             </button>
-            <button class="ip-link-btn ip-rh-change" (click)="selectedStack = null; roadmapSections = []">Change</button>
+            <button class="ip-rh-change" (click)="selectedStack = null; roadmapSections = []"
+              title="Switch stack">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="17 1 21 5 17 9"></polyline>
+                <path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+                <polyline points="7 23 3 19 7 15"></polyline>
+                <path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+              </svg>
+              Change
+            </button>
           </div>
         </div>
 
         <!-- Overall progress -->
         <div class="ip-overall-progress" *ngIf="roadmapTotalCount > 0">
-          <div class="ip-op-bar">
-            <div class="ip-op-fill" [style.width.%]="roadmapPercent"
-              [class.ip-op-complete]="roadmapPercent === 100"></div>
+          <div class="ip-op-track">
+            <div class="ip-op-bar">
+              <div class="ip-op-fill" [style.width.%]="roadmapPercent"
+                [class.ip-op-complete]="roadmapPercent === 100"></div>
+            </div>
           </div>
-          <span class="ip-op-label">{{ roadmapPercent }}% complete</span>
+          <span class="ip-op-label">{{ roadmapPercent }}%</span>
         </div>
 
         <!-- Scrollable section list -->
@@ -335,13 +361,14 @@
       <h2 class="ip-question-text">{{ selectedQuestion.question }}</h2>
       <!-- Answer mode selector -->
       <div class="ip-mode-bar">
+        <span class="ip-mode-label">Mode:</span>
         <button
           *ngFor="let m of MODE_LABELS"
           class="ip-mode-btn"
           [class.ip-mode-btn-active]="answerMode === m.key"
           (click)="setMode(m.key)"
           [disabled]="isLoadingAI || isFollowUpLoading"
-          [title]="m.label">
+          [title]="m.hint">
           {{ m.label }}
         </button>
       </div>
@@ -390,28 +417,13 @@
 
     </div><!-- /ip-messages -->
 
-    <!-- Quick action chips -->
-    <div class="ip-quick-chips" *ngIf="selectedQuestion && aiMessages.length > 0 && !isLoadingAI && !isFollowUpLoading">
-      <button class="ip-chip" (click)="sendChipAction('show-solution')">
-        <span>✅</span> Show Solution
-      </button>
-      <button class="ip-chip" (click)="explainSimpler()">
-        <span>💡</span> Explain Simpler
-      </button>
-      <button class="ip-chip" (click)="giveAnalogy()">
-        <span>🎭</span> Give Analogy
-      </button>
-      <button class="ip-chip" (click)="sendChipAction('common-mistakes')">
-        <span>⚠️</span> Common Mistakes
-      </button>
-      <button class="ip-chip" (click)="sendChipAction('code-example')">
-        <span>💻</span> Code Example
-      </button>
-      <button class="ip-chip" (click)="sendChipAction('best-practices')">
-        <span>🏆</span> Best Practices
-      </button>
-      <button class="ip-chip" (click)="getInterviewTips()">
-        <span>🎯</span> Interview Tips
+    <!-- Suggested follow-up chips (extracted from AI response) -->
+    <div class="ip-quick-chips" *ngIf="selectedQuestion && suggestedFollowUps.length > 0 && !isLoadingAI && !isFollowUpLoading">
+      <button class="ip-chip"
+        *ngFor="let s of suggestedFollowUps"
+        (click)="sendSuggestedFollowUp(s)">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        {{ s }}
       </button>
     </div>
 
@@ -444,34 +456,62 @@
 
 
   <!--  WELCOME STATE  -->
-  <main class="ip-welcome" *ngIf="!selectedQuestion" aria-hidden="true">
-    <div class="ip-welcome-card">
-      <div class="ip-welcome-icon"></div>
-      <h2 class="ip-welcome-h">Your AI Mentor is ready</h2>
-      <p class="ip-welcome-p">Select a question from the list to get a structured, interview-ready explanation with code examples and pro tips — or generate a full <strong>AI Roadmap</strong> for any tech stack.</p>
+  <main class="ip-welcome" *ngIf="!selectedQuestion" aria-label="Welcome">
+    <div class="ip-welcome-inner">
+
+      <!-- Hero -->
+      <div class="ip-welcome-hero">
+        <div class="ip-welcome-icon-wrap">
+          <div class="ip-welcome-icon"></div>
+          <div class="ip-welcome-icon-ring"></div>
+        </div>
+        <h2 class="ip-welcome-h">Start learning today</h2>
+        <p class="ip-welcome-p">Pick a question from the sidebar to get a structured, interview-ready explanation — or generate an AI Roadmap for your next job.</p>
+      </div>
+
+      <!-- Quick actions -->
+      <div class="ip-welcome-actions">
+        <button class="ip-wa-primary" (click)="selectTab('questions')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 4.78 2.83c-.67.37-1.07.85-1.07 1.67v.5"></path><circle cx="12" cy="17.5" r=".5" fill="currentColor"></circle></svg>
+          Pick a question
+        </button>
+        <button class="ip-wa-secondary" (click)="selectTab('roadmap')">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          Open Roadmap
+        </button>
+      </div>
+
+      <!-- Feature cards -->
       <div class="ip-feat-grid">
         <div class="ip-feat">
-          <span class="ip-feat-ico"></span>
+          <span class="ip-feat-ico">&#128172;</span>
           <strong>Chat answers</strong>
           <span>Step-by-step explanations</span>
         </div>
         <div class="ip-feat">
-          <span class="ip-feat-ico"></span>
+          <span class="ip-feat-ico">&#128187;</span>
           <strong>Code examples</strong>
           <span>Relevant snippets</span>
         </div>
         <div class="ip-feat">
-          <span class="ip-feat-ico"></span>
+          <span class="ip-feat-ico">&#128204;</span>
           <strong>AI Roadmap</strong>
           <span>Full prep plan per stack</span>
         </div>
         <div class="ip-feat">
-          <span class="ip-feat-ico"></span>
+          <span class="ip-feat-ico">&#127919;</span>
           <strong>Pro tips</strong>
           <span>Senior-level nuance</span>
         </div>
       </div>
-      <div class="ip-welcome-arrow"> Select a question or open the Roadmap tab</div>
+
+      <!-- Continue learning row (if a question was previously selected) -->
+      <div class="ip-continue-row" *ngIf="savedNotes.length > 0">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+        <span>{{ savedNotes.length }} note{{ savedNotes.length === 1 ? '' : 's' }} saved</span>
+        <button class="ip-link-btn" (click)="toggleNotesDrawer()">View notes →</button>
+      </div>
+
     </div>
   </main>
 

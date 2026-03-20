@@ -2130,6 +2130,35 @@
   }
   .me-tb-icon:active { background: rgba(99,102,241,0.1); border-color: #6366f1; color: #6366f1; }
 
+  /* Auto-format toggle pill in mobile toolbar */
+  .me-tb-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border: 1.5px solid #e5e9f5;
+    background: #ffffff;
+    border-radius: 8px;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: #94a3b8;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .me-tb-toggle .me-tb-toggle-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #cbd5e1; transition: background 0.15s;
+    flex-shrink: 0;
+  }
+  .me-tb-toggle.me-tb-toggle-on {
+    background: rgba(99,102,241,0.1);
+    border-color: rgba(99,102,241,0.3);
+    color: #6366f1;
+  }
+  .me-tb-toggle.me-tb-toggle-on .me-tb-toggle-dot { background: #6366f1; }
+
   /* ── Error banner ───────────────────────────────────────────── */
   .me-error {
     flex-shrink: 0;
@@ -2165,6 +2194,9 @@
     overflow-y: auto;
     caret-color: #6366f1;
     scroll-behavior: smooth;
+    user-select: text;
+    -webkit-user-select: text;
+    touch-action: manipulation;
   }
   .me-textarea::placeholder { color: #94a3b8; line-height: 1.75; }
   .me-textarea.me-streaming {
@@ -2503,6 +2535,35 @@
 .cn-format-btn:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
 .cn-format-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 .cn-format-btn.cn-formatting { background: linear-gradient(135deg, #818cf8, #6366f1); box-shadow: none; }
+
+/* Auto-format toggle for create-note toolbar */
+.cn-auto-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 12px;
+  border: 1.5px solid #e5e9f5;
+  background: #f8faff;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #94a3b8;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cn-auto-toggle .cn-auto-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: #cbd5e1; transition: background 0.15s;
+  flex-shrink: 0;
+}
+.cn-auto-toggle.cn-auto-on {
+  background: rgba(99,102,241,0.08);
+  border-color: rgba(99,102,241,0.25);
+  color: #6366f1;
+}
+.cn-auto-toggle.cn-auto-on .cn-auto-dot { background: #6366f1; }
 
 .cn-ai-spinner {
   display: inline-block;

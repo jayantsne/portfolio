@@ -17,7 +17,10 @@
     "compodoc": "npx compodoc -p tsconfig.doc.json",
     "audit": "npm audit fix",
     "version": "auto-changelog -p && git add CHANGELOG.md",
-    "deploy": "npm run build && firebase deploy",
+    "deploy": "powershell -ExecutionPolicy Bypass -File ../deploy.ps1",
+    "deploy:fe": "powershell -ExecutionPolicy Bypass -File ../deploy.ps1 -Frontend",
+    "deploy:be": "powershell -ExecutionPolicy Bypass -File ../deploy.ps1 -Backend",
+    "deploy:fast": "powershell -ExecutionPolicy Bypass -File ../deploy.ps1 -SkipBuild",
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "deploy:functions": "firebase deploy --only functions",
     "firebase:local": "firebase emulators:start"

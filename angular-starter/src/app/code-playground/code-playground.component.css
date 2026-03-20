@@ -22,52 +22,62 @@
 }
 
 /* ── Top bar ── */
+/* Topbar: title left | lang-center | actions right — never wrap */
 .pg-topbar {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  gap: 1rem;
-  padding: 0.7rem 1.25rem;
+  gap: 0.75rem;
+  padding: 0.55rem 1rem;
   background: #161b22;
   border-bottom: 1px solid #30363d;
   flex-shrink: 0;
-  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .pg-topbar-left {
   display: flex;
   align-items: center;
-  gap: 0.65rem;
-  margin-right: auto;
+  gap: 0.55rem;
+  min-width: 0;
+  overflow: hidden;
 }
-.pg-topbar-icon { font-size: 1.6rem; }
+.pg-topbar-icon { font-size: 1.35rem; flex-shrink: 0; }
 .pg-topbar-title {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 800;
   color: #e6edf3;
   margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.pg-topbar-sub { font-size: 0.72rem; color: #8b949e; margin: 0; }
+.pg-topbar-sub { display: none; } /* hidden to save space */
 
-/* Language buttons */
+/* Language buttons — centered in available space */
 .pg-lang-row {
   display: flex;
-  gap: 0.35rem;
-  flex-shrink: 0;
+  gap: 0.3rem;
+  justify-content: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+  overflow: hidden;
 }
 .pg-lang-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.3rem 0.75rem;
+  gap: 0.25rem;
+  padding: 0.28rem 0.6rem;
   background: #21262d;
   border: 1px solid #30363d;
   border-radius: 20px;
   color: #8b949e;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.18s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .pg-lang-btn:hover { border-color: #6366f1; color: #c9d1d9; }
 .pg-lang-btn--active {
@@ -76,24 +86,27 @@
   color: #a5b4fc;
 }
 
-/* Header action buttons */
+/* Action buttons — always on the right, never wrap */
 .pg-header-actions {
   display: flex;
-  gap: 0.45rem;
+  gap: 0.35rem;
   flex-shrink: 0;
+  flex-wrap: nowrap;
+  align-items: center;
 }
 .pg-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
-  padding: 0.38rem 0.9rem;
-  border-radius: 8px;
-  font-size: 0.82rem;
+  gap: 0.28rem;
+  padding: 0.32rem 0.7rem;
+  border-radius: 7px;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.18s;
   border: none;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .pg-action-btn--ghost {
   background: #21262d;
@@ -200,6 +213,72 @@
 }
 .pg-output-empty { color: #6e7681; font-size: 0.82rem; padding: 0.5rem 0; }
 
+/* Execution status bar */
+.pg-output-statusbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 1rem;
+  border-top: 1px solid #21262d;
+  background: #0d1117;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+}
+.pg-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  font-size: 0.65rem;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+.pg-status-icon--success {
+  background: rgba(63,185,80,0.15);
+  color: #3fb950;
+  border: 1px solid rgba(63,185,80,0.3);
+}
+.pg-status-icon--error {
+  background: rgba(248,81,73,0.15);
+  color: #f85149;
+  border: 1px solid rgba(248,81,73,0.3);
+}
+.pg-status-msg {
+  color: #8b949e;
+  font-weight: 600;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pg-status-msg--error { color: #f85149; }
+.pg-status-time {
+  color: #6e7681;
+  font-size: 0.7rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pg-status-retry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 1px solid #30363d;
+  border-radius: 4px;
+  color: #8b949e;
+  cursor: pointer;
+  padding: 0.15rem 0.3rem;
+  flex-shrink: 0;
+  transition: all 0.18s;
+}
+.pg-status-retry:hover {
+  border-color: #58a6ff;
+  color: #58a6ff;
+}
+
 .pg-output-line {
   display: flex;
   align-items: flex-start;
@@ -231,9 +310,9 @@
 
 /* ── Right column (AI assistant) ── */
 .pg-right {
-  width: 360px;
-  min-width: 280px;
-  max-width: 480px;
+  width: 320px;
+  min-width: 260px;
+  max-width: 400px;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -249,14 +328,16 @@
 .pg-ai-title { font-size: 0.88rem; font-weight: 800; color: #e6edf3; display: block; }
 .pg-ai-sub   { font-size: 0.72rem; color: #8b949e; }
 
-/* AI action chips */
+/* AI action chips — always 2 columns */
 .pg-ai-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.45rem;
-  padding: 0.75rem 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  padding: 0.65rem 0.85rem;
   border-bottom: 1px solid #21262d;
   flex-shrink: 0;
+  min-width: 0;
+  overflow: hidden;
 }
 /* Generate Exercise spans full width */
 .pg-ai-chip--exercise {
@@ -266,17 +347,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.3rem;
-  padding: 0.45rem 0.6rem;
+  gap: 0.25rem;
+  padding: 0.4rem 0.4rem;
   background: #161b22;
   border: 1px solid #30363d;
   border-radius: 8px;
   color: #8b949e;
-  font-size: 0.75rem;
+  font-size: 0.72rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.18s;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .pg-ai-chip:hover:not(:disabled) {
   border-color: #6366f1;
@@ -418,9 +502,16 @@
 .pg-ai-stream.md-content blockquote { border-left-color: #6366f1 !important; color: #8b949e !important; }
 
 /* ── Responsive ── */
+@media (max-width: 1100px) {
+  .pg-topbar { grid-template-columns: auto 1fr auto; gap: 0.5rem; padding: 0.5rem 0.75rem; }
+  .pg-topbar-left { gap: 0.35rem; }
+  .pg-topbar-icon { display: none; }
+}
 @media (max-width: 900px) {
   .pg-body { flex-direction: column; }
   .pg-left  { border-right: none; border-bottom: 1px solid #30363d; height: 50vh; }
   .pg-right { width: 100%; max-width: 100%; min-width: 0; height: 50vh; }
   .pg-topbar-left { display: none; }
+  .pg-topbar { grid-template-columns: 1fr auto; }
+  .pg-lang-row { justify-content: flex-start; }
 }

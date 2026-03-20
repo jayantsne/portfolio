@@ -713,34 +713,40 @@
           </div>
           <div class="am-mentor-chips">
             <button class="am-mentor-chip"
-                    (click)="sendFollowUpQuestion('Explain ' + currentTopicName + ' in the simplest possible terms with a real-world analogy')"
-                    [disabled]="isLoadingAI || !!streamingText">
-              💡 Explain simpler
+                    (click)="runQuickAction('breakdown')"
+                    [disabled]="isLoadingAI || !!streamingText"
+                    title="Step-by-step mental model with micro code snippets">
+              🧩 Break it down
             </button>
             <button class="am-mentor-chip"
-                    (click)="sendFollowUpQuestion('Give me a memorable real-world analogy for ' + currentTopicName + ' that makes it crystal clear')"
-                    [disabled]="isLoadingAI || !!streamingText">
-              🎭 Give analogy
+                    (click)="runQuickAction('realworld')"
+                    [disabled]="isLoadingAI || !!streamingText"
+                    title="Before/after production scenario showing why this concept matters">
+              🏗 Real-world scenario
             </button>
             <button class="am-mentor-chip"
-                    (click)="sendFollowUpQuestion('Show me a complete, production-quality code example of ' + currentTopicName + ' with inline comments')"
-                    [disabled]="isLoadingAI || !!streamingText">
-              💻 Show code
+                    (click)="runQuickAction('code')"
+                    [disabled]="isLoadingAI || !!streamingText"
+                    title="Production-quality code with line-by-line walkthrough">
+              💻 Code + walkthrough
             </button>
             <button class="am-mentor-chip"
-                    (click)="sendFollowUpQuestion('Give me the top 3 interview questions about ' + currentTopicName + ' with model answers')"
-                    [disabled]="isLoadingAI || !!streamingText">
-              🎯 Interview Q&amp;A
+                    (click)="runQuickAction('quiz')"
+                    [disabled]="isLoadingAI || !!streamingText"
+                    title="3-question quiz: concept check, code reading, application">
+              ❓ Quiz me
             </button>
             <button class="am-mentor-chip"
-                    (click)="sendFollowUpQuestion('What are the most common mistakes developers make with ' + currentTopicName + ' and how to avoid them?')"
-                    [disabled]="isLoadingAI || !!streamingText">
-              ⚠️ Common mistakes
+                    (click)="runQuickAction('mistakes')"
+                    [disabled]="isLoadingAI || !!streamingText"
+                    title="4 real production mistake patterns with broken vs fixed code">
+              ❌ What trips devs up
             </button>
             <button class="am-mentor-chip"
-                    (click)="sendFollowUpQuestion('Give me 5 bullet-point exam tips about ' + currentTopicName + ' that I must remember')"
-                    [disabled]="isLoadingAI || !!streamingText">
-              📋 Exam tips
+                    (click)="runQuickAction('interview')"
+                    [disabled]="isLoadingAI || !!streamingText"
+                    title="3 interview Q&As with model answers + what interviewers test">
+              🎯 Ace the interview
             </button>
           </div>
         </div>

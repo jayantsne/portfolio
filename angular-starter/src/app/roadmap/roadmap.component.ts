@@ -282,6 +282,16 @@ export class RoadmapComponent implements OnInit, OnDestroy {
       text,
     });
     this.cdr.markForCheck();
+
+    // Persist to backend Notes
+    this.notesSvc.saveNote(
+      `[Code Lab] ${this.expandedNode?.topic ?? this.activeRoadmap?.language ?? 'Playground'}`,
+      this.activeRoadmap?.language ?? 'Other',
+      text,
+      ['roadmap', 'code-lab', this.activeRoadmap?.language ?? ''].filter(Boolean),
+      'roadmap',
+      this.expandedNode?.id ?? '',
+    ).catch(() => { /* silently swallow */ });
   }
 
   /** Called when user clicks “Run in Playground” on a lesson code section */
@@ -389,6 +399,16 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   onMentorAddNote(text: string): void {
     this.inlineNotes.unshift({ topic: this.expandedNode?.topic ?? 'Note', text });
     this.cdr.markForCheck();
+
+    // Persist to backend Notes
+    this.notesSvc.saveNote(
+      this.expandedNode?.topic ?? (this.activeRoadmap?.language ?? 'Roadmap Note'),
+      this.activeRoadmap?.language ?? 'Other',
+      text,
+      ['roadmap', 'mentor-note', this.activeRoadmap?.language ?? ''].filter(Boolean),
+      'roadmap',
+      this.expandedNode?.id ?? '',
+    ).catch(() => { /* silently swallow */ });
   }
 
   @ViewChild('lessonBody')  lessonBodyEl?:  ElementRef<HTMLDivElement>;
@@ -416,8 +436,9 @@ export class RoadmapComponent implements OnInit, OnDestroy {
         if (user) {
           this.loadHome();
         } else {
-          this.view         = 'auth-gate';
+          // User logged out while on this protected page — navigate away
           this.savedRoadmaps = [];
+          this.router.navigate(['/'], { queryParams: { login: 'required', returnUrl: '/roadmap' } });
         }
         this.cdr.markForCheck();
       })
@@ -593,7 +614,9 @@ export class RoadmapComponent implements OnInit, OnDestroy {
         this.expandedNode.topic,
         this.activeRoadmap?.language ?? 'Roadmap',
         aiText,
-        ['roadmap', this.activeRoadmap?.language ?? '']
+        ['roadmap', this.activeRoadmap?.language ?? ''],
+        'roadmap',
+        this.expandedNode.id,
       );
       this.savedToNotes = true;
       setTimeout(() => { this.savedToNotes = false; }, 3000);

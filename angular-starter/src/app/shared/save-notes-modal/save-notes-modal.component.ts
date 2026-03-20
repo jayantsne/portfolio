@@ -21,6 +21,8 @@ export class SaveNotesModalComponent implements OnChanges {
   @Input() isVisible: boolean = false;
   @Input() topic: string = '';
   @Input() content: string = '';
+  @Input() contextType?: string;  // "prep" | "roadmap" | "mentor"
+  @Input() contextId?: string;    // topicId / questionId / nodeId
 
   @Output() closed = new EventEmitter<void>();
   @Output() saved  = new EventEmitter<void>();
@@ -79,7 +81,9 @@ export class SaveNotesModalComponent implements OnChanges {
         this.editableTopic.trim(),
         this.selectedCategory,
         this.content,
-        this.tags
+        this.tags,
+        this.contextType,
+        this.contextId,
       );
       this.saved.emit();
       this.close();

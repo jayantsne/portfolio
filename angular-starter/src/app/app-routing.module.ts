@@ -47,7 +47,7 @@ const routes: Routes = [
   { path: 'practice/azure-ai102',      redirectTo: 'azure-ai-102',   pathMatch: 'full' },
 
   // ── Learn content (requires subscription) ────────────────────────
-  { path: 'notes',        component: NotesComponent,         canActivate: [SubscriptionGuard] },
+  { path: 'notes',        component: NotesComponent,         canActivate: [LoginGuard, SubscriptionGuard] },
   { path: 'learn-quest',  component: LearnQuestComponent,    canActivate: [SubscriptionGuard] },
   { path: 'dsa-game',     component: DsaGameComponent,       canActivate: [SubscriptionGuard] },
   { path: 'memory-game',  component: MemoryGameComponent,    canActivate: [SubscriptionGuard] },
@@ -56,9 +56,11 @@ const routes: Routes = [
   { path: 'quiz/module/:moduleId', component: QuizComponent, canActivate: [LoginGuard, SubscriptionGuard] },
   { path: 'playground',   component: CodePlaygroundComponent, canActivate: [SubscriptionGuard] },
 
-  // ── Practice (requires login + subscription) ─────────────────────
+  // ── Practice (public) ──────────────────────────────────────────────
+  { path: 'interview-prep', component: InterviewPrepComponent },
+
+  // ── Practice Q&A (requires subscription) ────────────────────────────
   { path: 'questions',      component: QuestionsListComponent,  canActivate: [SubscriptionGuard] },
-  { path: 'interview-prep', component: InterviewPrepComponent,  canActivate: [LoginGuard, SubscriptionGuard] },
 
   // ── Subscription / payment ───────────────────────────────────────
   { path: 'subscribe', component: SubscribeComponent },

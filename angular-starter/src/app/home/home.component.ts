@@ -25,7 +25,8 @@ interface QuickConcept {
 
 interface AIMessage {
   role: 'user' | 'assistant';
-  content: string;
+  content: string;        // Display text shown in the UI
+  _sendContent?: string;  // Full prompt used for AI context (never rendered)
   timestamp: Date;
 }
 
@@ -1114,7 +1115,7 @@ One sentence: the single most important thing to remember about ${topic} in a te
   /**
    * Send a follow-up question to AI for deeper understanding
    */
-  async sendFollowUpQuestion(question: string): Promise<void> {
+  async sendFollowUpQuestion(question: string, displayText?: string): Promise<void> {
     if (this.isLoadingAI || !question.trim()) return;
 
     // Cancel any in-flight follow-up subscription
@@ -1126,10 +1127,13 @@ One sentence: the single most important thing to remember about ${topic} in a te
     this.currentQuestion = '';
     this.streamingText = '';
 
-    // Add user message
+    // Add user message — use displayText when provided (e.g. quick-action chip labels)
+    // so internal system prompts are NEVER rendered in the UI.
+    // _sendContent preserves the full prompt for AI history context only.
     this.aiMessages.push({
       role: 'user',
-      content: question,
+      content: displayText ?? question,
+      ...(displayText ? { _sendContent: question } : {}),
       timestamp: new Date()
     });
     this.shouldScrollToBottom = true;
@@ -1144,30 +1148,84 @@ One sentence: the single most important thing to remember about ${topic} in a te
         const topicForDive = (this.aiExplanation as any)?.concept ?? question.replace(/deep dive|in depth|explain (more|fully|in detail)/gi, '').trim();
         prompt = this.buildDeepDivePrompt(topicForDive || question);
       } else {
-        // Context-aware conversational follow-up
+        // Context-aware conversational follow-up — intent-aware
         const historyLines = this.aiMessages
           .slice(-6)
-          .map(m => `${m.role === 'user' ? '**User**' : '**Mentor**'}: ${m.content.slice(0, 600)}`)
+          .map(m => {
+            const text = m._sendContent ?? m.content;
+            return `${m.role === 'user' ? 'Student' : 'Mentor'}: ${text.slice(0, 600)}`;
+          })
           .join('\n\n');
 
-        prompt =
-          `You are an expert senior software engineer and programming mentor. ` +
-          `Answer the student's follow-up question based on the conversation. ` +
-          `Be direct, practical, and conversational. No filler phrases like "Sure!" or "Certainly!".\n\n` +
-          `---\n` +
-          `**Conversation so far:**\n${historyLines}\n` +
-          `---\n\n` +
-          `**Student's question:** ${question}\n\n` +
-          `Rules:\n` +
-          `- Answer only what was asked — don't repeat what was already covered\n` +
-          `- Match response length to the question — short questions get short answers\n` +
-          `- Use ## headings only if the answer has multiple distinct parts\n` +
-          `- Wrap all code in fenced blocks with language identifier (e.g. \`\`\`javascript)\n` +
-          `- **Bold** key terms\n` +
-          `- End your response with this exact block on its own line:\n` +
-          `**Explore more:**\n` +
-          `- [specific follow-up question 1?]\n` +
-          `- [specific follow-up question 2?]`;
+        // Pull the actual last assistant message for re-explanation context
+        const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'assistant')?.content?.slice(0, 800) ?? '';
+        const topic = this.currentTopicName || 'this concept';
+        const intent = this.detectIntent(question);
+
+        const SYS =
+          `You are a brilliant, patient programming mentor with the warmth of a senior dev who genuinely enjoys teaching. ` +
+          `Never start with filler ("Sure!", "Great question!", "Certainly!"). ` +
+          `No rigid templates. Respond like you're in a chat — natural, human, clear.\n\n`;
+
+        const EXPLORE =
+          `\n\nAfter your response add EXACTLY:\n` +
+          `**Explore more:**\n- [follow-up question 1?]\n- [follow-up question 2?]`;
+
+        if (intent === 'confused') {
+          // Student is lost — re-explain from scratch with a completely different angle
+          prompt =
+            SYS +
+            `The student is learning **${topic}** and just said: "${question}" — they're confused or lost.\n\n` +
+            `Here's what was explained before:\n${lastAI}\n\n` +
+            `Your job: re-explain **${topic}** from a completely different angle. Do NOT repeat the same explanation.\n\n` +
+            `Structure your response like this (but write it as flowing prose, not a list):\n` +
+            `1. Open with one ultra-simple sentence that captures the entire idea\n` +
+            `2. Use a real-world non-tech analogy (a coffee shop, a restaurant, a traffic light — anything relatable)\n` +
+            `3. Then ONE tiny code example (≤8 lines) that shows the simplest possible usage\n` +
+            `4. Close with: "Does that make more sense? What part is still fuzzy?"\n\n` +
+            `Tone: warm, patient, zero judgment. Short paragraphs (2-3 sentences max).` +
+            EXPLORE;
+        } else if (intent === 'why') {
+          prompt =
+            SYS +
+            `Student is learning **${topic}**. They asked: "${question}"\n\n` +
+            `Context from conversation:\n${historyLines}\n\n` +
+            `Focus on the WHY — the motivation, the problem it solves, why engineers reach for it. ` +
+            `Give a concrete before/after scenario (not just theory). ` +
+            `Keep it conversational. 2-3 short paragraphs. ` +
+            `No rigid sections or headers unless the answer genuinely has distinct parts.` +
+            EXPLORE;
+        } else if (intent === 'how') {
+          prompt =
+            SYS +
+            `Student is learning **${topic}**. They asked: "${question}"\n\n` +
+            `Context from conversation:\n${historyLines}\n\n` +
+            `Walk them through HOW step by step — but conversationally, not as a numbered list unless ` +
+            `steps really are sequential. Mix explanation + code naturally. ` +
+            `Show, don't just tell. ≤20 lines of code max.` +
+            EXPLORE;
+        } else if (intent === 'example') {
+          prompt =
+            SYS +
+            `Student is learning **${topic}**. They want an example or code for: "${question}"\n\n` +
+            `Context from conversation:\n${historyLines}\n\n` +
+            `Give ONE realistic, self-contained code example (15-25 lines). ` +
+            `Introduce it in 1-2 sentences. Add inline comments on non-obvious lines. ` +
+            `After the code, one short paragraph pointing out the 2-3 most important things to notice. ` +
+            `No headings. No bullet dumps.` +
+            EXPLORE;
+        } else {
+          // Normal conversational follow-up
+          prompt =
+            SYS +
+            `Student is learning **${topic}**. Here's the conversation so far:\n${historyLines}\n\n` +
+            `They just said: "${question}"\n\n` +
+            `Respond naturally — like continuing a conversation, not starting a new lesson. ` +
+            `Answer only what was asked. Match length to the question (short question = short answer). ` +
+            `Use headers only if genuinely needed for multiple distinct parts. ` +
+            `Bold key terms inline. Wrap code in fenced blocks.` +
+            EXPLORE;
+        }
       }
 
       this.followUpSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
@@ -1231,29 +1289,49 @@ One sentence: the single most important thing to remember about ${topic} in a te
   }
 
   /**
-   * Builds a short, ChatGPT-style answer for simple/definition questions.
-   * Response is conversational (150-300 words) with optional mini code snippet.
+   * Detects the student's intent from a short or vague follow-up message.
+   * Used to choose the right response strategy in sendFollowUpQuestion.
+   */
+  private detectIntent(text: string): 'confused' | 'why' | 'how' | 'example' | 'normal' {
+    const t = text.trim().toLowerCase();
+    const confused =
+      // Very short or vague inputs (≤20 chars, no '?')
+      (t.length <= 20 && !t.includes('?')) ||
+      /\b(not getting|don't get|dont get|confused|lost|i don.t understand|unclear|still don.t|make sense|makes no sense|huh|what does that mean|wut|wtf|no idea|can.t follow)\b/.test(t);
+    if (confused) return 'confused';
+    if (/^why\b/.test(t) || /\bwhy (is|does|do|did|would|should)\b/.test(t)) return 'why';
+    if (/^how\b/.test(t) || /\bhow (do|does|did|can|would|to)\b/.test(t)) return 'how';
+    if (/\b(show me|example|code|demo|snippet|write|implement)\b/.test(t)) return 'example';
+    return 'normal';
+  }
+
+  /**
+   * Builds a conversational, ChatGPT-style opening explanation.
+   * No rigid sections. Adapts tone to feel like a senior dev explaining over coffee.
    */
   private buildQuickAnswerPrompt(topic: string): string {
     return (
-      `You are a friendly, expert software engineering mentor. ` +
-      `Answer conversationally like ChatGPT — concise, clear, and direct.\n\n` +
-      `Topic: "${topic}"\n\n` +
-      `Response format:\n` +
-      `1. A clear, 2-3 sentence definition. No filler phrases like "Sure!", "Certainly!", or "Great question!". Get straight to the point.\n` +
-      `2. A short code snippet (≤ 10 lines) only if it directly illustrates the concept — wrap in a fenced block with the language identifier.\n` +
-      `3. One-sentence real-world analogy, only if a great one exists.\n` +
-      `4. End your response with EXACTLY this block — no extra text before or after it:\n` +
+      `You are a brilliant, patient programming mentor — like a senior dev explaining to a colleague over Slack.\n` +
+      `Your personality: direct, warm, no-nonsense. You get to the point fast and make things click.\n\n` +
+      `The student just asked about: "${topic}"\n\n` +
+      `How to respond:\n` +
+      `- Open with the KEY INSIGHT in plain English — the one sentence that makes the concept click\n` +
+      `- Follow with 1-2 short paragraphs (3-4 sentences each) that build on the insight\n` +
+      `- Weave in an analogy naturally if one exists — don't announce it with "Analogy:"\n` +
+      `- Include a ≤10 line code snippet ONLY if it makes something clearer than words can\n` +
+      `- End with ONE short natural question — e.g. "Does that click?" or "Want to see this in action?"\n\n` +
+      `Style rules:\n` +
+      `- NO section headers (no ## Definition, ## Why it's used, ## Example)\n` +
+      `- NO bullet dumps or numbered lists unless genuinely listing things\n` +
+      `- NO filler phrases ("Sure!", "Great question!", "Certainly!")\n` +
+      `- Short paragraphs — max 4 sentences each\n` +
+      `- Bold key terms on first use inline, not as headers\n` +
+      `- Total: 120-250 words\n\n` +
+      `After your response, add EXACTLY this block:\n` +
       `**Explore more:**\n` +
       `- [specific follow-up question about ${topic}?]\n` +
-      `- [another specific question the learner might ask next?]\n` +
-      `- [a practical or interview-related question about ${topic}?]\n\n` +
-      `Rules:\n` +
-      `- Total response length: 150-280 words\n` +
-      `- Use **bold** for key terms on first use\n` +
-      `- Skip ## section headers — keep it conversational\n` +
-      `- Wrap all code in fenced blocks with language identifier\n` +
-      `- Do NOT produce a long structured article for a simple definition question`
+      `- [another question the learner might ask next?]\n` +
+      `- [a practical or interview-related question about ${topic}?]`
     );
   }
 
@@ -1298,6 +1376,114 @@ One sentence: the single most important thing to remember about ${topic} in a te
       `Formatting: use ## headings, **bold** key terms on first use, \`inline code\` for short snippets, ` +
       `fenced code blocks with language identifier for multi-line code. No wall-of-text paragraphs.`
     );
+  }
+
+  /**
+   * Smart quick-action dispatcher.
+   * Each action MODIFIES / EXTENDS the last AI response — it does NOT start a new
+   * independent lesson. This makes actions feel like ChatGPT continuations.
+   */
+  runQuickAction(action: 'breakdown' | 'realworld' | 'code' | 'quiz' | 'mistakes' | 'interview'): void {
+    const topic = this.currentTopicName?.trim() || 'this concept';
+
+    // Get the last AI message — quick actions always build on what was just said
+    const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'assistant')?.content?.slice(0, 1000) ?? '';
+    const prevCtx = lastAI
+      ? `The student just read this explanation about **${topic}**:\n---\n${lastAI}\n---\n\n`
+      : `The student is learning **${topic}**.\n\n`;
+
+    const SYS =
+      `You are a brilliant programming mentor. Natural tone — like a senior dev continuing a Slack thread.\n` +
+      `Never start with filler ("Sure!", "Certainly!", "Great question!"). Go straight into the value.\n` +
+      `Build on what was already explained — don't repeat it, extend it.\n\n`;
+
+    const prompts: Record<typeof action, string> = {
+
+      // ── 1. Break it down — simplify the last explanation into digestible steps ──
+      breakdown:
+        SYS + prevCtx +
+        `The student wants this simplified. Break down what was just explained into a step-by-step mental model.\n\n` +
+        `How to respond:\n` +
+        `- 3-5 numbered steps written as short prose (2-3 sentences each), NOT bullet points\n` +
+        `- Each step has a bold title that captures the key idea in ≤5 words\n` +
+        `- Include a tiny code snippet (≤6 lines) for any step where code is clearer than words\n` +
+        `- End with one sentence: the mental shortcut a senior dev would use\n` +
+        `- Conversational tone throughout — this should feel like continuing a chat, not starting a new lesson\n` +
+        `- Wrap all code in fenced blocks with language identifier`,
+
+      // ── 2. Real-world scenario — extend with a concrete use case ───────────
+      realworld:
+        SYS + prevCtx +
+        `The student wants to see **${topic}** used in the real world. Build on the above explanation with a concrete production scenario.\n\n` +
+        `How to respond:\n` +
+        `- Open with 1 sentence naming a real-ish system ("In a ride-sharing app...", "On an e-commerce checkout...")\n` +
+        `- Show why ${topic} is necessary here — the pain without it (2-3 sentences)\n` +
+        `- Before/after code: ≤10 lines each, inline comments showing the difference\n` +
+        `- Close with 1–2 sentences on the actual impact (performance, reliability, readability)\n` +
+        `- No forced headers — let the narrative flow naturally\n` +
+        `- Wrap all code in fenced blocks with language identifier`,
+
+      // ── 3. Code + walkthrough — show the concept in running code ───────────
+      code:
+        SYS + prevCtx +
+        `The student wants to see **${topic}** in code. Give them a realistic, working example that extends the explanation above.\n\n` +
+        `How to respond:\n` +
+        `- ONE self-contained example (15-25 lines), real use case, not foo/bar\n` +
+        `- Inline comment on every non-obvious line\n` +
+        `- After the code: 2-3 short sentences pointing out the most important things to notice\n` +
+        `- ONE variation (≤8 lines) showing a meaningful edge case or alternative\n` +
+        `- No rigid "Line-by-Line Walkthrough" header — weave the explanation naturally\n` +
+        `- Wrap all code in fenced blocks with language identifier`,
+
+      // ── 4. Quiz me — test understanding of what was just explained ─────────
+      quiz:
+        SYS + prevCtx +
+        `Test the student's understanding of what was just explained about **${topic}**.\n\n` +
+        `How to respond:\n` +
+        `- 3 questions directly based on the explanation above (not generic ${topic} trivia)\n` +
+        `- Q1: concept check — "what/why" question answered in 1-2 sentences\n` +
+        `- Q2: code reading — show 5-8 lines, ask "what does this do?" or "spot the bug"\n` +
+        `- Q3: application — "given this scenario, how would you use ${topic}?"\n` +
+        `- Each answer immediately follows its question (no hiding answers)\n` +
+        `- End with one harder challenge question for students who want more\n` +
+        `- Wrap all code in fenced blocks with language identifier`,
+
+      // ── 5. What trips devs up — extend with common pitfalls ────────────────
+      mistakes:
+        SYS + prevCtx +
+        `Now show the student what trips developers up with **${topic}** — the mistakes that cause real bugs.\n\n` +
+        `How to respond:\n` +
+        `- 3-4 mistakes, each as a short story: "Here's a mistake devs often make..."\n` +
+        `- Broken code (4-8 lines) → fixed code (4-8 lines), inline comments showing WHY\n` +
+        `- One memorable rule-of-thumb after each mistake\n` +
+        `- Conversational tone — "the sneaky thing here is...", "you might think X, but actually..."\n` +
+        `- Close with one sentence: the single most dangerous misconception about ${topic}\n` +
+        `- Wrap all code in fenced blocks with language identifier`,
+
+      // ── 6. Ace the interview — extend with interview prep ──────────────────
+      interview:
+        SYS + prevCtx +
+        `Help the student answer **${topic}** interview questions confidently. Build on the explanation they just read.\n\n` +
+        `How to respond:\n` +
+        `- Q1 (definition): model answer in plain English, 3-4 sentences, first person, ends with an analogy\n` +
+        `- Q2 (depth): a harder follow-up an interviewer would ask; 2-3 sentence senior-level answer\n` +
+        `- Q3 (code): write [short task related to ${topic}] — 10-15 lines with comments\n` +
+        `- "What they're really testing": 2-3 bullet points on the underlying skills being probed\n` +
+        `- "Avoid these red flags": 2 things that would make an interviewer doubt the candidate\n` +
+        `- Write it conversationally — like coaching a friend, not writing a study guide\n` +
+        `- Wrap all code in fenced blocks with language identifier`
+    };
+
+    const labels: Record<typeof action, string> = {
+      breakdown: '🧩 Break it down',
+      realworld: '🏗 Real-world scenario',
+      code:      '💻 Code + walkthrough',
+      quiz:      '❓ Quiz me',
+      mistakes:  '❌ What trips devs up',
+      interview: '🎯 Ace the interview',
+    };
+
+    this.sendFollowUpQuestion(prompts[action], labels[action]);
   }
 
   // ── Visual Animated Diagram ──────────────────────────────────────────────

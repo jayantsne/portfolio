@@ -4,14 +4,16 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { CustomAuthService } from './custom-auth.service';
 
 export interface SavedNote {
-  id?:        string;   // MongoDB _id
-  topic:      string;
-  category:   string;   // e.g. Frontend, Backend, AI, DevOps
-  tags:       string[];  // user-defined tags
-  content:    string;
-  isPinned?:  boolean;
-  savedAt?:   string;   // ISO date string from backend
-  savedAtMs?: number;   // epoch ms for display/sorting
+  id?:          string;   // MongoDB _id
+  topic:        string;
+  category:     string;   // e.g. Frontend, Backend, AI, DevOps
+  tags:         string[];  // user-defined tags
+  content:      string;
+  isPinned?:    boolean;
+  savedAt?:     string;   // ISO date string from backend
+  savedAtMs?:   number;   // epoch ms for display/sorting
+  contextType?: string;   // "prep" | "roadmap" | "mentor" | ""
+  contextId?:   string;   // topicId / questionId / nodeId
 }
 
 @Injectable({ providedIn: 'root' })
@@ -38,8 +40,17 @@ export class NotesService {
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
-  async saveNote(topic: string, category: string, content: string, tags: string[] = []): Promise<void> {
-    const dto = { topic, category, tags, content };
+  async saveNote(
+    topic: string,
+    category: string,
+    content: string,
+    tags: string[] = [],
+    contextType?: string,
+    contextId?: string,
+  ): Promise<void> {
+    const dto: any = { topic, category, tags, content };
+    if (contextType) dto.contextType = contextType;
+    if (contextId)   dto.contextId   = contextId;
     const note = await this.http
       .post<SavedNote>(this.url, dto, { headers: this.authSvc.getAuthHeaders() })
       .toPromise();
@@ -84,6 +95,21 @@ export class NotesService {
     if (updated) {
       this._notes.next(current.map(n => n.id === noteId ? this.normalize(updated) : n));
     }
+  }
+
+  // ── Context Filtering ────────────────────────────────────────────
+
+  /**
+   * Returns notes from the in-memory cache that match a given context.
+   * Optionally narrow to a specific contextId (e.g. a question or node id).
+   * Avoids an extra HTTP round-trip on pages that already trigger loadNotes().
+   */
+  getNotesForContext(contextType: string, contextId?: string): SavedNote[] {
+    return this._notes.getValue().filter(n => {
+      if (n.contextType !== contextType) return false;
+      if (contextId && n.contextId !== contextId) return false;
+      return true;
+    });
   }
 
   // ── Duplicate Detection ────────────────────────────────────────────────────
@@ -152,9 +178,11 @@ export class NotesService {
   private normalize(n: SavedNote): SavedNote {
     return {
       ...n,
-      tags:      n.tags ?? [],
-      isPinned:  n.isPinned ?? false,
-      savedAtMs: n.savedAtMs ?? (n.savedAt ? new Date(n.savedAt).getTime() : Date.now())
+      tags:        n.tags ?? [],
+      isPinned:    n.isPinned ?? false,
+      contextType: n.contextType ?? '',
+      contextId:   n.contextId   ?? '',
+      savedAtMs:   n.savedAtMs ?? (n.savedAt ? new Date(n.savedAt).getTime() : Date.now())
     };
   }
 }

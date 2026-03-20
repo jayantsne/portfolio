@@ -7,6 +7,7 @@ import { AILearnService } from '../services/ai-learn.service';
 import { InterviewRoadmapService } from '../services/interview-roadmap.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { AuthTriggerService } from '../shared/auth-trigger.service';
+import { NotesService } from '../shared/notes.service';
 
 interface AIMessage {
   role: 'user' | 'ai';
@@ -109,6 +110,8 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   savedNotes: SavedNote[] = [];
   noteSaved = false;
   showNotesDrawer = false;
+  /** Mobile: controls sidebar drawer open/close */
+  showMobileSidebar = false;
   /** Shown when a guest tries to save — prompts them to sign in. */
   showLoginPrompt = false;
 
@@ -116,13 +119,13 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   answerMode: string = 'normal';
 
   readonly MODE_LABELS = [
-    { key: 'normal',         label: '📋 Standard'      },
-    { key: 'simple',         label: '🧩 Simple'         },
-    { key: 'analogy',        label: '🎭 Analogy'        },
-    { key: 'code',           label: '💻 Code'           },
-    { key: 'mistakes',       label: '❌ Mistakes'       },
-    { key: 'best_practices', label: '⭐ Best Practices'  },
-    { key: 'interview_tips', label: '🎯 Interview Tips'  },
+    { key: 'normal',         label: '📋 Standard',       hint: 'Balanced explanation with a real-world example' },
+    { key: 'simple',         label: '🧩 Simple',          hint: 'Plain English, analogy-first, no jargon' },
+    { key: 'analogy',        label: '🎭 Analogy',         hint: 'Real-world analogy that makes the concept stick' },
+    { key: 'code',           label: '💻 Code',            hint: 'Code-first answer with working examples' },
+    { key: 'mistakes',       label: '❌ Mistakes',        hint: 'Most common mistakes and how to avoid them' },
+    { key: 'best_practices', label: '⭐ Best Practices',  hint: 'Senior-level production insights' },
+    { key: 'interview_tips', label: '🎯 Interview Tips',  hint: 'How to deliver this answer in an interview' },
   ] as const;
 
   /* ─── Roadmap state ──────────────────────────────────────── */
@@ -303,6 +306,7 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     private customAuth: CustomAuthService,
     private router: Router,
     private authTrigger: AuthTriggerService,
+    private notesSvc: NotesService,
   ) {}
 
   ngOnInit(): void {
@@ -659,6 +663,16 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     localStorage.setItem('ip_saved_notes', JSON.stringify(this.savedNotes));
     this.roadmapNoteSaved = true;
     setTimeout(() => (this.roadmapNoteSaved = false), 2500);
+
+    // Persist to backend Notes
+    this.notesSvc.saveNote(
+      `${stack.name} Interview Prep Roadmap`,
+      'Other',
+      md,
+      ['interview-prep', 'roadmap', stack.id],
+      'prep',
+      stack.id,
+    ).catch(() => { /* silently swallow — local save already succeeded */ });
   }
 
   /** Open the login modal instantly — works even when already on /interview-prep.
@@ -721,6 +735,7 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     this.streamingText = '';
     this.followUpText = '';
     this.answerMode = 'normal'; // reset mode for each new question
+    this.showMobileSidebar = false; // close drawer on mobile
     this.loadAIExplanation(q);
   }
 
@@ -785,7 +800,8 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     if (!text) return text;
     let t = text;
 
-    // Strip echoed prompt preamble — real answer starts at first heading (## or ###)
+    // Strip echoed prompt preamble only — real content starts right away in the new free-form prompts.
+    // Only strip if a heading appears within the first 300 chars (a short echoed opener, not mid-response structure).
     const idx2 = t.indexOf('\n## ');
     const idx3 = t.indexOf('\n### ');
     const headingIdx =
@@ -793,7 +809,7 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
       : idx2 !== -1 ? idx2
       : idx3 !== -1 ? idx3
       : -1;
-    if (headingIdx !== -1 && headingIdx < 1400) {
+    if (headingIdx !== -1 && headingIdx < 300) {
       t = t.slice(headingIdx + 1);
     }
 
@@ -823,70 +839,110 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Builds the structured interview-coach prompt based on the selected mode.
-   * Produces a ChatGPT-style answer with fixed sections:
-   * ✅ Definition → 🚀 Key Points → 🧠 Simple Explanation → 🏢 Real-world Example → 🎯 Interview Tip
+   * Builds an adaptive, conversational mentor prompt.
+   * Each mode produces genuinely different response styles — never the same rigid skeleton.
    */
   private buildInterviewPrompt(q: InterviewQuestion, mode: string): string {
-    const SYSTEM =
-      `You are an expert software engineer and interview coach.\n` +
-      `Your job is to generate HIGH-QUALITY, structured answers — accurate, clean, easy to scan.\n\n` +
-      `Category: ${q.category} | Difficulty: ${q.difficulty || 'Medium'}\n` +
-      `Interview question: "${q.question}"\n\n`;
+    const topic   = q.question;
+    const cat     = q.category;
+    const diff    = q.difficulty || 'Medium';
 
-    const RULES =
-      `STRICT RULES (must follow):\n` +
-      `- NEVER write long paragraphs\n` +
-      `- NEVER include incorrect info — prefer correctness over verbosity\n` +
-      `- NEVER add fluff or vague analogies\n` +
-      `- Bold key terms on first use (inline, not as headers)\n` +
-      `- Wrap code in fenced blocks with language identifier\n` +
-      `- Never start with filler ("Sure!", "Certainly!", "Great question!")\n` +
-      `- Conversational tone, high clarity, easy to scan\n\n`;
-
-    const STRUCTURE =
-      `Structure your answer with EXACTLY these sections:\n\n` +
-      `### ✅ Definition\n` +
-      `2–3 lines — clear, correct, no padding\n\n` +
-      `### 🚀 Key Points\n` +
-      `Bullet points only (max 5–6), short and impactful\n\n` +
-      `### 🧠 Simple Explanation\n` +
-      `Explain like teaching a beginner, no unnecessary jargon\n\n` +
-      `### 🏢 Real-world Example\n` +
-      `Practical use case — concrete and relatable\n\n` +
-      `### 🎯 Interview Tip\n` +
-      `What interviewers actually look for — 1–3 lines\n\n`;
-
-    const MODE_ADDONS: Record<string, string> = {
-      normal: '',
-      simple:
-        `MODE: simple\n` +
-        `Explain in very easy terms throughout. Avoid all technical jargon. Use everyday language.\n\n`,
-      analogy:
-        `MODE: analogy\n` +
-        `In "🧠 Simple Explanation", lead with a strong, memorable real-world analogy for the core concept.\n\n`,
-      code:
-        `MODE: code\n` +
-        `In "🏢 Real-world Example", include a clean, well-commented code snippet (10–20 lines) that demonstrates the concept.\n\n`,
-      mistakes:
-        `MODE: mistakes\n` +
-        `In "🏢 Real-world Example", show the 2–3 most common mistakes developers make and how to fix them.\n\n`,
-      best_practices:
-        `MODE: best_practices\n` +
-        `In "🚀 Key Points" and "🏢 Real-world Example", focus on senior-level practical best practices.\n\n`,
-      interview_tips:
-        `MODE: interview_tips\n` +
-        `Expand "🎯 Interview Tip" to 3–4 bullet points covering what interviewers specifically want to hear.\n\n`,
-    };
+    // Shared persona & ground rules (kept brief so the model stays on task)
+    const SYS =
+      `You are a brilliant senior software engineer acting as an interview coach and mentor. ` +
+      `You sound like a knowledgeable colleague in a Slack thread — natural, direct, no filler. ` +
+      `Never start with "Sure!", "Certainly!", "Great question!" or any similar opener. ` +
+      `Topic: "${topic}" | Category: ${cat} | Difficulty: ${diff}\n\n`;
 
     const EXPLORE =
-      `After your answer add EXACTLY:\n` +
-      `**Explore more:**\n` +
+      `\n\n**Explore more:**\n` +
       `- [most common interviewer follow-up question 1?]\n` +
       `- [most common interviewer follow-up question 2?]\n` +
-      `- [practical or senior-level follow-up question 3?]`;
+      `- [a senior-level or edge-case follow-up?]`;
 
-    return SYSTEM + (MODE_ADDONS[mode] ?? '') + RULES + STRUCTURE + EXPLORE;
+    const prompts: Record<string, string> = {
+
+      normal:
+        SYS +
+        `Give a complete, interview-ready answer. Think of this as coaching a smart engineer who ` +
+        `knows the basics but needs to nail the explanation in an interview setting.\n\n` +
+        `- Open directly with the core idea in 1–2 sentences — no headers, no preamble\n` +
+        `- Explain how it works naturally, like you're talking through it (mix prose and bullets)\n` +
+        `- Include ONE practical code example (10–15 lines) that shows the concept in context\n` +
+        `- End with a short "In an interview, the key thing to emphasise is..." note\n` +
+        `- Bold key terms inline as they appear\n` +
+        `- End the response with: "Want me to go deeper on any part of this?"` +
+        EXPLORE,
+
+      simple:
+        SYS +
+        `The user wants the simplest possible explanation — they're building intuition, not depth yet.\n\n` +
+        `- Start with ONE sentence in plain English that captures the whole idea — no jargon\n` +
+        `- Immediately follow with a real-world non-tech analogy (not a tech metaphor)\n` +
+        `- Then show the concept in code in ≤8 lines — the absolute simplest usage\n` +
+        `- Use everyday language throughout; if you must use a technical term, define it on the spot\n` +
+        `- Keep it short — understanding first, completeness second\n` +
+        `- End with: "Does that click? Want the deeper version when you're ready?"` +
+        EXPLORE,
+
+      analogy:
+        SYS +
+        `Make this concept impossible to forget by building a memorable real-world analogy.\n\n` +
+        `- Open with the analogy directly — non-technical (coffee shop, traffic, restaurant, etc.)\n` +
+        `- Spend 3–4 sentences building the analogy richly; make it visual and concrete\n` +
+        `- Then explicitly map each part of the analogy back to the technical concept\n` +
+        `- Show a short code snippet (≤10 lines) that proves the analogy holds in practice\n` +
+        `- End with: "Does that mental model make it stick? Want a different angle?"` +
+        EXPLORE,
+
+      code:
+        SYS +
+        `Lead with code — the user learns best by seeing it in action.\n\n` +
+        `- Start with 1 sentence of context, then immediately show a realistic, self-contained ` +
+        `code example (15–25 lines). Every non-obvious line gets an inline comment.\n` +
+        `- After the code: explain in 2–3 short paragraphs what the code demonstrates and why it's ` +
+        `written that way — no rigid headers, just natural prose\n` +
+        `- Highlight 1–2 things a reviewer would instantly notice (good or bad) in this code\n` +
+        `- End with: "Want to see how this changes in a real-world scenario or edge case?"` +
+        EXPLORE,
+
+      mistakes:
+        SYS +
+        `Teach through failure — the most memorable learning comes from understanding what goes wrong.\n\n` +
+        `- Cover the 3 most common mistakes developers make with this in interviews and production\n` +
+        `- For each mistake: show broken/naive code (4–8 lines) → fixed code (4–8 lines), with inline ` +
+        `comments explaining WHY the first version is wrong\n` +
+        `- After each fix, give ONE memorable rule: "The rule here: ..."\n` +
+        `- Conversational tone — "the sneaky thing here is...", "this trips up even experienced devs..."\n` +
+        `- End with the single most dangerous misconception about this topic and: ` +
+        `"Any of these look familiar from your codebase?"` +
+        EXPLORE,
+
+      best_practices:
+        SYS +
+        `Share the production-grade wisdom that separates junior answers from senior answers.\n\n` +
+        `- Cover 3–4 real best practices — NOT a generic bullet dump\n` +
+        `- For each: what beginners do, what seniors do, and WHY it matters in production\n` +
+        `- Include code snippets only where they make a concrete difference (side-by-side if helpful)\n` +
+        `- Mention trade-offs: when is the "best practice" NOT the right choice?\n` +
+        `- End with: "In an interview, saying X signals you've shipped this in production — ` +
+        `want me to prep you on the likely follow-up questions?"` +
+        EXPLORE,
+
+      interview_tips:
+        SYS +
+        `Give focused interview coaching — not a general explanation. The user already understands ` +
+        `the concept; they need to know how to deliver it under pressure.\n\n` +
+        `- The opening line: what's the perfect first sentence to say in an interview for this question?\n` +
+        `- Signal words: 2–3 keywords or phrases that immediately tell the interviewer you know this deep\n` +
+        `- The trap: one thing candidates say that tanks an otherwise good answer — and how to avoid it\n` +
+        `- Wrapping up: how to end your answer to invite a deep-dive (not just trail off)\n` +
+        `- BRIEF delivery guide: if 2 minutes, cover X. If 5 minutes, add Y, Z.\n` +
+        `- End with: "Want me to mock-interview you on this one?"` +
+        EXPLORE,
+    };
+
+    return prompts[mode] ?? prompts['normal'];
   }
 
   /* ─── Follow-up ─────────────────────────────────────────── */
@@ -1061,6 +1117,18 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
     localStorage.setItem('ip_saved_notes', JSON.stringify(this.savedNotes));
     this.noteSaved = true;
     setTimeout(() => (this.noteSaved = false), 2200);
+
+    // Persist to backend Notes
+    const tags: string[] = ['interview-prep'];
+    if (this.selectedQuestion.difficulty) tags.push(this.selectedQuestion.difficulty.toLowerCase());
+    this.notesSvc.saveNote(
+      this.selectedQuestion.question,
+      this.selectedQuestion.category,
+      answer,
+      tags,
+      'prep',
+      String(this.selectedQuestion.id),
+    ).catch(() => { /* silently swallow — local save already succeeded */ });
   }
 
   deleteNote(questionId: number): void {

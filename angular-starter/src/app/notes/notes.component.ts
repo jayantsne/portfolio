@@ -85,6 +85,9 @@ export class NotesComponent implements OnInit, OnDestroy {
   meFormatLoading     = false;
   mePreFormatContent: string | null = null;
   private meXhr: XMLHttpRequest | null = null;
+  autoFormatEnabled   = false;
+  private mePasteTimer: any  = null;
+  private cnPasteTimer: any  = null;
 
   // ── Delete flow ─────────────────────────────────────────────────────────
   deleteModal: SavedNote | null = null;   // note awaiting modal confirmation
@@ -298,6 +301,58 @@ export class NotesComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Paste handler for mobile editor — debounces AI format 700 ms after paste if auto-format is on */
+  onMobileEditorPaste(_event: ClipboardEvent): void {
+    if (!this.autoFormatEnabled) return;
+    clearTimeout(this.mePasteTimer);
+    this.mePasteTimer = setTimeout(() => {
+      if (this.editContent.trim() && !this.meFormatLoading) {
+        this.formatMobileWithAI();
+      }
+    }, 700);
+  }
+
+  /** Paste handler for create-note editor — same debounce pattern */
+  onCreateNotePaste(_event: ClipboardEvent): void {
+    if (!this.autoFormatEnabled) return;
+    clearTimeout(this.cnPasteTimer);
+    this.cnPasteTimer = setTimeout(() => {
+      if (this.createContent.trim() && !this.isFormatting) {
+        this.formatNoteWithAI();
+      }
+    }, 700);
+  }
+
+  /**
+   * Client-side fallback formatter — wraps recognized code lines in fenced blocks.
+   * Called when AI is unreachable. NEVER changes wording; only adds markdown structure.
+   */
+  private fallbackFormat(text: string): string {
+    const CODE_START = /^\s*(let|const|var|function|class|if\s*\(|for\s*\(|while\s*\(|return\s|import\s|export\s|def\s|async\s|print\s*\(|console\.|#include|void\s|int\s|public\s|private\s)\b/;
+    const CODE_CONT  = /[{};]$|^\s*\/\//;
+    const lines = text.split('\n');
+    const out: string[] = [];
+    let buf: string[] = [];
+
+    const flush = () => {
+      if (!buf.length) return;
+      const isPy = buf.some(l => /\bdef\b|\bprint\b/.test(l));
+      out.push('```' + (isPy ? 'python' : 'javascript'), ...buf, '```');
+      buf = [];
+    };
+
+    for (const line of lines) {
+      if (CODE_START.test(line.trim()) || (buf.length > 0 && CODE_CONT.test(line.trim()))) {
+        buf.push(line);
+      } else {
+        flush();
+        out.push(line);
+      }
+    }
+    flush();
+    return out.join('\n');
+  }
+
   insertMdSyntax(textarea: HTMLTextAreaElement, type: string): void {
     const start  = textarea.selectionStart;
     const end    = textarea.selectionEnd;
@@ -386,8 +441,17 @@ export class NotesComponent implements OnInit, OnDestroy {
     xhr.onload     = () => { parse(); this.meFormatLoading = false; this.meXhr = null; };
     xhr.onerror    = () => {
       this.meFormatLoading = false; this.meXhr = null;
-      this.updateError = 'Connection error. Try again.';
-      this.editContent = this.mePreFormatContent!; this.mePreFormatContent = null;
+      const original = this.mePreFormatContent!;
+      this.mePreFormatContent = null;
+      const fb = this.fallbackFormat(original);
+      if (fb !== original) {
+        this.editContent = fb;
+        this.updateError = '⚡ AI unavailable — applied basic code formatting.';
+        setTimeout(() => { this.updateError = ''; }, 3500);
+      } else {
+        this.editContent = original;
+        this.updateError = 'Connection error. Try again.';
+      }
     };
     xhr.send(JSON.stringify({ question: prompt, provider: 'ollama', rawMode: true, maxTokens: 2048 }));
   }
@@ -992,9 +1056,17 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
     xhr.onerror    = () => {
       this.isFormatting  = false;
       this.formatXhr     = null;
-      this.createError   = 'Connection error. Please try formatting again.';
-      this.createContent = this.preAIContent!;
+      const original = this.preAIContent!;
       this.preAIContent  = null;
+      const fb = this.fallbackFormat(original);
+      if (fb !== original) {
+        this.createContent = fb;
+        this.createError   = '⚡ AI unavailable — applied basic code formatting.';
+        setTimeout(() => { this.createError = ''; }, 3500);
+      } else {
+        this.createContent = original;
+        this.createError   = 'Connection error. Please try formatting again.';
+      }
     };
 
     xhr.send(JSON.stringify({

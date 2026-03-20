@@ -94,11 +94,11 @@
           <!-- ──────────── AI Learn navigation ──────────── -->
 
           <!-- Home -->
-          <li *ngIf="isAILearnPage">
+          <!-- <li *ngIf="isAILearnPage">
             <a class="nav-link" routerLink="/home"
                [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"
                (click)="closeNavbar()">Home</a>
-          </li>
+          </li> -->
 
           <!-- Learn ▾ dropdown -->
           <li class="has-dropdown" *ngIf="isAILearnPage && isSignedIn"
@@ -113,7 +113,7 @@
             </button>
             <div class="dropdown-panel" [class.is-visible]="activeDropdown === 'learn'" role="menu">
               <div class="dropdown-header">Learn</div>
-              <!-- <a class="dropdown-item" routerLink="/home"
+              <a class="dropdown-item" routerLink="/home"
                  [routerLinkActiveOptions]="{exact: true}" routerLinkActive="active"
                  (click)="closeNavbar()" role="menuitem">
                 <span class="di-icon">🤖</span>
@@ -121,7 +121,7 @@
                   <span class="di-label">AI Tutor</span>
                   <span class="di-desc">Chat &amp; learn any concept with AI</span>
                 </span>
-              </a> -->
+              </a>
               <a class="dropdown-item" routerLink="/roadmap" routerLinkActive="active"
                  (click)="closeNavbar()" role="menuitem">
                 <span class="di-icon">🗺️</span>
@@ -181,14 +181,14 @@
               </a> -->
               <div class="dropdown-divider"></div>
               <div class="dropdown-header">Certification Prep</div>
-              <a class="dropdown-item" routerLink="/azure-ai-102" routerLinkActive="active"
+              <!-- <a class="dropdown-item" routerLink="/azure-ai-102" routerLinkActive="active"
                  (click)="closeNavbar()" role="menuitem">
                 <span class="di-icon">☁️</span>
                 <span class="di-body">
                   <span class="di-label">Azure AI-102</span>
                   <span class="di-desc">AI Engineer Associate</span>
                 </span>
-              </a>
+              </a> -->
               <span class="dropdown-item dropdown-item--coming" role="menuitem" aria-disabled="true">
                 <span class="di-icon">⭐</span>
                 <span class="di-body">

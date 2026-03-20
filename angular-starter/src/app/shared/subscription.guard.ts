@@ -2,12 +2,15 @@ import { Injectable }   from '@angular/core';
 import { CanActivate, ActivatedRouteSnapshot, RouterStateSnapshot, Router } from '@angular/router';
 import { CustomAuthService }   from './custom-auth.service';
 import { SubscriptionService } from './subscription.service';
+import { AppConfigService }    from './app-config.service';
 
 /**
  * Guards feature routes that require an active trial or paid subscription.
- * Unauthenticated users → /  (let the auth flow handle it)
- * Admin users → always allowed (bypass payment/trial checks)
- * Authenticated non-admin, no access → /subscribe
+ *
+ * ─ If `isSubscriptionEnabled` flag is OFF in MasterConfig → allow everyone through.
+ * ─ Unauthenticated users → /  (let the auth flow handle it)
+ * ─ Admin users → always allowed (bypass payment/trial checks)
+ * ─ Authenticated non-admin, no access → /subscribe
  */
 @Injectable({ providedIn: 'root' })
 export class SubscriptionGuard implements CanActivate {
@@ -15,10 +18,14 @@ export class SubscriptionGuard implements CanActivate {
   constructor(
     private auth:        CustomAuthService,
     private subSvc:      SubscriptionService,
-    private router:      Router
+    private router:      Router,
+    private appCfg:      AppConfigService
   ) {}
 
   async canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Promise<boolean> {
+    // ── Feature-flag bypass: when subscription system is disabled, allow all ──
+    if (!this.appCfg.cfg.isSubscriptionEnabled) return true;
+
     if (!this.auth.isLoggedIn) {
       // Pass returnUrl so the header can navigate back after login
       this.router.navigate(['/'], {

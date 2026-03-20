@@ -595,6 +595,14 @@
         <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'bold')" title="Bold"><strong>B</strong></button>
         <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'bullet')" title="Bullet list">•≡</button>
         <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'checklist')" title="Checklist">☑</button>
+        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'code')" title="Code block">&lt;/&gt;</button>
+        <div class="me-tb-sep"></div>
+        <button class="me-tb-toggle" (click)="autoFormatEnabled = !autoFormatEnabled"
+                [class.me-tb-toggle-on]="autoFormatEnabled"
+                title="Auto-format pasted text with AI">
+          <span class="me-tb-toggle-dot"></span>
+          <span>Auto</span>
+        </button>
       </div>
 
       <!-- Error banner -->
@@ -603,8 +611,7 @@
       <!-- Textarea fills remaining height -->
       <div class="me-body">
         <textarea class="me-textarea" #meTextarea
-                  [(ngModel)]="editContent"
-                  [class.me-streaming]="meFormatLoading"
+                  [(ngModel)]="editContent"                  (paste)="onMobileEditorPaste($event)"                  [class.me-streaming]="meFormatLoading"
                   placeholder="Type or paste your note here…&#10;&#10;✨ Tip: Tap ‘Format with AI’ to clean up messy text instantly.">
         </textarea>
       </div>
@@ -697,6 +704,12 @@
         <button class="cn-undo-btn" *ngIf="preAIContent !== null && !isFormatting" (click)="undoAIFormat()">
           ↩ Undo
         </button>
+        <button class="cn-auto-toggle" (click)="autoFormatEnabled = !autoFormatEnabled"
+                [class.cn-auto-on]="autoFormatEnabled"
+                title="Auto-format pasted text with AI">
+          <span class="cn-auto-dot"></span>
+          <span>Auto</span>
+        </button>
         <button class="cn-format-btn" (click)="formatNoteWithAI()"
                 [disabled]="isFormatting || isSavingNew || !createContent.trim()"
                 [class.cn-formatting]="isFormatting">
@@ -714,7 +727,9 @@
     <div class="cn-content-area">
 
       <textarea [hidden]="createPreviewMode" class="cn-textarea" #cnTextarea
-                [(ngModel)]="createContent" [class.cn-streaming]="isFormatting"
+                [(ngModel)]="createContent"
+                (paste)="onCreateNotePaste($event)"
+                [class.cn-streaming]="isFormatting"
                 placeholder="Type or paste your raw notes here…&#10;&#10;✨ Tip: Paste messy text and tap 'Format with AI' to get clean structured notes instantly.">
       </textarea>
 

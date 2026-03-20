@@ -55,9 +55,11 @@ export interface MasterConfigDto {
   cooldownMs:               Record<string, number>;
 
   // Feature flags
-  enableSignup:        boolean;
-  maintenanceMode:     boolean;
-  maintenanceMessage:  string;
+  enableSignup:             boolean;
+  maintenanceMode:          boolean;
+  maintenanceMessage:       string;
+  /** When false the entire subscription/payment system is bypassed — the app is fully free. */
+  isSubscriptionEnabled:    boolean;
 
   // Device-based token limits
   deviceTokenLimitsEnabled: boolean;
@@ -122,9 +124,10 @@ export interface UpdateMasterConfigDto {
   cooldownMs?:               Record<string, number>;
 
   // Feature flags
-  enableSignup?:        boolean;
-  maintenanceMode?:     boolean;
-  maintenanceMessage?:  string;
+  enableSignup?:             boolean;
+  maintenanceMode?:          boolean;
+  maintenanceMessage?:       string;
+  isSubscriptionEnabled?:    boolean;
 
   // Device-based token limits
   deviceTokenLimitsEnabled?: boolean;

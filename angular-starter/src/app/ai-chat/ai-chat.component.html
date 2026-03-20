@@ -104,6 +104,7 @@
   [isVisible]="showSaveModal"
   [topic]="saveNoteTopic"
   [content]="saveNoteContent"
+  [contextType]="'mentor'"
   (closed)="showSaveModal = false"
   (saved)="onNoteSaved()">
 </app-save-notes-modal>

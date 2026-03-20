@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminService, AIProvider } from '../services/admin.service';
+import { CustomAuthService } from '../../shared/custom-auth.service';
 
 type AdminTab = 'providers' | 'users';
 
@@ -22,16 +23,24 @@ export class AdminDashboardComponent implements OnInit {
 
   constructor(
     private adminService: AdminService,
-    private router: Router
+    private router: Router,
+    private customAuth: CustomAuthService
   ) {}
 
   async ngOnInit() {
-    if (!this.adminService.isLoggedIn()) {
+    // Accept either old admin_token (legacy) OR new CustomAuthService admin role
+    const isOldAdmin = this.adminService.isLoggedIn();
+    const isNewAdmin = this.customAuth.isAdmin;
+
+    if (!isOldAdmin && !isNewAdmin) {
       this.router.navigate(['/admin-login']);
       return;
     }
 
-    this.user = this.adminService.getUser();
+    this.user = isOldAdmin
+      ? this.adminService.getUser()
+      : { username: this.customAuth.currentUser?.username ?? 'Admin', role: 'admin' };
+
     await this.loadProviders();
   }
 
@@ -119,8 +128,13 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   logout() {
-    this.adminService.logout();
-    this.router.navigate(['/admin-login']);
+    if (this.adminService.isLoggedIn()) {
+      this.adminService.logout();
+      this.router.navigate(['/admin-login']);
+    } else {
+      this.customAuth.logout();
+      this.router.navigate(['/']);
+    }
   }
 
   goToDeployment(): void {

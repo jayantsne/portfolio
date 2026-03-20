@@ -74,9 +74,10 @@ const FALLBACK_CONFIG: MasterConfigDto = {
   },
 
   // Feature flags
-  enableSignup:       true,
-  maintenanceMode:    false,
-  maintenanceMessage: 'Down for maintenance. Back soon!',
+  enableSignup:             true,
+  maintenanceMode:          false,
+  maintenanceMessage:       'Down for maintenance. Back soon!',
+  isSubscriptionEnabled:    false,
 
   // Device-based token limits
   deviceTokenLimitsEnabled: true,

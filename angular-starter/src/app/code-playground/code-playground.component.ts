@@ -117,6 +117,9 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
   // ── Code execution ────────────────────────────────────────────────────────
   outputLines: { text: string; type: 'log' | 'error' | 'info' | 'warn' }[] = [];
   isRunning = false;
+  execStatus: 'idle' | 'success' | 'error' = 'idle';
+  execStatusMsg = '';
+  execTime = '';
 
   // ── AI panel ──────────────────────────────────────────────────────────────
   aiPanel: 'idle' | 'loading' | 'result' = 'idle';
@@ -291,6 +294,9 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
   runCode(): void {
     this.clearOutput();
     this.isRunning = true;
+    this.execStatus = 'idle';
+    this.execStatusMsg = '';
+    this.execTime = '';
     const code = this.currentCode;
 
     if (this.selectedLang.id === 'javascript') {
@@ -301,6 +307,10 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
       this.runSandbox(this.selectedLang.id, code);
     }
     this.cdr.detectChanges();
+  }
+
+  retryCode(): void {
+    this.runCode();
   }
 
   private runSandbox(language: string, code: string): void {
@@ -324,16 +334,32 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
             this.addOutput(line, 'log'));
         }
 
+        const statusText = res.status ?? 'Unknown';
+        const isInternalError = statusText.toLowerCase().includes('internal');
+
         if (res.stderr) {
+          // Backend provides a detailed message for Internal Error; show it as-is
           res.stderr.split('\n').filter(Boolean).forEach(line =>
-            this.addOutput(line, 'error'));
+            this.addOutput(line, isInternalError ? 'error' : 'error'));
         } else if (res.compileOutput && !res.success) {
           res.compileOutput.split('\n').filter(Boolean).forEach(line =>
             this.addOutput(line, 'error'));
         }
 
-        const icon = res.success ? '✅' : '❌';
-        this.addOutput(`${icon} ${res.status}  ·  ⏱ ${res.executionTime}`, 'info');
+        // Only show fallback message if backend sent nothing useful for Internal Error
+        if (isInternalError && !res.stderr && !res.compileOutput) {
+          this.addOutput('❌ Judge0 returned Internal Error with no details. This is a server-side issue.', 'error');
+          this.addOutput('💡 Tip: Click Retry — transient sandbox errors often resolve on a second attempt.', 'info');
+        }
+
+        if (isInternalError) {
+          this.execStatus = 'error';
+          this.execStatusMsg = 'Internal Error — click retry';
+        } else {
+          this.execStatus = res.success ? 'success' : 'error';
+          this.execStatusMsg = statusText;
+        }
+        this.execTime = res.executionTime ?? '';
         this.isRunning = false;
         this.cdr.detectChanges();
         setTimeout(() => this.scrollOutput(), 50);
@@ -341,8 +367,16 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
       error: err => {
         this.outputLines = this.outputLines.filter(l => !l.text.startsWith('⏳'));
         const msg = err.error?.error ?? err.message ?? 'Unknown error';
-        this.addOutput(`❌ Sandbox error: ${msg}`, 'error');
-        this.addOutput('💡 Tip: Make sure the backend is running and a Judge0 API key is configured.', 'info');
+        const isInternalError = msg.toLowerCase().includes('internal');
+        if (isInternalError) {
+          this.addOutput('❌ Sandbox Internal Error: The code execution service encountered an internal issue.', 'error');
+          this.addOutput('💡 This may be a temporary issue with the sandbox. Please try again.', 'info');
+        } else {
+          this.addOutput(`❌ Sandbox error: ${msg}`, 'error');
+          this.addOutput('💡 Tip: Make sure the backend is running and a Judge0 API key is configured.', 'info');
+        }
+        this.execStatus = 'error';
+        this.execStatusMsg = msg.length > 40 ? msg.substring(0, 40) + '…' : msg;
         this.isRunning = false;
         this.cdr.detectChanges();
         setTimeout(() => this.scrollOutput(), 50);
@@ -363,14 +397,20 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
     (console as any).error = makeLogger('error');
 
     const start = performance.now();
+    let jsError = false;
     try {
       // Use Function constructor to avoid full eval scope
       const fn = new Function(code);
       fn();
       const ms = (performance.now() - start).toFixed(1);
-      this.addOutput(`✅ Execution completed in ${ms}ms`, 'info');
+      this.execTime = `${ms}ms`;
+      this.execStatus = 'success';
+      this.execStatusMsg = `Completed in ${ms}ms`;
     } catch (err: any) {
+      jsError = true;
       this.addOutput(`❌ ${err?.toString() ?? 'Unknown error'}`, 'error');
+      this.execStatus = 'error';
+      this.execStatusMsg = err?.message ?? 'Runtime error';
     } finally {
       // Restore
       (console as any).log   = originalConsole.log;
@@ -380,6 +420,7 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
     }
     logs.forEach(l => this.addOutput(l.text, l.type));
     this.isRunning = false;
+    this.cdr.detectChanges();
     setTimeout(() => this.scrollOutput(), 50);
   }
 
@@ -396,7 +437,19 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
     this.outputLines.push({ text, type });
   }
 
-  private clearOutput(): void { this.outputLines = []; }
+  clearOutputBtn(): void {
+    this.outputLines = [];
+    this.execStatus = 'idle';
+    this.execStatusMsg = '';
+    this.execTime = '';
+  }
+
+  private clearOutput(): void {
+    this.outputLines = [];
+    this.execStatus = 'idle';
+    this.execStatusMsg = '';
+    this.execTime = '';
+  }
 
   private scrollOutput(): void {
     const el = this.outputScroll?.nativeElement;
