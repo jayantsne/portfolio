@@ -4,7 +4,7 @@
 
 $serverIP = "76.13.244.113"
 $username = "root"
-$password = "1ZC7Lts7,saeb)Y0H4@n"
+$password = "<DEPLOY_SSH_PASSWORD>"
 
 Write-Host "🔧 MongoDB Service Fix Script" -ForegroundColor Cyan
 Write-Host "================================" -ForegroundColor Cyan
@@ -72,7 +72,7 @@ if systemctl is-active --quiet mongod; then
     
     echo ""
     echo "🔐 Testing admin user connection..."
-    mongosh --username jbadmin --password 'PwC\$Grow88!Track' --authenticationDatabase admin --eval "db.adminCommand('ping')"
+    mongosh --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "db.adminCommand('ping')"
     
 else
     echo "❌ MongoDB service failed to start!"

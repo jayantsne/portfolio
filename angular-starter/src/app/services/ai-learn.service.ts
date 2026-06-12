@@ -26,26 +26,26 @@ export class AILearnService {
   // Free tier: 60 req/min, 1,500 req/day, 1M tokens/month per key
   // 🎯 TARGET: 20 keys = 30,000 requests/day!
   private readonly GEMINI_API_KEYS = [
-    'AIzaSyAXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 1 - Add your Gemini key from https://aistudio.google.com/app/apikey
-    'AIzaSyBXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 2 - ADD MORE: Create new Google account
-    'AIzaSyCXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 3 - ADD MORE: Use work email
-    'AIzaSyDXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 4 - ADD MORE: Use personal email 2
-    'AIzaSyEXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 5 - ADD MORE: Use personal email 3
-    'AIzaSyFXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 6 - ADD MORE: Family member's email
-    'AIzaSyGXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 7 - ADD MORE: +tag1@gmail.com
-    'AIzaSyHXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 8 - ADD MORE: +tag2@gmail.com
-    'AIzaSyIXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 9 - ADD MORE: +tag3@gmail.com
-    'AIzaSyJXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 10 - ADD MORE
-    'AIzaSyKXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 11 - ADD MORE
-    'AIzaSyLXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 12 - ADD MORE
-    'AIzaSyMXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 13 - ADD MORE
-    'AIzaSyNXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 14 - ADD MORE
-    'AIzaSyOXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 15 - ADD MORE
-    'AIzaSyPXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 16 - ADD MORE
-    'AIzaSyQXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 17 - ADD MORE
-    'AIzaSyRXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 18 - ADD MORE
-    'AIzaSySXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 19 - ADD MORE
-    'AIzaSyTXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 20 - ADD MORE
+    'YOUR_GEMINI_API_KEY_1', // Key 1 - Add your Gemini key from https://aistudio.google.com/app/apikey
+    'YOUR_GEMINI_API_KEY_2', // Key 2
+    'YOUR_GEMINI_API_KEY_3', // Key 3
+    'YOUR_GEMINI_API_KEY_4', // Key 4
+    'YOUR_GEMINI_API_KEY_5', // Key 5
+    'YOUR_GEMINI_API_KEY_6', // Key 6
+    'YOUR_GEMINI_API_KEY_7', // Key 7
+    'YOUR_GEMINI_API_KEY_8', // Key 8
+    'YOUR_GEMINI_API_KEY_9', // Key 9
+    'YOUR_GEMINI_API_KEY_10', // Key 10
+    'YOUR_GEMINI_API_KEY_11', // Key 11
+    'YOUR_GEMINI_API_KEY_12', // Key 12
+    'YOUR_GEMINI_API_KEY_13', // Key 13
+    'YOUR_GEMINI_API_KEY_14', // Key 14
+    'YOUR_GEMINI_API_KEY_15', // Key 15
+    'YOUR_GEMINI_API_KEY_16', // Key 16
+    'YOUR_GEMINI_API_KEY_17', // Key 17
+    'YOUR_GEMINI_API_KEY_18', // Key 18
+    'YOUR_GEMINI_API_KEY_19', // Key 19
+    'YOUR_GEMINI_API_KEY_20', // Key 20
   ];
   
   // 🔄 PRIMARY: GROQ (Super fast, free tier, BEST CHOICE!) 🚀
@@ -148,6 +148,7 @@ export class AILearnService {
   private currentKeyIndex = 0;
   private requestCount = 0;
   private lastRequestTime = Date.now();
+  private conversationId: string | null = localStorage.getItem('conversationId');
   
   // 🎯 SMART RATE LIMIT HANDLER (AUTO-RECOVERY!)
   // Track usage per key with cooldown periods
@@ -1566,6 +1567,16 @@ Backend proxy is enabled but all 9 keys are exhausted.
   }
 
   /**
+   * Reset conversation ID for new chat
+   * Call this when user starts a new conversation
+   */
+  resetConversation(): void {
+    this.conversationId = null;
+    localStorage.removeItem('conversationId');
+    console.log('🔄 Conversation reset - next message will start new chat');
+  }
+
+  /**
    * Get simple quick answer (uses fewer tokens)
    */
   getQuickAnswer(question: string): Observable<any> {
@@ -1636,10 +1647,10 @@ Backend proxy is enabled but all 9 keys are exhausted.
    * Emits partial text every 30 tokens so UI can show real-time streaming,
    * then emits final complete text with done:true.
    */
-  getOllamaExplanation(prompt: string): Observable<{ explanation: string; success: boolean; done?: boolean }> {
+  getOllamaExplanation(prompt: string, mode?: string): Observable<{ explanation: string; success: boolean; done?: boolean }> {
     // Use relative /api path on localhost (proxied); full URL in production
     const apiBase = window.location.hostname === 'localhost' ? '' : 'https://learnwithai.tech';
-    const apiKey = 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41';
+    const apiKey = '<API_KEY>';
 
     // Abort any in-flight request before starting a new one (handles rapid re-asks)
     if (this.activeXhr) {
@@ -1667,33 +1678,56 @@ Backend proxy is enabled but all 9 keys are exhausted.
       const selectedProvider = this.llmSvc?.selectedProvider ?? localStorage.getItem('selected_llm_provider') ?? 'ollama';
       console.log('[AI] Sending request with provider:', selectedProvider);
 
-      const parseChunks = (isFinal = false) => {
-        const newText = xhr.responseText.slice(cursor);
-        cursor = xhr.responseText.length;
-        for (const line of newText.split('\n')) {
-          if (!line.startsWith('data: ')) continue;
-          try {
-            const chunk = JSON.parse(line.slice(6));
-            if (chunk.done) {
-              if (chunk.error) {
-                // Backend reported an error — surface the actual message to the user
-                console.error('[AILearnService] SSE stream error from backend:', chunk.error);
-                observer.next({ success: false, explanation: `⚠️ ${chunk.error}`, done: true });
-              } else {
-                observer.next({ success: accumulated.length > 0, explanation: accumulated || '⚠️ No response received. Please try again.', done: true });
-              }
-              observer.complete();
-              return;
-            }
-            accumulated += chunk.token || '';
-            const now = Date.now();
-            if (isFinal || now - lastEmitAt >= THROTTLE_MS) {
-              lastEmitAt = now;
-              observer.next({ success: true, explanation: accumulated, done: false });
-            }
-          } catch {}
+    const parseChunks = (isFinal = false) => {
+  const newText = xhr.responseText.slice(cursor);
+  cursor = xhr.responseText.length;
+
+  for (const line of newText.split('\n')) {
+
+    // ✅ HANDLE conversation event
+    if (line.startsWith('event: conversation')) {
+      continue; // next line will have data
+    }
+
+    if (line.startsWith('data: ')) {
+      try {
+        const raw = line.slice(6);
+
+        // 🔥 detect if it's conversationId (string, not JSON object)
+        if (raw.startsWith('"') && raw.endsWith('"')) {
+          const convId = JSON.parse(raw);
+
+          this.conversationId = convId;
+          localStorage.setItem('conversationId', convId);
+
+          console.log('✅ Conversation ID received:', convId);
+          continue;
         }
-      };
+
+        const chunk = JSON.parse(raw);
+
+        if (chunk.done) {
+          if (chunk.error) {
+            observer.next({ success: false, explanation: `⚠️ ${chunk.error}`, done: true });
+          } else {
+            observer.next({ success: accumulated.length > 0, explanation: accumulated, done: true });
+          }
+          observer.complete();
+          return;
+        }
+
+        accumulated += chunk.token || '';
+
+        const now = Date.now();
+        if (isFinal || now - lastEmitAt >= THROTTLE_MS) {
+          lastEmitAt = now;
+          observer.next({ success: true, explanation: accumulated, done: false });
+        }
+
+      } catch {}
+    }
+  }
+};
 
       xhr.onprogress = () => parseChunks();
       xhr.onload = () => {
@@ -1722,7 +1756,7 @@ Backend proxy is enabled but all 9 keys are exhausted.
 
       // rawMode: true → backend passes our structured mentor prompt verbatim to the AI
       // without this the backend would replace the rich prompt with its own minimal template
-      xhr.send(JSON.stringify({ question: prompt, maxTokens: this.appCfg.cfg.maxTokensStream, provider: selectedProvider, rawMode: true }));
+      xhr.send(JSON.stringify({ question: prompt,  conversationId: this.conversationId || null, maxTokens: this.appCfg.cfg.maxTokensStream, provider: selectedProvider, rawMode: true, mode: mode ?? null }));
       return () => { xhr.abort(); this.activeXhr = null; };
     });
   }

@@ -44,7 +44,7 @@ Your AI Learning Assistant needs at least 1 API key to work. Here are the fastes
 5. Find `OPENROUTER_API_KEYS` array (around line 90)
 6. Replace a placeholder:
    ```typescript
-   'sk-or-v1-YOUR_ACTUAL_KEY_XXXXXXXXXXXXXXXXXXXXXXXXXX',
+   'YOUR_OPENROUTER_API_KEY',
    ```
 
 ---
@@ -81,11 +81,11 @@ Your AI Learning Assistant needs at least 1 API key to work. Here are the fastes
 5. Find `GEMINI_API_KEYS` array (around line 25)
 6. Replace first placeholder:
    ```typescript
-   'AIzaSyXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
+   'YOUR_GOOGLE_API_KEY',
    ```
    With your key:
    ```typescript
-   'AIzaSyAbCdEfGhIjKlMnOpQrStUvWxYz123456789',
+   'YOUR_FIREBASE_API_KEY',
    ```
 
 ---

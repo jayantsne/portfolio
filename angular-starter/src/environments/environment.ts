@@ -5,7 +5,7 @@
 export const environment = {
   production: false,
   apiUrl: '/api',
-  apiKey: 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41',
+  apiKey: '<API_KEY>',
   groqApiKeys: [] as string[],
   // groqApiKeys: ['gsk_YOUR_ACTUAL_KEY_HERE'],  // Add your GROQ API keys here
   // ─── Firebase ──────────────────────────────────────────────────────
@@ -18,12 +18,13 @@ export const environment = {
   //  5. Click </> to register a web app if none exists
   //  6. Copy the firebaseConfig object values into the fields below
   firebase: {
-    apiKey: 'YOUR_FIREBASE_API_KEY',          // e.g. AIzaSy...
-    authDomain: 'myportfolioadmin-d45bd.firebaseapp.com',
-    projectId: 'myportfolioadmin-d45bd',
-    storageBucket: 'myportfolioadmin-d45bd.appspot.com',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',  // numeric, e.g. 123456789
-    appId: 'YOUR_APP_ID'                      // e.g. 1:123:web:abc123
+    apiKey: 'YOUR_FIREBASE_API_KEY',
+    authDomain: 'YOUR_FIREBASE_AUTH_DOMAIN',
+    projectId: 'myportfolioadmin',
+    storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
+    messagingSenderId: 'YOUR_FIREBASE_MESSAGING_SENDER_ID',
+    appId: 'YOUR_FIREBASE_APP_ID',
+    measurementId: 'YOUR_FIREBASE_MEASUREMENT_ID'
   }
 };
 

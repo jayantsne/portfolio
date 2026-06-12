@@ -1,7 +1,7 @@
 export const environment = {
   production: true,
   apiUrl: 'https://learnwithai.tech/api',
-  apiKey: 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41',
+  apiKey: '<API_KEY>',
   groqApiKeys: [
     'gsk_YOUR_PRODUCTION_KEY_1',
     'gsk_YOUR_PRODUCTION_KEY_2',
@@ -11,10 +11,11 @@ export const environment = {
   // Same project as dev — fill in the 3 values from Firebase console.
   firebase: {
     apiKey: 'YOUR_FIREBASE_API_KEY',
-    authDomain: 'myportfolioadmin-d45bd.firebaseapp.com',
-    projectId: 'myportfolioadmin-d45bd',
-    storageBucket: 'myportfolioadmin-d45bd.appspot.com',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    appId: 'YOUR_APP_ID'
+    authDomain: 'YOUR_FIREBASE_AUTH_DOMAIN',
+    projectId: 'myportfolioadmin',
+    storageBucket: 'YOUR_FIREBASE_STORAGE_BUCKET',
+    messagingSenderId: 'YOUR_FIREBASE_MESSAGING_SENDER_ID',
+    appId: 'YOUR_FIREBASE_APP_ID',
+    measurementId: 'YOUR_FIREBASE_MEASUREMENT_ID'
   }
 };
