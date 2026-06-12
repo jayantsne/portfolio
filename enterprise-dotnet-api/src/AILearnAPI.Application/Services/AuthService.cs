@@ -134,6 +134,79 @@ namespace AILearnAPI.Application.Services
             };
         }
 
+        public async Task<LoginResponseDto> LoginWithExternalProviderAsync(
+            string provider,
+            string providerUserId,
+            string email,
+            string? displayName)
+        {
+            if (string.IsNullOrWhiteSpace(provider))
+                throw new ArgumentException("Provider is required.");
+
+            if (string.IsNullOrWhiteSpace(providerUserId))
+                throw new ArgumentException("Provider user id is required.");
+
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required.");
+
+            var emailNormalized = email.Trim().ToLowerInvariant();
+            if (!emailNormalized.Contains('@') || !emailNormalized.Contains('.'))
+                throw new ArgumentException("Google account does not have a valid email address.");
+
+            var auth = await _authRepository.GetByEmailAsync(emailNormalized);
+
+            if (auth == null)
+            {
+                var userCount   = await _authRepository.CountUsersAsync();
+                var role        = userCount == 0 ? UserRoles.Admin : UserRoles.User;
+                var userId      = await _authRepository.GetNextUserIdAsync();
+                var display     = BuildDisplayName(displayName, emailNormalized);
+
+                auth = new Auth
+                {
+                    UserId                 = userId,
+                    Username               = display,
+                    Email                  = emailNormalized,
+                    Password               = string.Empty,
+                    Role                   = role,
+                    AuthProvider           = provider.Trim().ToLowerInvariant(),
+                    ExternalProviderUserId = providerUserId,
+                    IsAuthenticated        = true,
+                    LastLogin              = DateTime.UtcNow
+                };
+
+                await _authRepository.CreateAsync(auth);
+                _logger.LogInformation(
+                    "Registered {Provider} user {Email} with ID {UserId} and role {Role}",
+                    provider,
+                    emailNormalized,
+                    userId,
+                    role);
+
+                if (_subscriptionService != null)
+                {
+                    try   { await _subscriptionService.CreateTrialAsync(userId); }
+                    catch (Exception ex) { _logger.LogWarning(ex, "Failed to create trial for {UserId}", userId); }
+                }
+            }
+            else
+            {
+                await _authRepository.UpdateAuthenticationStatusAsync(auth.UserId, true);
+                _logger.LogInformation("{Provider} user {Email} logged in successfully", provider, emailNormalized);
+            }
+
+            var token = BuildToken(auth.UserId, auth.Username, auth.Email, auth.Role);
+            return new LoginResponseDto
+            {
+                message  = "Google login successful",
+                userId   = auth.UserId,
+                username = auth.Username,
+                email    = auth.Email,
+                role     = auth.Role,
+                token    = token
+            };
+        }
+
         public async Task<bool> LogoutAsync(string userId)
         {
             var updated = await _authRepository.UpdateAuthenticationStatusAsync(userId, false);
@@ -201,11 +274,20 @@ namespace AILearnAPI.Application.Services
                 username,
                 email,
                 role,
-                secretKey:   jwt["SecretKey"]   ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123456",
+                secretKey:   jwt["SecretKey"]   ?? throw new InvalidOperationException("Missing JwtSettings:SecretKey configuration."),
                 issuer:      jwt["Issuer"]       ?? "AILearnAPI",
                 audience:    jwt["Audience"]     ?? "AILearnAPI",
                 expiryHours: int.TryParse(jwt["ExpiryHours"], out var h) ? h : 24
             );
+        }
+
+        private static string BuildDisplayName(string? displayName, string email)
+        {
+            var display = string.IsNullOrWhiteSpace(displayName)
+                ? email.Split('@')[0]
+                : displayName.Trim();
+
+            return display.Length > 80 ? display[..80] : display;
         }
     }
 }

@@ -1,47 +1,57 @@
-name: CI Pipeline
+name: CI
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
 
 jobs:
-  build-and-deploy:
+  frontend:
+    name: Frontend build
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: angular-starter
 
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: angular-starter/package-lock.json
 
       - name: Install dependencies
-        run: npm install
-        working-directory: angular-starter
+        run: npm ci
 
-      - name: Build Angular project
+      - name: Build
         run: npm run build
-        working-directory: angular-starter
 
-      - name: 🔍 Check Firebase token
-        id: check_firebase
-        run: |
-          if [ -z "${{ secrets.FIREBASE_TOKEN }}" ]; then
-            echo "⚠️  FIREBASE_TOKEN secret is not set. Skipping Firebase deployment."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
+  api:
+    name: API build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: enterprise-dotnet-api
 
-      - name: Deploy to Firebase from subdirectory
-        if: steps.check_firebase.outputs.skip == 'false'
-        run: |
-          cd angular-starter
-          npm install firebase-tools
-          npx firebase deploy --only hosting --token "$FIREBASE_TOKEN"
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore AILearnAPI.sln
+
+      - name: Build
+        run: dotnet build AILearnAPI.sln --configuration Release --no-restore

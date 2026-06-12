@@ -7,6 +7,7 @@ using AILearnAPI.Domain.Interfaces;
 using AILearnAPI.Application.Interfaces;
 using AILearnAPI.Application.Services;
 using AILearnAPI.Api.Services;
+using AILearnAPI.Api.StreamProvider;
 using AILearnAPI.Api.Repositories;
 using AILearnAPI.Api.Middleware;
 using AILearnAPI.Api.Models;
@@ -72,8 +73,12 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Configure MongoDB
-var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB") 
-    ?? "mongodb://localhost:27017";
+var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB")
+    ?? builder.Configuration["MongoDbSettings:ConnectionString"];
+if (string.IsNullOrWhiteSpace(mongoConnectionString))
+{
+    throw new InvalidOperationException("Missing MongoDB connection string. Set ConnectionStrings__MongoDB in the server environment.");
+}
 var mongoDatabaseName = builder.Configuration["MongoDB:DatabaseName"] ?? "jayant-portfolio";
 
 builder.Services.Configure<MongoDbSettings>(options =>
@@ -134,6 +139,9 @@ builder.Services.AddScoped<INoteRepository, NoteRepository>();
 builder.Services.AddScoped<ILlmProviderRepository, LlmProviderRepository>();
 builder.Services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 builder.Services.AddScoped<IInterviewRoadmapRepository, InterviewRoadmapRepository>();
+// Chat repositories (clean architecture — no MongoDB in controllers)
+builder.Services.AddScoped<IConversationRepository, ConversationRepository>();
+builder.Services.AddScoped<IMessageRepository, MessageRepository>();
 // Deployment service — no repository layer needed (uses IMongoDatabase directly)
 builder.Services.AddScoped<IDeploymentService, DeploymentService>();
 // Analytics service — tracks visits + clicks, serves admin dashboard
@@ -148,13 +156,21 @@ builder.Services.AddMemoryCache();
 builder.Services.AddHttpClient<IOllamaService, OllamaService>();
 
 // Configure HttpClient for Judge0 (code execution sandbox)
-builder.Services.AddHttpClient("Judge0");
+// 55-second timeout keeps us safely under nginx's default 60s proxy_read_timeout.
+builder.Services.AddHttpClient("Judge0", c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(55);
+});
 builder.Services.AddScoped<ICodeExecutionService, CodeExecutionService>();
+
+// Roslyn-based C# execution for the AI Playground (no external dependency)
+builder.Services.AddSingleton<PlaygroundExecutionService>();
 
 // Register services
 builder.Services.AddScoped<IQuestionService, QuestionService>();
 builder.Services.AddScoped<IUserProgressService, UserProgressService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IFirebaseTokenValidator, FirebaseTokenValidator>();
 builder.Services.AddScoped<IAIQAService, AIQAService>();
 builder.Services.AddScoped<ILearningService, LearningService>();
 builder.Services.AddScoped<IAiUnderstandService, AiUnderstandService>();
@@ -162,8 +178,26 @@ builder.Services.AddScoped<IUserConfigService, UserConfigService>();
 builder.Services.AddScoped<IMasterConfigService, MasterConfigService>();
 builder.Services.AddScoped<INoteService, NoteService>();
 builder.Services.AddScoped<ILlmProviderService, LlmProviderService>();
+
+// Spaced-repetition revision system
+builder.Services.AddScoped<IRevisionRepository, RevisionRepository>();
+builder.Services.AddScoped<IRevisionAiGenerator, RevisionAiGeneratorAdapter>();
+builder.Services.AddScoped<IRevisionService, RevisionService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IInterviewRoadmapService, InterviewRoadmapService>();
+// Chat services — controllers keep HTTP concerns, ChatService owns conversation state, streaming owns AI providers
+builder.Services.AddScoped<IChatStreamProvider, OpenAiChatStreamProvider>();
+builder.Services.AddScoped<IChatStreamProvider, OllamaChatStreamProvider>();
+builder.Services.AddScoped<IChatAiStreamingService, ChatAiStreamingService>();
+builder.Services.AddScoped<IChatService, ChatService>();
+
+// ── Semantic Memory (RAG pipeline) ───────────────────────────────────────────
+// IEmbeddingService calls OpenAI text-embedding-3-small
+builder.Services.AddScoped<IEmbeddingService, OpenAIEmbeddingService>();
+// IUserMemoryRepository persists vectors in MongoDB "user_memories" collection
+builder.Services.AddScoped<IUserMemoryRepository, UserMemoryRepository>();
+// ISemanticMemoryService orchestrates store + cosine-similarity retrieval
+builder.Services.AddScoped<ISemanticMemoryService, SemanticMemoryService>();
 
 // Razorpay HttpClient (short timeout — REST call to payment gateway)
 builder.Services.AddHttpClient("Razorpay", c =>
@@ -178,7 +212,13 @@ builder.Services.AddHttpClient("OpenAI", c =>
 {
     c.Timeout = TimeSpan.FromMinutes(5);
 });
+builder.Services.AddHttpClient("FirebaseAuth", c =>
+{
+    c.Timeout = TimeSpan.FromSeconds(15);
+});
 builder.Services.AddScoped<IOpenAIStreamingService, OpenAIStreamingService>();
+// Stateless prompt builder — singleton (pure functions, no DB or HTTP dependencies)
+builder.Services.AddSingleton<IPromptBuilderService, PromptBuilderService>();
 
 // Stateless UA classifier — registered as singleton (no state, no DB dependency)
 builder.Services.AddSingleton<IDeviceDetectionService, DeviceDetectionService>();
@@ -196,7 +236,11 @@ builder.Services.AddCors(options =>
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"] ?? "YourSuperSecretKeyThatIsAtLeast32CharactersLong123456";
+var secretKey = jwtSettings["SecretKey"];
+if (string.IsNullOrWhiteSpace(secretKey))
+{
+    throw new InvalidOperationException("Missing JWT secret. Set JwtSettings__SecretKey in the server environment.");
+}
 
 builder.Services.AddAuthentication(options =>
 {

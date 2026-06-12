@@ -1,221 +1,139 @@
-name: Deploy .NET API to VPS
+name: Deploy API
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
-      - 'enterprise-dotnet-api/**'
-      - '.github/workflows/deploy-api.yml'
+      - "enterprise-dotnet-api/**"
+      - "server-configs/systemd/ailearnapi.service"
+      - ".github/workflows/deploy-api.yml"
   workflow_dispatch:
+
+concurrency:
+  group: deploy-api
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  BACKEND_DEPLOY_PATH: ${{ vars.BACKEND_DEPLOY_PATH || '/var/www/learnwithai.tech/backend' }}
+  API_SERVICE_NAME: ${{ vars.API_SERVICE_NAME || 'ailearnapi' }}
 
 jobs:
   deploy:
-    name: Build & Deploy .NET API
+    name: Build and deploy .NET API
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: enterprise-dotnet-api
 
     steps:
-      - name: 🔍 Check required secrets
-        id: check_secrets
-        run: |
-          if [ -z "${{ secrets.VPS_SSH_PRIVATE_KEY }}" ]; then
-            echo "⚠️  VPS_SSH_PRIVATE_KEY not set. Skipping."
-            echo "skip=true" >> $GITHUB_OUTPUT
-          else
-            echo "✅ Secret found."
-            echo "skip=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: � Check VPS SSH connectivity
-        id: check_vps
-        if: steps.check_secrets.outputs.skip == 'false'
-        run: |
-          echo "Testing TCP connectivity to 76.13.244.113:22 (10s timeout)..."
-          if nc -z -w 10 76.13.244.113 22; then
-            echo "✅ VPS port 22 is reachable"
-            echo "reachable=true" >> $GITHUB_OUTPUT
-          else
-            echo "❌ VPS port 22 is NOT reachable (firewall or server down)"
-            echo "reachable=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: ⏭️ Skip — VPS unreachable
-        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'false'
-        run: |
-          echo "::warning::VPS 76.13.244.113:22 is unreachable. Deployment skipped."
-          echo "Fix: ensure port 22 is open in the VPS firewall (ufw allow 22 / iptables -A INPUT -p tcp --dport 22 -j ACCEPT)"
-          exit 1
-
-      - name: 📥 Checkout code
-        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
+      - name: Checkout
         uses: actions/checkout@v4
 
-      - name: 🟣 Setup .NET 8
-        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
+      - name: Check required secrets
+        run: |
+          test -n "${{ secrets.VPS_HOST }}" || (echo "Missing secret VPS_HOST" && exit 1)
+          test -n "${{ secrets.VPS_USER }}" || (echo "Missing secret VPS_USER" && exit 1)
+          test -n "${{ secrets.VPS_SSH_PRIVATE_KEY }}" || (echo "Missing secret VPS_SSH_PRIVATE_KEY" && exit 1)
+          test -n "${{ secrets.MONGODB_CONNECTION_STRING }}" || (echo "Missing secret MONGODB_CONNECTION_STRING" && exit 1)
+          test -n "${{ secrets.API_KEY }}" || (echo "Missing secret API_KEY" && exit 1)
+          test -n "${{ secrets.JWT_SECRET_KEY }}" || (echo "Missing secret JWT_SECRET_KEY" && exit 1)
+
+      - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: "8.0.x"
 
-      - name: 📦 Restore dependencies
-        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
-        working-directory: ./enterprise-dotnet-api
-        run: dotnet restore src/AILearnAPI.Api/AILearnAPI.Api.csproj
+      - name: Restore
+        run: dotnet restore AILearnAPI.sln
 
-      - name: 🏗️ Publish API (linux-x64)
-        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
-        working-directory: ./enterprise-dotnet-api
+      - name: Publish
         run: |
           dotnet publish src/AILearnAPI.Api/AILearnAPI.Api.csproj \
             --configuration Release \
             --runtime linux-x64 \
             --self-contained false \
-            --output ./publish
-          echo "✓ Build complete"
-          ls -lh publish/
+            --output publish
 
-      - name: 📦 Create deployment archive
-        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
-        run: |
-          tar -czf api-deploy.tar.gz -C enterprise-dotnet-api/publish .
-          echo "Archive: $(du -h api-deploy.tar.gz | cut -f1)"
+      - name: Archive API
+        run: tar -czf ../api-deploy.tar.gz -C publish .
 
-      - name: 📤 Upload API archive to VPS
-        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
+      - name: Upload API archive
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: 76.13.244.113
-          username: root
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           source: api-deploy.tar.gz
-          target: /tmp/
-          timeout: 30s
-          command_timeout: 5m
+          target: /tmp
 
-      - name: 📤 Upload systemd service to VPS
-        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
+      - name: Upload service file
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: 76.13.244.113
-          username: root
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           source: server-configs/systemd/ailearnapi.service
-          target: /tmp/
-          strip_components: 2
-          timeout: 30s
-          command_timeout: 5m
+          target: /tmp
 
-      - name: 🚀 Deploy & Start API on VPS
-        if: steps.check_secrets.outputs.skip == 'false' && steps.check_vps.outputs.reachable == 'true'
+      - name: Activate API release
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 76.13.244.113
-          username: root
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
-          connect_timeout: 30s
-          command_timeout: 10m
+          script_stop: true
           script: |
-            set -e
+            set -euo pipefail
 
-            # ── Install .NET 8 runtime if missing ──
-            if ! command -v dotnet &>/dev/null || ! dotnet --list-runtimes | grep -q "Microsoft.AspNetCore.App 8"; then
-              echo "📥 Installing .NET 8 runtime..."
-              wget -q https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O /tmp/ms-prod.deb
-              dpkg -i /tmp/ms-prod.deb
-              apt-get update -qq
-              apt-get install -y aspnetcore-runtime-8.0
-              rm /tmp/ms-prod.deb
-              echo "✅ .NET 8 runtime installed: $(dotnet --version)"
-            else
-              echo "✅ .NET runtime already present: $(dotnet --list-runtimes | grep 'AspNetCore.App 8')"
-            fi
+            SERVICE_NAME="${{ env.API_SERVICE_NAME }}"
+            DEPLOY_PATH="${{ env.BACKEND_DEPLOY_PATH }}"
+            RELEASE="/tmp/api-release-${{ github.sha }}"
+            ENV_FILE="/etc/ailearnapi.env"
 
-            # ── Create backend directory ──
-            mkdir -p /var/www/learnwithai.tech/backend
+            sudo mkdir -p "$DEPLOY_PATH" "$RELEASE"
+            sudo tar -xzf /tmp/api-deploy.tar.gz -C "$RELEASE"
+            rm -f /tmp/api-deploy.tar.gz
 
-            # ── Stop service and ensure port 5000 is free ──
-            systemctl stop ailearnapi 2>/dev/null || true
-            sleep 2
-            # SIGKILL anything holding port 5000 (SIGTERM is too slow — port may still be in TIME_WAIT)
-            fuser -k -KILL 5000/tcp 2>/dev/null || true
-            # Poll up to 15 seconds for port to actually release
-            FREED=0
-            for i in $(seq 1 15); do
-              if ! ss -tlnp | grep -q ':5000'; then FREED=1; break; fi
-              echo "⏳ Waiting for port 5000 to release (attempt $i/15)..."
-              fuser -k -KILL 5000/tcp 2>/dev/null || true
-              sleep 1
-            done
-            [ $FREED -eq 1 ] && echo "✅ Port 5000 free" || (echo "❌ Port 5000 still occupied after 15s!"; ss -tlnp | grep 5000; exit 1)
-            echo "⏸️  Service stopped, port 5000 cleared"
+            sudo install -m 0644 /tmp/server-configs/systemd/ailearnapi.service /etc/systemd/system/"$SERVICE_NAME".service
+            sudo rm -rf /tmp/server-configs
 
-            # ── Deploy API files ──
-            rm -rf /var/www/learnwithai.tech/backend/*
-            ARCHIVE=$(find /tmp -name "api-deploy.tar.gz" 2>/dev/null | head -1)
-            if [ -z "$ARCHIVE" ]; then echo "❌ Archive not found in /tmp!"; find /tmp -type f | head -20; exit 1; fi
-            echo "📦 Found archive: $ARCHIVE"
-            tar -xzf "$ARCHIVE" -C /var/www/learnwithai.tech/backend/
-            rm "$ARCHIVE"
-            chmod -R 755 /var/www/learnwithai.tech/backend/
-            echo "📦 API files deployed"
+            sudo tee "$ENV_FILE" >/dev/null <<'EOF'
+            ASPNETCORE_ENVIRONMENT=Production
+            ASPNETCORE_URLS=http://localhost:5000
+            DOTNET_PRINT_TELEMETRY_MESSAGE=false
+            ConnectionStrings__MongoDB=${{ secrets.MONGODB_CONNECTION_STRING }}
+            ConnectionStrings__Redis=${{ secrets.REDIS_CONNECTION_STRING || 'localhost:6379' }}
+            MongoDB__DatabaseName=${{ secrets.MONGODB_DATABASE || 'jayant-portfolio' }}
+            ApiSettings__ApiKey=${{ secrets.API_KEY }}
+            JwtSettings__SecretKey=${{ secrets.JWT_SECRET_KEY }}
+            JwtSettings__Issuer=${{ vars.JWT_ISSUER || 'AILearnAPI' }}
+            JwtSettings__Audience=${{ vars.JWT_AUDIENCE || 'AILearnAPI' }}
+            LlmProvider__EncryptionKey=${{ secrets.LLM_PROVIDER_ENCRYPTION_KEY || '' }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || '' }}
+            Razorpay__KeyId=${{ secrets.RAZORPAY_KEY_ID || '' }}
+            Razorpay__KeySecret=${{ secrets.RAZORPAY_KEY_SECRET || '' }}
+            EOF
+            sudo chmod 600 "$ENV_FILE"
+            sudo chown root:root "$ENV_FILE"
 
-            # ── Install/update systemd service ──
-            # Use root user since we deploy as root
-            SERVICE=$(find /tmp -name "ailearnapi.service" 2>/dev/null | head -1)
-            if [ -z "$SERVICE" ]; then echo "❌ Service file not found!"; exit 1; fi
-            DOTNET_PATH=$(command -v dotnet)
-            echo "🔍 dotnet path: $DOTNET_PATH"
-            # Read OPENAI_API_KEY from .bashrc so it survives redeployments
-            OPENAI_KEY=$(grep -h 'OPENAI_API_KEY' /root/.bashrc /etc/environment 2>/dev/null | head -1 | sed 's/.*=//;s/^"//;s/"$//' || true)
-            sed \
-              -e 's/User=deployuser/User=root/g' \
-              -e 's/Group=deployuser/Group=root/g' \
-              -e 's|Type=notify|Type=simple|g' \
-              -e '/Wants=mongod.service/d' \
-              -e '/After=network.target mongod.service/c\After=network.target' \
-              -e "s|ExecStart=/usr/bin/dotnet|ExecStart=$DOTNET_PATH|g" \
-              "$SERVICE" > /etc/systemd/system/ailearnapi.service
-            # Inject OPENAI_API_KEY into service file if found
-            if [ -n "$OPENAI_KEY" ]; then
-              sed -i "/Environment=DOTNET_PRINT_TELEMETRY_MESSAGE/a Environment=OPENAI_API_KEY=$OPENAI_KEY" /etc/systemd/system/ailearnapi.service
-              echo "🔑 OPENAI_API_KEY injected into service file"
-            else
-              echo "⚠️  OPENAI_API_KEY not found in .bashrc or /etc/environment — set it with: echo 'export OPENAI_API_KEY=sk-...' >> /root/.bashrc"
-            fi
-            rm "$SERVICE"
-            echo "📄 Installed service file:"
-            cat /etc/systemd/system/ailearnapi.service
-            systemctl daemon-reload
-            systemctl enable ailearnapi
-            echo "⚙️  Systemd service installed"
+            sudo systemctl stop "$SERVICE_NAME" 2>/dev/null || true
+            sudo rsync -a --delete "$RELEASE"/ "$DEPLOY_PATH"/
+            sudo rm -rf "$RELEASE"
+            sudo chown -R root:root "$DEPLOY_PATH"
+            sudo find "$DEPLOY_PATH" -type d -exec chmod 755 {} \;
+            sudo find "$DEPLOY_PATH" -type f -exec chmod 644 {} \;
 
-            # ── Start API service ──
-            systemctl start ailearnapi || true
+            sudo systemctl daemon-reload
+            sudo systemctl enable "$SERVICE_NAME"
+            sudo systemctl restart "$SERVICE_NAME"
             sleep 5
-            echo "📋 Service status:"
-            systemctl status ailearnapi --no-pager || true
-            echo "📋 Journal logs:"
-            journalctl -u ailearnapi -n 30 --no-pager || true
-            systemctl is-active --quiet ailearnapi && echo "✅ ailearnapi service is running" || (echo "❌ Service failed to start — see logs above"; exit 1)
+            sudo systemctl --no-pager --full status "$SERVICE_NAME"
 
-            # ── Reload nginx (only if config test passes) ──
-            if nginx -t 2>/dev/null; then
-              systemctl reload nginx
-              echo "🔄 Nginx reloaded"
-            else
-              echo "⚠️  Nginx config test failed — skipping reload (API still running on port 5000)"
-              nginx -t 2>&1 || true
-            fi
+            sudo nginx -t
+            sudo systemctl reload nginx
 
-            echo "✅ API deployed at https://learnwithai.tech/api"
-
-      - name: ⏭️ Skipped
-        if: steps.check_secrets.outputs.skip == 'true'
-        run: echo "Skipped — VPS_SSH_PRIVATE_KEY not set"
-
-      - name: 📊 Summary
-        if: success() && steps.check_secrets.outputs.skip == 'false'
-        run: |
-          echo "### 🎉 .NET API Deployed!" >> $GITHUB_STEP_SUMMARY
-          echo "**API URL:** https://learnwithai.tech/api" >> $GITHUB_STEP_SUMMARY
-          echo "**Health:** https://learnwithai.tech/api/health" >> $GITHUB_STEP_SUMMARY
-          echo "**Swagger:** https://learnwithai.tech/swagger" >> $GITHUB_STEP_SUMMARY
+            curl -fsS http://127.0.0.1:5000/health || curl -fsS http://127.0.0.1:5000/api/health
+            echo "API deployed to $DEPLOY_PATH"

@@ -13,7 +13,7 @@ MongoDB.  The raw key is NEVER written to disk or returned by any API.
 After running, delete this file.
 """
 
-import sys, hashlib, secrets, base64, datetime, getpass
+import sys, os, hashlib, secrets, base64, datetime, getpass
 
 # ── Install check ────────────────────────────────────────────────────────────
 try:
@@ -23,13 +23,15 @@ except ImportError:
     sys.exit("Run:  pip install pymongo cryptography  then try again.")
 
 # ── Config (from appsettings.json — no secrets here) ────────────────────────
-MONGO_URI  = (
-    "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n"
-    "@76.13.244.113:27017/jayant-portfolio?authSource=admin"
-)
+MONGO_URI  = os.environ.get("MONGODB_CONNECTION_STRING")
 DB_NAME    = "jayant-portfolio"
 COLLECTION = "llmproviders"
-ENC_RAW    = "ChangeThisToAStrong256BitKeyInProduction!"   # appsettings.json
+ENC_RAW    = os.environ.get("LLM_PROVIDER_ENCRYPTION_KEY")
+
+if not MONGO_URI:
+    sys.exit("Set MONGODB_CONNECTION_STRING before running this script.")
+if not ENC_RAW:
+    sys.exit("Set LLM_PROVIDER_ENCRYPTION_KEY before running this script.")
 
 # ── Derive 32-byte encryption key (SHA-256, same as .NET) ───────────────────
 enc_key = hashlib.sha256(ENC_RAW.encode("utf-8")).digest()

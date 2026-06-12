@@ -1,0 +1,93 @@
+name: Deploy Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "angular-starter/**"
+      - ".github/workflows/deploy-frontend.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-frontend
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  FRONTEND_DEPLOY_PATH: ${{ vars.FRONTEND_DEPLOY_PATH || '/var/www/learnwithai.tech/frontend' }}
+
+jobs:
+  deploy:
+    name: Build and deploy Angular app
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: angular-starter
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check required secrets
+        run: |
+          test -n "${{ secrets.VPS_HOST }}" || (echo "Missing secret VPS_HOST" && exit 1)
+          test -n "${{ secrets.VPS_USER }}" || (echo "Missing secret VPS_USER" && exit 1)
+          test -n "${{ secrets.VPS_SSH_PRIVATE_KEY }}" || (echo "Missing secret VPS_SSH_PRIVATE_KEY" && exit 1)
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: angular-starter/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build production bundle
+        run: npm run build
+
+      - name: Archive frontend
+        run: tar -czf ../frontend-deploy.tar.gz -C dist/angular-starter .
+
+      - name: Upload archive
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          source: frontend-deploy.tar.gz
+          target: /tmp
+
+      - name: Activate release
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            set -euo pipefail
+            DEPLOY_PATH="${{ env.FRONTEND_DEPLOY_PATH }}"
+            RELEASE="/tmp/frontend-release-${{ github.sha }}"
+
+            rm -rf "$RELEASE"
+            mkdir -p "$RELEASE"
+            tar -xzf /tmp/frontend-deploy.tar.gz -C "$RELEASE"
+            rm -f /tmp/frontend-deploy.tar.gz
+
+            sudo mkdir -p "$DEPLOY_PATH"
+            sudo rsync -a --delete "$RELEASE"/ "$DEPLOY_PATH"/
+            rm -rf "$RELEASE"
+
+            sudo chown -R www-data:www-data "$DEPLOY_PATH"
+            sudo find "$DEPLOY_PATH" -type d -exec chmod 755 {} \;
+            sudo find "$DEPLOY_PATH" -type f -exec chmod 644 {} \;
+
+            sudo nginx -t
+            sudo systemctl reload nginx
+
+            test -f "$DEPLOY_PATH/index.html"
+            echo "Frontend deployed to $DEPLOY_PATH"
