@@ -29,6 +29,10 @@ Log.Logger = new LoggerConfiguration()
     .CreateLogger();
 
 builder.Host.UseSerilog();
+builder.Configuration.AddEnvironmentVariables();
+
+var startupSecrets = new ConfigurationSecretProvider(builder.Configuration);
+new StartupSecretValidator(startupSecrets, builder.Environment).Validate();
 
 // Add services to the container
 builder.Services.AddControllers();
@@ -73,12 +77,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Configure MongoDB
-var mongoConnectionString = builder.Configuration.GetConnectionString("MongoDB")
-    ?? builder.Configuration["MongoDbSettings:ConnectionString"];
-if (string.IsNullOrWhiteSpace(mongoConnectionString))
-{
-    throw new InvalidOperationException("Missing MongoDB connection string. Set ConnectionStrings__MongoDB in the server environment.");
-}
+var mongoConnectionString = startupSecrets.GetRequired("ConnectionStrings:MongoDB");
 var mongoDatabaseName = builder.Configuration["MongoDB:DatabaseName"] ?? "jayant-portfolio";
 
 builder.Services.Configure<MongoDbSettings>(options =>
@@ -148,6 +147,8 @@ builder.Services.AddScoped<IDeploymentService, DeploymentService>();
 builder.Services.AddScoped<IAnalyticsService, AnalyticsService>();
 builder.Services.Configure<OllamaSettings>(builder.Configuration.GetSection("OllamaSettings"));
 builder.Services.Configure<ApiSettings>(builder.Configuration.GetSection("ApiSettings"));
+builder.Services.AddSingleton<ISecretProvider, ConfigurationSecretProvider>();
+builder.Services.AddSingleton<IStartupSecretValidator, StartupSecretValidator>();
 
 // In-memory cache for AI responses (instant repeat-question delivery)
 builder.Services.AddMemoryCache();
@@ -236,11 +237,7 @@ builder.Services.AddCors(options =>
 
 // Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"];
-if (string.IsNullOrWhiteSpace(secretKey))
-{
-    throw new InvalidOperationException("Missing JWT secret. Set JwtSettings__SecretKey in the server environment.");
-}
+var secretKey = startupSecrets.GetRequired("JwtSettings:SecretKey");
 
 builder.Services.AddAuthentication(options =>
 {

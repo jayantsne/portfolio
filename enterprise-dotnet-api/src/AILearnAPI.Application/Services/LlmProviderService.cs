@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.Extensions.Configuration;
 using AILearnAPI.Application.Interfaces;
 using AILearnAPI.Domain.Constants;
 using AILearnAPI.Domain.Entities;
@@ -19,14 +18,13 @@ namespace AILearnAPI.Application.Services
         private readonly ILlmProviderRepository _repo;
         private readonly byte[] _encKey;
 
-        public LlmProviderService(ILlmProviderRepository repo, IConfiguration config)
+        public LlmProviderService(ILlmProviderRepository repo, ISecretProvider secrets)
         {
             _repo = repo;
 
             // Derive a 32-byte key from configuration. In production set the env var
             // LlmProvider__EncryptionKey to a strong random 256-bit Base64 string.
-            var rawKey = config["LlmProvider:EncryptionKey"]
-                         ?? "LlmDefaultKey#ChangeInProduction!";
+            var rawKey = secrets.GetRequired("LlmProvider:EncryptionKey");
             using var sha = SHA256.Create();
             _encKey = sha.ComputeHash(Encoding.UTF8.GetBytes(rawKey));
         }

@@ -5,7 +5,6 @@ using AILearnAPI.Domain.Entities;
 using AILearnAPI.Domain.Interfaces;
 using AILearnAPI.Shared.DTOs.UserConfig;
 using AILearnAPI.Shared.Extensions;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace AILearnAPI.Application.Services
@@ -19,14 +18,14 @@ namespace AILearnAPI.Application.Services
         public UserConfigService(
             IUserConfigRepository repo,
             ILogger<UserConfigService> logger,
-            IConfiguration config)
+            ISecretProvider secrets)
         {
             _repo   = repo;
             _logger = logger;
 
             // Reuse same key derivation as LlmProviderService for consistency.
             // Override with env var: LlmProvider__EncryptionKey
-            var rawKey = config["LlmProvider:EncryptionKey"] ?? "LlmDefaultKey#ChangeInProduction!";
+            var rawKey = secrets.GetRequired("LlmProvider:EncryptionKey");
             using var sha = SHA256.Create();
             _encKey = sha.ComputeHash(Encoding.UTF8.GetBytes(rawKey));
         }
@@ -91,7 +90,7 @@ namespace AILearnAPI.Application.Services
                 Id             = Guid.NewGuid().ToString("N")[..12],
                 Name           = dto.name.Trim(),
                 BaseUrl        = dto.baseUrl.TrimEnd('/'),
-                Model          = string.IsNullOrWhiteSpace(dto.model) ? "gpt-4o-mini" : dto.model,
+                Model          = string.IsNullOrWhiteSpace(dto.model) ? "gpt-4o" : dto.model,
                 ApiKeyEncrypted = Encrypt(dto.apiKey),
                 CreatedAt      = DateTime.UtcNow
             };

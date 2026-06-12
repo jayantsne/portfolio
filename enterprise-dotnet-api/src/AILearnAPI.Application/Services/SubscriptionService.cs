@@ -14,6 +14,7 @@ namespace AILearnAPI.Application.Services
     {
         private readonly ISubscriptionRepository _repo;
         private readonly IConfiguration          _config;
+        private readonly ISecretProvider         _secrets;
         private readonly ILogger<SubscriptionService> _logger;
         private readonly HttpClient              _http;
 
@@ -28,11 +29,13 @@ namespace AILearnAPI.Application.Services
             ISubscriptionRepository repo,
             IConfiguration config,
             ILogger<SubscriptionService> logger,
+            ISecretProvider secrets,
             IHttpClientFactory httpFactory)
         {
             _repo   = repo;
             _config = config;
             _logger = logger;
+            _secrets = secrets;
             _http   = httpFactory.CreateClient("Razorpay");
         }
 
@@ -75,8 +78,8 @@ namespace AILearnAPI.Application.Services
 
         public async Task<CreateOrderResponseDto> CreateRazorpayOrderAsync(string userId)
         {
-            var keyId     = _config["Razorpay:KeyId"]     ?? throw new InvalidOperationException("Razorpay:KeyId not configured");
-            var keySecret = _config["Razorpay:KeySecret"] ?? throw new InvalidOperationException("Razorpay:KeySecret not configured");
+            var keyId     = _secrets.GetRequired("Razorpay:KeyId");
+            var keySecret = _secrets.GetRequired("Razorpay:KeySecret");
 
             var payload = new
             {
@@ -115,8 +118,7 @@ namespace AILearnAPI.Application.Services
 
         public async Task<PaymentVerifiedDto> VerifyPaymentAsync(VerifyPaymentDto dto)
         {
-            var keySecret = _config["Razorpay:KeySecret"]
-                            ?? throw new InvalidOperationException("Razorpay:KeySecret not configured");
+            var keySecret = _secrets.GetRequired("Razorpay:KeySecret");
 
             // Signature = HMAC-SHA256(order_id + "|" + payment_id, key_secret)
             var payload   = $"{dto.RazorpayOrderId}|{dto.RazorpayPaymentId}";

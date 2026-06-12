@@ -15,17 +15,20 @@ namespace AILearnAPI.Application.Services
         private readonly IAuthRepository _authRepository;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthService> _logger;
+        private readonly ISecretProvider _secrets;
         private readonly ISubscriptionService? _subscriptionService;
 
         public AuthService(
             IAuthRepository authRepository,
             IConfiguration configuration,
             ILogger<AuthService> logger,
+            ISecretProvider secrets,
             ISubscriptionService? subscriptionService = null)
         {
             _authRepository      = authRepository;
             _configuration       = configuration;
             _logger              = logger;
+            _secrets             = secrets;
             _subscriptionService = subscriptionService;
         }
 
@@ -274,7 +277,7 @@ namespace AILearnAPI.Application.Services
                 username,
                 email,
                 role,
-                secretKey:   jwt["SecretKey"]   ?? throw new InvalidOperationException("Missing JwtSettings:SecretKey configuration."),
+                secretKey:   _secrets.GetRequired("JwtSettings:SecretKey"),
                 issuer:      jwt["Issuer"]       ?? "AILearnAPI",
                 audience:    jwt["Audience"]     ?? "AILearnAPI",
                 expiryHours: int.TryParse(jwt["ExpiryHours"], out var h) ? h : 24

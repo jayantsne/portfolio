@@ -8,6 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using AILearnAPI.Application.Interfaces;
 
 namespace AILearnAPI.Api.Controllers
 {
@@ -18,16 +19,19 @@ namespace AILearnAPI.Api.Controllers
         private readonly IMongoCollection<AdminUser> _adminUsers;
         private readonly IMongoCollection<AIProvider> _aiProviders;
         private readonly IConfiguration _configuration;
+        private readonly ISecretProvider _secrets;
         private readonly ILogger<AdminController> _logger;
 
         public AdminController(
             IMongoDatabase database,
             IConfiguration configuration,
+            ISecretProvider secrets,
             ILogger<AdminController> logger)
         {
             _adminUsers = database.GetCollection<AdminUser>("adminusers");
             _aiProviders = database.GetCollection<AIProvider>("aiproviders");
             _configuration = configuration;
+            _secrets = secrets;
             _logger = logger;
         }
 
@@ -269,11 +273,7 @@ namespace AILearnAPI.Api.Controllers
 
         private string GenerateJwtToken(AdminUser user)
         {
-            var secretKey = _configuration["JwtSettings:SecretKey"];
-            if (string.IsNullOrWhiteSpace(secretKey))
-            {
-                throw new InvalidOperationException("Missing JwtSettings:SecretKey configuration.");
-            }
+            var secretKey = _secrets.GetRequired("JwtSettings:SecretKey");
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -286,8 +286,8 @@ namespace AILearnAPI.Api.Controllers
             };
 
             var token = new JwtSecurityToken(
-                issuer: "AILearnAPI",
-                audience: "AILearnAPI",
+                issuer: _configuration["JwtSettings:Issuer"] ?? "AILearnAPI",
+                audience: _configuration["JwtSettings:Audience"] ?? "AILearnAPI",
                 claims: claims,
                 expires: DateTime.UtcNow.AddHours(24),
                 signingCredentials: credentials
