@@ -318,13 +318,12 @@ export class CodePlaygroundComponent implements OnInit, AfterViewInit, OnDestroy
     this.cdr.detectChanges();
 
     const url     = `${environment.apiUrl}/code/execute`;
-    const headers = new HttpHeaders({ 'X-API-Key': environment.apiKey });
     const body    = { language, code };
 
     this.http.post<{
       stdout: string; stderr: string; compileOutput: string;
       executionTime: string; status: string; success: boolean;
-    }>(url, body, { headers }).subscribe({
+    }>(url, body).subscribe({
       next: res => {
         // Clear the ⏳ spinner line
         this.outputLines = this.outputLines.filter(l => !l.text.startsWith('⏳'));

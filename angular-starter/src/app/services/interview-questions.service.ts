@@ -60,7 +60,6 @@ export interface QuestionsResponse {
 export class InterviewQuestionsService {
   // Update this to match your .NET API URL
   private apiUrl = environment.apiUrl || 'https://localhost:5001/api';
-  private apiKey = (environment as any).apiKey || '';  // API Key from environment
   
   // Cache for questions
   private questionsCache$ = new BehaviorSubject<InterviewQuestion[]>([]);
@@ -75,7 +74,6 @@ export class InterviewQuestionsService {
   private getHeaders() {
     return {
       headers: {
-        'X-API-Key': this.apiKey,
         'Content-Type': 'application/json'
       }
     };

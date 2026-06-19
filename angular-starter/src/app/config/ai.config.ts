@@ -14,8 +14,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // 1.  BACKEND ENDPOINT
 //     In production the environment file sets apiUrl to the absolute VPS URL.
-//     In development the Angular proxy (proxy.conf.json) forwards /api to
-//     localhost:5000 and injects X-API-Key automatically.
+//     In development the Angular proxy forwards /api to localhost:5000.
 // ─────────────────────────────────────────────────────────────────────────────
 import { environment } from '../../environments/environment';
 
@@ -23,7 +22,7 @@ export const AI_BACKEND = {
   /** true = use relative /api (dev proxy), false = use absolute production URL */
   USE_LOCAL_BACKEND: !environment.production,
 
-  // Relative path → Angular dev-server proxy forwards to localhost:5000 and adds X-API-Key
+  // Relative path → Angular dev-server proxy forwards to localhost:5000.
   LOCAL_URL:      '/api',
   PRODUCTION_URL: 'https://learnwithai.tech/api',
 
@@ -32,7 +31,6 @@ export const AI_BACKEND = {
     return this.USE_LOCAL_BACKEND ? this.LOCAL_URL : this.PRODUCTION_URL;
   },
 
-  API_KEY: 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41',
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

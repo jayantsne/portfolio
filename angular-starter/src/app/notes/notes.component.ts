@@ -411,7 +411,6 @@ export class NotesComponent implements OnInit, OnDestroy {
     this.meXhr    = xhr;
     xhr.open('POST', `${apiBase}/api/ai/stream`, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('X-API-Key', AI_BACKEND.API_KEY);
     xhr.responseType = 'text';
 
     let cursor = 0; let acc = '';
@@ -1019,7 +1018,6 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
 
     xhr.open('POST', `${apiBase}/api/ai/stream`, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
-    xhr.setRequestHeader('X-API-Key', AI_BACKEND.API_KEY);
     xhr.responseType = 'text';
 
     let cursor      = 0;

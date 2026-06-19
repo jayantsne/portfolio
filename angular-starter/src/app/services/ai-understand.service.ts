@@ -30,7 +30,6 @@ export interface ErrorResponse {
 })
 export class AiUnderstandService {
   private readonly apiUrl = environment.apiUrl || 'https://learnwithai.tech/learn-api';
-  private readonly apiKey = 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41';
   
   // Cache for responses (in-memory)
   private cache: Map<string, UnderstandResponse> = new Map();
@@ -59,8 +58,7 @@ export class AiUnderstandService {
     };
 
     const headers = new HttpHeaders({
-      'Content-Type': 'application/json',
-      'X-API-Key': this.apiKey
+      'Content-Type': 'application/json'
     });
 
     console.log('Fetching AI understanding for:', topicName);

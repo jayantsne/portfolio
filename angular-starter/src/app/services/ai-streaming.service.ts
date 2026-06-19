@@ -23,7 +23,6 @@ export const MODEL_MAP: Record<OllamaModel, string> = {
 @Injectable({ providedIn: 'root' })
 export class AiStreamingService {
   private readonly apiBase = AI_BACKEND.BASE_URL;
-  private readonly apiKey  = AI_BACKEND.API_KEY;
 
   constructor(private appCfg: AppConfigService) {}
 
@@ -42,7 +41,6 @@ export class AiStreamingService {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${this.apiBase}/ai/stream`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('X-API-Key', this.apiKey);
       xhr.responseType = 'text';
 
       let cursor = 0;

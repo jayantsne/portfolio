@@ -9,16 +9,14 @@ import { AppConfigService } from '../shared/app-config.service';
 export class AiChatService {
 
   private readonly apiBase = AI_BACKEND.BASE_URL;
-  private readonly apiKey  = AI_BACKEND.API_KEY;
 
   constructor(private appCfg: AppConfigService) {}
 
-  sendMessage(message: string): Observable<{ reply: string }> {
+  sendMessage(message: string, toneMode: 'friendly' | 'professional' = 'friendly'): Observable<{ reply: string }> {
     return new Observable(observer => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', `${this.apiBase}/ai/stream`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('X-API-Key', this.apiKey);
       xhr.responseType = 'text';
 
       let cursor = 0;
@@ -59,7 +57,7 @@ export class AiChatService {
         observer.complete();
       };
 
-      xhr.send(JSON.stringify({ question: message, maxTokens: this.appCfg.cfg.maxTokensStream }));
+      xhr.send(JSON.stringify({ question: message, maxTokens: this.appCfg.cfg.maxTokensStream, toneMode }));
       return () => xhr.abort();
     });
   }

@@ -25,28 +25,7 @@ export class AILearnService {
   // Get free keys: https://aistudio.google.com/app/apikey
   // Free tier: 60 req/min, 1,500 req/day, 1M tokens/month per key
   // 🎯 TARGET: 20 keys = 30,000 requests/day!
-  private readonly GEMINI_API_KEYS = [
-    'YOUR_GEMINI_API_KEY_1', // Key 1 - Add your Gemini key from https://aistudio.google.com/app/apikey
-    'YOUR_GEMINI_API_KEY_2', // Key 2
-    'YOUR_GEMINI_API_KEY_3', // Key 3
-    'YOUR_GEMINI_API_KEY_4', // Key 4
-    'YOUR_GEMINI_API_KEY_5', // Key 5
-    'YOUR_GEMINI_API_KEY_6', // Key 6
-    'YOUR_GEMINI_API_KEY_7', // Key 7
-    'YOUR_GEMINI_API_KEY_8', // Key 8
-    'YOUR_GEMINI_API_KEY_9', // Key 9
-    'YOUR_GEMINI_API_KEY_10', // Key 10
-    'YOUR_GEMINI_API_KEY_11', // Key 11
-    'YOUR_GEMINI_API_KEY_12', // Key 12
-    'YOUR_GEMINI_API_KEY_13', // Key 13
-    'YOUR_GEMINI_API_KEY_14', // Key 14
-    'YOUR_GEMINI_API_KEY_15', // Key 15
-    'YOUR_GEMINI_API_KEY_16', // Key 16
-    'YOUR_GEMINI_API_KEY_17', // Key 17
-    'YOUR_GEMINI_API_KEY_18', // Key 18
-    'YOUR_GEMINI_API_KEY_19', // Key 19
-    'YOUR_GEMINI_API_KEY_20', // Key 20
-  ];
+  private readonly GEMINI_API_KEYS: string[] = [];
   
   // 🔄 PRIMARY: GROQ (Super fast, free tier, BEST CHOICE!) 🚀
   // Get free keys: https://console.groq.com/keys
@@ -58,53 +37,20 @@ export class AILearnService {
   // Get free keys: https://huggingface.co/settings/tokens
   // Free tier: Very generous limits, free models
   // 🎯 TARGET: 15 keys = Strong backup capacity (50,000+ req/day!)
-  private readonly HF_API_KEYS = [
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 1 - Add your HF token from https://huggingface.co/settings/tokens
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 2 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 3 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 4 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 5 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 6 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 7 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 8 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 9 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 10 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 11 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 12 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 13 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 14 - WORKING ✅
-    'hf_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 15 - WORKING ✅
-  ];
+  private readonly HF_API_KEYS: string[] = [];
   
   // 🔄 FALLBACK 3: TOGETHER.AI (Premium quality models)
   // Get free keys: https://api.together.xyz/settings/api-keys
   // Free tier: $25 credit for new users (lasts months!)
   // 🎯 TARGET: 10 keys = Premium backup
-  private readonly TOGETHER_API_KEYS = [
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 1 - ADD: Free $25 credit!
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 2 - ADD: Another account
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 3 - ADD MORE
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 4 - ADD MORE
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 5 - ADD MORE
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 6 - ADD MORE
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 7 - ADD MORE
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 8 - ADD MORE
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 9 - ADD MORE
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 10 - ADD MORE
-  ];
+  private readonly TOGETHER_API_KEYS: string[] = [];
   
   // 🌟 NEW: OPENROUTER (100+ AI models with one API key!)
   // Get free key: https://openrouter.ai/keys
   // Free tier: Access to free models like Llama, Mistral, etc.
   // Free tier: 10 req/min on free models, unlimited on paid models
   // 🎯 TARGET: 5 keys = Massive model selection!
-  private readonly OPENROUTER_API_KEYS = [
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 1 - GET FREE: https://openrouter.ai/keys
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 2 - Use different email
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 3 - Use temp email
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 4 - ADD MORE
-    'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', // Key 5 - ADD MORE
-  ];
+  private readonly OPENROUTER_API_KEYS: string[] = [];
 
   // 🏠 SERVER OLLAMA: Proxied through ASP.NET API (SECURE & UNLIMITED!)
   // 🎯 Server: 76.13.244.113 (learnwithai.tech)
@@ -279,12 +225,9 @@ Your AI Learning Assistant needs at least 1 API key to work.
    - Click "Sign in with Google" (no password!)
    - Click "Create API Key" → Copy it
    
-2. Open: src/environments/environment.ts
+2. Store the key in the backend/admin provider settings.
 
-3. Paste your key in groqApiKeys array:
-   groqApiKeys: [
-     'gsk_YOUR_KEY_HERE',  // ← Replace with your actual key
-   ]
+3. Keep private provider keys out of Angular environment files.
 
 4. Reload app - Done! 🎉
 
@@ -1647,10 +1590,9 @@ Backend proxy is enabled but all 9 keys are exhausted.
    * Emits partial text every 30 tokens so UI can show real-time streaming,
    * then emits final complete text with done:true.
    */
-  getOllamaExplanation(prompt: string, mode?: string): Observable<{ explanation: string; success: boolean; done?: boolean }> {
+  getOllamaExplanation(prompt: string, mode?: string, rawMode = true): Observable<{ explanation: string; success: boolean; done?: boolean }> {
     // Use relative /api path on localhost (proxied); full URL in production
     const apiBase = window.location.hostname === 'localhost' ? '' : 'https://learnwithai.tech';
-    const apiKey = '<API_KEY>';
 
     // Abort any in-flight request before starting a new one (handles rapid re-asks)
     if (this.activeXhr) {
@@ -1663,7 +1605,6 @@ Backend proxy is enabled but all 9 keys are exhausted.
       this.activeXhr = xhr;
       xhr.open('POST', `${apiBase}/api/ai/stream`, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('X-API-Key', apiKey);  // Always send — middleware requires it on /api/ai/stream
       // Forward JWT when logged in so the backend can route to custom providers
       const jwtToken = this.authSvc?.getToken?.();
       if (jwtToken) xhr.setRequestHeader('Authorization', `Bearer ${jwtToken}`);
@@ -1754,9 +1695,16 @@ Backend proxy is enabled but all 9 keys are exhausted.
         observer.complete();
       };
 
-      // rawMode: true → backend passes our structured mentor prompt verbatim to the AI
-      // without this the backend would replace the rich prompt with its own minimal template
-      xhr.send(JSON.stringify({ question: prompt,  conversationId: this.conversationId || null, maxTokens: this.appCfg.cfg.maxTokensStream, provider: selectedProvider, rawMode: true, mode: mode ?? null }));
+      // rawMode=true keeps existing prompt-heavy lesson/note flows working.
+      // Chat callers can pass rawMode=false so the backend applies its ChatGPT-style chat prompt.
+      xhr.send(JSON.stringify({
+        question: prompt,
+        conversationId: this.conversationId || null,
+        maxTokens: this.appCfg.cfg.maxTokensStream,
+        provider: selectedProvider,
+        rawMode,
+        mode: mode ?? null
+      }));
       return () => { xhr.abort(); this.activeXhr = null; };
     });
   }
