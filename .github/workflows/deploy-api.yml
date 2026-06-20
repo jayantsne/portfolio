@@ -18,7 +18,7 @@ permissions:
   contents: read
 
 env:
-  BACKEND_DEPLOY_PATH: ${{ vars.BACKEND_DEPLOY_PATH || '/var/www/learnwithai.tech/backend' }}
+  BACKEND_DEPLOY_PATH: /var/www/learnwithai.tech/backend
   API_SERVICE_NAME: ${{ vars.API_SERVICE_NAME || 'ailearnapi' }}
 
 jobs:
