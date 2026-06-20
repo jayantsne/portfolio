@@ -1,8 +1,8 @@
-#!/bin/bash
+﻿#!/bin/bash
 
 # MongoDB Service Fix Script for learnwithai.tech server
 # Admin user: jbadmin
-# Admin password: PwC$Grow88!Track
+# Admin password: <MONGODB_PASSWORD>
 
 echo "🔧 ===== MongoDB Service Fix Script ====="
 echo ""
@@ -101,18 +101,18 @@ if systemctl is-active --quiet mongod; then
     echo "🔐 Step 12: Testing connection with admin user..."
     if command -v mongosh &> /dev/null; then
         # Using mongosh (newer)
-        mongosh --quiet --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "print('✅ Admin authentication successful!'); db.adminCommand('listDatabases')" 2>&1
+        mongosh --quiet --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "print('✅ Admin authentication successful!'); db.adminCommand('listDatabases')" 2>&1
     else
         # Using legacy mongo shell
-        mongo --quiet --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "print('✅ Admin authentication successful!'); db.adminCommand('listDatabases')" 2>&1
+        mongo --quiet --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "print('✅ Admin authentication successful!'); db.adminCommand('listDatabases')" 2>&1
     fi
     
     echo ""
     echo "🔐 Step 13: Listing existing users..."
     if command -v mongosh &> /dev/null; then
-        mongosh --quiet --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "db.getUsers()" admin 2>&1
+        mongosh --quiet --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "db.getUsers()" admin 2>&1
     else
-        mongo --quiet --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "db.getUsers()" admin 2>&1
+        mongo --quiet --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "db.getUsers()" admin 2>&1
     fi
     
 else
@@ -145,5 +145,5 @@ echo "   - Admin user: jbadmin"
 echo "   - Config backup: /etc/mongod.conf.backup.*"
 echo ""
 echo "🔗 Connection string for your app:"
-echo "   mongodb://jbadmin:PwC\$Grow88!Track@localhost:27017/AILearnDB?authSource=admin"
+echo "   mongodb://jbadmin:<MONGODB_PASSWORD>@localhost:27017/AILearnDB?authSource=admin"
 echo ""

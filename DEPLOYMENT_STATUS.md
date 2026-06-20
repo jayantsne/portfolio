@@ -1,4 +1,4 @@
-# 🎉 DEPLOYMENT COMPLETE - Summary Report
+﻿# 🎉 DEPLOYMENT COMPLETE - Summary Report
 
 **Date:** February 27, 2026  
 **Status:** ✅ Backend Deployed & Running  
@@ -72,7 +72,7 @@ The backend API is running but nginx needs configuration to route public HTTPS t
 1. **SSH to server:**
    ```bash
    ssh root@76.13.244.113
-   # Password: 1ZC7Lts7,saeb)Y0H4@n
+   # Password: <DEPLOY_SSH_PASSWORD>
    ```
 
 2. **Edit nginx config:**

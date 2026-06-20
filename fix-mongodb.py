@@ -1,10 +1,10 @@
-import paramiko
+﻿import paramiko
 import sys
 import time
 
 hostname = '76.13.244.113'
 username = 'root'
-password = '1ZC7Lts7,saeb)Y0H4@n'
+password = '<DEPLOY_SSH_PASSWORD>'
 port = 22
 
 def execute_command(client, command, description=""):
@@ -71,7 +71,7 @@ try {
 try {
     db.createUser({
         user: "jbadmin",
-        pwd: "1ZC7Lts7,saeb)Y0H4@n",
+        pwd: "<DEPLOY_SSH_PASSWORD>",
         roles: [
             { role: "userAdminAnyDatabase", db: "admin" },
             { role: "readWriteAnyDatabase", db: "admin" },
@@ -92,19 +92,19 @@ db.getUser("jbadmin");
         print("\n" + "="*60)
         print("STEP 5: Test authentication")
         print("="*60)
-        test_cmd = 'mongosh "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/admin" --quiet --eval "db.runCommand({connectionStatus: 1})" 2>&1'
+        test_cmd = 'mongosh "mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:27017/admin" --quiet --eval "db.runCommand({connectionStatus: 1})" 2>&1'
         execute_command(client, test_cmd, "Testing connection")
         
         print("\n" + "="*60)
         print("STEP 6: Check jayant-portfolio database")
         print("="*60)
-        check_db_cmd = 'mongosh "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.questions.countDocuments()" 2>&1'
+        check_db_cmd = 'mongosh "mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.questions.countDocuments()" 2>&1'
         execute_command(client, check_db_cmd, "Counting questions")
         
         print("\n" + "="*60)
         print("STEP 7: Test remote connection from server")
         print("="*60)
-        remote_test = f'mongosh "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@{hostname}:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.getName()" 2>&1'
+        remote_test = f'mongosh "mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@{hostname}:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.getName()" 2>&1'
         execute_command(client, remote_test, "Testing remote connection")
         
         client.close()
@@ -113,12 +113,12 @@ db.getUser("jbadmin");
         print("✅ MONGODB CONFIGURATION COMPLETE!")
         print("="*60)
         print("\n📱 Use this connection string in MongoDB Compass:")
-        print(f"\n   mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@{hostname}:27017/jayant-portfolio?authSource=admin")
+        print(f"\n   mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@{hostname}:27017/jayant-portfolio?authSource=admin")
         print(f"\n🌐 Or fill in manually:")
         print(f"   Hostname: {hostname}")
         print(f"   Port: 27017")
         print(f"   Username: jbadmin")
-        print(f"   Password: 1ZC7Lts7,saeb)Y0H4@n")
+        print(f"   Password: <DEPLOY_SSH_PASSWORD>")
         print(f"   Auth Database: admin")
         print(f"   Default Database: jayant-portfolio")
         

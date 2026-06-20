@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Generate SSH key, install on VPS, print private key for GitHub Secrets."""
 import paramiko
 import os
@@ -22,7 +22,7 @@ print(f'Public key (first 60 chars): {pub_key[:60]}...')
 # Install public key on server
 client = paramiko.SSHClient()
 client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect('76.13.244.113', username='root', password='1ZC7Lts7,saeb)Y0H4@n', timeout=30)
+client.connect('76.13.244.113', username='root', password='<DEPLOY_SSH_PASSWORD>', timeout=30)
 print('Connected to server')
 
 cmd = (

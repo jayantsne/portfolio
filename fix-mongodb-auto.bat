@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 setlocal enabledelayedexpansion
 
 echo.
@@ -11,7 +11,7 @@ echo.
 echo Server credentials:
 echo   Host: 76.13.244.113
 echo   User: root  
-echo   Password: 1ZC7Lts7,saeb)Y0H4@n
+echo   Password: <DEPLOY_SSH_PASSWORD>
 echo.
 echo ============================================================
 echo.
@@ -44,7 +44,7 @@ echo echo "=============== MongoDB Status ==============="
 echo systemctl status mongod --no-pager ^| head -n 15
 echo echo ""
 echo echo "=============== Testing Connection ==============="
-echo mongosh --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "db.adminCommand('ping'^)" ^|^| mongo --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "db.adminCommand('ping'^)"
+echo mongosh --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "db.adminCommand('ping'^)" ^|^| mongo --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "db.adminCommand('ping'^)"
 ) > %TEMP_COMMANDS%
 
 echo Commands file created: %TEMP_COMMANDS%
@@ -56,7 +56,7 @@ pause >nul
 
 echo.
 echo Connecting to server...
-echo When prompted for password, enter: 1ZC7Lts7,saeb)Y0H4@n
+echo When prompted for password, enter: <DEPLOY_SSH_PASSWORD>
 echo.
 echo After connecting successfully, the fix commands will run automatically.
 echo.
@@ -85,7 +85,7 @@ if %ERRORLEVEL% EQU 0 (
     echo Opening interactive SSH session...
     echo.
     echo INSTRUCTIONS:
-    echo   1. Enter password when prompted: 1ZC7Lts7,saeb)Y0H4@n
+    echo   1. Enter password when prompted: <DEPLOY_SSH_PASSWORD>
     echo   2. After connecting, run: bash /tmp/fix-mongodb.sh
     echo   3. Or paste the commands from: %TEMP_COMMANDS%
     echo.

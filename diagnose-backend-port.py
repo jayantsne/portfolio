@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Diagnose why backend isn't responding"""
 
 import paramiko
@@ -6,7 +6,7 @@ import time
 
 HOST = "76.13.244.113"
 USERNAME = "root"
-PASSWORD = "1ZC7Lts7,saeb)Y0H4@n"
+PASSWORD = "<DEPLOY_SSH_PASSWORD>"
 
 print("🔍 Diagnosing backend communication issue...\n")
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Test with HTTPS and verify the API is accessible
 """
@@ -7,7 +7,7 @@ import paramiko
 def main():
     server = "76.13.244.113"
     username = "root"
-    password = "1ZC7Lts7,saeb)Y0H4@n"
+    password = "<DEPLOY_SSH_PASSWORD>"
     
     print("🔍 Testing API with HTTPS...")
     

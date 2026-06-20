@@ -1,4 +1,4 @@
-# 🎓 Multi-Prompt AI Learning System - Implementation Complete
+﻿# 🎓 Multi-Prompt AI Learning System - Implementation Complete
 
 ## 📊 Project Overview
 
@@ -219,7 +219,7 @@ Each prompt template includes:
 
 All endpoints require X-API-Key header:
 ```
-X-API-Key: b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41
+X-API-Key: <API_KEY>
 ```
 
 ---

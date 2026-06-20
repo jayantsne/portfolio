@@ -1,4 +1,4 @@
-# MongoDB Service Fix Instructions
+﻿# MongoDB Service Fix Instructions
 
 ## Problem
 MongoDB service is not starting on server 76.13.244.113
@@ -7,12 +7,12 @@ MongoDB service is not starting on server 76.13.244.113
 
 ### Option 1: Automated Script (Recommended)
 
-The server password will be needed: `1ZC7Lts7,saeb)Y0H4@n`
+The server password will be needed: `<DEPLOY_SSH_PASSWORD>`
 
 **Step 1:** Open PuTTY or your SSH client and connect to:
 - Host: `76.13.244.113`
 - Username: `root`
-- Password: `1ZC7Lts7,saeb)Y0H4@n`
+- Password: `<DEPLOY_SSH_PASSWORD>`
 
 **Step 2:** Once connected, run these commands:
 
@@ -63,7 +63,7 @@ sudo systemctl enable mongod
 sudo systemctl status mongod
 
 # 7. Test connection
-mongosh --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "db.adminCommand('ping')"
+mongosh --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "db.adminCommand('ping')"
 ```
 
 ## Expected Result
@@ -78,7 +78,7 @@ After running the script, you should see:
 After MongoDB is running, update your .NET API connection string to:
 
 ```
-mongodb://jbadmin:PwC$Grow88!Track@localhost:27017/AILearnDB?authSource=admin
+mongodb://jbadmin:<MONGODB_PASSWORD>@localhost:27017/AILearnDB?authSource=admin
 ```
 
 ## Troubleshooting

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Deploy:
 1. Updated .NET backend (streaming endpoint + qwen2.5:3b + llama3.2:3b config)
@@ -14,7 +14,7 @@ import json
 
 HOST = "76.13.244.113"
 USERNAME = "root"
-PASSWORD = "1ZC7Lts7,saeb)Y0H4@n"
+PASSWORD = "<DEPLOY_SSH_PASSWORD>"
 
 BACKEND_DIR  = r"d:\folio\jayant-angular-ui\enterprise-dotnet-api\src\AILearnAPI.Api\publish"
 FRONTEND_DIR = r"d:\folio\jayant-angular-ui\angular-starter\dist\angular-starter"

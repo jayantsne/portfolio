@@ -1,8 +1,8 @@
-import paramiko, io, re
+﻿import paramiko, io, re
 
 host = "76.13.244.113"
 user = "root"
-password = "1ZC7Lts7,saeb)Y0H4@n"
+password = "<DEPLOY_SSH_PASSWORD>"
 
 c = paramiko.SSHClient()
 c.set_missing_host_key_policy(paramiko.AutoAddPolicy())

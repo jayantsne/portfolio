@@ -1,10 +1,10 @@
-# MongoDB Integration Setup
+﻿# MongoDB Integration Setup
 
 ## Overview
 Your application has been migrated from localStorage to MongoDB Atlas. All data is now stored in the cloud database.
 
 ## MongoDB Connection
-- **Connection String**: `mongodb+srv://bjayantsne_db_user:H3Y4FWCZ3t0ZIzu6@cluster0.9liq2qs.mongodb.net/jayant-portfolio`
+- **Connection String**: `mongodb+srv://bjayantsne_db_user:<MONGODB_PASSWORD>@cluster0.9liq2qs.mongodb.net/jayant-portfolio`
 - **Database Name**: `jayant-portfolio`
 
 ## Collections

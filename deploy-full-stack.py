@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Complete Frontend + Backend Deployment
 Deploys Angular app and ASP.NET backend with full nginx configuration
@@ -11,7 +11,7 @@ import sys
 def main():
     server = "76.13.244.113"
     username = "root"
-    password = "1ZC7Lts7,saeb)Y0H4@n"
+    password = "<DEPLOY_SSH_PASSWORD>"
     
     frontend_path = r"d:\folio\jayant-angular-ui\angular-starter\dist"
     backend_path = r"d:\folio\jayant-angular-ui\enterprise-dotnet-api\publish"

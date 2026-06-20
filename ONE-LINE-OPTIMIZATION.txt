@@ -1,10 +1,10 @@
-===============================================================================
+﻿===============================================================================
 🚀 OLLAMA SPEED OPTIMIZATION - ONE COMMAND
 ===============================================================================
 
 SSH INTO YOUR SERVER:
   ssh root@76.13.244.113
-  Password: 1ZC7Lts7,saeb)Y0H4@n
+  Password: <DEPLOY_SSH_PASSWORD>
 
 THEN COPY & PASTE THIS ENTIRE COMMAND (ONE LINE):
 

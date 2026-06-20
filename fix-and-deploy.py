@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Fix the directory issue and redeploy
 """
@@ -11,7 +11,7 @@ import sys
 def main():
     server = "76.13.244.113"
     username = "root"
-    password = "1ZC7Lts7,saeb)Y0H4@n"
+    password = "<DEPLOY_SSH_PASSWORD>"
     local_path = r"d:\folio\jayant-angular-ui\enterprise-dotnet-api\publish"
     remote_path = "/var/www/ai-learn-api"
     

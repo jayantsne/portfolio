@@ -1,4 +1,4 @@
-# Copy and paste these commands into your SSH session
+﻿# Copy and paste these commands into your SSH session
 # After connecting to root@76.13.244.113
 
 # 1. Stop MongoDB and clean up
@@ -42,8 +42,8 @@ systemctl status mongod --no-pager | head -n 15
 
 # 7. Test connection
 echo "🔐 Testing admin connection..."
-mongosh --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "print('✅ SUCCESS: MongoDB is working!'); db.adminCommand('listDatabases')" || mongo --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "print('✅ SUCCESS: MongoDB is working!'); db.adminCommand('listDatabases')"
+mongosh --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "print('✅ SUCCESS: MongoDB is working!'); db.adminCommand('listDatabases')" || mongo --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "print('✅ SUCCESS: MongoDB is working!'); db.adminCommand('listDatabases')"
 
 echo ""
 echo "✅ MongoDB fix complete!"
-echo "Connection string: mongodb://jbadmin:PwC\$Grow88!Track@localhost:27017/AILearnDB?authSource=admin"
+echo "Connection string: mongodb://jbadmin:<MONGODB_PASSWORD>@localhost:27017/AILearnDB?authSource=admin"

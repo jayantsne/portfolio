@@ -1,6 +1,6 @@
-option batch on
+﻿option batch on
 option confirm off
-open scp://root:1ZC7Lts7,saeb)Y0H4@n@76.13.244.113
+open scp://root:<DEPLOY_SSH_PASSWORD>@76.13.244.113
 cd /var/www/ai-learn-api
 rm *
 lcd "d:\folio\jayant-angular-ui\enterprise-dotnet-api\publish"

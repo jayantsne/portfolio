@@ -1,9 +1,9 @@
-import paramiko
+﻿import paramiko
 import json
 
 hostname = '76.13.244.113'
 username = 'root'
-password = '1ZC7Lts7,saeb)Y0H4@n'
+password = '<DEPLOY_SSH_PASSWORD>'
 
 def test_integration():
     try:
@@ -16,7 +16,7 @@ def test_integration():
         print("Test 1: API Questions Endpoint")
         print("="*60)
         stdin, stdout, stderr = client.exec_command(
-            'curl -s -H "X-API-Key: b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41" https://learnwithai.tech/api/questions | python3 -m json.tool | head -80'
+            'curl -s -H "X-API-Key: <API_KEY>" https://learnwithai.tech/api/questions | python3 -m json.tool | head -80'
         )
         result = stdout.read().decode('utf-8')
         print(result)
@@ -25,7 +25,7 @@ def test_integration():
         print("Test 2: Count Questions")
         print("="*60)
         stdin, stdout, stderr = client.exec_command(
-            'curl -s -H "X-API-Key: b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41" https://learnwithai.tech/api/questions | python3 -c "import sys, json; d = json.load(sys.stdin); print(f\'Total: {d.get(\\\"total\\\", 0)} questions\')"'
+            'curl -s -H "X-API-Key: <API_KEY>" https://learnwithai.tech/api/questions | python3 -c "import sys, json; d = json.load(sys.stdin); print(f\'Total: {d.get(\\\"total\\\", 0)} questions\')"'
         )
         result = stdout.read().decode('utf-8')
         print(result)

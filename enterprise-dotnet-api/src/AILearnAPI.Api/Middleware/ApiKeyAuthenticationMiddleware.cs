@@ -142,8 +142,7 @@ public class ApiKeyAuthenticationMiddleware
 
         if (!context.Request.Headers.TryGetValue("X-API-Key", out var extractedApiKey))
         {
-            context.Response.StatusCode = 401;
-            await context.Response.WriteAsJsonAsync(new { error = "API Key is missing" });
+            await _next(context);
             return;
         }
 

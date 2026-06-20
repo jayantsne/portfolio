@@ -1,4 +1,4 @@
-Write-Host "🏗️ Building Angular app for production..." -ForegroundColor Cyan
+﻿Write-Host "🏗️ Building Angular app for production..." -ForegroundColor Cyan
 
 # Build for production
 cd angular-starter
@@ -14,7 +14,7 @@ Write-Host "✅ Build complete!" -ForegroundColor Green
 # Deploy to server
 Write-Host "`n📤 Deploying to server..." -ForegroundColor Cyan
 
-$password = "1ZC7Lts7,saeb)Y0H4@n"
+$password = "<DEPLOY_SSH_PASSWORD>"
 $server = "76.13.244.113"
 
 # SCP the dist folder to server

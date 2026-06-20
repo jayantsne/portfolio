@@ -1,12 +1,12 @@
-import paramiko
+﻿import paramiko
 import json
 
 hostname = '76.13.244.113'
 username = 'root'
-password = '1ZC7Lts7,saeb)Y0H4@n'
+password = '<DEPLOY_SSH_PASSWORD>'
 port = 22
 
-MONGO_URI = '"mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/jayant-portfolio?authSource=admin"'
+MONGO_URI = '"mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:27017/jayant-portfolio?authSource=admin"'
 
 def run(client, cmd):
     stdin, stdout, stderr = client.exec_command(cmd)

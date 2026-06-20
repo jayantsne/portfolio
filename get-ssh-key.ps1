@@ -1,8 +1,8 @@
-Import-Module Posh-SSH
+﻿Import-Module Posh-SSH
 
 $VPS_HOST = "76.13.244.113"
 $VPS_USER = "root"
-$PASSWORD = ConvertTo-SecureString "1ZC7Lts7,saeb)Y0H4@n" -AsPlainText -Force
+$PASSWORD = ConvertTo-SecureString "<DEPLOY_SSH_PASSWORD>" -AsPlainText -Force
 $Credential = New-Object System.Management.Automation.PSCredential($VPS_USER, $PASSWORD)
 
 Write-Host "`n========================================" -ForegroundColor Cyan

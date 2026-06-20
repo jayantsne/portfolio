@@ -1,10 +1,10 @@
-import paramiko
+﻿import paramiko
 import sys
 import time
 
 hostname = '76.13.244.113'
 username = 'root'
-password = '1ZC7Lts7,saeb)Y0H4@n'
+password = '<DEPLOY_SSH_PASSWORD>'
 port = 22
 
 def execute_command(client, command, description):

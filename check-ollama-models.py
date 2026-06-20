@@ -1,8 +1,8 @@
-import paramiko
+﻿import paramiko
 
 SERVER_IP = '76.13.244.113'
 SERVER_USER = 'root'
-SERVER_PASSWORD = '1ZC7Lts7,saeb)Y0H4@n'
+SERVER_PASSWORD = '<DEPLOY_SSH_PASSWORD>'
 
 print('='*60)
 print('Checking Ollama Models & Configuration')

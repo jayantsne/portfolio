@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """Force restart and watch startup"""
 
 import paramiko
@@ -6,7 +6,7 @@ import time
 
 HOST = "76.13.244.113"
 USERNAME = "root"
-PASSWORD = "1ZC7Lts7,saeb)Y0H4@n"
+PASSWORD = "<DEPLOY_SSH_PASSWORD>"
 
 print("🔄 Force restarting backend...\n")
 

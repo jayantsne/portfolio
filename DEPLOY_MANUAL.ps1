@@ -1,4 +1,4 @@
-#!/usr/bin/env pwsh
+﻿#!/usr/bin/env pwsh
 # 🚀 Manual Backend Deployment Guide
 # Use this if automated deployment requires password setup
 
@@ -19,7 +19,7 @@ Write-Host "1. Download WinSCP: https://winscp.net/eng/download.php"
 Write-Host "2. Connect to server:"
 Write-Host "   Host: 76.13.244.113"
 Write-Host "   User: root"
-Write-Host "   Password: 1ZC7Lts7,saeb)Y0H4@n"
+Write-Host "   Password: <DEPLOY_SSH_PASSWORD>"
 Write-Host ""
 Write-Host "3. Navigate to: /var/www/ai-learn-api/"
 Write-Host ""
@@ -48,7 +48,7 @@ Write-Host ""
 Write-Host "2. Connect via PuTTY:"
 Write-Host "   Host: 76.13.244.113"  
 Write-Host "   Login: root"
-Write-Host "   Password: 1ZC7Lts7,saeb)Y0H4@n"
+Write-Host "   Password: <DEPLOY_SSH_PASSWORD>"
 Write-Host ""
 Write-Host "3. Run these commands:"
 Write-Host "   cd /var/www/ai-learn-api"

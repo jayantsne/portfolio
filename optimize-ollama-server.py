@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Complete Ollama Performance Optimization
 - Switches to faster 3B model
@@ -13,7 +13,7 @@ import json
 
 SERVER = "76.13.244.113"
 USERNAME = "root"
-PASSWORD = "1ZC7Lts7,saeb)Y0H4@n"
+PASSWORD = "<DEPLOY_SSH_PASSWORD>"
 
 def run_command(ssh, cmd, show_output=True):
     """Execute command and return output"""

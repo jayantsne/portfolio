@@ -1,4 +1,4 @@
-# 🚀 Ollama Server Configuration
+﻿# 🚀 Ollama Server Configuration
 
 ## ✅ Current Setup (SECURE ARCHITECTURE)
 - **Server**: 76.13.244.113 (learnwithai.tech)
@@ -26,7 +26,7 @@ Ollama is running on the server at localhost:11434 (internal only).
 ### Verify Ollama is Running
 ```bash
 ssh root@76.13.244.113
-# Password: 1ZC7Lts7,saeb)Y0H4@n
+# Password: <DEPLOY_SSH_PASSWORD>
 
 # Check Ollama status
 systemctl status ollama

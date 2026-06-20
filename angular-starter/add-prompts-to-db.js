@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
 
 // MongoDB Connection - Server
-const MONGODB_URI = 'mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@76.13.244.113:27017/jayant-portfolio?authSource=admin';
+const MONGODB_URI = 'mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@76.13.244.113:27017/jayant-portfolio?authSource=admin';
 
 // Question Schema with Prompts
 const questionSchema = new mongoose.Schema({

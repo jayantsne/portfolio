@@ -1,4 +1,4 @@
-@echo off
+﻿@echo off
 REM MongoDB Service Fix Script for Windows
 REM Server: 76.13.244.113
 REM This script will guide you through fixing MongoDB
@@ -10,11 +10,11 @@ echo ===================================================
 echo.
 echo Server: 76.13.244.113
 echo User: root
-echo Password: 1ZC7Lts7,saeb)Y0H4@n
+echo Password: <DEPLOY_SSH_PASSWORD>
 echo.
 echo INSTRUCTIONS:
 echo 1. This will open an SSH connection to your server
-echo 2. Enter the password when prompted: 1ZC7Lts7,saeb)Y0H4@n
+echo 2. Enter the password when prompted: <DEPLOY_SSH_PASSWORD>
 echo 3. Then copy and paste the commands below
 echo.
 pause

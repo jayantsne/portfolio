@@ -1,11 +1,11 @@
-import paramiko
+﻿import paramiko
 import os
 import sys
 from pathlib import Path
 
 hostname = '76.13.244.113'
 username = 'root'
-password = '1ZC7Lts7,saeb)Y0H4@n'
+password = '<DEPLOY_SSH_PASSWORD>'
 port = 22
 
 def deploy_angular_app():

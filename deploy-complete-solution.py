@@ -1,4 +1,4 @@
-import paramiko
+﻿import paramiko
 import os
 import time
 import subprocess
@@ -6,7 +6,7 @@ import subprocess
 # Server Configuration
 SERVER_IP = '76.13.244.113'
 SERVER_USER = 'root'
-SERVER_PASSWORD = '1ZC7Lts7,saeb)Y0H4@n'
+SERVER_PASSWORD = '<DEPLOY_SSH_PASSWORD>'
 
 # Paths
 LOCAL_FRONTEND_PATH = r'D:\folio\jayant-angular-ui\angular-starter\dist\angular-starter\browser'
@@ -103,10 +103,10 @@ try:
     print_step('STEP 5', 'Testing new API endpoints')
     
     test_commands = [
-        ('curl -s -H "X-API-Key: b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41" '
+        ('curl -s -H "X-API-Key: <API_KEY>" '
          'https://learnwithai.tech/api/questions/1/prompts | head -c 200',
          'Testing prompts endpoint'),
-        ('curl -s -H "X-API-Key: b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41" '
+        ('curl -s -H "X-API-Key: <API_KEY>" '
          'https://learnwithai.tech/api/questions | grep -o \'"total":[0-9]*\'',
          'Testing questions endpoint'),
     ]

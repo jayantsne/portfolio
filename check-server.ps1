@@ -1,4 +1,4 @@
-$password = '1ZC7Lts7,saeb)Y0H4@n'
+﻿$password = '<DEPLOY_SSH_PASSWORD>'
 $server = '76.13.244.113'
 $user = 'root'
 

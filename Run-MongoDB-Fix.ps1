@@ -1,4 +1,4 @@
-# MongoDB Fix - Simple Guide Script
+﻿# MongoDB Fix - Simple Guide Script
 # This will open the right files and connections for you
 
 Clear-Host
@@ -10,7 +10,7 @@ Write-Host "================================================================" -F
 Write-Host ""
 Write-Host "Server: 76.13.244.113" -ForegroundColor White
 Write-Host "User: root" -ForegroundColor White
-Write-Host "Password: 1ZC7Lts7,saeb)Y0H4@n" -ForegroundColor Green
+Write-Host "Password: <DEPLOY_SSH_PASSWORD>" -ForegroundColor Green
 Write-Host ""
 
 # Step 1

@@ -1,4 +1,4 @@
-# 🚀 Deployment Architecture
+﻿# 🚀 Deployment Architecture
 
 ## Your 3 Separate Deployments
 
@@ -92,7 +92,7 @@ dotnet publish -c Release
 To enable HTTPS on learnwithai.tech:
 ```bash
 ssh root@76.13.244.113
-# Password: 1ZC7Lts7,saeb)Y0H4@n
+# Password: <DEPLOY_SSH_PASSWORD>
 certbot --nginx -d learnwithai.tech -d www.learnwithai.tech --non-interactive --agree-tos -m your@email.com
 ```
 

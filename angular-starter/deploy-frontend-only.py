@@ -1,11 +1,11 @@
-import paramiko
+﻿import paramiko
 import os
 import time
 
 # Server Configuration
 SERVER_IP = '76.13.244.113'
 SERVER_USER = 'root'
-SERVER_PASSWORD = '1ZC7Lts7,saeb)Y0H4@n'
+SERVER_PASSWORD = '<DEPLOY_SSH_PASSWORD>'
 
 # Correct path - from workspace root
 script_dir = os.path.dirname(os.path.abspath(__file__))

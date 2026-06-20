@@ -1,9 +1,9 @@
-import paramiko
+﻿import paramiko
 import sys
 
 hostname = '76.13.244.113'
 username = 'root'
-password = '1ZC7Lts7,saeb)Y0H4@n'
+password = '<DEPLOY_SSH_PASSWORD>'
 port = 22
 
 def execute_command(client, command, description=""):
@@ -35,7 +35,7 @@ def import_questions_to_mongodb():
         print("="*60)
         print("STEP 1: Check if questions already exist")
         print("="*60)
-        check_cmd = 'mongosh "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.questions.countDocuments()"'
+        check_cmd = 'mongosh "mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.questions.countDocuments()"'
         code, output, error = execute_command(client, check_cmd, "")
         
         count = int(output.strip()) if output.strip().isdigit() else 0
@@ -52,7 +52,7 @@ def import_questions_to_mongodb():
                 print("\n" + "="*60)
                 print("STEP 2: Clearing existing questions")
                 print("="*60)
-                clear_cmd = 'mongosh "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.questions.deleteMany({})"'
+                clear_cmd = 'mongosh "mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.questions.deleteMany({})"'
                 execute_command(client, clear_cmd, "")
             elif choice == "1":
                 print("\n✅ Keeping existing questions. Exiting...")
@@ -68,7 +68,7 @@ def import_questions_to_mongodb():
         print("="*60)
         
         # Use mongorestore to import from Atlas
-        atlas_uri = "mongodb+srv://bjayantsne_db_user:H3Y4FWCZ3t0ZIzu6@cluster0.9liq2qs.mongodb.net/jayant-portfolio"
+        atlas_uri = "mongodb+srv://bjayantsne_db_user:<MONGODB_PASSWORD>@cluster0.9liq2qs.mongodb.net/jayant-portfolio"
         
         import_cmd = f'''
 # Create temp directory
@@ -78,13 +78,13 @@ mkdir -p /tmp/mongo-backup
 mongodump --uri="{atlas_uri}" --collection=questions --out=/tmp/mongo-backup
 
 # Import to local MongoDB
-mongorestore --uri="mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/jayant-portfolio?authSource=admin" --dir=/tmp/mongo-backup/jayant-portfolio --drop
+mongorestore --uri="mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:27017/jayant-portfolio?authSource=admin" --dir=/tmp/mongo-backup/jayant-portfolio --drop
 
 # Cleanup
 rm -rf /tmp/mongo-backup
 
 # Count imported questions
-mongosh "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "print('✅ Total questions imported:', db.questions.countDocuments())"
+mongosh "mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "print('✅ Total questions imported:', db.questions.countDocuments())"
 '''
         
         execute_command(client, import_cmd, "Importing from Atlas")
@@ -92,7 +92,7 @@ mongosh "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/jayant-por
         print("\n" + "="*60)
         print("STEP 4: Verify data")
         print("="*60)
-        verify_cmd = 'mongosh "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.questions.findOne()" | head -30'
+        verify_cmd = 'mongosh "mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:27017/jayant-portfolio?authSource=admin" --quiet --eval "db.questions.findOne()" | head -30'
         execute_command(client, verify_cmd, "Sample question")
         
         print("\n" + "="*60)

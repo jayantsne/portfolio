@@ -1,9 +1,9 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
 
 // Server MongoDB connection
-const SERVER_URI = 'mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@76.13.244.113:27017/jayant-portfolio?authSource=admin';
+const SERVER_URI = 'mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@76.13.244.113:27017/jayant-portfolio?authSource=admin';
 
 // Read questions from TypeScript file
 const tsFilePath = path.join(__dirname, 'src', 'app', 'ai-qa', 'interview-questions-data.ts');

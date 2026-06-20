@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
+﻿const mongoose = require('mongoose');
 
 // Source: MongoDB Atlas
-const ATLAS_URI = 'mongodb+srv://bjayantsne_db_user:H3Y4FWCZ3t0ZIzu6@cluster0.9liq2qs.mongodb.net/jayant-portfolio?retryWrites=true&w=majority';
+const ATLAS_URI = 'mongodb+srv://bjayantsne_db_user:<MONGODB_PASSWORD>@cluster0.9liq2qs.mongodb.net/jayant-portfolio?retryWrites=true&w=majority';
 
 // Destination: Server MongoDB
-const SERVER_URI = 'mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@76.13.244.113:27017/jayant-portfolio?authSource=admin';
+const SERVER_URI = 'mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@76.13.244.113:27017/jayant-portfolio?authSource=admin';
 
 // Question Schema
 const questionSchema = new mongoose.Schema({

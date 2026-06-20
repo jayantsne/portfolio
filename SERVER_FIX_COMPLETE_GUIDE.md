@@ -1,4 +1,4 @@
-# Complete Server Fix Instructions
+﻿# Complete Server Fix Instructions
 
 ## What's Been Updated
 
@@ -14,7 +14,7 @@ Connect to your server:
 ```powershell
 ssh root@76.13.244.113
 ```
-Password: `1ZC7Lts7,saeb)Y0H4@n`
+Password: `<DEPLOY_SSH_PASSWORD>`
 
 Then run this command:
 ```bash
@@ -23,7 +23,7 @@ systemctl stop mongod && pkill -9 mongod 2>/dev/null && chown -R mongodb:mongodb
 
 Verify MongoDB is running:
 ```bash
-mongosh --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "db.adminCommand('ping')"
+mongosh --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "db.adminCommand('ping')"
 ```
 
 ### Step 2: Upload Updated Service File
@@ -72,7 +72,7 @@ sudo systemctl status mongod
 sudo tail -f /var/log/mongodb/mongod.log
 
 # Connect to MongoDB
-mongosh --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin
+mongosh --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin
 ```
 
 ### API Service Commands
@@ -105,8 +105,8 @@ sudo tail -f /var/log/nginx/learnwithai.tech_error.log
 - Host: localhost:27017
 - Database: AILearnDB
 - Admin User: jbadmin
-- Admin Password: PwC$Grow88!Track
-- Connection String: `mongodb://jbadmin:PwC$Grow88!Track@localhost:27017/AILearnDB?authSource=admin`
+- Admin Password: <MONGODB_PASSWORD>
+- Connection String: `mongodb://jbadmin:<MONGODB_PASSWORD>@localhost:27017/AILearnDB?authSource=admin`
 
 **API:**
 - URL: http://localhost:5000
@@ -143,7 +143,7 @@ sudo journalctl -u ailearnapi -n 100
 ### Authentication errors
 ```bash
 # List MongoDB users
-mongosh --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "db.getUsers()" admin
+mongosh --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "db.getUsers()" admin
 ```
 
 ## Files Modified

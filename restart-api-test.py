@@ -1,11 +1,11 @@
-import paramiko
+﻿import paramiko
 import sys
 import time
 import json
 
 hostname = '76.13.244.113'
 username = 'root'
-password = '1ZC7Lts7,saeb)Y0H4@n'
+password = '<DEPLOY_SSH_PASSWORD>'
 port = 22
 
 def execute_command(client, command, description=""):
@@ -40,14 +40,14 @@ def restart_api_and_test():
         update_cmd = '''cat > /var/www/learnwithai.tech/backend/appsettings.json << 'EOF'
 {
   "ConnectionStrings": {
-    "MongoDB": "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:27017/jayant-portfolio?authSource=admin",
+    "MongoDB": "mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:27017/jayant-portfolio?authSource=admin",
     "Redis": "localhost:6379"
   },
   "MongoDB": {
     "DatabaseName": "jayant-portfolio"
   },
   "MongoDbSettings": {
-    "ConnectionString": "mongodb://jbadmin:1ZC7Lts7%2Csaeb%29Y0H4%40n@localhost:270 17/jayant-portfolio?authSource=admin",
+    "ConnectionString": "mongodb://jbadmin:<MONGODB_PASSWORD_URL_ENCODED>@localhost:270 17/jayant-portfolio?authSource=admin",
     "DatabaseName": "jayant-portfolio"
   },
   "OllamaSettings": {
@@ -57,7 +57,7 @@ def restart_api_and_test():
     "MaxTokens": 2000
   },
   "ApiSettings": {
-    "ApiKey": "b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41",
+    "ApiKey": "<API_KEY>",
     "RateLimitPerMinute": 30
   },
   "Redis": {

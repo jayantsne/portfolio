@@ -1,4 +1,4 @@
-# MongoDB Fix Commands v2 - Based on exit code 14 error
+﻿# MongoDB Fix Commands v2 - Based on exit code 14 error
 # This usually means config file issue or permission problem
 
 # 1. Stop any existing MongoDB processes
@@ -64,4 +64,4 @@ sleep 3
 sudo systemctl status mongod --no-pager
 
 # 8. If running, test connection
-mongosh --username jbadmin --password 'PwC$Grow88!Track' --authenticationDatabase admin --eval "db.adminCommand('ping')"
+mongosh --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval "db.adminCommand('ping')"

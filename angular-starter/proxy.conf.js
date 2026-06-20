@@ -17,10 +17,7 @@ const PROXY_CONFIG = [
     target: 'http://localhost:5000',
     secure: false,
     changeOrigin: true,
-    logLevel: 'info',
-    headers: {
-      'X-API-Key': 'b49d1564ed136964b91428cae724b08110043caa66fc83d32977fb41'
-    }
+    logLevel: 'info'
   },
 
   // ── Rule 2: Serve index.html for all unknown paths (SPA fallback) ─────────

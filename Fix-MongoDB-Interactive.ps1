@@ -1,10 +1,10 @@
-# MongoDB Fix - Interactive PowerShell Script
+﻿# MongoDB Fix - Interactive PowerShell Script
 # This script will guide you through fixing MongoDB step-by-step
 
 $ErrorActionPreference = "Continue"
 $ServerIP = "76.13.244.113"
 $ServerUser = "root"
-$ServerPassword = "1ZC7Lts7,saeb)Y0H4@n"
+$ServerPassword = "<DEPLOY_SSH_PASSWORD>"
 
 function Show-Header {
     param($Title)
@@ -93,7 +93,7 @@ Write-Host ""
 Write-Host "Paste this command in the same SSH session:" -ForegroundColor Yellow
 Write-Host ""
 
-$testCommand = "mongosh --username jbadmin --password 'PwC`$Grow88!Track' --authenticationDatabase admin --eval `"db.adminCommand('ping')`""
+$testCommand = "mongosh --username jbadmin --password '<MONGODB_PASSWORD>' --authenticationDatabase admin --eval `"db.adminCommand('ping')`""
 Write-Host $testCommand -ForegroundColor Cyan
 
 try {
@@ -162,7 +162,7 @@ Write-Host "Your website should now be working:" -ForegroundColor Cyan
 Write-Host "  https://learnwithai.tech" -ForegroundColor White
 Write-Host ""
 Write-Host "MongoDB Connection String:" -ForegroundColor Yellow
-Write-Host "  mongodb://jbadmin:PwC`$Grow88!Track@localhost:27017/AILearnDB?authSource=admin" -ForegroundColor White
+Write-Host "  mongodb://jbadmin:<MONGODB_PASSWORD>@localhost:27017/AILearnDB?authSource=admin" -ForegroundColor White
 Write-Host ""
 Write-Host "To check status later, SSH to server and run:" -ForegroundColor Yellow
 Write-Host "  sudo systemctl status mongod ailearnapi nginx" -ForegroundColor White

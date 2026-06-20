@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 Debug and fix nginx API routing to ensure it points to localhost:5001
 """
@@ -7,7 +7,7 @@ import paramiko
 def main():
     server = "76.13.244.113"
     username = "root"
-    password = "1ZC7Lts7,saeb)Y0H4@n"
+    password = "<DEPLOY_SSH_PASSWORD>"
     
     print("🔍 Debugging nginx API routing...\n")
     

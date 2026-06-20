@@ -1,4 +1,4 @@
-# 🎉 FULL STACK DEPLOYMENT - COMPLETE
+﻿# 🎉 FULL STACK DEPLOYMENT - COMPLETE
 
 **Date:** February 27, 2026  
 **URL:** https://learnwithai.tech  
@@ -266,7 +266,7 @@ groqApiKeys: [
 ## 📞 Server Access
 
 **SSH:** `ssh root@76.13.244.113`  
-**Password:** `1ZC7Lts7,saeb)Y0H4@n`
+**Password:** `<DEPLOY_SSH_PASSWORD>`
 
 **Important Locations:**
 - Frontend: `/var/www/ai-learn-frontend/`
