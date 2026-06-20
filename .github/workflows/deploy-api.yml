@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "enterprise-dotnet-api/**"
+      - "server-configs/nginx/learnwithai.tech.conf"
       - "server-configs/systemd/ailearnapi.service"
       - ".github/workflows/deploy-api.yml"
   workflow_dispatch:
@@ -91,6 +92,15 @@ jobs:
           source: server-configs/systemd/ailearnapi.service
           target: /tmp
 
+      - name: Upload nginx config
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          source: server-configs/nginx/learnwithai.tech.conf
+          target: /tmp
+
       - name: Activate API release
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -111,6 +121,8 @@ jobs:
             rm -f /tmp/api-deploy.tar.gz
 
             sudo install -m 0644 /tmp/server-configs/systemd/ailearnapi.service /etc/systemd/system/"$SERVICE_NAME".service
+            sudo install -m 0644 /tmp/server-configs/nginx/learnwithai.tech.conf /etc/nginx/sites-available/learnwithai.tech.conf
+            sudo ln -sf /etc/nginx/sites-available/learnwithai.tech.conf /etc/nginx/sites-enabled/000-learnwithai.tech.conf
             sudo rm -rf /tmp/server-configs
 
             sudo touch "$ENV_FILE"
