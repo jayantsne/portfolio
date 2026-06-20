@@ -153,11 +153,20 @@ jobs:
             sudo systemctl daemon-reload
             sudo systemctl enable "$SERVICE_NAME"
             sudo systemctl restart "$SERVICE_NAME"
-            sleep 5
-            sudo systemctl --no-pager --full status "$SERVICE_NAME"
 
             sudo nginx -t
             sudo systemctl reload nginx
 
-            curl -fsS http://127.0.0.1:5000/health || curl -fsS http://127.0.0.1:5000/api/health
-            echo "API deployed to $DEPLOY_PATH"
+            for attempt in $(seq 1 30); do
+              if sudo systemctl is-active --quiet "$SERVICE_NAME" && \
+                 (curl -fsS http://127.0.0.1:5000/health || curl -fsS http://127.0.0.1:5000/api/health); then
+                echo "API health check passed on attempt $attempt"
+                echo "API deployed to $DEPLOY_PATH"
+                exit 0
+              fi
+              sleep 2
+            done
+
+            sudo systemctl --no-pager --full status "$SERVICE_NAME" || true
+            sudo journalctl -u "$SERVICE_NAME" -n 80 --no-pager || true
+            exit 1
