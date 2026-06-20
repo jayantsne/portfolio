@@ -69,8 +69,8 @@ jobs:
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            rm -f /tmp/api-deploy.tar.gz
-            rm -rf /tmp/api-release-*
+            sudo rm -f /tmp/api-deploy.tar.gz
+            sudo rm -rf /tmp/api-release-*
             df -h /tmp
 
       - name: Upload API archive
