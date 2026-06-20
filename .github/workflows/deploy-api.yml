@@ -61,6 +61,18 @@ jobs:
       - name: Archive API
         run: tar -czf ../api-deploy.tar.gz -C publish .
 
+      - name: Prepare remote temp
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          script_stop: true
+          script: |
+            rm -f /tmp/api-deploy.tar.gz
+            rm -rf /tmp/api-release-*
+            df -h /tmp
+
       - name: Upload API archive
         uses: appleboy/scp-action@v0.1.7
         with:
