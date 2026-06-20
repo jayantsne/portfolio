@@ -125,6 +125,21 @@ jobs:
             sudo ln -sf /etc/nginx/sites-available/learnwithai.tech.conf /etc/nginx/sites-enabled/000-learnwithai.tech.conf
             sudo rm -rf /tmp/server-configs
 
+            # Remove stale LearnWithAI routing and service names from older deployments.
+            # The live app must route to this workflow's service on localhost:5000.
+            sudo systemctl stop ailearn-api 2>/dev/null || true
+            sudo systemctl disable ailearn-api 2>/dev/null || true
+            for enabled in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
+              [ -e "$enabled" ] || continue
+              target="$(readlink -f "$enabled" 2>/dev/null || echo "$enabled")"
+              if [ "$target" = "/etc/nginx/sites-available/learnwithai.tech.conf" ]; then
+                continue
+              fi
+              if sudo grep -Eq 'server_name .*learnwithai\.tech' "$enabled"; then
+                sudo mv "$enabled" "$enabled.disabled-by-ailearn-deploy"
+              fi
+            done
+
             sudo touch "$ENV_FILE"
             EXISTING_LLM_PROVIDER_ENCRYPTION_KEY="$(sudo grep -E '^LlmProvider__EncryptionKey=' "$ENV_FILE" 2>/dev/null | tail -n 1 | cut -d= -f2- || true)"
             EXISTING_DEFAULT_ADMIN_PASSWORD="$(sudo grep -E '^DefaultAdmin__Password=' "$ENV_FILE" 2>/dev/null | tail -n 1 | cut -d= -f2- || true)"
