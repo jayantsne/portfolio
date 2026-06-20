@@ -22,6 +22,7 @@ public class ApiKeyAuthenticationMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value?.ToLower() ?? "";
+        context.Response.Headers["X-AILearn-ApiKey-Policy"] = "optional";
 
         // Browser-owned authentication routes must never require the shared
         // X-API-Key. Google OAuth starts as a top-level redirect, so the
