@@ -8,7 +8,8 @@ Type=simple
 User=root
 Group=root
 WorkingDirectory=/var/www/learnwithai.tech/backend
-ExecStartPre=-/bin/bash -c 'fuser -k -KILL 5000/tcp 2>/dev/null; for i in 1 2 3 4 5 6 7 8 9 10; do ss -tlnp | grep -q ":5000" || break; sleep 1; done'
+ExecStartPre=-/usr/bin/fuser -k 5000/tcp
+ExecStartPre=/bin/bash -c 'for i in 1 2 3 4 5 6 7 8 9 10; do ss -tlnp | grep -q ":5000" || exit 0; sleep 1; done; echo "Port 5000 is still in use"; ss -tlnp | grep ":5000"; exit 1'
 ExecStart=/usr/bin/dotnet /var/www/learnwithai.tech/backend/AILearnAPI.Api.dll
 
 # Restart policy
