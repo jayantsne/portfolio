@@ -60,6 +60,7 @@ namespace AILearnAPI.Api.Controllers
 
         // POST /api/auth/register - Register new user
         [HttpPost("register")]
+        [AllowAnonymous]
         public async Task<ActionResult<LoginResponseDto>> Register([FromBody] RegisterDto dto)
         {
             try
@@ -87,6 +88,7 @@ namespace AILearnAPI.Api.Controllers
 
         // POST /api/auth/login - Login
         [HttpPost("login")]
+        [AllowAnonymous]
         public async Task<ActionResult<LoginResponseDto>> Login([FromBody] LoginDto dto)
         {
             try
@@ -113,6 +115,7 @@ namespace AILearnAPI.Api.Controllers
 
         // GET /api/auth/google/start - Start backend-owned Google OAuth code flow.
         [HttpGet("google/start")]
+        [AllowAnonymous]
         public IActionResult StartGoogleLogin([FromQuery] string? returnUrl)
         {
             var state = CreateState();
@@ -126,6 +129,7 @@ namespace AILearnAPI.Api.Controllers
 
         // GET /api/auth/google/callback - Google redirects here with an authorization code.
         [HttpGet("google/callback")]
+        [AllowAnonymous]
         public async Task<IActionResult> GoogleCallback(
             [FromQuery] string? code,
             [FromQuery] string? state,

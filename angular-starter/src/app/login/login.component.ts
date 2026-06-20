@@ -96,8 +96,8 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
   
 
   loadAuthSettings(): void {
-    // First check localStorage for auth settings
-    const savedSettings = localStorage.getItem('authSettings');
+    // Do not read auth settings from browser storage.
+    const savedSettings = '';
     if (savedSettings) {
       try {
         this.authSettings = JSON.parse(savedSettings);
@@ -117,8 +117,8 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
         if (settings && Object.keys(settings).length > 0) {
           this.authSettings = settings;
           console.log('✅ Loaded auth settings from database:', this.authSettings);
-          // Save to localStorage for future use
-          localStorage.setItem('authSettings', JSON.stringify(this.authSettings));
+          // Do not persist auth settings in browser storage.
+          // Do not persist authentication settings in browser storage.
         } else {
           console.log('📝 Using default auth settings:', this.authSettings);
         }
@@ -126,8 +126,8 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
       (error) => {
         console.error('❌ Error loading auth settings:', error);
         console.log('📝 Using default auth settings:', this.authSettings);
-        // Save defaults to localStorage
-        localStorage.setItem('authSettings', JSON.stringify(this.authSettings));
+        // Do not persist auth settings in browser storage.
+        // Do not persist authentication settings in browser storage.
       }
     );
   }
@@ -389,7 +389,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('🎯 Face Login button clicked!');
     
     // Check if face is enrolled
-    const storedFaceData = localStorage.getItem('enrolledFaceData');
+    const storedFaceData = '';
     
     if (!storedFaceData) {
       // No face enrolled, start enrollment
@@ -533,8 +533,8 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     
-    // Store face data in localStorage (in real app, send to backend)
-    localStorage.setItem('enrolledFaceData', this.capturedFaceData);
+    // Do not store captured biometric data in browser storage.
+    // Do not persist biometric data in browser storage.
     this.enrolledFaceData = this.capturedFaceData;
     this.faceEnrolled = true;
     
@@ -641,7 +641,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
 
   resetFaceEnrollment(): void {
     if (confirm('Are you sure you want to reset your enrolled face? You will need to enroll again.')) {
-      localStorage.removeItem('enrolledFaceData');
+      // No browser-stored biometric data to remove.
       this.enrolledFaceData = null;
       this.faceEnrolled = false;
       alert('Face enrollment reset. Click Face ID to enroll a new face.');

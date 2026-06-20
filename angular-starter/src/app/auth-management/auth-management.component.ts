@@ -30,15 +30,15 @@ export class AuthManagementComponent implements OnInit {
   }
 
   loadAuthSettings(): void {
-    const savedSettings = localStorage.getItem('authSettings');
+    const savedSettings = '';
     if (savedSettings) {
       this.authSettings = JSON.parse(savedSettings);
     }
   }
 
   saveAuthSettings(): void {
-    localStorage.setItem('authSettings', JSON.stringify(this.authSettings));
-    alert('✅ Authentication settings saved successfully!');
+    // Do not persist authentication settings in browser storage.
+    alert('Authentication settings are not stored in this browser.');
   }
 
   toggleAuthFeature(feature: string): void {

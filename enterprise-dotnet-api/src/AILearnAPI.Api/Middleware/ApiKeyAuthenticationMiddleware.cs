@@ -22,6 +22,15 @@ public class ApiKeyAuthenticationMiddleware
     public async Task InvokeAsync(HttpContext context)
     {
         var path = context.Request.Path.Value?.ToLower() ?? "";
+
+        // Browser-owned authentication routes must never require the shared
+        // X-API-Key. Google OAuth starts as a top-level redirect, so the
+        // frontend cannot and should not attach server secrets to this request.
+        if (path.Equals("/api/auth") || path.StartsWith("/api/auth/"))
+        {
+            await _next(context);
+            return;
+        }
         
         // Skip authentication for health check
         if (path.Contains("/health"))
