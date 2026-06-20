@@ -19,7 +19,6 @@ public static class ApplicationBuilderExtensions
 
         app.UseCors("AllowAll");
         app.UseAuthentication();
-        app.UseMiddleware<ApiKeyAuthenticationMiddleware>();
         app.UseMiddleware<ExceptionHandlingMiddleware>();
         app.UseMiddleware<SubscriptionAccessMiddleware>();
         app.UseAuthorization();
