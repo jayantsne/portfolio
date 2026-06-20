@@ -75,9 +75,10 @@ namespace AILearnAPI.Application.Services
             if (dto.cooldownMs               != null) config.CooldownMs               = dto.cooldownMs;
 
             // ── Feature flags ─────────────────────────────────────────────
-            if (dto.enableSignup       != null) config.EnableSignup       = dto.enableSignup.Value;
-            if (dto.maintenanceMode    != null) config.MaintenanceMode    = dto.maintenanceMode.Value;
-            if (dto.maintenanceMessage != null) config.MaintenanceMessage = dto.maintenanceMessage;
+            if (dto.enableSignup            != null) config.EnableSignup            = dto.enableSignup.Value;
+            if (dto.maintenanceMode         != null) config.MaintenanceMode         = dto.maintenanceMode.Value;
+            if (dto.maintenanceMessage      != null) config.MaintenanceMessage      = dto.maintenanceMessage;
+            if (dto.isSubscriptionEnabled   != null) config.IsSubscriptionEnabled   = dto.isSubscriptionEnabled.Value;
             // ── Device token limits ──────────────────────────────────────────────
             if (dto.deviceTokenLimitsEnabled != null) config.DeviceTokenLimitsEnabled = dto.deviceTokenLimitsEnabled.Value;
             if (dto.mobileMaxTokens          != null) config.MobileMaxTokens          = dto.mobileMaxTokens.Value;
@@ -145,9 +146,10 @@ namespace AILearnAPI.Application.Services
             cooldownMs               = c.CooldownMs,
 
             // Feature flags
-            enableSignup       = c.EnableSignup,
-            maintenanceMode    = c.MaintenanceMode,
-            maintenanceMessage = c.MaintenanceMessage,
+            enableSignup             = c.EnableSignup,
+            maintenanceMode          = c.MaintenanceMode,
+            maintenanceMessage       = c.MaintenanceMessage,
+            isSubscriptionEnabled    = c.IsSubscriptionEnabled,
 
             // Device token limits
             deviceTokenLimitsEnabled = c.DeviceTokenLimitsEnabled,

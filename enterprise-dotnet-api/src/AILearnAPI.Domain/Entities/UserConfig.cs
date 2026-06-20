@@ -18,7 +18,7 @@ namespace AILearnAPI.Domain.Entities
         public string BaseUrl { get; set; } = string.Empty;
 
         [BsonElement("model")]
-        public string Model { get; set; } = "gpt-4o-mini";
+        public string Model { get; set; } = "gpt-4o";
 
         /// <summary>AES-256-GCM encrypted — never returned to frontend.</summary>
         [BsonElement("apiKeyEncrypted")]

@@ -154,14 +154,16 @@ public class OllamaService : IOllamaService
         string? model = null,
         float temperature = 0.7f,
         int maxTokens = 1500,
+        string? systemPrompt = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        var selectedModel = model ?? _settings.Model;
+        var selectedModel = string.IsNullOrEmpty(model) ? _settings.Model : model;
 
         var request = new OllamaRequestDto
         {
             Model = selectedModel,
             Prompt = prompt,
+            System = systemPrompt,
             Stream = true,
             Options = new OllamaOptionsDto
             {

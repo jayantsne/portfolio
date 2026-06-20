@@ -12,5 +12,7 @@ namespace AILearnAPI.Application.Interfaces
         Task<bool>          DeleteAsync(string userId, string noteId);
         /// <summary>Toggles the isPinned flag. Returns updated note, or null if not found / not owned.</summary>
         Task<NoteDto?>      TogglePinAsync(string userId, string noteId);
+        /// <summary>Returns notes for a given context type (and optionally a specific context id).</summary>
+        Task<List<NoteDto>> GetByContextAsync(string userId, string contextType, string? contextId = null);
     }
 }

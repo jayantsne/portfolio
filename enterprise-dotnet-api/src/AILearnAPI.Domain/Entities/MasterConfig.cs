@@ -39,7 +39,7 @@ namespace AILearnAPI.Domain.Entities
         public string ModelOpenrouter { get; set; } = "meta-llama/llama-3.1-8b-instruct:free";
 
         [BsonElement("modelOllamaStream")]
-        public string ModelOllamaStream { get; set; } = "qwen2.5:3b-instruct-q4_0";
+        public string ModelOllamaStream { get; set; } = "llama3:latest";
 
         [BsonElement("modelOllamaFallbacks")]
         public List<string> ModelOllamaFallbacks { get; set; } = new() { "llama2", "llama3", "mistral", "codellama", "gemma" };
@@ -206,6 +206,14 @@ namespace AILearnAPI.Domain.Entities
 
         [BsonElement("maintenanceMessage")]
         public string MaintenanceMessage { get; set; } = "Down for maintenance. Back soon!";
+
+        /// <summary>
+        /// Master switch for the entire subscription/payment system.
+        /// false = fully free, all routes accessible without payment.
+        /// true  = enforce 2-day trial + paid subscription for protected routes.
+        /// </summary>
+        [BsonElement("isSubscriptionEnabled")]
+        public bool IsSubscriptionEnabled { get; set; } = false;
 
         // ── Audit ────────────────────────────────────────────────────────
         [BsonElement("lastUpdatedBy")]

@@ -35,5 +35,13 @@ namespace AILearnAPI.Domain.Entities
 
         [BsonElement("isPinned")]
         public bool IsPinned { get; set; } = false;
+
+        /// <summary>The source screen/feature that created this note: "prep" | "roadmap" | "mentor".</summary>
+        [BsonElement("contextType")]
+        public string ContextType { get; set; } = string.Empty;
+
+        /// <summary>The specific item this note belongs to (questionId, nodeId, sessionId, etc.).</summary>
+        [BsonElement("contextId")]
+        public string ContextId { get; set; } = string.Empty;
     }
 }

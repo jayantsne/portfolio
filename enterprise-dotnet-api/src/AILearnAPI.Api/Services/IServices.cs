@@ -38,6 +38,7 @@ public interface IOllamaService
         string? model = null,
         float temperature = 0.7f,
         int maxTokens = 512,
+        string? systemPrompt = null,
         CancellationToken cancellationToken = default);
 }
 

@@ -100,18 +100,42 @@ jobs:
             sudo install -m 0644 /tmp/server-configs/systemd/ailearnapi.service /etc/systemd/system/"$SERVICE_NAME".service
             sudo rm -rf /tmp/server-configs
 
-            sudo tee "$ENV_FILE" >/dev/null <<'EOF'
+            sudo touch "$ENV_FILE"
+            EXISTING_LLM_PROVIDER_ENCRYPTION_KEY="$(sudo grep -E '^LlmProvider__EncryptionKey=' "$ENV_FILE" 2>/dev/null | tail -n 1 | cut -d= -f2- || true)"
+            EXISTING_DEFAULT_ADMIN_PASSWORD="$(sudo grep -E '^DefaultAdmin__Password=' "$ENV_FILE" 2>/dev/null | tail -n 1 | cut -d= -f2- || true)"
+            LLM_PROVIDER_ENCRYPTION_KEY_VALUE="${{ secrets.LLM_PROVIDER_ENCRYPTION_KEY }}"
+            DEFAULT_ADMIN_PASSWORD_VALUE="${{ secrets.DEFAULT_ADMIN_PASSWORD }}"
+            if [ -z "$LLM_PROVIDER_ENCRYPTION_KEY_VALUE" ]; then
+              LLM_PROVIDER_ENCRYPTION_KEY_VALUE="$EXISTING_LLM_PROVIDER_ENCRYPTION_KEY"
+            fi
+            if [ -z "$DEFAULT_ADMIN_PASSWORD_VALUE" ]; then
+              DEFAULT_ADMIN_PASSWORD_VALUE="$EXISTING_DEFAULT_ADMIN_PASSWORD"
+            fi
+            if [ -z "$LLM_PROVIDER_ENCRYPTION_KEY_VALUE" ]; then
+              echo "Missing LLM provider encryption key. Set GitHub secret LLM_PROVIDER_ENCRYPTION_KEY or preconfigure LlmProvider__EncryptionKey in $ENV_FILE." >&2
+              exit 1
+            fi
+            DEFAULT_ADMIN_PASSWORD_LINE=""
+            if [ -n "$DEFAULT_ADMIN_PASSWORD_VALUE" ]; then
+              DEFAULT_ADMIN_PASSWORD_LINE="DefaultAdmin__Password=$DEFAULT_ADMIN_PASSWORD_VALUE"
+            fi
+
+            sudo tee "$ENV_FILE" >/dev/null <<EOF
             ASPNETCORE_ENVIRONMENT=Production
             ASPNETCORE_URLS=http://localhost:5000
             DOTNET_PRINT_TELEMETRY_MESSAGE=false
             ConnectionStrings__MongoDB=${{ secrets.MONGODB_CONNECTION_STRING }}
             ConnectionStrings__Redis=${{ secrets.REDIS_CONNECTION_STRING || 'localhost:6379' }}
             MongoDB__DatabaseName=${{ secrets.MONGODB_DATABASE || 'jayant-portfolio' }}
+            MongoDB__RequireTls=${{ vars.MONGODB_REQUIRE_TLS || 'true' }}
+            MongoDB__AllowInvalidCertificates=${{ vars.MONGODB_ALLOW_INVALID_CERTIFICATES || 'false' }}
+            MongoDB__AllowInvalidHostnames=${{ vars.MONGODB_ALLOW_INVALID_HOSTNAMES || 'false' }}
             ApiSettings__ApiKey=${{ secrets.API_KEY }}
             JwtSettings__SecretKey=${{ secrets.JWT_SECRET_KEY }}
             JwtSettings__Issuer=${{ vars.JWT_ISSUER || 'AILearnAPI' }}
             JwtSettings__Audience=${{ vars.JWT_AUDIENCE || 'AILearnAPI' }}
-            LlmProvider__EncryptionKey=${{ secrets.LLM_PROVIDER_ENCRYPTION_KEY || '' }}
+            LlmProvider__EncryptionKey=$LLM_PROVIDER_ENCRYPTION_KEY_VALUE
+            $DEFAULT_ADMIN_PASSWORD_LINE
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || '' }}
             Razorpay__KeyId=${{ secrets.RAZORPAY_KEY_ID || '' }}
             Razorpay__KeySecret=${{ secrets.RAZORPAY_KEY_SECRET || '' }}

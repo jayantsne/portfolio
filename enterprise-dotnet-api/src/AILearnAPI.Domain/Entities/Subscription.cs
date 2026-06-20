@@ -47,6 +47,18 @@ namespace AILearnAPI.Domain.Entities
         [BsonElement("razorpayPaymentId")]
         public string? RazorpayPaymentId { get; set; }
 
+        // ─── Admin override fields ───────────────────────────────────────────
+
+        [BsonElement("isBlocked")]
+        public bool IsBlocked { get; set; } = false;
+
+        [BsonElement("blockedAt")]
+        [BsonDateTimeOptions(Kind = DateTimeKind.Utc)]
+        public DateTime? BlockedAt { get; set; }
+
+        [BsonElement("blockedReason")]
+        public string? BlockedReason { get; set; }
+
         // ─── Computed helpers (not stored) ──────────────────────────────────
 
         [BsonIgnore]
@@ -59,7 +71,7 @@ namespace AILearnAPI.Domain.Entities
                                             && DateTime.UtcNow <= SubscriptionExpiry.Value;
 
         [BsonIgnore]
-        public bool HasAccess => IsTrialActive || IsSubscriptionActive;
+        public bool HasAccess => !IsBlocked && (IsTrialActive || IsSubscriptionActive);
 
         [BsonIgnore]
         public int TrialDaysRemaining =>

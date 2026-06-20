@@ -58,6 +58,8 @@ namespace AILearnAPI.Domain.Interfaces
         Task<List<Note>> GetByUserIdAsync(string userId);
         /// <summary>Fetches a note only when it belongs to the given userId (prevents cross-user access).</summary>
         Task<Note?> GetByIdAndUserIdAsync(string noteId, string userId);
+        /// <summary>Returns notes filtered by context type (and optionally context id).</summary>
+        Task<List<Note>> GetByContextAsync(string userId, string contextType, string? contextId = null);
     }
 
     public interface ILlmProviderRepository : IBaseRepository<LlmProvider>
@@ -74,6 +76,8 @@ namespace AILearnAPI.Domain.Interfaces
     {
         Task<Subscription?> GetByUserIdAsync(string userId);
         Task<Subscription> UpsertByUserIdAsync(Subscription subscription);
+        Task<List<Subscription>> GetAllAsync();
+        Task<List<Subscription>> GetAllByUserIdsAsync(IEnumerable<string> userIds);
     }
 
     public interface IInterviewRoadmapRepository : IBaseRepository<InterviewRoadmap>
@@ -83,5 +87,48 @@ namespace AILearnAPI.Domain.Interfaces
         /// <summary>Inserts or replaces the roadmap for a given (userId, techStackId) pair.</summary>
         Task<InterviewRoadmap> UpsertAsync(InterviewRoadmap roadmap);
         Task<bool> DeleteByUserAndIdAsync(string userId, string id);
+    }
+
+    public interface IUserMemoryRepository
+    {
+        Task<UserMemory> CreateAsync(UserMemory memory);
+        /// <summary>Returns the most-recent <paramref name="limit"/> memories for the user.</summary>
+        Task<List<UserMemory>> GetByUserIdAsync(string userId, int limit = 50);
+    }
+
+    public interface IRevisionRepository : IBaseRepository<RevisionItem>
+    {
+        Task<List<RevisionItem>> GetByUserIdAsync(string userId);
+        /// <summary>Returns the single item for a (userId, noteId) pair, or null if not enrolled.</summary>
+        Task<RevisionItem?> GetByUserAndNoteAsync(string userId, string noteId);
+        /// <summary>Returns all items whose NextReviewDate &lt;= <paramref name="asOf"/>.</summary>
+        Task<List<RevisionItem>> GetDueForReviewAsync(string userId, DateTime asOf);
+        Task<RevisionItem?> GetByIdAndUserIdAsync(string id, string userId);
+    }
+
+    // ── Chat / Conversation ───────────────────────────────────────────────────
+
+    public interface IConversationRepository : IBaseRepository<Conversation>
+    {
+        /// <summary>Returns the most-recent conversations for a user, newest first.</summary>
+        Task<List<Conversation>> GetByUserIdAsync(string userId, int limit = 50);
+
+        /// <summary>Bumps UpdatedAt so the conversation surfaces at the top of recent lists.</summary>
+        Task TouchUpdatedAtAsync(string conversationId);
+    }
+
+    public interface IMessageRepository : IBaseRepository<ChatMessage>
+    {
+        /// <summary>Returns all messages for a conversation, sorted oldest → newest.</summary>
+        Task<List<ChatMessage>> GetByConversationIdAsync(string conversationId);
+
+        /// <summary>
+        /// Returns the most-recent <paramref name="limit"/> messages for context building,
+        /// reversed to oldest → newest order so they can be fed directly to the AI.
+        /// </summary>
+        Task<List<ChatMessage>> GetRecentAsync(string conversationId, int limit = 20);
+
+        /// <summary>Deletes all messages belonging to a conversation (used when deleting the conversation).</summary>
+        Task DeleteByConversationIdAsync(string conversationId);
     }
 }

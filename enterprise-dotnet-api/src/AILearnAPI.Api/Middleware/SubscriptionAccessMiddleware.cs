@@ -23,9 +23,10 @@ namespace AILearnAPI.Api.Middleware
         private readonly ILogger<SubscriptionAccessMiddleware> _logger;
 
         // Prefixes that require an active trial or subscription
+        // NOTE: /api/notes is intentionally excluded — notes are user-owned data
+        // (not AI compute), so authenticated users can always save/read notes.
         private static readonly string[] ProtectedPrefixes =
         [
-            "/api/notes",
             "/api/questions",
             "/api/user-progress",
             "/api/user-config",
@@ -50,14 +51,24 @@ namespace AILearnAPI.Api.Middleware
             "/health",
         ];
 
-        public SubscriptionAccessMiddleware(RequestDelegate next, ILogger<SubscriptionAccessMiddleware> logger)
+        private readonly IWebHostEnvironment _env;
+
+        public SubscriptionAccessMiddleware(RequestDelegate next, ILogger<SubscriptionAccessMiddleware> logger, IWebHostEnvironment env)
         {
             _next   = next;
             _logger = logger;
+            _env    = env;
         }
 
         public async Task InvokeAsync(HttpContext context, ISubscriptionService subscriptionService)
         {
+            // In Development mode, skip subscription check so local builds work without a trial
+            if (_env.IsDevelopment())
+            {
+                await _next(context);
+                return;
+            }
+
             var path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
 
             // Fast-path: always-open routes

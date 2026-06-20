@@ -87,7 +87,15 @@ public class ApiKeyAuthenticationMiddleware
             return;
         }
 
-        // Skip for /api/app-config — public config endpoint
+        // Skip for /api/conversation - protected by JWT Bearer token in ConversationController.
+        // Browser clients should not need or expose the shared X-API-Key for user chat history.
+        if (path.StartsWith("/api/conversation"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Skip for /api/app-config - public config endpoint
         if (path.StartsWith("/api/app-config"))
         {
             await _next(context);
@@ -103,6 +111,20 @@ public class ApiKeyAuthenticationMiddleware
 
         // Skip for /api/llm-providers — protected by JWT Bearer + RBAC (role checks in controller)
         if (path.StartsWith("/api/llm-providers"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Skip for /api/playground — browser clients cannot safely keep shared API keys.
+        if (path.StartsWith("/api/playground"))
+        {
+            await _next(context);
+            return;
+        }
+
+        // Skip for /api/learn — public learning endpoint used by the Angular app.
+        if (path.StartsWith("/api/learn"))
         {
             await _next(context);
             return;

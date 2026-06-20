@@ -24,12 +24,14 @@ namespace AILearnAPI.Application.Services
         {
             var note = new Note
             {
-                UserId   = userId,
-                Topic    = dto.topic.Trim(),
-                Category = dto.category?.Trim() ?? string.Empty,
-                Tags     = dto.tags ?? new(),
-                Content  = dto.content,
-                SavedAt  = DateTime.UtcNow
+                UserId      = userId,
+                Topic       = dto.topic.Trim(),
+                Category    = dto.category?.Trim() ?? string.Empty,
+                Tags        = dto.tags ?? new(),
+                Content     = dto.content,
+                ContextType = dto.contextType?.Trim() ?? string.Empty,
+                ContextId   = dto.contextId?.Trim()   ?? string.Empty,
+                SavedAt     = DateTime.UtcNow
             };
             var saved = await _repo.CreateAsync(note);
             return ToDto(saved);
@@ -66,17 +68,25 @@ namespace AILearnAPI.Application.Services
             return ToDto(updated);
         }
 
+        public async Task<List<NoteDto>> GetByContextAsync(string userId, string contextType, string? contextId = null)
+        {
+            var notes = await _repo.GetByContextAsync(userId, contextType, contextId);
+            return notes.Select(ToDto).ToList();
+        }
+
         // ── Mapping ──────────────────────────────────────────────────────────
         private static NoteDto ToDto(Note n) => new()
         {
-            id        = n.Id,
-            topic     = n.Topic,
-            category  = n.Category,
-            tags      = n.Tags,
-            content   = n.Content,
-            savedAt   = n.SavedAt,
-            savedAtMs = new DateTimeOffset(n.SavedAt, TimeSpan.Zero).ToUnixTimeMilliseconds(),
-            isPinned  = n.IsPinned,
+            id          = n.Id,
+            topic       = n.Topic,
+            category    = n.Category,
+            tags        = n.Tags,
+            content     = n.Content,
+            savedAt     = n.SavedAt,
+            savedAtMs   = new DateTimeOffset(n.SavedAt, TimeSpan.Zero).ToUnixTimeMilliseconds(),
+            isPinned    = n.IsPinned,
+            contextType = n.ContextType,
+            contextId   = n.ContextId,
         };
     }
 }

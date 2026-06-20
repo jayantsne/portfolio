@@ -56,9 +56,11 @@ namespace AILearnAPI.Shared.DTOs.MasterConfig
         public Dictionary<string, long> cooldownMs               { get; set; } = new();
 
         // ── Feature flags ─────────────────────────────────────────────────
-        public bool         enableSignup         { get; set; }
-        public bool         maintenanceMode      { get; set; }
-        public string       maintenanceMessage   { get; set; } = string.Empty;
+        public bool         enableSignup              { get; set; }
+        public bool         maintenanceMode           { get; set; }
+        public string       maintenanceMessage        { get; set; } = string.Empty;
+        /// <summary>When false the entire subscription/payment system is bypassed — the app is fully free.</summary>
+        public bool         isSubscriptionEnabled     { get; set; }
         // ── Device-based token limits ────────────────────────────────────
         public bool         deviceTokenLimitsEnabled { get; set; } = true;
         public int          mobileMaxTokens          { get; set; } = 250;
@@ -124,9 +126,10 @@ namespace AILearnAPI.Shared.DTOs.MasterConfig
         public Dictionary<string, long>? cooldownMs               { get; set; }
 
         // ── Feature flags ─────────────────────────────────────────────────
-        public bool?         enableSignup         { get; set; }
-        public bool?         maintenanceMode      { get; set; }
-        public string?       maintenanceMessage   { get; set; }
+        public bool?         enableSignup              { get; set; }
+        public bool?         maintenanceMode           { get; set; }
+        public string?       maintenanceMessage        { get; set; }
+        public bool?         isSubscriptionEnabled     { get; set; }
         // ── Device-based token limits ────────────────────────────────────
         public bool? deviceTokenLimitsEnabled { get; set; }
         public int?  mobileMaxTokens          { get; set; }

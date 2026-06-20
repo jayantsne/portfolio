@@ -25,5 +25,22 @@ namespace AILearnAPI.Infrastructure.Repositories
                 .Find(n => n.Id == noteId && n.UserId == userId)
                 .FirstOrDefaultAsync();
         }
+
+        public async Task<List<Note>> GetByContextAsync(string userId, string contextType, string? contextId = null)
+        {
+            var filter = Builders<Note>.Filter.And(
+                Builders<Note>.Filter.Eq(n => n.UserId, userId),
+                Builders<Note>.Filter.Eq(n => n.ContextType, contextType)
+            );
+            if (!string.IsNullOrEmpty(contextId))
+                filter = Builders<Note>.Filter.And(
+                    filter,
+                    Builders<Note>.Filter.Eq(n => n.ContextId, contextId)
+                );
+            return await _collection
+                .Find(filter)
+                .SortByDescending(n => n.SavedAt)
+                .ToListAsync();
+        }
     }
 }

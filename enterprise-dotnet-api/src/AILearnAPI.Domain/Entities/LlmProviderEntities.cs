@@ -25,9 +25,9 @@ namespace AILearnAPI.Domain.Entities
         [BsonElement("enabled")]
         public bool Enabled { get; set; } = false;
 
-        /// <summary>Default model name, e.g. "gpt-4o-mini".</summary>
+        /// <summary>Default model name, e.g. "gpt-4o".</summary>
         [BsonElement("model")]
-        public string Model { get; set; } = "gpt-4o-mini";
+        public string Model { get; set; } = "gpt-4o";
 
         /// <summary>OpenAI-compatible base URL (allows Azure OpenAI or other compat. APIs).</summary>
         [BsonElement("base_url")]

@@ -18,6 +18,12 @@ namespace AILearnAPI.Domain.Entities
         [BsonElement("email")]
         public string Email { get; set; } = string.Empty;
 
+        [BsonElement("authProvider")]
+        public string AuthProvider { get; set; } = "local";
+
+        [BsonElement("externalProviderUserId")]
+        public string ExternalProviderUserId { get; set; } = string.Empty;
+
         /// <summary>ADMIN or USER — stored in MongoDB and embedded in the JWT.</summary>
         [BsonElement("role")]
         public string Role { get; set; } = UserRoles.User;

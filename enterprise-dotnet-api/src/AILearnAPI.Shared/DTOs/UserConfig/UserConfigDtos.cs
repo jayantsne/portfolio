@@ -33,7 +33,7 @@ namespace AILearnAPI.Shared.DTOs.UserConfig
         public string name    { get; set; } = string.Empty;
         public string baseUrl { get; set; } = string.Empty;
         public string apiKey  { get; set; } = string.Empty;
-        public string model   { get; set; } = "gpt-4o-mini";
+        public string model   { get; set; } = "gpt-4o";
     }
 
     public class UpdateCustomProviderDto

@@ -23,5 +23,14 @@ namespace AILearnAPI.Infrastructure.Repositories
             subscription.CreatedAt = existing.CreatedAt;
             return await UpdateAsync(existing.Id, subscription);
         }
+
+        public async Task<List<Subscription>> GetAllAsync()
+            => await _collection.Find(_ => true).ToListAsync();
+
+        public async Task<List<Subscription>> GetAllByUserIdsAsync(IEnumerable<string> userIds)
+        {
+            var ids = userIds.ToList();
+            return await _collection.Find(s => ids.Contains(s.UserId)).ToListAsync();
+        }
     }
 }

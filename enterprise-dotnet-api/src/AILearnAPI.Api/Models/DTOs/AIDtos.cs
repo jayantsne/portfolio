@@ -38,6 +38,37 @@ public class AIExplanationRequest
     /// Use for raw/custom prompts like note formatting.
     /// </summary>
     public bool RawMode { get; set; } = false;
+
+    /// <summary>
+    /// View mode selected by the user — drives mode-aware prompt selection on the server.
+    /// Supported values: "simple" | "analogy" | "deep" | "interview" | "mistakes" | "exam" | "default"
+    /// When RawMode is true the frontend builds the full prompt; Mode is still logged for analytics.
+    /// </summary>
+    public string? Mode { get; set; }
+
+    /// <summary>
+    /// Short-term conversation history for multi-turn context.
+    /// Each entry: { "role": "user"|"assistant", "content": "..." }
+    /// When provided, prepended before the current user message.
+    /// </summary>
+    public List<ConversationMessage>? History { get; set; }
+
+    /// <summary>
+    /// Tone of the AI response.
+    /// "friendly" (default) — conversational, analogies, light emoji, ends with follow-up.
+    /// "professional" — concise, direct, exam-focused, no filler.
+    /// </summary>
+    public string? ToneMode { get; set; }  // "friendly" | "professional"
+
+    public  string? ConversationId { get; set; }
+    public  string? GuestId { get; set; }
+}
+
+/// <summary>A single turn in the conversation (role + content).</summary>
+public class ConversationMessage
+{
+    public string Role    { get; set; } = string.Empty;   // "user" or "assistant"
+    public string Content { get; set; } = string.Empty;
 }
 
 /// <summary>

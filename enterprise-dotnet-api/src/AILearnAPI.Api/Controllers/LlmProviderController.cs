@@ -154,16 +154,49 @@ namespace AILearnAPI.Api.Controllers
             // Retrieve provider config (model + base URL) for this stream request
             var allProviders = await _svc.GetAllForAdminAsync();
             var provider     = allProviders.FirstOrDefault(p => p.ProviderName == "openai");
-            var model        = req.Model ?? provider?.Model ?? "gpt-4o-mini";
+            var model        = req.Model ?? provider?.Model ?? "gpt-4o";
             var baseUrl      = provider?.BaseUrl ?? "https://api.openai.com/v1";
 
             _logger.LogInformation("OpenAI stream: user={U} model={M}", UserId, model);
 
             try
             {
-                await foreach (var token in _openAI.StreamAsync(
-                    apiKey, baseUrl, model, string.Empty, req.Question,
-                    req.MaxTokens ?? 1500, cancellationToken))
+            await foreach (var token in _openAI.StreamAsync(
+                    apiKey, baseUrl, model,
+                    """
+                    You are an expert programming tutor for a learning application.
+                    Your job is to explain concepts clearly, simply, and in a structured way — like a great teacher.
+                    You have deep knowledge across all programming languages, frameworks, and computer science concepts
+                    — JavaScript, TypeScript, Python, C#, Java, SQL, AI/ML, system design, data structures, algorithms, and more.
+                    You NEVER start a response with filler phrases such as "Sure!", "Certainly!", "Of course!", "Great question!", or "Absolutely!".
+                    Go straight into useful content.
+                    All code examples must be syntactically valid, clean, and minimal — add comments only where logic is not self-evident.
+                    Use simple, beginner-friendly language. Break complex ideas into smaller parts. Use real-life analogies.
+                    Do NOT use emojis. Use ## headings, bullet points, and blank lines for readability.
+
+                    Structure every response as clean study notes:
+
+                    ## Definition
+                    A simple 1-2 sentence definition.
+
+                    ## Explanation
+                    Intuitive explanation with a real-life analogy if applicable.
+
+                    ## Example
+                    A minimal, correct code example with comments where helpful.
+
+                    ## Key Points
+                    - 3 to 5 bullet points of what matters most
+
+                    ## Summary
+                    1-2 sentences the student should remember.
+
+                    Multilingual: detect the user's language and respond in the same language.
+                    If the question is in Hindi, respond in simple Hindi or Hinglish (Hindi + English mix).
+                    Keep technical terms in English even in Hindi responses (e.g., array, function, class, thread).
+                    """,
+                    req.Question,
+                    req.MaxTokens ?? 2000, cancellationToken))
                 {
                     if (cancellationToken.IsCancellationRequested) break;
                     var escaped = System.Text.Json.JsonSerializer.Serialize(token);

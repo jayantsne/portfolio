@@ -32,14 +32,12 @@ public class LearnController : ControllerBase
     /// <returns>Structured learning content with explanations, examples, and practice questions</returns>
     /// <response code="200">Content generated successfully</response>
     /// <response code="400">Invalid request parameters</response>
-    /// <response code="401">Missing or invalid API key</response>
     /// <response code="408">Request timeout - AI model took too long to respond</response>
     /// <response code="500">Internal server error</response>
     /// <response code="503">Service unavailable - Unable to connect to AI service</response>
     [HttpPost("learn")]
     [ProducesResponseType(typeof(LearnResponseDto), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status408RequestTimeout)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status500InternalServerError)]
     [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status503ServiceUnavailable)]
@@ -47,13 +45,12 @@ public class LearnController : ControllerBase
         Summary = "Generate learning content",
         Description = "Generates structured learning content for Azure exam preparation. " +
                       "Returns comprehensive explanations, key points, code examples, and practice questions. " +
-                      "Requires X-API-Key header for authentication. Typical response time: 3-5 seconds.",
+                      "Typical response time: 3-5 seconds.",
         OperationId = "GenerateLearningContent",
         Tags = new[] { "Learn" }
     )]
     [SwaggerResponse(200, "Learning content generated successfully", typeof(LearnResponseDto))]
     [SwaggerResponse(400, "Invalid request - check topic length and parameters", typeof(ErrorResponseDto))]
-    [SwaggerResponse(401, "Unauthorized - missing or invalid API key", typeof(ErrorResponseDto))]
     public async Task<ActionResult<LearnResponseDto>> GenerateLearningContent(
         [FromBody, SwaggerRequestBody("Learning content request", Required = true)] LearnRequestDto request,
         CancellationToken cancellationToken)
@@ -82,10 +79,8 @@ public class LearnController : ControllerBase
     /// <param name="cancellationToken">Cancellation token</param>
     /// <returns>Structured learning content with default settings (includes examples and questions)</returns>
     /// <response code="200">Content generated successfully</response>
-    /// <response code="401">Missing or invalid API key</response>
     [HttpGet("learn/{topic}")]
     [ProducesResponseType(typeof(LearnResponseDto), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(ErrorResponseDto), StatusCodes.Status401Unauthorized)]
     [SwaggerOperation(
         Summary = "Quick learn with defaults",
         Description = "Simplified endpoint for generating learning content with default settings. " +

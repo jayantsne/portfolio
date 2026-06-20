@@ -222,17 +222,19 @@ namespace AILearnAPI.Application.Services
 
         public async Task InitializeDefaultUserAsync()
         {
-            var exists = await _authRepository.UsernameExistsAsync("admin");
+            const string defaultAdminEmail = "admin@learnwithai.tech";
+            var exists = await _authRepository.EmailExistsAsync(defaultAdminEmail);
 
             if (!exists)
             {
-                var hashedPassword = PasswordHelper.HashPassword("admin123");
+                var defaultAdminPassword = _secrets.GetRequired("DefaultAdmin:Password");
+                var hashedPassword = PasswordHelper.HashPassword(defaultAdminPassword);
 
                 var defaultUser = new Auth
                 {
                     UserId          = "user_1",
                     Username        = "admin",
-                    Email           = "admin@learnwithai.tech",
+                    Email           = defaultAdminEmail,
                     Password        = hashedPassword,
                     Role            = UserRoles.Admin,
                     IsAuthenticated = false,
@@ -240,7 +242,7 @@ namespace AILearnAPI.Application.Services
                 };
 
                 await _authRepository.CreateAsync(defaultUser);
-                _logger.LogInformation("Initialized default admin user (admin@learnwithai.tech / admin123)");
+                _logger.LogInformation("Initialized default admin user {Email}", defaultAdminEmail);
             }
         }
         public async Task<bool> AssignRoleAsync(string targetUserId, string newRole)

@@ -11,8 +11,8 @@ namespace AILearnAPI.Api.Controllers
     /// model names, generation parameters, and cache/rate-limit settings
     /// dynamically from the database instead of using hardcoded values.
     ///
-    /// Access: any request that passes the X-API-Key middleware
-    ///         (no JWT / no ADMIN role required).
+    /// Access: public read-only endpoint
+    ///         (no API key / no JWT / no ADMIN role required).
     /// </summary>
     [ApiController]
     [Route("api/app-config")]

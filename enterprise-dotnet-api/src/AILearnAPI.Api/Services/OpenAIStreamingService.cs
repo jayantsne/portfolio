@@ -2,11 +2,13 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using AILearnAPI.Api.Models.DTOs;
 
 namespace AILearnAPI.Api.Services
 {
     /// <summary>
     /// Calls OpenAI-compatible Chat Completions API with streaming (SSE).
+    /// Supports conversation history for multi-turn context (short-term memory).
     /// Emits tokens incrementally; the caller writes each to the HTTP response.
     /// </summary>
     public interface IOpenAIStreamingService
@@ -18,7 +20,9 @@ namespace AILearnAPI.Api.Services
             string systemPrompt,
             string userPrompt,
             int maxTokens,
-            CancellationToken cancellationToken);
+            CancellationToken cancellationToken,
+            IReadOnlyList<ConversationMessage>? history = null,
+            float temperature = 0.7f);
     }
 
     public class OpenAIStreamingService : IOpenAIStreamingService
@@ -29,7 +33,7 @@ namespace AILearnAPI.Api.Services
         public OpenAIStreamingService(IHttpClientFactory httpFactory, ILogger<OpenAIStreamingService> logger)
         {
             _httpFactory = httpFactory;
-            _logger      = logger;
+            _logger = logger;
         }
 
         public async IAsyncEnumerable<string> StreamAsync(
@@ -39,25 +43,39 @@ namespace AILearnAPI.Api.Services
             string systemPrompt,
             string userPrompt,
             int maxTokens,
-            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+            [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken,
+            IReadOnlyList<ConversationMessage>? history = null,
+            float temperature = 0.7f)
         {
             var client = _httpFactory.CreateClient("OpenAI");
 
-            // Use proper system + user roles so the model never echoes the system prompt
-            object[] messages = string.IsNullOrWhiteSpace(systemPrompt)
-                ? new object[] { new { role = "user", content = userPrompt } }
-                : new object[] { new { role = "system", content = systemPrompt }, new { role = "user", content = userPrompt } };
+            // Build messages array: system → conversation history → current user message
+            var messages = new List<object>();
+
+            if (!string.IsNullOrWhiteSpace(systemPrompt))
+                messages.Add(new { role = "system", content = systemPrompt });
+
+            // Inject conversation history
+            if (history != null)
+            {
+                foreach (var turn in history)
+                    messages.Add(new { role = turn.Role, content = turn.Content });
+            }
+
+            messages.Add(new { role = "user", content = userPrompt });
 
             var requestBody = new
             {
                 model,
-                messages,
+                messages = messages.ToArray(),
                 max_tokens = maxTokens,
                 stream = true,
-                temperature = 0.7
+                temperature,
+                frequency_penalty = 0.3,
+                presence_penalty = 0.1
             };
 
-            var json    = JsonSerializer.Serialize(requestBody);
+            var json = JsonSerializer.Serialize(requestBody);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
 
             using var req = new HttpRequestMessage(HttpMethod.Post, $"{baseUrl.TrimEnd('/')}/chat/completions");
@@ -93,7 +111,7 @@ namespace AILearnAPI.Api.Services
                     401 => "The AI provider API key is invalid or expired. Please update it in Settings.",
                     403 => "Access to this AI provider was denied. Check your API key permissions.",
                     500 or 502 or 503 => "The AI provider is temporarily unavailable. Please try again shortly.",
-                    _   => $"The AI provider returned an unexpected error ({(int)response.StatusCode}). Please try again."
+                    _ => $"The AI provider returned an unexpected error ({(int)response.StatusCode}). Please try again."
                 };
                 yield return $"[ERROR] {friendlyMsg}";
                 yield break;

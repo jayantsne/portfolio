@@ -1,14 +1,23 @@
-using Microsoft.AspNetCore.Mvc;
-using AILearnAPI.Api.Services;
 using AILearnAPI.Api.Models.DTOs;
+using AILearnAPI.Api.Services;
 using AILearnAPI.Application.Interfaces;
-using AILearnAPI.Shared.DTOs.MasterConfig;
-using System.Diagnostics;
-using Microsoft.Extensions.Caching.Memory;
-using System.Security.Cryptography;
-using System.Linq;
-using System.IdentityModel.Tokens.Jwt;
 using AILearnAPI.Domain.Constants;
+using AILearnAPI.Domain.Entities;
+using AILearnAPI.Shared.DTOs.AI;
+using AILearnAPI.Shared.DTOs.Chat;
+using AILearnAPI.Shared.DTOs.MasterConfig;
+using Microsoft.AspNetCore.Http.Metadata;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Memory;
+using MongoDB.Driver;
+using System.Diagnostics;
+using System.IdentityModel.Tokens.Jwt;
+using System.Linq;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace AILearnAPI.Api.Controllers;
 
@@ -30,6 +39,51 @@ public class AIController : ControllerBase
     private readonly ILlmProviderService _llmProviderSvc;
     private readonly IUserConfigService _userConfigSvc;
     private readonly IConfiguration _configuration;
+    private readonly ISemanticMemoryService _memSvc;
+    private readonly IPromptBuilderService _promptBuilder;
+    private readonly IChatService _chatService;
+
+    /// <summary>
+    /// Prefixed to every system prompt (including DB templates) to enforce
+    /// the senior-dev mentor response format and language rule.
+    /// </summary>
+    private const string MentorPrefix = """
+        ===MANDATORY RESPONSE FORMAT — OVERRIDE ALL PREVIOUS INSTRUCTIONS===
+
+        You are a senior software engineer and mentor. Ignore any formatting instructions above.
+        You MUST structure EVERY response using exactly these 5 sections (no exceptions):
+
+        ## 🔹 Concept Overview
+        Explain in simple terms — no jargon, clear for a junior developer.
+
+        ## 🔹 Key Points
+        - Bullet point 1
+        - Bullet point 2
+        - Bullet point 3 (cover what a junior commonly misses)
+
+        ## 🔹 Example
+        A practical code example or real-world scenario with brief inline comments.
+
+        ## 🔹 When to Use
+        Real-world context — when does this appear in actual production code?
+
+        ## 🔹 Common Mistakes
+        - What beginners get wrong
+        - How to fix it
+
+        LANGUAGE RULE (mandatory):
+        - If the user says "explain in Hindi" or writes in Hindi → respond in Hinglish (conversational Hindi + English mix).
+          Keep all technical terms (function, class, loop, etc.) in English.
+          Example: "Browser request bhejta hai → Angular '#/home' handle karta hai → isliye 404 nahi aata"
+          Do NOT use formal/pure Hindi.
+        - Otherwise → respond in clear, simple English only.
+
+        TONE: Friendly but professional. Like a senior explaining to a junior. Not robotic.
+        FORMATTING: Use ## headings, bullet points, code blocks, spacing. Make it a mini lesson.
+        Never open with "Sure!" or "Great question!". Go straight into ## 🔹 Concept Overview.
+        DO NOT write long paragraphs. DO NOT skip any section. DO NOT ignore this format.
+        ===END MANDATORY FORMAT===
+        """;
 
     public AIController(
         IOllamaService ollamaService,
@@ -40,7 +94,10 @@ public class AIController : ControllerBase
         IOpenAIStreamingService openAIStreaming,
         ILlmProviderService llmProviderSvc,
         IUserConfigService userConfigSvc,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ISemanticMemoryService memSvc,
+        IPromptBuilderService promptBuilder,
+        IChatService chatService)
     {
         _ollamaService    = ollamaService;
         _logger           = logger;
@@ -51,6 +108,9 @@ public class AIController : ControllerBase
         _llmProviderSvc   = llmProviderSvc;
         _userConfigSvc    = userConfigSvc;
         _configuration    = configuration;
+        _memSvc           = memSvc;
+        _promptBuilder    = promptBuilder;
+        _chatService      = chatService;
     }
 
     /// <summary>
@@ -96,7 +156,7 @@ public class AIController : ControllerBase
             var cfg = await _masterConfig.GetAsync();
 
             // Build prompt using DB-driven template (falls back to built-in if not configured)
-            var claudePrompt = BuildClaudeQualityPrompt(request.Question, cfg);
+            var claudePrompt = BuildClaudeQualityPrompt(request.Question, cfg, request.ToneMode);
 
             // Check cache first (responses are deterministic for same question)
             var cacheKey = $"ai_explain_{ComputeHash(request.Question)}";
@@ -172,246 +232,86 @@ public class AIController : ControllerBase
     }
 
     /// <summary>
-    /// Stream AI explanation token-by-token via Server-Sent Events (SSE)
-    /// Frontend consumes via fetch + ReadableStream for instant first-token latency
+    /// Stream AI response token-by-token via Server-Sent Events.
     /// Each event: data: {"token":"...","done":false}
     /// Final event: data: {"token":"","done":true}
+    ///
+    /// Controller responsibilities (HTTP only):
+    ///   - Set SSE headers
+    ///   - Extract userId from JWT
+    ///   - Emit new-conversation SSE event
+    ///   - Write token SSE events
+    ///
+    /// Business logic is fully delegated to <see cref="IChatService"/>.
     /// </summary>
     [HttpPost("stream")]
     public async Task StreamExplanation(
         [FromBody] AIExplanationRequest request,
         CancellationToken cancellationToken)
     {
+        // ── 1. SSE headers ─────────────────────────────────────────────────────
         Response.ContentType = "text/event-stream; charset=utf-8";
         Response.Headers.Append("Cache-Control", "no-cache, no-store");
-        Response.Headers.Append("X-Accel-Buffering", "no"); // Disable nginx buffering
+        Response.Headers.Append("X-Accel-Buffering", "no");
         Response.Headers.Append("Connection", "keep-alive");
 
+        // ── 2. Validate ────────────────────────────────────────────────────────
         if (string.IsNullOrWhiteSpace(request.Question))
         {
             await Response.WriteAsync("data: {\"error\":\"Question is required\",\"done\":true}\n\n", cancellationToken);
             return;
         }
 
-        // Pick model: default qwen2.5:3b (fast tech Q&A), backup llama3.2:3b (tutor style)
-        // Load all AI config from DB once for this streaming request
-        var cfg = await _masterConfig.GetAsync();
-        //var prompt = BuildClaudeQualityPrompt(request.Question, cfg);
+        // ── 3. Normalise model ─────────────────────────────────────────────────
+        if (string.Equals(request.Model, "default", StringComparison.OrdinalIgnoreCase))
+            request.Model = null;
 
+        var userId = ExtractUserIdFromBearer();
+        var userName = ExtractUsernameFromBearer();
 
-        var ua = Request.Headers["User-Agent"].ToString();
-        var device = _deviceDetection.Detect(ua);
+        // ── 4. Prepare session (create/validate conversation, save user message) ─
+        var session = await _chatService.PrepareSessionAsync(
+            request.ConversationId, userId, request.GuestId, request.Question, cancellationToken);
 
-        var prompt = request.RawMode
-            ? request.Question   // raw verbatim prompt (e.g. note formatter)
-            : device switch
-            {
-                DeviceType.Mobile  => BuildMobileLearningPrompt(request.Question),
-                DeviceType.Tablet  => BuildMobileLearningPrompt(request.Question),
-                DeviceType.Desktop => BuildClaudeQualityPrompt(request.Question, cfg),
-                _                  => BuildClaudeQualityPrompt(request.Question, cfg),
-            };
-
-        _logger.LogInformation("⚡ SSE Stream request: '{Q}' model={M}",
-            request.Question[..Math.Min(50, request.Question.Length)],
-            request.Model ?? "default");
-
-        try
+        // Emit new-conversation event so Angular can update its URL
+        if (session.IsNew)
         {
-            var streamDeviceLimit = GetDeviceTokenLimitFromConfig(cfg);
-            var providerName = (request.Provider ?? "openai").ToLowerInvariant();
-
-            // Auth-based provider routing:
-            //   Logged-in user  → OpenAI
-            //   Guest           → Ollama
-            // Custom-provider requests (custom:xxx) bypass this — they have their own auth check.
-            if (!providerName.StartsWith("custom:"))
-            {
-                providerName = string.IsNullOrEmpty(ExtractUserIdFromBearer()) ? "ollama" : "openai";
-            }
-
-            IAsyncEnumerable<string> tokenStream;
-
-            if (providerName == "openai")
-            {
-                // ── Route to OpenAI (or any OpenAI-compatible provider) ──────────
-                var providers = await _llmProviderSvc.GetAllForAdminAsync();
-                var prov = providers.FirstOrDefault(p =>
-                    p.ProviderName.Equals("openai", StringComparison.OrdinalIgnoreCase) && p.Enabled);
-
-                if (prov == null)
-                {
-                    _logger.LogWarning("OpenAI provider not configured or disabled — falling back to Ollama");
-                    tokenStream = _ollamaService.StreamAsync(
-                        prompt,
-                        request.Model ?? cfg.modelOllamaStream,
-                        temperature: request.Temperature ?? (float)cfg.defaultTemperature,
-                        maxTokens: streamDeviceLimit,
-                        cancellationToken: cancellationToken);
-                }
-                else
-                {
-                    // Resolve API key: process env → machine env → appsettings
-                    var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY")  // Process (Linux systemd / shell export)
-                              ?? Environment.GetEnvironmentVariable("OPENAI_API_KEY", EnvironmentVariableTarget.Machine)
-                              ?? _configuration["LlmProviders:OpenAI:ApiKey"]
-                              ?? _configuration["OpenAI:ApiKey"];
-
-                    if (string.IsNullOrEmpty(apiKey))
-                    {
-                        _logger.LogWarning("OpenAI API key could not be resolved — falling back to Ollama");
-                        tokenStream = _ollamaService.StreamAsync(
-                            prompt,
-                            request.Model ?? cfg.modelOllamaStream,
-                            temperature: request.Temperature ?? (float)cfg.defaultTemperature,
-                            maxTokens: streamDeviceLimit,
-                            cancellationToken: cancellationToken);
-                    }
-                    else
-                    {
-                        _logger.LogInformation("⚡ SSE Stream → OpenAI model={M}", prov.Model);
-                        // rawMode: frontend-built rich prompt is the user message;
-                        // still inject the system persona so OpenAI keeps the mentor role.
-                        var (oaiSystem, oaiUser) = request.RawMode
-                            ? (cfg.defaultSystemPrompt, request.Question)
-                            : BuildOpenAIMessages(request.Question, cfg);
-                        tokenStream = _openAIStreaming.StreamAsync(
-                            apiKey,
-                            prov.BaseUrl,
-                            request.Model ?? prov.Model,
-                            oaiSystem,
-                            oaiUser,
-                            streamDeviceLimit,
-                            cancellationToken);
-                    }
-                }
-            }
-            else if (providerName.StartsWith("custom:"))
-            {
-                // ── Route to user-custom provider ────────────────────────────────
-                var customId = providerName["custom:".Length..];
-                var userId   = ExtractUserIdFromBearer();
-
-                if (string.IsNullOrEmpty(userId))
-                {
-                    await Response.WriteAsync("data: {\"error\":\"Authentication required for custom providers.\",\"done\":true}\n\n", cancellationToken);
-                    await Response.Body.FlushAsync(cancellationToken);
-                    return;
-                }
-
-                var info = await _userConfigSvc.GetCustomProviderStreamInfoAsync(userId, customId);
-                if (info == null)
-                {
-                    await Response.WriteAsync("data: {\"error\":\"Custom provider not found.\",\"done\":true}\n\n", cancellationToken);
-                    await Response.Body.FlushAsync(cancellationToken);
-                    return;
-                }
-
-                _logger.LogInformation("⚡ SSE Stream → Custom provider id={Id} model={M}", customId, info.Model);
-                var (custSystem, custUser) = request.RawMode
-                    ? (cfg.defaultSystemPrompt, request.Question)
-                    : BuildOpenAIMessages(request.Question, cfg);
-                tokenStream = _openAIStreaming.StreamAsync(
-                    info.ApiKey,
-                    info.BaseUrl,
-                    request.Model ?? info.Model,
-                    custSystem,
-                    custUser,
-                    streamDeviceLimit,
-                    cancellationToken);
-            }
-            else
-            {
-                // ── Default: Ollama ──────────────────────────────────────────────
-                tokenStream = _ollamaService.StreamAsync(
-                    prompt,
-                    request.Model ?? cfg.modelOllamaStream,
-                    temperature: request.Temperature ?? (float)cfg.defaultTemperature,
-                    maxTokens: streamDeviceLimit,
-                    cancellationToken: cancellationToken);
-            }
-
-            var tokensWritten = 0;
-
-            await foreach (var token in tokenStream)
-            {
-                if (cancellationToken.IsCancellationRequested) break;
-
-                // If the service yielded an [ERROR] sentinel ─────────────────
-                if (token.StartsWith("[ERROR]"))
-                {
-                    var errMsg = token["[ERROR]".Length..].Trim();
-
-                    // If no tokens were emitted yet and we're not already on Ollama,
-                    // silently retry with Ollama rather than surfacing the error.
-                    if (tokensWritten == 0 && providerName != "ollama")
-                    {
-                        _logger.LogWarning(
-                            "⚡ Provider '{P}' failed before first token — falling back to Ollama. Reason: {E}",
-                            providerName, errMsg);
-
-                        tokenStream = _ollamaService.StreamAsync(
-                            prompt,
-                            request.Model ?? cfg.modelOllamaStream,
-                            temperature: request.Temperature ?? (float)cfg.defaultTemperature,
-                            maxTokens: streamDeviceLimit,
-                            cancellationToken: cancellationToken);
-
-                        // Restart the loop over the new stream
-                        await foreach (var fallbackToken in tokenStream)
-                        {
-                            if (cancellationToken.IsCancellationRequested) break;
-                            if (fallbackToken.StartsWith("[ERROR]")) break; // give up
-                            var fe = System.Text.Json.JsonSerializer.Serialize(fallbackToken);
-                            await Response.WriteAsync($"data: {{\"token\":{fe},\"done\":false}}\n\n", cancellationToken);
-                            await Response.Body.FlushAsync(cancellationToken);
-                            tokensWritten++;
-                        }
-
-                        await Response.WriteAsync("data: {\"token\":\"\",\"done\":true}\n\n", cancellationToken);
-                        await Response.Body.FlushAsync(cancellationToken);
-                        return;
-                    }
-
-                    // Already mid-stream or already on Ollama — surface the error
-                    var escapedErr = System.Text.Json.JsonSerializer.Serialize(errMsg);
-                    await Response.WriteAsync($"data: {{\"error\":{escapedErr},\"done\":true}}\n\n", cancellationToken);
-                    await Response.Body.FlushAsync(cancellationToken);
-                    return;
-                }
-
-                // Normal token ────────────────────────────────────────────────
-                var escaped = System.Text.Json.JsonSerializer.Serialize(token);
-                await Response.WriteAsync($"data: {{\"token\":{escaped},\"done\":false}}\n\n", cancellationToken);
-                await Response.Body.FlushAsync(cancellationToken);
-                tokensWritten++;
-            }
-
-            await Response.WriteAsync("data: {\"token\":\"\",\"done\":true}\n\n", cancellationToken);
+            await Response.WriteAsync(
+                $"event: conversation\ndata: \"{session.ConversationId}\"\n\n",
+                cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
         }
-        catch (OperationCanceledException)
+
+        // ── 5. Load conversation history for multi-turn context ────────────────
+        var history = await _chatService.GetHistoryAsync(session.ConversationId, limit: 20);
+
+        // ── 6. Stream AI tokens ────────────────────────────────────────────────
+        var fullResponse = new StringBuilder();
+
+        await foreach (var token in _chatService.StreamAiAsync(
+            request.Question,
+            request.Mode,
+            request.ToneMode,
+            request.Model,
+            request.Temperature,
+            request.MaxTokens,
+            request.RawMode = false,
+            history,
+            userId,
+            userName,
+            cancellationToken))
         {
-            _logger.LogInformation("⚡ Stream cancelled by client");
-        }
-        catch (HttpRequestException ex)
-        {
-            // Ollama not running, wrong model, or unreachable — write SSE error so frontend shows user message
-            _logger.LogError(ex, "🔌 Ollama connection failed during stream (HTTP {Status})", (int?)ex.StatusCode);
-            var msg = ex.StatusCode == System.Net.HttpStatusCode.NotFound
-                ? "The AI model is not loaded on the server. Please try again later."
-                : "Cannot reach the AI model server. Please check back in a moment.";
-            var errJson = System.Text.Json.JsonSerializer.Serialize(msg);
-            await Response.WriteAsync($"data: {{\"error\":{errJson},\"done\":true}}\n\n");
-            await Response.Body.FlushAsync();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "❌ Streaming error");
-            var errJson = System.Text.Json.JsonSerializer.Serialize(ex.Message);
-            await Response.WriteAsync($"data: {{\"error\":{errJson},\"done\":true}}\n\n", cancellationToken);
+            var escaped = System.Text.Json.JsonSerializer.Serialize(token);
+            await Response.WriteAsync($"data: {{\"token\":{escaped},\"done\":false}}\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
+            fullResponse.Append(token);
         }
+
+        await Response.WriteAsync("data: {\"token\":\"\",\"done\":true}\n\n", cancellationToken);
+        await Response.Body.FlushAsync(cancellationToken);
+
+        // ── 7. Finalize (save assistant message, update timestamp, store memory) ─
+        await _chatService.FinalizeSessionAsync(session.ConversationId, fullResponse.ToString(), userId, cancellationToken);
     }
 
     /// <summary>
@@ -531,6 +431,189 @@ public class AIController : ControllerBase
         }
     }
 
+    // ── /api/ai/structured ──────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns a structured JSON lesson for a Semantic Kernel / .NET topic.
+    /// The AI is instructed to return ONLY valid JSON matching StructuredNoteDto.
+    /// Server-side fallback parses partial JSON or constructs a minimal skeleton when
+    /// the model returns unstructured text.
+    /// </summary>
+    [HttpPost("structured")]
+    [ProducesResponseType(typeof(StructuredNoteDto), StatusCodes.Status200OK)]
+    public async Task<ActionResult<StructuredNoteDto>> GetStructuredNote(
+        [FromBody] StructuredNoteRequest request,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request.Topic))
+            return BadRequest(new { message = "topic is required" });
+
+        try
+        {
+            var cfg        = await _masterConfig.GetAsync();
+            var model      = cfg.modelOllamaStream;
+            var tokenLimit = Math.Min(request.MaxTokens, 2500);
+
+            var prompt = BuildStructuredPrompt(request.Topic, request.VisualHint);
+            _logger.LogInformation("📐 Structured note request — topic={Topic} model={Model}", request.Topic, model);
+
+            var resp = await _ollamaService.GenerateAsync(prompt, model, 0.1f, tokenLimit, cancellationToken);
+            var raw  = resp.Response ?? string.Empty;
+
+            var note = ParseStructuredNote(raw, request.Topic);
+            return Ok(note);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "❌ Ollama unreachable in /structured");
+            return StatusCode(503, new { message = "AI model server unreachable." });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "❌ /structured error");
+            return StatusCode(500, new { message = ex.Message });
+        }
+    }
+
+    /// <summary>
+    /// Builds a zero-temperature structured JSON prompt for the given topic.
+    /// Temperature = 0.1 at call-site for consistent JSON output.
+    /// </summary>
+    private static string BuildStructuredPrompt(string topic, string? visualHint)
+    {
+        var vHint = visualHint?.ToLowerInvariant() switch
+        {
+            "comparison" => "comparison",
+            "diagram"    => "diagram",
+            _            => "flow"
+        };
+
+        // NOTE: double braces {{ }} escape to literal { } in a raw string literal
+        return $$"""
+            You are a structured educational content API for a developer learning platform.
+            You MUST return ONLY valid JSON. Do not include ANY text before or after the JSON object.
+            The response must start with { and end with }.
+            Do not wrap the JSON in markdown code fences.
+            Do not include comments inside the JSON.
+
+            Topic: {{topic}}
+
+            Return this exact JSON structure with all fields filled meaningfully:
+            {
+              "title": "concise title for the topic",
+              "summary": "2-3 sentence overview of what this topic is and why it matters",
+              "sections": [
+                {
+                  "heading": "what this section covers",
+                  "content": "1-2 paragraph explanation. No newline characters.",
+                  "bullets": ["key insight 1", "key insight 2", "key insight 3"],
+                  "example": "a concrete code snippet or real-world example. Empty string if not needed."
+                }
+              ],
+              "steps": [
+                "Step 1: clear description of first step",
+                "Step 2: clear description of second step"
+              ],
+              "visual": {
+                "type": "{{vHint}}",
+                "data": []
+              }
+            }
+
+            Rules — follow exactly:
+            - sections: 3 to 5 entries. Each must have 2 to 4 bullets.
+            - steps: 4 to 7 entries. Each starts with "Step N:" where N is the number.
+            - visual.type: use "flow" for processes/sequences, "comparison" for feature comparisons, "diagram" for concepts.
+            - For "flow" type: data = short labels in order, e.g. ["User Request", "Kernel", "Plugin", "AI Model", "Response"]
+            - For "comparison" type: data = pipe-delimited rows starting with headers, e.g. ["Feature | SK | LangChain", "Language | C# | Python"]
+            - For "diagram" type: data = lines of ASCII text, e.g. [" [Client] ", "    |    ", " [Kernel] "]
+            - No markdown inside JSON string values (no **, no #, no - at start of strings).
+            - No newline characters (\n) inside JSON string values.
+            - All strings must be valid JSON-escaped.
+            - Return ONLY the JSON object. Nothing else.
+            """;
+    }
+
+    private static readonly JsonSerializerOptions _jsonOpts = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        AllowTrailingCommas         = true,
+    };
+
+    /// <summary>
+    /// Three-stage parser:
+    ///   1. Try to parse response as-is
+    ///   2. Try to extract JSON from ```json...``` or first { ... } block
+    ///   3. Build a minimal StructuredNoteDto from raw text
+    /// </summary>
+    private StructuredNoteDto ParseStructuredNote(string raw, string topic)
+    {
+        // Stage 1: clean parse
+        try
+        {
+            var dto = JsonSerializer.Deserialize<StructuredNoteDto>(raw.Trim(), _jsonOpts);
+            if (dto != null && !string.IsNullOrWhiteSpace(dto.Title)) return dto;
+        }
+        catch { /* fall through */ }
+
+        // Stage 2: extract JSON block
+        var extracted = ExtractJson(raw);
+        if (extracted != null)
+        {
+            try
+            {
+                var dto = JsonSerializer.Deserialize<StructuredNoteDto>(extracted, _jsonOpts);
+                if (dto != null && !string.IsNullOrWhiteSpace(dto.Title)) return dto;
+            }
+            catch { /* fall through */ }
+        }
+
+        // Stage 3: construct from raw text
+        _logger.LogWarning("Structured note JSON parse failed for topic '{Topic}' — building fallback", topic);
+        return BuildFallbackNote(raw, topic);
+    }
+
+    private static string? ExtractJson(string text)
+    {
+        // Try ```json ... ``` block
+        var fenceMatch = Regex.Match(text, @"```(?:json)?\s*(\{[\s\S]*?\})\s*```");
+        if (fenceMatch.Success) return fenceMatch.Groups[1].Value;
+
+        // Try first {...} blob
+        var start = text.IndexOf('{');
+        var end   = text.LastIndexOf('}');
+        if (start >= 0 && end > start) return text[start..(end + 1)];
+
+        return null;
+    }
+
+    /// <summary>Builds a minimal StructuredNoteDto from unstructured text.</summary>
+    private static StructuredNoteDto BuildFallbackNote(string raw, string topic)
+    {
+        // Split the raw text into non-empty lines for bullet extraction
+        var lines = raw.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                       .Where(l => l.Length > 10)
+                       .Take(20)
+                       .ToList();
+
+        var summary = lines.FirstOrDefault() ?? $"An explanation of {topic}.";
+        var bullets = lines.Skip(1).Take(4).Select(l => l.TrimStart('-', '*', ' ')).ToList();
+
+        return new StructuredNoteDto
+        {
+            Title   = topic,
+            Summary = summary,
+            Sections =
+            [
+                new() { Heading = "Overview", Content = summary, Bullets = bullets, Example = "" }
+            ],
+            Steps = lines.Skip(5).Take(5)
+                         .Select((l, i) => $"Step {i + 1}: {l.TrimStart('-', '*', ' ')}")
+                         .ToList(),
+            Visual = new StructuredVisual { Type = "flow", Data = [topic] },
+        };
+    }
+
     // SHA256 hash of question for cache key (avoids key length/character issues)
     private static string ComputeHash(string input)
     {
@@ -546,7 +629,7 @@ public class AIController : ControllerBase
     /// </summary>
     private int GetDeviceTokenLimitFromConfig(MasterConfigDto cfg)
     {
-        const int FallbackDesktop = 1000;
+        const int FallbackDesktop = 2000;
         try
         {
             if (!cfg.deviceTokenLimitsEnabled)
@@ -582,7 +665,7 @@ public class AIController : ControllerBase
     /// </summary>
     private async Task<int> GetDeviceTokenLimitAsync()
     {
-        const int FallbackDesktop = 1000;
+        const int FallbackDesktop = 2000;
         try
         {
             var cfg = await _masterConfig.GetAsync();
@@ -601,13 +684,61 @@ public class AIController : ControllerBase
     ///         → built-in Claude-style teaching template using <c>defaultSystemPrompt</c> as the role.
     /// </summary>
     /// <summary>
-    /// Builds separate system-prompt and user-message for OpenAI chat completions.
-    /// Detects question intent (quick definition vs deep dive) and selects the
-    /// appropriate system instructions so responses feel natural and conversational.
+    /// Returns a strong, accurate system prompt for Semantic Kernel / .NET topics.
+    /// Falls back to the DB defaultSystemPrompt when set by admin.
     /// </summary>
-    private (string systemPrompt, string userMessage) BuildOpenAIMessages(string question, MasterConfigDto cfg)
+    private string BuildSkSystemPrompt(MasterConfigDto cfg, string? mode, string? toneMode = null)
     {
-        // DB-driven template takes priority
+        // Admin-configured system prompt takes priority
+        if (!string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt))
+            return cfg.defaultSystemPrompt;
+
+        var modeHint = (mode?.ToLowerInvariant()) switch
+        {
+            "simple"    => "Use plain English, avoid jargon, and provide one memorable everyday analogy. Assume the user is a complete beginner.",
+            "analogy"   => "Explain using exactly 2–3 vivid real-world analogies from different domains. No code required beyond a tiny snippet. Make comparisons that a beginner can instantly picture.",
+            "deep"      => "Provide complete, runnable code examples with inline comments explaining every non-obvious line. Build from a simple case to a real-world one.",
+            "interview" => "Structure your answer as a mock interview Q&A with follow-up questions and what the interviewer is testing.",
+            "mistakes"  => "Show each mistake as: wrong code snippet → why it's wrong (one sentence) → fixed code snippet. No generic advice.",
+            "exam"      => "Give a memorizable 1-line definition, top 5 points, most likely exam question, and a memory trick.",
+            _           => "Structure your response using exactly these sections in order: ## Definition (1-2 sentences), ## Explanation (analogy or intuitive walkthrough), ## Example (minimal working code with comments), ## Key Points (3-5 bullets), ## Summary (1-2 sentences)."
+        };
+
+        var toneInstruction = (toneMode?.ToLowerInvariant()) switch
+        {
+            "professional" => "Tone: concise and direct. No filler phrases, no small-talk, no emojis. Use precise technical language. Every sentence must add value.",
+            _              => "Tone: conversational, encouraging, and beginner-friendly. Use relatable real-life analogies. Do not use emojis. End responses with a short summary."
+        };
+
+        return $"""
+            You are an expert programming tutor for a structured learning application.
+            Your job is to explain concepts clearly, simply, and in a structured way — like a great teacher.
+            You have deep knowledge across all programming languages, frameworks, and computer science concepts
+            — JavaScript, TypeScript, Python, C#, Java, SQL, AI/ML, system design, data structures, algorithms, and more.
+            You write code examples in whatever language is most relevant to the question.
+            You NEVER start a response with filler phrases such as "Sure!", "Certainly!", "Of course!",
+            "Great question!", or "Absolutely!". Go straight into useful content.
+            All code examples must be syntactically valid, clean, and minimal — add comments only where logic is not self-evident.
+            Assume the user is a beginner unless they indicate otherwise. Avoid unnecessary jargon.
+            Use simple, beginner-friendly language. When a concept is complex, break it into smaller parts.
+            Use real-life analogies to make abstract ideas concrete, but only when they genuinely clarify.
+            Do NOT use emojis. Use ## headings, bullet points, and blank lines between sections for readability.
+            Never repeat the question back to the user or summarize what you are about to say.
+            Multilingual: detect the user's language automatically and respond in the same language.
+            If the user asks in Hindi, respond in simple Hindi or Hinglish (Hindi + English mix).
+            Keep ALL technical terms in English even in Hindi responses (e.g., thread, class, function, array, loop, API).
+            {modeHint}
+            {toneInstruction}
+            """;
+    }
+
+    /// <summary>
+    /// Builds separate system-prompt and user-message for OpenAI chat completions.
+    /// Uses explicit mode when provided; falls back to intent detection for generic questions.
+    /// </summary>
+    private (string systemPrompt, string userMessage) BuildOpenAIMessages(string question, MasterConfigDto cfg, string? mode = null, string? toneMode = null)
+    {
+        // DB-driven template — always append mentor format rules AFTER so they win
         if (!string.IsNullOrWhiteSpace(cfg.mainPromptTemplate))
         {
             var sysTemplate = cfg.mainPromptTemplate
@@ -615,192 +746,351 @@ public class AIController : ControllerBase
                 .Replace("Explain \"{question}\" for developers.", "")
                 .Replace("{question}", "")
                 .Trim();
-            return (sysTemplate, $"Explain \"{question}\" for developers.");
+            return (sysTemplate + "\n\n" + MentorPrefix, $"Explain \"{question}\" for developers.");
         }
 
-        var systemRole = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
-            ? cfg.defaultSystemPrompt
-            : "You are an expert software engineering mentor. Respond conversationally and adapt response length to question complexity.";
+        var sys = BuildSkSystemPrompt(cfg, mode, toneMode);
 
-        // ── Intent detection ─────────────────────────────────────────────────
-        var isDeepDive = System.Text.RegularExpressions.Regex.IsMatch(
-            question,
-            @"\b(deep dive|in depth|in detail|comprehensive|full explanation|advanced|internals?|under the hood|walk me through|step by step|explain everything|teach me everything)\b",
-            System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        sys = "";
 
-        var isSimpleQuestion = !isDeepDive && (
-            System.Text.RegularExpressions.Regex.IsMatch(
-                question,
-                @"^(what is|what are|what does|define|who is|how do|how does|briefly|quick|give me a|tell me about|can you explain)\b",
-                System.Text.RegularExpressions.RegexOptions.IgnoreCase)
-            || (question.TrimEnd().EndsWith("?") && question.Split(' ').Length <= 10));
-
-        if (isDeepDive)
+        // ── Mode-based dispatch ────────────────────────────────────────────────
+        switch (mode?.ToLowerInvariant())
         {
-            // ── Full structured study notes ──────────────────────────────────
-            var deepInstructions = $"""
-                {systemRole}
+            case "simple":
+                return ($@"{sys}
 
-                Produce fully structured study notes for this topic. All sections are mandatory.
-                Never start with "Sure!", "Certainly!", "Great question!", or any filler phrase.
+Structure your response exactly as:
 
-                ## Definition
-                One or two clear sentences.
+## Definition
+1-2 clear sentences using plain English. No jargon.
 
-                ## Key Concepts
-                - 5-7 bullet points with **bold** key terms
+## Intuitive Explanation
+One memorable real-life analogy that a beginner can instantly picture.
 
-                ## Real-World Analogy
-                A relatable non-technical comparison.
+## Simplest Code Example
+A minimal, working example in the relevant language with brief comments.
 
-                ## How It Works
-                Numbered step-by-step mechanics.
+## Key Points
+- Point 1
+- Point 2
+- Point 3
 
-                ## Code Example
-                ```language
-                // Practical, commented example
-                ```
+## Summary
+One sentence — what should the student remember most?",
+                    $"Explain \"{question}\" in simple beginner-friendly terms.");
 
-                ## Common Mistakes
-                - ❌ Exactly 3 mistakes with a one-line fix each
+            case "analogy":
+                return ($@"{sys}
 
-                ## Best Practices
-                - ✅ 3-5 actionable best practices
+Explain using exactly 3 real-world analogies from different domains.
+For each analogy use this format:
 
-                ## Interview Tips
-                What interviewers are really testing. Include 1 tricky follow-up question.
+## Analogy N: [Title]
+The everyday comparison in 2-3 sentences. Then: ""In code terms, this maps to..."" (one sentence).
 
-                ## Follow-up Questions
-                1. Natural next question
-                2. Deeper follow-up
-                3. Practical/real-world application question
-                """;
-            return (deepInstructions, $"Give me a full deep-dive on: \"{question}\"");
-        }
-        else
-        {
-            // ── Short, ChatGPT-style conversational answer (default) ─────────
-            var quickInstructions = $"""
-                {systemRole}
+## Why These Analogies Work
+One paragraph tying all 3 back to the topic.",
+                    $"Explain \"{question}\" using real-world analogies only.");
 
-                Answer conversationally like ChatGPT. Never start with filler phrases.
+            case "deep":
+                return ($@"{sys}
 
-                For this question:
-                1. Give a clear, concise definition (2-3 sentences).
-                2. Include a short code snippet (≤ 10 lines) only if it directly illustrates the concept.
-                3. Add one-sentence real-world analogy only if a great one exists.
-                4. End with EXACTLY this block on its own line — no other text after it:
-                **Explore more:**
-                - [specific follow-up question about the topic?]
-                - [another question the learner naturally asks next?]
-                - [a practical or interview-related question?]
+Structure your response as:
 
-                Total response length: ~150-250 words.
-                Use **bold** for key terms. Skip large ## section headers for simple answers.
-                """;
-            return (quickInstructions, question);
+## Definition
+1-2 sentences — what is this concept?
+
+## Basic Example
+A complete, runnable code example with a comment on each key line.
+
+## Real-World Example
+A more realistic, practical usage showing how it actually appears in production code.
+
+## Key Notes
+- What this demonstrates
+- Common pitfall to avoid
+- One best practice to follow
+
+## Summary
+1-2 sentences the student should take away.",
+                    $"Show practical, runnable code examples for \"{question}\".");
+
+            case "interview":
+                return ($@"{sys}
+
+Structure your response as:
+
+## Interview Question
+State it exactly as a senior interviewer would ask it.
+
+## Model Answer
+3 paragraphs max. Use **bold** for key terms.
+
+## Follow-up Question
+A harder follow-up.
+
+## Follow-up Answer
+The ideal answer.
+
+## What the Interviewer Is Testing
+One short paragraph.",
+                    $"Give me a realistic technical interview Q&A about \"{question}\".");
+
+            case "mistakes":
+                return ($@"{sys}
+
+For each of the 3 mistakes use this exact format:
+
+## Mistake N: [Short Descriptive Name]
+**What people do wrong:** (show wrong code if applicable)
+**Why it's wrong:** One sentence.
+**The Fix:** (show correct code if applicable)
+
+End with a Summary checklist (3 bullets: what to always do / never do).",
+                    $"What are the most common mistakes when working with \"{question}\"?");
+
+
+            case "chat":
+                return ($@"{sys}
+
+You are a helpful AI assistant.
+
+Respond in a natural, conversational way like ChatGPT.
+
+Rules:
+- Keep responses concise and clear
+- Do NOT use headings unless necessary
+- Do NOT structure answers like an article
+- Avoid bullet points unless helpful
+- Talk like a human, not a textbook", question);
+
+
+
+            case "exam":
+                return ($@"{sys}
+
+Structure your response as:
+
+## 1-Line Definition
+Memorable. One sentence.
+
+## 5 Most Important Points
+Numbered list. Keep each point short and clear.
+
+## Most Likely Exam Question
+The question, followed by the correct answer.
+
+## Common Exam Traps
+- Trap 1: what looks right but is wrong
+- Trap 2: another common confusion
+
+## Memory Trick
+A mnemonic, acronym, or simple mental hook to remember the concept.
+
+## Summary
+One sentence — the single most important thing to know for the exam.",
+                    $"Give me exam tips and key facts about \"{question}\".");
+
+            default:
+                return BuildDefaultModeMessages(question, sys);
         }
     }
 
-    private string BuildClaudeQualityPrompt(string question, MasterConfigDto cfg)
+    /// <summary>Default mode: AI Mentor 7-step structured teaching format.</summary>
+    private static (string systemPrompt, string userMessage) BuildDefaultModeMessages(string question, string systemRole)
     {
-        // DB-driven prompt
+        var sys = $"""
+            {systemRole}
+
+            You are a senior software engineer and mentor. Teach this concept using exactly these 5 sections:
+
+            ## 🔹 Concept Overview
+            Explain in simple terms — no jargon, clear enough for a junior developer.
+
+            ## 🔹 Key Points
+            - Bullet points
+            - Clear and concise
+            - Include anything a junior would miss
+
+            ## 🔹 Example
+            Give a practical code example or real-world scenario with brief inline comments.
+
+            ## 🔹 When to Use
+            Explain real-world usage — when does this concept actually appear in production code?
+
+            ## 🔹 Common Mistakes
+            Highlight the mistakes beginners typically make and how to avoid them.
+
+            LANGUAGE RULE:
+            - If the user says "explain in Hindi" or the question is in Hindi → respond in Hinglish (conversational Hindi + English mix).
+              Use simple spoken Hindi; keep technical terms (function, loop, class, etc.) in English.
+              Example: "Browser request bhejta hai → Angular '#/home' handle karta hai → isliye 404 nahi aata"
+              Do NOT use formal/pure Hindi.
+            - Otherwise → respond in clear, simple English.
+            TONE: Friendly but professional. Like a senior explaining to a junior. Not robotic, not generic.
+            FORMATTING: Use ## headings, bullet points, code blocks, spacing. Make it feel like a mini lesson.
+            Never start with "Sure!" or "Great question!". Go straight into the first section.
+            DO NOT give one-paragraph answers, be vague, or skip any section.
+            """;
+        return (sys, question);
+    }
+
+    private string BuildClaudeQualityPrompt(string question, MasterConfigDto cfg, string? toneMode = null)
+    {
+        // DB-driven prompt — append mentor format rules AFTER so they win
         if (!string.IsNullOrWhiteSpace(cfg.mainPromptTemplate))
         {
-            _logger.LogInformation("📋 Using DB mainPromptTemplate for question prompt");
-            return cfg.mainPromptTemplate.Replace("{question}", question);
+            _logger.LogInformation("📋 Using DB mainPromptTemplate with mentor suffix");
+            return cfg.mainPromptTemplate.Replace("{question}", question) + "\n\n" + MentorPrefix;
         }
 
-        var systemRole = !string.IsNullOrWhiteSpace(cfg.defaultSystemPrompt)
-            ? cfg.defaultSystemPrompt
-            : "You are an expert senior software engineer and programming mentor with 15+ years of industry experience.";
+        var systemRole = BuildSkSystemPrompt(cfg, null, toneMode);
 
-        _logger.LogInformation("📋 Using structured study notes prompt");
+        _logger.LogInformation("📋 Using AI Mentor 7-step teaching prompt");
 
         return $@"
 {systemRole}
 
-Explain **{question}** as fully structured study notes for a developer preparing for a technical interview.
-Never start with filler phrases like 'Sure!' or 'Great question!'. Go straight into the content.
-Never summarize — every section must be complete.
+You are a senior software engineer and mentor. Teach **{question}** using exactly these 5 sections.
+Never start with 'Sure!' or 'Great question!'. Go straight into the first section.
+LANGUAGE RULE:
+- If the user says ""explain in Hindi"" or the question is in Hindi → respond in Hinglish (conversational Hindi + English mix).
+  Use simple spoken Hindi; keep technical terms (function, loop, class, etc.) in English.
+  Example: ""Browser request bhejta hai → Angular '#/home' handle karta hai → isliye 404 nahi aata""
+  Do NOT use formal/pure Hindi.
+- Otherwise → respond in clear, simple English.
 
 # {question}
 
-## Definition
-One or two clear sentences defining the concept.
+## 🔹 Concept Overview
+Explain in simple terms — clear enough for a junior developer, no jargon.
 
-## Key Concepts
-- 5-7 bullet points with **bold** key terms
+## 🔹 Key Points
+- Bullet points
+- Clear and concise
+- Cover what a junior would commonly miss
 
-## Real-World Analogy
-A relatable non-technical analogy.
-
-## How It Works
-1. Numbered step-by-step mechanics
-2. ...
-3. ...
-
-## Code Example
-A practical, self-contained example with inline comments.
-Wrap in a fenced block with the language specified, e.g.:
-```csharp
-// example code here
+## 🔹 Example
+A practical code example or real-world scenario with brief inline comments.
+```
+// example here
 ```
 
-## Common Mistakes
-- ❌ Mistake 1 — one-line fix
-- ❌ Mistake 2 — one-line fix
-- ❌ Mistake 3 — one-line fix
+## 🔹 When to Use
+Explain real-world usage — when does this appear in production code?
 
-## Best Practices
-- ✅ Best practice 1
-- ✅ Best practice 2
-- ✅ Best practice 3
+## 🔹 Common Mistakes
+- Mistake beginners make
+- How to avoid it
 
-## Interview Tips
-What interviewers are really testing. Include 1 tricky follow-up question they might ask.
-
-## Follow-up Questions
-1. Natural next question
-2. Deeper follow-up
-3. Practical real-world application";
+TONE: Friendly but professional. Like a senior explaining to a junior. Not robotic.
+FORMATTING: Use ## headings, bullet points, code blocks, spacing. Make it feel like a mini lesson.
+DO NOT give one-paragraph answers, be vague, or skip any section.";
     }
 
-    private string BuildMobileLearningPrompt(string question)
+    private string BuildMobileLearningPrompt(string question, string? toneMode = null)
     {
+        var toneIntro = (toneMode?.ToLowerInvariant()) switch
+        {
+            "professional" => "You are a concise senior engineer. No filler. Give precise, expert answers using the 5-section format below.",
+            _              => "You are a senior software engineer and mentor. Explain clearly like you're teaching a junior developer."
+        };
+
         return $@"
-You are a friendly programming tutor.
+{toneIntro}
 
-Explain ""{question}"" in **two layers** so it works well on mobile devices.
-
-Layer 1 = Quick Answer (very short)  
-Layer 2 = Deep Dive (optional detailed explanation)
-
-Rules:
-• Keep Quick Answer extremely short
-• Use bullet points
-• Avoid long paragraphs
-• Use simple language
-
-Follow this structure exactly.
+Teach ""{question}"" using exactly these 5 sections. Mobile-optimized: keep each section short and scannable.
+Never start with 'Sure!' or 'Great question!'. Go straight into the first section.
+LANGUAGE RULE:
+- If the user says ""explain in Hindi"" or the question is in Hindi → respond in Hinglish (conversational Hindi + English mix).
+  Use simple spoken Hindi; keep technical terms (function, loop, class, etc.) in English.
+  Example: ""Browser request bhejta hai → Server sirf '/' dekhta hai → Angular baaki handle karta hai""
+  Do NOT use formal/pure Hindi.
+- Otherwise → respond in clear, simple English.
 
 ---
 
-# 🧠 {question}
+# {question}
 
-## ⚡ Quick Answer
+## 🔹 Concept Overview
+Simple explanation — no jargon, clear for a junior.
 
-### 🎯 Simple Idea
-Explain in **one sentence**.
+## 🔹 Key Points
+- Bullet points
+- What matters most
 
-### ⚙️ How It Works
-Explain in **3 short steps**.
+## 🔹 Example
+Practical code or real-world scenario.
+```
+// example here
+```
 
-1. Step one
-2. Step two
-3. Step three
+## 🔹 When to Use
+Real-world context — where does this appear in actual code?
 
-### 💻 Tiny Example";
+## 🔹 Common Mistakes
+- What beginners get wrong
+- How to fix it
+
+TONE: Friendly but professional. Like a senior explaining to a junior.
+FORMATTING: Use ## headings, bullet points, code blocks, spacing. Mini lesson feel.
+DO NOT give one-paragraph answers, be vague, or skip any section.";
+    }
+
+
+    private (string system, string user) BuildPrompt(string question, string? mode)
+    {
+        mode = (mode ?? "chat").ToLower();
+
+        string system;
+        string user = question;
+
+        switch (mode)
+        {
+            case "learn":
+                system = @"
+You are a helpful teaching assistant.
+
+Explain concepts clearly and in a structured way.
+
+Guidelines:
+- Use simple language
+- Use examples where helpful
+- You MAY use bullet points or sections if it improves clarity
+- Keep it easy to understand
+";
+                break;
+
+            case "code":
+                system = @"
+You are a senior software engineer.
+
+Guidelines:
+- Give practical, correct answers
+- Provide code examples when useful
+- Explain code briefly and clearly
+- Avoid unnecessary theory
+";
+                break;
+
+            case "chat":
+            default:
+                system = @"
+You are a helpful AI assistant.
+
+Respond in a natural, conversational way like ChatGPT.
+
+Rules:
+- Keep responses concise and clear
+- Do NOT use headings unless necessary
+- Do NOT structure answers like an article
+- Avoid bullet points unless helpful
+- Talk like a human, not a textbook
+";
+                break;
+        }
+
+        return (system.Trim(), user.Trim());
     }
 
     // ── helpers ──────────────────────────────────────────────────────────────
@@ -821,11 +1111,43 @@ Explain in **3 short steps**.
             if (!handler.CanReadToken(raw)) return null;
             var jwt = handler.ReadJwtToken(raw);
             return jwt.Subject
-                ?? jwt.Claims.FirstOrDefault(c => c.Type is "sub" or "nameid")?.Value;
+                ?? jwt.Claims.FirstOrDefault(c =>
+                    c.Type is "sub" or "nameid" or "userId" ||
+                    c.Type == ClaimTypes.NameIdentifier)?.Value;
         }
         catch
         {
             return null;
         }
     }
+
+    private string? ExtractUsernameFromBearer()
+    {
+        var auth = Request.Headers["Authorization"].FirstOrDefault();
+        if (string.IsNullOrEmpty(auth) || !auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            return null;
+
+        var raw = auth["Bearer ".Length..].Trim();
+        try
+        {
+            var handler = new JwtSecurityTokenHandler();
+            if (!handler.CanReadToken(raw)) return null;
+            var jwt = handler.ReadJwtToken(raw);
+            return jwt.Claims.FirstOrDefault(c =>
+                       c.Type == JwtRegisteredClaimNames.UniqueName ||
+                       c.Type == ClaimTypes.Name ||
+                       c.Type == "username")
+                   ?.Value;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string GetUserId() =>
+           User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+            ?? User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("userId")
+            ?? string.Empty;
 }

@@ -9,6 +9,8 @@ using System.Security.Claims;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using AILearnAPI.Application.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 
 namespace AILearnAPI.Api.Controllers
 {
@@ -20,18 +22,21 @@ namespace AILearnAPI.Api.Controllers
         private readonly IMongoCollection<AIProvider> _aiProviders;
         private readonly IConfiguration _configuration;
         private readonly ISecretProvider _secrets;
+        private readonly IWebHostEnvironment _environment;
         private readonly ILogger<AdminController> _logger;
 
         public AdminController(
             IMongoDatabase database,
             IConfiguration configuration,
             ISecretProvider secrets,
+            IWebHostEnvironment environment,
             ILogger<AdminController> logger)
         {
             _adminUsers = database.GetCollection<AdminUser>("adminusers");
             _aiProviders = database.GetCollection<AIProvider>("aiproviders");
             _configuration = configuration;
             _secrets = secrets;
+            _environment = environment;
             _logger = logger;
         }
 
@@ -89,12 +94,13 @@ namespace AILearnAPI.Api.Controllers
 
                 // Generate JWT token
                 var token = GenerateJwtToken(user);
+                SetAuthCookie(token);
 
                 return Ok(new AdminLoginResponseDto
                 {
                     Success = true,
                     Message = "Login successful",
-                    Token = token,
+                    Token = string.Empty,
                     User = new AdminUserDto
                     {
                         Username = user.Username,
@@ -117,16 +123,11 @@ namespace AILearnAPI.Api.Controllers
 
         // GET /api/admin/providers - Get all AI providers
         [HttpGet("providers")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "ADMIN")]
         public async Task<ActionResult<List<AIProviderDto>>> GetProviders()
         {
             try
             {
-                // Check auth token (simple check - should use proper JWT middleware)
-                if (!Request.Headers.ContainsKey("Authorization"))
-                {
-                    return Unauthorized(new { message = "Unauthorized" });
-                }
-
                 var providers = await _aiProviders.Find(_ => true)
                     .SortByDescending(p => p.Priority)
                     .ToListAsync();
@@ -165,14 +166,10 @@ namespace AILearnAPI.Api.Controllers
 
         // PUT /api/admin/providers/{id} - Update provider
         [HttpPut("providers/{id}")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "ADMIN")]
         public async Task<ActionResult> UpdateProvider(string id, [FromBody] UpdateProviderDto dto)
         {
             try {
-                if (!Request.Headers.ContainsKey("Authorization"))
-                {
-                    return Unauthorized(new { message = "Unauthorized" });
-                }
-
                 var updateBuilder = Builders<AIProvider>.Update;
                 var updates = new List<UpdateDefinition<AIProvider>>();
 
@@ -204,15 +201,11 @@ namespace AILearnAPI.Api.Controllers
 
         // POST /api/admin/providers/add-key - Add API key to provider
         [HttpPost("providers/add-key")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "ADMIN")]
         public async Task<ActionResult> AddApiKey([FromBody] AddApiKeyDto dto)
         {
             try
             {
-                if (!Request.Headers.ContainsKey("Authorization"))
-                {
-                    return Unauthorized(new { message = "Unauthorized" });
-                }
-
                 var provider = await _aiProviders.Find(p => p.Id == dto.ProviderId).FirstOrDefaultAsync();
                 if (provider == null)
                     return NotFound(new { message = "Provider not found" });
@@ -238,15 +231,11 @@ namespace AILearnAPI.Api.Controllers
 
         // DELETE /api/admin/providers/remove-key - Remove API key
         [HttpDelete("providers/remove-key")]
+        [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme, Roles = "ADMIN")]
         public async Task<ActionResult> RemoveApiKey([FromBody] RemoveApiKeyDto dto)
         {
             try
             {
-                if (!Request.Headers.ContainsKey("Authorization"))
-                {
-                    return Unauthorized(new { message = "Unauthorized" });
-                }
-
                 var provider = await _aiProviders.Find(p => p.Id == dto.ProviderId).FirstOrDefaultAsync();
                 if (provider == null)
                     return NotFound(new { message = "Provider not found" });
@@ -280,7 +269,13 @@ namespace AILearnAPI.Api.Controllers
 
             var claims = new[]
             {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+                new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+                new Claim(JwtRegisteredClaimNames.Email, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Name, user.Username),
+                new Claim("username", user.Username),
+                new Claim("userId", user.Id),
                 new Claim(ClaimTypes.Role, user.Role),
                 new Claim(ClaimTypes.Email, user.Email)
             };
@@ -294,6 +289,18 @@ namespace AILearnAPI.Api.Controllers
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+
+        private void SetAuthCookie(string token)
+        {
+            Response.Cookies.Append("ailearn_auth", token, new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_environment.IsDevelopment() || Request.IsHttps,
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+                Expires = DateTimeOffset.UtcNow.AddHours(24)
+            });
         }
 
         private string MaskApiKey(string key)

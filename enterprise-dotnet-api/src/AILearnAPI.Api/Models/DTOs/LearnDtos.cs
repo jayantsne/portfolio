@@ -170,6 +170,7 @@ public class OllamaRequestDto
 {
     public string Model { get; set; } = string.Empty;
     public string Prompt { get; set; } = string.Empty;
+    public string? System { get; set; }
     public bool Stream { get; set; } = false;
     public OllamaOptionsDto? Options { get; set; }
 }

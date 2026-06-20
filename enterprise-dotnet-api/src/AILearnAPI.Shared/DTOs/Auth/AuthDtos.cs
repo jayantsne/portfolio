@@ -36,6 +36,11 @@ namespace AILearnAPI.Shared.DTOs.Auth
         public string password { get; set; } = string.Empty;
     }
 
+    public class GoogleLoginDto
+    {
+        public string idToken { get; set; } = string.Empty;
+    }
+
     public class LoginResponseDto
     {
         public string message  { get; set; } = string.Empty;
