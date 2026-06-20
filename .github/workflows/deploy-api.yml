@@ -51,6 +51,7 @@ jobs:
 
       - name: Publish
         run: |
+          rm -rf publish
           dotnet publish src/AILearnAPI.Api/AILearnAPI.Api.csproj \
             --configuration Release \
             --runtime linux-x64 \
