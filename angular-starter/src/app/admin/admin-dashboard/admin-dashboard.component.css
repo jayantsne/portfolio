@@ -1,4 +1,4 @@
-.dashboard-container {
+﻿.dashboard-container {
   min-height: 100vh;
   background: #f7fafc;
 }
@@ -524,6 +524,165 @@ input:checked + .toggle-slider:before {
 .modal-body p {
   margin-bottom: 16px;
   color: #4a5568;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE OVERRIDES
+   ═══════════════════════════════════════════════════════════════ */
+
+:host-context([data-theme="dark"]) .dashboard-container {
+  background: #0b0e1c;
+}
+
+:host-context([data-theme="dark"]) .dashboard-header {
+  background: #0e1225;
+  border-bottom-color: #1e2235;
+  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.35);
+}
+
+:host-context([data-theme="dark"]) .header-left h1 {
+  color: rgba(241, 245, 249, 0.96);
+}
+
+:host-context([data-theme="dark"]) .header-left p {
+  color: rgba(148, 163, 184, 0.75);
+}
+
+:host-context([data-theme="dark"]) .user-name {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+:host-context([data-theme="dark"]) .user-role {
+  color: rgba(100, 116, 139, 0.7);
+}
+
+:host-context([data-theme="dark"]) .logout-button {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: #1e2235;
+  color: rgba(203, 213, 225, 0.85);
+}
+
+:host-context([data-theme="dark"]) .logout-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: #2d3148;
+}
+
+:host-context([data-theme="dark"]) .tab-nav {
+  border-top-color: #1e2235;
+}
+
+:host-context([data-theme="dark"]) .tab-btn {
+  color: rgba(148, 163, 184, 0.8);
+}
+
+:host-context([data-theme="dark"]) .tab-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(226, 232, 240, 0.9);
+}
+
+:host-context([data-theme="dark"]) .tab-active {
+  color: #818cf8;
+  border-bottom-color: #818cf8;
+  background: transparent;
+}
+
+:host-context([data-theme="dark"]) .provider-card {
+  background: #111527;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+  border-color: #1e2235;
+}
+
+:host-context([data-theme="dark"]) .provider-card:hover {
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  border-color: #6366f1;
+}
+
+:host-context([data-theme="dark"]) .provider-header {
+  border-bottom-color: #1e2235;
+}
+
+:host-context([data-theme="dark"]) .provider-title h3 {
+  color: rgba(241, 245, 249, 0.96);
+}
+
+:host-context([data-theme="dark"]) .provider-type {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(148, 163, 184, 0.85);
+}
+
+:host-context([data-theme="dark"]) .detail-label {
+  color: rgba(100, 116, 139, 0.85);
+}
+
+:host-context([data-theme="dark"]) .detail-value {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+:host-context([data-theme="dark"]) .priority-input {
+  background: #1a1d2e;
+  border-color: #2d3148;
+  color: rgba(226, 232, 240, 0.9);
+}
+
+:host-context([data-theme="dark"]) .provider-stats {
+  background: #1a1d2e;
+}
+
+:host-context([data-theme="dark"]) .stat-label {
+  color: rgba(100, 116, 139, 0.75);
+}
+
+:host-context([data-theme="dark"]) .stat-value {
+  color: rgba(226, 232, 240, 0.95);
+}
+
+:host-context([data-theme="dark"]) .api-keys-section {
+  border-top-color: #1e2235;
+}
+
+:host-context([data-theme="dark"]) .api-keys-header h4 {
+  color: rgba(226, 232, 240, 0.9);
+}
+
+:host-context([data-theme="dark"]) .api-key-item {
+  background: #1a1d2e;
+}
+
+:host-context([data-theme="dark"]) .key-value {
+  color: rgba(148, 163, 184, 0.85);
+}
+
+:host-context([data-theme="dark"]) .no-keys-message {
+  color: rgba(100, 116, 139, 0.65);
+}
+
+:host-context([data-theme="dark"]) .providers-grid-header h2 {
+  color: rgba(241, 245, 249, 0.96);
+}
+
+:host-context([data-theme="dark"]) .modal-content {
+  background: #111527;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+
+:host-context([data-theme="dark"]) .modal-header h3 {
+  color: rgba(241, 245, 249, 0.96);
+}
+
+:host-context([data-theme="dark"]) .close-button {
+  color: rgba(100, 116, 139, 0.7);
+}
+
+:host-context([data-theme="dark"]) .close-button:hover {
+  color: rgba(203, 213, 225, 0.9);
+}
+
+:host-context([data-theme="dark"]) .modal-body p {
+  color: rgba(148, 163, 184, 0.85);
+}
+
+:host-context([data-theme="dark"]) .error-container h3 {
+  color: rgba(241, 245, 249, 0.96);
 }
 
 .modal-body label {

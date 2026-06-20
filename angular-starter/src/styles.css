@@ -1,6 +1,9 @@
 /* Global theme + shared styles */
 
 :root {
+	/* Layout */
+	--header-h: 52px;
+
 	/* Brand */
 	--accent: #7c3aed; /* royal violet */
 	--highlight: #fbbf24; /* royal gold */
@@ -13,100 +16,154 @@
 	--ink-rgb: 15, 23, 42;
 
 	/* Text */
-	--text-main: rgba(241, 245, 249, 0.96);
-	--text-muted: rgba(203, 213, 225, 0.78);
+	--text-main: rgba(17, 24, 39, 0.96);
+	--text-muted: rgba(71, 85, 105, 0.88);
 
 	/* Accent helpers */
-	--accent-soft: rgba(var(--accent-rgb), 0.22);
-	--accent-glow: rgba(var(--accent-rgb), 0.46);
+	--accent-soft: rgba(var(--accent-rgb), 0.12);
+	--accent-glow: rgba(var(--accent-rgb), 0.25);
 
 	/* Surfaces */
-	--bg-page: #050712;
-	--bg-soft: #070a18;
-	--glass: rgba(2, 6, 23, 0.58);
-	--glass-border: rgba(255, 255, 255, 0.10);
-	--glass-dark: rgba(2, 6, 23, 0.78);
-	--glass-dark-border: rgba(255, 255, 255, 0.14);
+	--bg-page: #ffffff;
+	--bg-soft: #f9fafb;
+	--glass: rgba(255, 255, 255, 0.9);
+	--glass-border: rgba(0, 0, 0, 0.08);
+	--glass-dark: rgba(255, 255, 255, 0.95);
+	--glass-dark-border: rgba(0, 0, 0, 0.10);
 	--glass-blur: 18px;
 
 	/* Motion */
 	--ease-out: cubic-bezier(.22,.61,.36,1);
+
+	/* ── Design System (DS) Tokens ────────────────────────────── */
+
+	/* Typography */
+	--ds-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+	           'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
+	--ds-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	--ds-text-xs:   0.72rem;  /* 11.5px */
+	--ds-text-sm:   0.85rem;  /* 13.6px */
+	--ds-text-base: 0.9375rem; /* 15px  */
+	--ds-text-md:   1rem;
+	--ds-text-lg:   1.125rem;
+	--ds-text-xl:   1.25rem;
+	--ds-text-2xl:  1.5rem;
+	--ds-text-3xl:  1.875rem;
+	--ds-text-4xl:  2.25rem;
+
+	/* Spacing scale */
+	--ds-sp-1:   4px;
+	--ds-sp-2:   8px;
+	--ds-sp-3:  12px;
+	--ds-sp-4:  16px;
+	--ds-sp-5:  20px;
+	--ds-sp-6:  24px;
+	--ds-sp-8:  32px;
+	--ds-sp-10: 40px;
+	--ds-sp-12: 48px;
+	--ds-sp-16: 64px;
+
+	/* Border radius */
+	--ds-radius-xs:   4px;
+	--ds-radius-sm:   6px;
+	--ds-radius-md:  10px;
+	--ds-radius-lg:  16px;
+	--ds-radius-xl:  22px;
+	--ds-radius-pill: 999px;
+
+	/* Shadows — light theme */
+	--ds-shadow-xs:    0 1px 3px rgba(0,0,0,.06);
+	--ds-shadow-sm:    0 2px 8px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.06) inset;
+	--ds-shadow-card:  0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+	--ds-shadow-hover: 0 4px 24px rgba(var(--accent-rgb),.10), 0 2px 8px rgba(0,0,0,.06);
+	--ds-shadow-modal: 0 8px 40px rgba(0,0,0,.14);
+
+	/* Color aliases (point at existing global tokens) */
+	--ds-accent:        var(--accent);
+	--ds-accent-rgb:    var(--accent-rgb);
+	--ds-text:          var(--text-main);
+	--ds-text-muted:    var(--text-muted);
+	--ds-surface:       var(--glass);
+	--ds-surface-solid: var(--bg-soft);
+	--ds-border:        var(--glass-border);
+}
+
+body.notes-create-active {
+	overflow: hidden;
+}
+
+body.notes-create-active app-footer {
+	display: none !important;
+}
+
+/* ── Light theme CSS variable overrides ────────────────────────── */
+html[data-theme="light"] {
+  --text-main: rgba(15, 23, 42, 0.96);
+  --text-muted: rgba(71, 85, 105, 0.88);
+  --bg-page: #f0f4ff;
+  --bg-soft: #e8edf8;
+  --glass: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(15, 23, 42, 0.10);
+  --glass-dark: rgba(255, 255, 255, 0.92);
+  --glass-dark-border: rgba(15, 23, 42, 0.12);
+  /* DS shadow overrides — soft for light backgrounds */
+  --ds-shadow-xs:    0 1px 3px rgba(0,0,0,.06);
+  --ds-shadow-sm:    0 2px 8px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.06);
+  --ds-shadow-card:  0 1px 4px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+  --ds-shadow-hover: 0 4px 24px rgba(var(--accent-rgb),.14), 0 2px 8px rgba(0,0,0,.06);
+  --ds-shadow-modal: 0 8px 40px rgba(0,0,0,.14);
+  background:
+    radial-gradient(980px 620px at 16% 18%, rgba(var(--accent-rgb), .07), transparent 60%),
+    radial-gradient(980px 620px at 84% 22%, rgba(var(--teal-rgb), .06), transparent 60%),
+    linear-gradient(180deg, #eef2ff 0%, #f0f4ff 100%);
 }
 
 html {
 	scroll-behavior: smooth;
 	position: relative;
-	background:
-		/* main royal wash (purple -> teal) */
-		linear-gradient(120deg, rgba(var(--accent-rgb), .14) 0%, rgba(2, 6, 23, 0) 40%, rgba(var(--teal-rgb), .12) 100%),
-		radial-gradient(980px 620px at 16% 18%, rgba(var(--accent-rgb), .22), transparent 62%),
-		radial-gradient(980px 620px at 84% 22%, rgba(var(--teal-rgb), .18), transparent 62%),
-		linear-gradient(180deg, var(--bg-soft) 0%, var(--bg-page) 70%);
+	background: #f4f6fb;
+	overflow: hidden;
+	height: 100%;
 }
 
-/* Global background pillars (match screenshot) */
+/* Global background pillars — disabled for light theme */
 html::before {
-	content: "";
-	position: fixed;
-	inset: 0;
-	pointer-events: none;
-	z-index: -1;
-	opacity: 1;
-
-	mix-blend-mode: normal;
-	background:
-		/* subtle vertical light pillars */
-		repeating-linear-gradient(
-			90deg,
-			rgba(255, 255, 255, 0.04) 0px,
-			rgba(255, 255, 255, 0.04) 1px,
-			rgba(255, 255, 255, 0) 18px,
-			rgba(255, 255, 255, 0) 44px
-		),
-		repeating-linear-gradient(
-			90deg,
-			rgba(255, 255, 255, 0.02) 0px,
-			rgba(255, 255, 255, 0.02) 2px,
-			rgba(255, 255, 255, 0) 80px,
-			rgba(255, 255, 255, 0) 160px
-		),
-		/* faint colored veil */
-		linear-gradient(90deg, rgba(var(--accent-rgb), .14), rgba(2, 6, 23, 0) 45%, rgba(var(--teal-rgb), .12));
-
-	background-size: auto, auto, auto;
-	background-position: 0 0, 0 0, 0 0;
-	mask-image: radial-gradient(circle at 50% 40%, rgba(0,0,0,0.92), rgba(0,0,0,0) 78%);
-	animation: pillarsDrift 18s ease-in-out infinite;
+	display: none;
 }
 
 html::after {
-	content: "";
-	position: fixed;
-	inset: -10%;
-	pointer-events: none;
-	z-index: -1;
-	opacity: .42;
+	display: none;
+}
 
-	background:
-		radial-gradient(980px 560px at 18% 18%, rgba(var(--accent-rgb), .20), rgba(var(--accent-rgb), 0) 68%),
-		radial-gradient(980px 560px at 86% 18%, rgba(var(--teal-rgb), .16), rgba(var(--teal-rgb), 0) 70%),
-		radial-gradient(1100px 720px at 50% 108%, rgba(0, 0, 0, .55), rgba(0, 0, 0, 0) 70%);
-
-	filter: blur(18px) saturate(1.10);
-	animation: glowDrift 20s ease-in-out infinite;
+html {
+	font-family: var(--ds-font);
+	font-size: 16px;        /* baseline — all em/rem values are relative to this */
+	line-height: 1.5;
+	-webkit-text-size-adjust: 100%; /* prevent iOS auto-scaling on orientation change */
+	text-size-adjust: 100%;
+	scrollbar-width: none;  /* Firefox */
 }
 
 body {
 	margin: 0;
 	color: var(--text-main);
 	background: transparent;
-	overflow-x: hidden;
+	overflow: hidden;
+	height: 100%;
+	font-family: inherit;   /* inherits from html — avoids double declaration */
+	font-size: 1rem;
+	line-height: 1.5;
+}
+
+/* ── Dynamic content (innerHTML / markdown) inherits system font ── */
+.note-content,
+.note-content *,
+[innerHTML],
+.md-content {
+	font-family: inherit;
 }
 
 /* ── Hide scrollbar everywhere ── */
-html {
-	scrollbar-width: none; /* Firefox */
-}
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
 *::-webkit-scrollbar {
@@ -314,45 +371,16 @@ body::-webkit-scrollbar,
 	.site-header .brand-meta::after { animation: none; opacity: 0; }
 }
 
-/* Custom Scrollbar Styling */
+/* Custom Scrollbar Styling — hidden globally, enabled per-component */
 ::-webkit-scrollbar {
-	width: 12px;
-	height: 12px;
+	width: 0;
+	height: 0;
+	display: none;
 }
 
-::-webkit-scrollbar-track {
-	background: rgba(15, 23, 42, 0.4);
-	border-left: 1px solid rgba(102, 126, 234, 0.2);
-}
-
-::-webkit-scrollbar-thumb {
-	background: linear-gradient(180deg, 
-		rgba(102, 126, 234, 0.6),
-		rgba(124, 58, 237, 0.6)
-	);
-	border-radius: 6px;
-	border: 2px solid rgba(15, 23, 42, 0.4);
-	transition: background 0.3s ease;
-}
-
-::-webkit-scrollbar-thumb:hover {
-	background: linear-gradient(180deg, 
-		rgba(102, 126, 234, 0.8),
-		rgba(124, 58, 237, 0.8)
-	);
-}
-
-::-webkit-scrollbar-thumb:active {
-	background: linear-gradient(180deg, 
-		rgba(102, 126, 234, 1),
-		rgba(124, 58, 237, 1)
-	);
-}
-
-/* Firefox Scrollbar */
-* {
-	scrollbar-width: thin;
-	scrollbar-color: rgba(102, 126, 234, 0.6) rgba(15, 23, 42, 0.4);
+/* Firefox: hide globally — components opt-in with scrollbar-width: thin */
+*:not(html):not(body) {
+	scrollbar-width: none;
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -364,28 +392,32 @@ body::-webkit-scrollbar,
 .md-content .md-h2,
 .md-content .md-h3,
 .md-content .md-h4 {
-  font-weight: 800;
-  line-height: 1.25;
-  margin: 1.1rem 0 0.45rem;
-  color: #1a202c;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: #0f172a;
 }
-.md-content .md-h1 { font-size: 1.4rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.3rem; }
-.md-content .md-h2 { font-size: 1.18rem; color: #2d3748; }
-.md-content .md-h3 { font-size: 1.03rem; color: #4a5568; }
-.md-content .md-h4 { font-size: 0.95rem; color: #718096; }
+.md-content .md-h1 { font-size: 1.65rem; font-weight: 800; margin: 2em 0 0.6em; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.45em; }
+.md-content .md-h2 { font-size: 1.3rem;  font-weight: 700; margin: 1.85em 0 0.5em; color: #1e293b; }
+.md-content .md-h3 { font-size: 1.08rem; font-weight: 700; margin: 1.6em 0 0.4em;  color: #334155; letter-spacing: -0.01em; }
+.md-content .md-h4 { font-size: 0.95rem; font-weight: 600; margin: 1.3em 0 0.35em; color: #475569; letter-spacing: 0; }
+.md-content .md-h1:first-child,
+.md-content .md-h2:first-child,
+.md-content .md-h3:first-child { margin-top: 0; }
 
 /* ── Paragraph ── */
 .md-content .md-p {
-  margin: 0.35rem 0;
+  margin: 0 0 1.3em;
   line-height: 1.75;
-  color: #374151;
-  font-size: 0.96rem;
+  color: #1f2937;
+  font-size: 1rem;
 }
+.md-content .md-p:first-child { margin-top: 0; }
+.md-content .md-p:last-child  { margin-bottom: 0; }
 
 /* ── Inline code ── */
 .md-content .md-inline {
   background: #f1f5f9;
-  color: #c026d3;
+  color: #7c3aed;
   padding: 0.15em 0.45em;
   border-radius: 4px;
   font-size: 0.87em;
@@ -399,9 +431,25 @@ body::-webkit-scrollbar,
 .md-code-block {
   margin: 0.9rem 0;
   border-radius: 10px;
+  /* overflow:hidden clips border-radius on the pre corners.
+     overflow:clip (supported Chrome 90+, Safari 15.4+) does the same
+     WITHOUT creating a scroll container — which is critical because
+     an overflow:hidden ancestor suppresses child overflow-x:auto
+     touch scrollbars on iOS Safari < 15.4 (known WebKit bug).
+     Listing clip AFTER hidden so modern browsers use clip,
+     older ones fall back to hidden. */
   overflow: hidden;
+  overflow: clip;
   border: 1px solid #2d333b;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  /* Explicit containment — belt + suspenders for mobile Webkit */
+  max-width: 100%;
+  box-sizing: border-box;
+  width: 100%;
+  /* contain:inline-size establishes a new inline formatting context
+     so percentage widths on children always resolve to this element,
+     not a distant ancestor with overflow:visible. */
+  contain: inline-size;
 }
 
 /* ── Code block header bar ── */
@@ -413,6 +461,8 @@ body::-webkit-scrollbar,
   background: #21262d;
   padding: 0.45rem 0.875rem;
   border-bottom: 1px solid #30363d;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 /* Language label */
@@ -477,48 +527,71 @@ body::-webkit-scrollbar,
   padding: 1rem 1.1rem !important;
   background: #0d1117 !important;   /* GitHub dark */
   overflow-x: auto;
+  overflow-y: hidden;
+  /* width:100% is required (not just max-width) so the pre gets a
+     DEFINITE width equal to the code-block container from the start.
+     Without explicit width, a pre with white-space:pre has its
+     intrinsic min-content width (= longest code line) computed first,
+     which can push the containing flex item wider before max-width
+     applies — especially in Webkit/Blink on mobile. */
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  /* iOS Safari momentum scrolling */
+  -webkit-overflow-scrolling: touch;
   font-size: 0.875rem !important;
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace !important;
   line-height: 1.6 !important;
   tab-size: 2;
+  white-space: pre;
 }
 .md-pre code {
   background: transparent !important;
   padding: 0 !important;
   border-radius: 0 !important;
   font-size: inherit !important;
+  /* display:block forces the code to fill the pre's content width.
+     overflow-x:visible overrides atom-one-dark.min.css which sets
+     "pre code.hljs { overflow-x:auto }" — if the CODE is the scroll
+     container the PRE scroll never fires; we centralise scrolling on
+     the PRE only so touch-scroll works reliably on all browsers. */
+  display: block;
+  min-width: 0;
+  overflow-x: visible !important;
+  white-space: inherit;
 }
 
 /* ── Lists ── */
 .md-content .md-ul,
 .md-content .md-ol {
-  margin: 0.4rem 0;
-  padding-left: 1.4rem;
+  margin: 0.35em 0 1.3em;
+  padding-left: 1.6rem;
 }
 .md-content .md-li {
-  line-height: 1.7;
-  color: #374151;
-  font-size: 0.96rem;
-  margin-bottom: 0.2rem;
+  line-height: 1.75;
+  color: #1f2937;
+  font-size: 1rem;
+  margin-bottom: 0.35rem;
 }
 
 /* ── Blockquote ── */
 .md-content .md-blockquote {
-  margin: 0.6rem 0;
-  padding: 0.5rem 1rem;
-  border-left: 4px solid #667eea;
-  background: #f0f4ff;
+  margin: 1.4em 0;
+  padding: 0.8rem 1.25rem;
+  border-left: 3px solid #e2e8f0;
+  background: #f8fafc;
   border-radius: 0 8px 8px 0;
-  color: #4a5568;
+  color: #4b5563;
   font-style: italic;
-  font-size: 0.95rem;
+  font-size: 0.975rem;
+  line-height: 1.75;
 }
 
 /* ── Horizontal rule ── */
 .md-content .md-hr {
   border: none;
-  border-top: 2px solid #e2e8f0;
-  margin: 1rem 0;
+  border-top: 1px solid #f1f5f9;
+  margin: 2.5em 0;
 }
 
 /* ── Tables ── */
@@ -536,14 +609,14 @@ body::-webkit-scrollbar,
   overflow-x: auto;
 }
 .md-content .md-table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #f8fafc;
 }
 .md-content .md-table th {
-  color: #fff;
+  color: #1e293b;
   font-weight: 700;
   padding: 0.65rem 1rem;
   text-align: left;
-  border-bottom: none;
+  border-bottom: 1px solid #e2e8f0;
   white-space: nowrap;
   letter-spacing: 0.02em;
   font-size: 0.82rem;
@@ -556,11 +629,11 @@ body::-webkit-scrollbar,
   vertical-align: top;
   line-height: 1.5;
 }
-.md-content .md-table tbody tr:nth-child(odd) td  { background: #f8faff; }
+.md-content .md-table tbody tr:nth-child(odd) td  { background: #f9fafb; }
 .md-content .md-table tbody tr:nth-child(even) td { background: #ffffff; }
 .md-content .md-table tr:last-child td { border-bottom: none; }
 .md-content .md-table tbody tr:hover td {
-  background: #eef2ff;
+  background: #f0f9ff;
   transition: background 0.15s ease;
 }
 /* First column acts as row header */
@@ -572,20 +645,120 @@ body::-webkit-scrollbar,
 
 /* ── Link ── */
 .md-content .md-link {
-  color: #667eea;
-  text-decoration: none;
+  color: #4f46e5;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(79, 70, 229, 0.35);
   font-weight: 500;
-  border-bottom: 1px solid rgba(102, 126, 234, 0.3);
-  transition: border-color 0.2s;
+  transition: text-decoration-color 0.2s;
 }
-.md-content .md-link:hover { border-color: #667eea; }
+.md-content .md-link:hover { text-decoration-color: #4f46e5; }
 
 /* ── Spacer ── */
 .md-content .md-spacer { height: 0.35rem; }
 
 /* ── Strong / Em ── */
-.md-content strong { color: #1a202c; font-weight: 700; }
-.md-content em { color: #553c9a; font-style: italic; }
+.md-content strong { color: #0f172a; font-weight: 700; }
+.md-content em { color: #374151; font-style: italic; }
+
+/* ═══════════════════════════════════════════════════════════════════
+   NATIVE HTML TAG FALLBACK — for Tiptap-edited notes
+   Tiptap saves content as native HTML (<h1>, <p>, <ul> etc.) which
+   bypasses the MarkdownPipe class-based output (.md-h1, .md-p etc.).
+   Because [innerHTML] bypasses Angular view encapsulation, these rules
+   must live here (global) to reach the injected DOM nodes.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Headings ── */
+.md-content h1,
+.md-content h2,
+.md-content h3,
+.md-content h4 {
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+}
+.md-content h1 { font-size: 1.65rem; font-weight: 800; margin: 2em 0 0.6em; border-bottom: 1px solid #f1f5f9; padding-bottom: 0.45em; }
+.md-content h2 { font-size: 1.3rem;  font-weight: 700; margin: 1.85em 0 0.5em; color: #1e293b; }
+.md-content h3 { font-size: 1.08rem; font-weight: 700; margin: 1.6em 0 0.4em;  color: #334155; letter-spacing: -0.01em; }
+.md-content h4 { font-size: 0.95rem; font-weight: 600; margin: 1.3em 0 0.35em; color: #475569; letter-spacing: 0; }
+.md-content h1:first-child,
+.md-content h2:first-child,
+.md-content h3:first-child { margin-top: 0; }
+
+/* ── Paragraph ── */
+.md-content p { margin: 0 0 1.3em; line-height: 1.75; color: #1f2937; font-size: 1rem; }
+.md-content p:first-child { margin-top: 0; }
+.md-content p:last-child  { margin-bottom: 0; }
+
+/* ── Lists ── */
+.md-content ul,
+.md-content ol { margin: 0.35em 0 1.3em; padding-left: 1.6rem; }
+.md-content li { line-height: 1.75; color: #1f2937; font-size: 1rem; margin-bottom: 0.35rem; }
+.md-content ul li::marker { color: #9ca3af; }
+.md-content ol li::marker { color: #9ca3af; font-weight: 700; }
+
+/* ── Inline code ── */
+.md-content code {
+  background: #f1f5f9;
+  color: #7c3aed;
+  padding: 0.15em 0.45em;
+  border-radius: 4px;
+  font-size: 0.87em;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  border: 1px solid #e2e8f0;
+}
+
+/* ── Code block ── */
+.md-content pre {
+  background: #0d1117;
+  border-radius: 10px;
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  margin: 1.5em 0;
+  line-height: 1.65;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.md-content pre code {
+  background: transparent !important;
+  border: none !important;
+  color: #e2e8f0;
+  padding: 0 !important;
+  font-size: 0.875rem;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace;
+  display: block;
+  white-space: pre;
+}
+
+/* ── Blockquote ── */
+.md-content blockquote {
+  margin: 1.4em 0;
+  padding: 0.8rem 1.25rem;
+  border-left: 3px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 0 8px 8px 0;
+  color: #4b5563;
+  font-style: italic;
+  font-size: 0.975rem;
+  line-height: 1.75;
+}
+
+/* ── Horizontal rule ── */
+.md-content hr { border: none; border-top: 1px solid #f1f5f9; margin: 2.5em 0; }
+
+/* ── Links ── */
+.md-content a {
+  color: #4f46e5;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: rgba(79, 70, 229, 0.35);
+  font-weight: 500;
+  transition: text-decoration-color 0.2s;
+}
+.md-content a:hover { text-decoration-color: #4f46e5; }
 
 /* ═══════════════════════════════════════════════════════════════════
    LW LESSON CARD — md-content overrides (compact card context)
@@ -645,6 +818,160 @@ body::-webkit-scrollbar,
 .lwl-followup-bubble.md-content .md-ul,
 .lwl-followup-bubble.md-content .md-ol { margin: 0.2rem 0; padding-left: 1.1rem; }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   MOBILE READER: reading-optimized context (Notion/Medium style)
+   Applied to: .mr-body.md-content inside mobile reader overlay
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Base font size for the reading context */
+.mr-body.md-content {
+  font-size: 1.05rem;
+  letter-spacing: 0.005em;
+}
+
+/* ── Headings: clear hierarchy ───────────────────────────────── */
+.mr-body.md-content .md-h1 {
+  font-size: 1.45rem;
+  color: #0f172a;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin: 1.75em 0 0.5em;
+  line-height: 1.25;
+  border-bottom: none;
+  padding-bottom: 0;
+}
+.mr-body.md-content .md-h1:first-child { margin-top: 0; }
+
+.mr-body.md-content .md-h2 {
+  font-size: 1.15rem;
+  color: #1e293b;
+  font-weight: 800;
+  position: relative;
+  padding-left: 14px;
+  margin: 1.8em 0 0.55em;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  border-bottom: none;
+}
+.mr-body.md-content .md-h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  background: linear-gradient(180deg, #6366f1, #8b5cf6);
+  border-radius: 2px;
+}
+.mr-body.md-content .md-h2:first-child { margin-top: 0; }
+
+.mr-body.md-content .md-h3 {
+  font-size: 1.02rem;
+  color: #4338ca;
+  font-weight: 700;
+  margin: 1.5em 0 0.4em;
+  letter-spacing: -0.01em;
+}
+.mr-body.md-content .md-h3:first-child { margin-top: 0; }
+
+.mr-body.md-content .md-h4 {
+  font-size: 0.95rem;
+  color: #475569;
+  font-weight: 700;
+  margin: 1.2em 0 0.35em;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.82rem;
+}
+
+/* ── Paragraphs: comfortable reading with proper breathing room ─── */
+.mr-body.md-content .md-p {
+  font-size: 1.0625rem;    /* 17px at 16px base */
+  line-height: 1.8;
+  color: #1e293b;
+  margin: 0 0 1.05em;
+}
+.mr-body.md-content .md-p:last-child { margin-bottom: 0; }
+
+/* ── Lists: spaced out, comfortable to read ───────────────── */
+.mr-body.md-content .md-ul,
+.mr-body.md-content .md-ol {
+  margin: 0 0 1.05em;
+  padding-left: 1.5em;
+}
+.mr-body.md-content .md-li {
+  font-size: 1.0625rem;
+  line-height: 1.78;
+  color: #1e293b;
+  margin-bottom: 0.45em;
+  padding-top: 1px;
+}
+.mr-body.md-content .md-li:last-child { margin-bottom: 0; }
+
+/* ── Blockquote: callout / highlight box ────────────────── */
+.mr-body.md-content .md-blockquote {
+  border-left: 3px solid #6366f1;
+  background: linear-gradient(to right, rgba(99,102,241,0.08), rgba(99,102,241,0.02));
+  padding: 14px 18px;
+  border-radius: 0 12px 12px 0;
+  margin: 1.2em 0;
+  color: #334155;
+  font-style: normal;
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+/* ── Horizontal rule: gradient section divider ───────────── */
+.mr-body.md-content .md-hr {
+  border: none;
+  height: 2px;
+  background: linear-gradient(to right, transparent, #c7d2fe 30%, #c7d2fe 70%, transparent);
+  margin: 1.75em 0;
+  border-radius: 2px;
+}
+
+/* ── Spacer: more breathing room between content blocks ──── */
+.mr-body.md-content .md-spacer {
+  height: 0.65rem;
+}
+
+/* ── Inline code: slightly larger for reading context ────── */
+.mr-body.md-content .md-inline {
+  font-size: 0.9em;
+  background: #f0f4ff;
+  color: #6366f1;
+  border-color: #e0e7ff;
+  padding: 0.15em 0.5em;
+}
+
+/* ── Strong & em ───────────────────────────────────── */
+.mr-body.md-content strong {
+  color: #0f172a;
+  font-weight: 700;
+}
+.mr-body.md-content em {
+  font-style: italic;
+  color: #4338ca;
+}
+
+/* ── Mobile reader: native tag overrides (Tiptap HTML) ───────── */
+.mr-body.md-content h1 { font-size: 1.45rem; font-weight: 800; color: #0f172a; letter-spacing: -0.02em; margin: 1.75em 0 0.5em; line-height: 1.25; border-bottom: none; padding-bottom: 0; }
+.mr-body.md-content h1:first-child { margin-top: 0; }
+.mr-body.md-content h2 { font-size: 1.15rem; font-weight: 800; color: #1e293b; margin: 1.8em 0 0.55em; line-height: 1.3; letter-spacing: -0.015em; border-bottom: none; position: relative; padding-left: 14px; }
+.mr-body.md-content h2::before { content: ''; position: absolute; left: 0; top: 2px; bottom: 2px; width: 3px; background: linear-gradient(180deg, #6366f1, #8b5cf6); border-radius: 2px; }
+.mr-body.md-content h2:first-child { margin-top: 0; }
+.mr-body.md-content h3 { font-size: 1.02rem; font-weight: 700; color: #4338ca; margin: 1.5em 0 0.4em; letter-spacing: -0.01em; }
+.mr-body.md-content h3:first-child { margin-top: 0; }
+.mr-body.md-content h4 { font-size: 0.82rem; font-weight: 700; color: #475569; margin: 1.2em 0 0.35em; text-transform: uppercase; letter-spacing: 0.04em; }
+.mr-body.md-content p  { font-size: 1.0625rem; line-height: 1.8; color: #1e293b; margin: 0 0 1.05em; }
+.mr-body.md-content p:last-child { margin-bottom: 0; }
+.mr-body.md-content ul,
+.mr-body.md-content ol { margin: 0 0 1.05em; padding-left: 1.5em; }
+.mr-body.md-content li { font-size: 1.0625rem; line-height: 1.78; color: #1e293b; margin-bottom: 0.45em; }
+.mr-body.md-content blockquote { border-left: 3px solid #6366f1; background: linear-gradient(to right, rgba(99,102,241,0.08), rgba(99,102,241,0.02)); padding: 14px 18px; border-radius: 0 12px 12px 0; margin: 1.2em 0; color: #334155; font-style: normal; font-size: 1rem; line-height: 1.75; }
+.mr-body.md-content hr { border: none; height: 2px; background: linear-gradient(to right, transparent, #c7d2fe 30%, #c7d2fe 70%, transparent); margin: 1.75em 0; border-radius: 2px; }
+.mr-body.md-content code { font-size: 0.9em; background: #f0f4ff; color: #6366f1; border-color: #e0e7ff; padding: 0.15em 0.5em; }
+
 
 
 /* 
@@ -680,4 +1007,669 @@ body::-webkit-scrollbar,
   transform: scale(1.025) !important;
   z-index: 2;
   position: relative;
+}
+
+/* 
+   Architecture Diagram — AI-generated HTML inside .al-arch-content
+   Must live here (global) because [innerHTML] bypasses Angular view encapsulation.
+*/
+.al-arch-content .arch-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  padding: 16px 8px;
+}
+
+.al-arch-content .diagram-box {
+  width: 100%;
+  max-width: 360px;
+  border-radius: 14px;
+  padding: 14px 18px;
+  color: #ffffff;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  animation: diagramBoxIn 0.45s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  transform-origin: top center;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  cursor: default;
+}
+.al-arch-content .diagram-box:nth-child(1)  { animation-delay: 0.00s; }
+.al-arch-content .diagram-box:nth-child(3)  { animation-delay: 0.12s; }
+.al-arch-content .diagram-box:nth-child(5)  { animation-delay: 0.24s; }
+.al-arch-content .diagram-box:nth-child(7)  { animation-delay: 0.36s; }
+.al-arch-content .diagram-box:nth-child(9)  { animation-delay: 0.48s; }
+.al-arch-content .diagram-box:nth-child(11) { animation-delay: 0.60s; }
+
+.al-arch-content .diagram-box:hover {
+  transform: translateY(-3px) scale(1.02);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+}
+
+.al-arch-content .arch-arrow {
+  font-size: 22px;
+  color: #6366f1;
+  line-height: 1;
+  padding: 4px 0;
+  text-align: center;
+  animation: diagramBoxIn 0.3s ease both;
+}
+
+.al-arch-content .arch-insight {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 360px;
+  background: linear-gradient(135deg, #eef2ff, #f0fdf4);
+  border: 1.5px solid #c7d2fe;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.5;
+  animation: diagramBoxIn 0.5s ease 0.7s both;
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — UTILITY CLASSES
+   Composed of --ds-* tokens. Use these across all components for
+   visual consistency (spacing, typography, cards, buttons, inputs).
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── Typography ─────────────────────────────────────────────── */
+.ds-font-family { font-family: var(--ds-font); }
+
+.ds-text-xs   { font-size: var(--ds-text-xs);   }
+.ds-text-sm   { font-size: var(--ds-text-sm);   }
+.ds-text-base { font-size: var(--ds-text-base); }
+.ds-text-md   { font-size: var(--ds-text-md);   }
+.ds-text-lg   { font-size: var(--ds-text-lg);   }
+.ds-text-xl   { font-size: var(--ds-text-xl);   }
+.ds-text-2xl  { font-size: var(--ds-text-2xl);  }
+.ds-text-3xl  { font-size: var(--ds-text-3xl);  }
+
+.ds-font-normal  { font-weight: 400; }
+.ds-font-medium  { font-weight: 500; }
+.ds-font-semibold{ font-weight: 600; }
+.ds-font-bold    { font-weight: 700; }
+.ds-font-extrabold { font-weight: 800; }
+
+.ds-text-primary   { color: var(--ds-text); }
+.ds-text-muted     { color: var(--ds-text-muted); }
+.ds-text-accent    { color: var(--ds-accent); }
+.ds-text-on-accent { color: #ffffff; }
+
+.ds-leading-tight  { line-height: 1.25; }
+.ds-leading-snug   { line-height: 1.4;  }
+.ds-leading-normal { line-height: 1.6;  }
+.ds-leading-relaxed{ line-height: 1.75; }
+
+.ds-tracking-tight  { letter-spacing: -0.02em; }
+.ds-tracking-normal { letter-spacing: 0;       }
+.ds-tracking-wide   { letter-spacing: 0.04em;  }
+.ds-tracking-wider  { letter-spacing: 0.08em;  }
+.ds-uppercase       { text-transform: uppercase; font-weight: 700; }
+
+/* ── Spacing helpers ────────────────────────────────────────── */
+.ds-p-1  { padding: var(--ds-sp-1);  }
+.ds-p-2  { padding: var(--ds-sp-2);  }
+.ds-p-3  { padding: var(--ds-sp-3);  }
+.ds-p-4  { padding: var(--ds-sp-4);  }
+.ds-p-6  { padding: var(--ds-sp-6);  }
+.ds-p-8  { padding: var(--ds-sp-8);  }
+
+.ds-px-2 { padding-left: var(--ds-sp-2);  padding-right: var(--ds-sp-2);  }
+.ds-px-3 { padding-left: var(--ds-sp-3);  padding-right: var(--ds-sp-3);  }
+.ds-px-4 { padding-left: var(--ds-sp-4);  padding-right: var(--ds-sp-4);  }
+.ds-px-6 { padding-left: var(--ds-sp-6);  padding-right: var(--ds-sp-6);  }
+
+.ds-py-2 { padding-top: var(--ds-sp-2);   padding-bottom: var(--ds-sp-2); }
+.ds-py-3 { padding-top: var(--ds-sp-3);   padding-bottom: var(--ds-sp-3); }
+.ds-py-4 { padding-top: var(--ds-sp-4);   padding-bottom: var(--ds-sp-4); }
+
+.ds-gap-1 { gap: var(--ds-sp-1); }
+.ds-gap-2 { gap: var(--ds-sp-2); }
+.ds-gap-3 { gap: var(--ds-sp-3); }
+.ds-gap-4 { gap: var(--ds-sp-4); }
+.ds-gap-6 { gap: var(--ds-sp-6); }
+
+/* ── Border radius ──────────────────────────────────────────── */
+.ds-rounded-xs   { border-radius: var(--ds-radius-xs);   }
+.ds-rounded-sm   { border-radius: var(--ds-radius-sm);   }
+.ds-rounded-md   { border-radius: var(--ds-radius-md);   }
+.ds-rounded-lg   { border-radius: var(--ds-radius-lg);   }
+.ds-rounded-xl   { border-radius: var(--ds-radius-xl);   }
+.ds-rounded-pill { border-radius: var(--ds-radius-pill); }
+
+/* ── Shadows ────────────────────────────────────────────────── */
+.ds-shadow-xs    { box-shadow: var(--ds-shadow-xs);    }
+.ds-shadow-sm    { box-shadow: var(--ds-shadow-sm);    }
+.ds-shadow-card  { box-shadow: var(--ds-shadow-card);  }
+.ds-shadow-hover { box-shadow: var(--ds-shadow-hover); }
+.ds-shadow-modal { box-shadow: var(--ds-shadow-modal); }
+
+/* ── Display / layout ───────────────────────────────────────── */
+.ds-flex         { display: flex; }
+.ds-inline-flex  { display: inline-flex; }
+.ds-flex-col     { flex-direction: column; }
+.ds-items-center { align-items: center; }
+.ds-items-start  { align-items: flex-start; }
+.ds-justify-center{ justify-content: center; }
+.ds-justify-between{ justify-content: space-between; }
+.ds-flex-1       { flex: 1; min-width: 0; }
+.ds-shrink-0     { flex-shrink: 0; }
+.ds-truncate     { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Card ───────────────────────────────────────────────────── */
+.ds-card {
+  background: var(--ds-surface, #ffffff);
+  border: 1px solid var(--ds-border, rgba(0,0,0,0.07));
+  border-radius: var(--ds-radius-lg);
+  box-shadow: var(--ds-shadow-card);
+  padding: var(--ds-sp-6);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.ds-card:hover {
+  box-shadow: var(--ds-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.ds-card-sm {
+  padding: var(--ds-sp-4);
+  border-radius: var(--ds-radius-md);
+}
+
+/* ── Buttons ────────────────────────────────────────────────── */
+.ds-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-sp-2);
+  border: none;
+  border-radius: var(--ds-radius-md);
+  padding: 0.52rem 1.1rem;
+  font-family: var(--ds-font);
+  font-size: var(--ds-text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s, box-shadow 0.15s, transform 0.12s;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.ds-btn:active { transform: translateY(1px); }
+
+/* Primary — solid accent fill */
+.ds-btn-primary {
+  background: linear-gradient(135deg, var(--ds-accent), #8b5cf6);
+  color: #ffffff;
+  box-shadow: 0 3px 12px rgba(var(--ds-accent-rgb, 124,58,237), 0.30);
+}
+.ds-btn-primary:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 5px 18px rgba(var(--ds-accent-rgb, 124,58,237), 0.42);
+  transform: translateY(-1px);
+}
+
+/* Secondary — outline */
+.ds-btn-secondary {
+  background: transparent;
+  color: var(--ds-accent);
+  border: 1.5px solid currentColor;
+}
+.ds-btn-secondary:hover {
+  background: rgba(var(--ds-accent-rgb, 124,58,237), 0.06);
+  transform: translateY(-1px);
+}
+
+/* Ghost — text only */
+.ds-btn-ghost {
+  background: transparent;
+  color: var(--ds-text-muted, #64748b);
+  border: none;
+  padding: 0.4rem 0.7rem;
+}
+.ds-btn-ghost:hover {
+  background: rgba(0,0,0,0.05);
+  color: var(--ds-text, inherit);
+}
+
+/* Size modifiers */
+.ds-btn-xs { padding: 0.25rem 0.6rem;  font-size: var(--ds-text-xs); border-radius: var(--ds-radius-sm); }
+.ds-btn-sm { padding: 0.38rem 0.85rem; font-size: var(--ds-text-sm); }
+.ds-btn-lg { padding: 0.7rem 1.5rem;   font-size: var(--ds-text-md);  border-radius: var(--ds-radius-lg); }
+
+/* ── Input ──────────────────────────────────────────────────── */
+.ds-input {
+  display: block;
+  width: 100%;
+  background: var(--ds-surface, #ffffff);
+  border: 1.5px solid var(--ds-border, rgba(0,0,0,0.12));
+  border-radius: var(--ds-radius-md);
+  padding: 0.55rem 0.9rem;
+  font-family: var(--ds-font);
+  font-size: var(--ds-text-base);
+  color: var(--ds-text, inherit);
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  box-sizing: border-box;
+}
+.ds-input::placeholder { color: var(--ds-text-muted, #94a3b8); }
+.ds-input:focus {
+  border-color: var(--ds-accent);
+  box-shadow: 0 0 0 3px rgba(var(--ds-accent-rgb, 124,58,237), 0.12);
+}
+
+/* Pill variant */
+.ds-input-pill {
+  border-radius: var(--ds-radius-pill);
+  padding-left: 1.1rem;
+  padding-right: 1.1rem;
+}
+
+/* ── Badge / chip ───────────────────────────────────────────── */
+.ds-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: rgba(var(--ds-accent-rgb, 124,58,237), 0.10);
+  color: var(--ds-accent);
+  border: 1px solid rgba(var(--ds-accent-rgb, 124,58,237), 0.22);
+  border-radius: var(--ds-radius-pill);
+  padding: 0.18rem 0.65rem;
+  font-size: var(--ds-text-xs);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.ds-badge-neutral {
+  background: rgba(0,0,0,0.05);
+  color: var(--ds-text-muted, #64748b);
+  border-color: transparent;
+}
+
+.ds-badge-success {
+  background: rgba(16,185,129,0.10);
+  color: #059669;
+  border-color: rgba(16,185,129,0.22);
+}
+
+.ds-badge-danger {
+  background: rgba(239,68,68,0.10);
+  color: #dc2626;
+  border-color: rgba(239,68,68,0.22);
+}
+
+/* ── Divider ────────────────────────────────────────────────── */
+.ds-divider {
+  height: 1px;
+  background: var(--ds-border, rgba(0,0,0,0.07));
+  border: none;
+  margin: var(--ds-sp-4) 0;
+}
+
+.ds-divider-gradient {
+  background: linear-gradient(to right, transparent, var(--ds-border, rgba(0,0,0,0.1)) 30%, var(--ds-border, rgba(0,0,0,0.1)) 70%, transparent);
+}
+
+/* ── Skeleton shimmer ───────────────────────────────────────── */
+.ds-skeleton {
+  background: linear-gradient(90deg,
+    rgba(0,0,0,0.05) 25%,
+    rgba(0,0,0,0.09) 50%,
+    rgba(0,0,0,0.05) 75%);
+  background-size: 200% 100%;
+  animation: dsShimmer 1.6s ease-in-out infinite;
+  border-radius: var(--ds-radius-sm);
+}
+@keyframes dsShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* ── Fade-in animation ──────────────────────────────────────── */
+.ds-fade-in {
+  animation: dsFadeIn 0.3s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes dsFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Hover lift ─────────────────────────────────────────────── */
+.ds-hover-lift {
+  transition: transform 0.2s cubic-bezier(0.22, 0.61, 0.36, 1),
+              box-shadow 0.2s;
+}
+.ds-hover-lift:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--ds-shadow-hover);
+}
+
+/* ── Surface / panel ────────────────────────────────────────── */
+.ds-surface {
+  background: var(--ds-surface, #ffffff);
+  border: 1px solid var(--ds-border, rgba(0,0,0,0.07));
+  border-radius: var(--ds-radius-md);
+}
+
+/* ── Dark-mode preparation ──────────────────────────────────── */
+/* When a future dark toggle sets html[data-theme="dark"],
+   override the DS surface + border + text tokens here.       */
+html[data-theme="dark"] {
+  --ds-surface:       #1e2235;
+  --ds-surface-solid: #161929;
+  --ds-border:        rgba(255,255,255,0.09);
+  --ds-text:          rgba(241,245,249,0.95);
+  --ds-text-muted:    rgba(203,213,225,0.70);
+  --ds-shadow-card:   0 4px 20px rgba(0,0,0,0.38), 0 0 0 1px rgba(255,255,255,0.07) inset;
+  --ds-shadow-hover:  0 8px 32px rgba(var(--accent-rgb),0.28), 0 2px 12px rgba(0,0,0,0.42);
+  background: #0b0e1c;
+}
+
+/* ── Smooth theme transition ──────────────────────────────────────────────── */
+/* Applied only while switching themes via the .theme-transitioning class,
+   preventing flash-of-wrong-theme on initial load.                          */
+.theme-transitioning,
+.theme-transitioning *,
+.theme-transitioning *::before,
+.theme-transitioning *::after {
+  transition:
+    background-color 0.22s ease,
+    color 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UNIFIED APP — LAYOUT FOUNDATION
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Shared layout tokens — referenced by all modules */
+:root {
+  --app-nav-h:       56px;   /* fixed header height            */
+  --app-max-content: 1200px; /* default page max-width         */
+  --app-max-chat:     740px; /* chat / conversation max-width  */
+  --app-purple:      #6366f1;
+  --app-purple-dim:  rgba(99, 102, 241, 0.08);
+  --app-transition:  220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Page-entry transition ──────────────────────────────────────
+   Angular router-outlet renders the activated component as the
+   next sibling element. Selecting "~ *" fades in every page on
+   route change without any TypeScript changes.
+   ──────────────────────────────────────────────────────────── */
+@keyframes __appPageIn {
+  from { opacity: 0; transform: translateY(7px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+
+router-outlet ~ * {
+  animation: __appPageIn 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  router-outlet ~ * { animation: none; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE — Global markdown content (md-content)
+   Applied globally so all components benefit automatically.
+   Component-specific overrides (am-msg-card, reader-body) take
+   precedence via higher specificity.
+   ═══════════════════════════════════════════════════════════════ */
+html[data-theme="dark"] .md-content .md-h1,
+html[data-theme="dark"] .md-content .md-h2,
+html[data-theme="dark"] .md-content .md-h3,
+html[data-theme="dark"] .md-content .md-h4 {
+  color: rgba(226, 232, 240, 0.95);
+}
+html[data-theme="dark"] .md-content .md-h1 { border-bottom-color: rgba(255,255,255,0.08); }
+html[data-theme="dark"] .md-content .md-h2 { color: rgba(203, 213, 225, 0.9); }
+html[data-theme="dark"] .md-content .md-h3 { color: rgba(148, 163, 184, 0.9); }
+html[data-theme="dark"] .md-content .md-h4 { color: #94a3b8; }
+
+html[data-theme="dark"] .md-content .md-p  { color: rgba(203, 213, 225, 0.85); }
+html[data-theme="dark"] .md-content .md-li { color: rgba(203, 213, 225, 0.85); }
+
+html[data-theme="dark"] .md-content .md-inline {
+  background: rgba(99, 102, 241, 0.12);
+  color: #c084fc;
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+html[data-theme="dark"] .md-content .md-blockquote {
+  background: rgba(99, 102, 241, 0.08);
+  border-left-color: #6366f1;
+  color: rgba(148, 163, 184, 0.85);
+}
+
+html[data-theme="dark"] .md-content .md-hr { border-top-color: rgba(255,255,255,0.08); }
+
+html[data-theme="dark"] .md-content .md-table { border-color: rgba(255,255,255,0.08); }
+html[data-theme="dark"] .md-content .md-table td {
+  border-bottom-color: rgba(255,255,255,0.06);
+  color: rgba(203, 213, 225, 0.85);
+}
+html[data-theme="dark"] .md-content .md-table tbody tr:nth-child(odd) td  { background: rgba(255,255,255,0.03); }
+html[data-theme="dark"] .md-content .md-table tbody tr:nth-child(even) td { background: transparent; }
+html[data-theme="dark"] .md-content .md-table tbody tr:hover td { background: rgba(99,102,241,0.08); }
+html[data-theme="dark"] .md-content .md-table tbody td:first-child {
+  color: rgba(226, 232, 240, 0.9);
+  border-right-color: rgba(255,255,255,0.07);
+}
+
+html[data-theme="dark"] .md-content .md-link { color: #818cf8; border-bottom-color: rgba(129,140,248,0.3); }
+html[data-theme="dark"] .md-content .md-link:hover { border-bottom-color: #818cf8; }
+
+html[data-theme="dark"] .md-content strong { color: rgba(241, 245, 249, 0.96); }
+html[data-theme="dark"] .md-content em { color: #a78bfa; }
+
+/* ── Dark mode: native tag fallback (Tiptap HTML) ── */
+html[data-theme="dark"] .md-content h1,
+html[data-theme="dark"] .md-content h2,
+html[data-theme="dark"] .md-content h3,
+html[data-theme="dark"] .md-content h4 { color: rgba(226, 232, 240, 0.95); }
+html[data-theme="dark"] .md-content h1 { border-bottom-color: rgba(255,255,255,0.08); }
+html[data-theme="dark"] .md-content h2 { color: rgba(203, 213, 225, 0.9); }
+html[data-theme="dark"] .md-content h3 { color: rgba(148, 163, 184, 0.9); }
+html[data-theme="dark"] .md-content h4 { color: #94a3b8; }
+html[data-theme="dark"] .md-content p  { color: rgba(203, 213, 225, 0.85); }
+html[data-theme="dark"] .md-content li { color: rgba(203, 213, 225, 0.85); }
+html[data-theme="dark"] .md-content blockquote {
+  background: rgba(99, 102, 241, 0.08);
+  border-left-color: #6366f1;
+  color: rgba(148, 163, 184, 0.85);
+}
+html[data-theme="dark"] .md-content hr { border-top-color: rgba(255,255,255,0.08); }
+html[data-theme="dark"] .md-content a  { color: #818cf8; }
+html[data-theme="dark"] .md-content code {
+  background: rgba(99, 102, 241, 0.12);
+  color: #c084fc;
+  border-color: rgba(99, 102, 241, 0.25);
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   GLOBAL MOBILE RESPONSIVE — production-grade
+   These are the ONLY viewport-width breakpoints in this file.
+   Add all new global responsive rules here, not scattered inline.
+   ═══════════════════════════════════════════════════════════════════
+
+   Breakpoint scale (mirrors Tailwind):
+     sm  ≤ 640px   — most phones (portrait)
+     xs  ≤ 480px   — small phones (iPhone SE, Galaxy A series)
+     2xs ≤ 375px   — minimum supported width
+
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ── md-content: prevent native-tag pre blocks from overflowing on mobile ─── */
+/* The Tiptap render path uses native <pre><code> without the .md-code-block
+   wrapper, so these rules handle the overflow case globally.                  */
+.md-content pre {
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  min-width: 0;
+}
+
+.md-content pre code {
+  min-width: 0;
+}
+
+/* ── All md-content: ensure no child breaks layout width ────────────────── */
+.md-content {
+  min-width: 0;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Tables: always wrap in overflow scroll on any screen — they're the
+   widest native element and most likely to overflow on mobile         */
+.md-content .md-table,
+.md-content table {
+  display: block;           /* converts from table to block — critical for overflow-x to fire */
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  width: 100%;
+}
+/* Re-set table layout for the inner table */
+.md-content .md-table table,
+.md-content table > * {
+  min-width: max-content;   /* table cells won't wrap awkwardly until they naturally can */
+}
+
+/* ════════════════════════════════════════════════════════════
+   sm — ≤ 640px  (most phones, portrait)
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+
+  /* Base font: keep at 16px (prevents iOS zoom on focus) but
+     scale down derived rem values via clamp typography          */
+  html { font-size: 16px; }
+
+  /* Paragraphs: reduce from 1rem → 0.9375rem on small screens  */
+  .md-content .md-p,
+  .md-content p {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  /* Lists */
+  .md-content .md-li,
+  .md-content li {
+    font-size: 0.9375rem;
+    line-height: 1.7;
+  }
+
+  /* Headings: scale down proportionally */
+  .md-content .md-h1,
+  .md-content h1 { font-size: 1.375rem; }
+
+  .md-content .md-h2,
+  .md-content h2 { font-size: 1.125rem; }
+
+  .md-content .md-h3,
+  .md-content h3 { font-size: 0.975rem; }
+
+  .md-content .md-h4,
+  .md-content h4 { font-size: 0.875rem; }
+
+  /* Code blocks: compact but readable */
+  .md-content .md-pre,
+  .md-content .md-pre,
+  .md-pre,
+  .md-content pre {
+    font-size: 0.8125rem !important;
+    padding: 0.75rem 0.875rem !important;
+    line-height: 1.55 !important;
+  }
+
+  /* Blockquote: reduce padding */
+  .md-content .md-blockquote,
+  .md-content blockquote {
+    padding: 0.65rem 0.875rem;
+    font-size: 0.9rem;
+  }
+
+  /* DS utility cards: reduce padding on mobile */
+  .ds-card {
+    padding: var(--ds-sp-4);
+  }
+
+  /* DS buttons: full-width on mobile by default (can override per-use) */
+  .ds-btn-lg {
+    padding: 0.62rem 1.25rem;
+    font-size: var(--ds-text-base);
+  }
+
+  /* Architecture diagram boxes: full width on phone */
+  .al-arch-content .diagram-box {
+    max-width: 100%;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   xs — ≤ 480px  (smaller phones)
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+
+  /* Layout: 100dvh on phones that have virtual keyboards */
+  :host {
+    height: 100dvh;
+  }
+
+  /* Code pre: tightest readable size */
+  .md-content .md-pre,
+  .md-pre,
+  .md-content pre {
+    font-size: 0.77rem !important;
+    padding: 0.65rem 0.75rem !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Table cells: smaller text so more columns fit before scroll */
+  .md-content .md-table th,
+  .md-content table th { font-size: 0.72rem; padding: 0.5rem 0.75rem; }
+
+  .md-content .md-table td,
+  .md-content table td { font-size: 0.82rem; padding: 0.45rem 0.75rem; }
+
+  /* DS card: tightest padding */
+  .ds-card {
+    padding: var(--ds-sp-3);
+    border-radius: var(--ds-radius-md);
+  }
+
+  .ds-card-sm {
+    padding: var(--ds-sp-2);
+  }
+
+  /* Diagram / architecture boxes: no hover lift on touch */
+  .am-diagram-content .diagram-box,
+  .al-arch-content .diagram-box {
+    max-width: 100%;
+  }
+  .am-diagram-content .diagram-box:hover,
+  .al-arch-content .diagram-box:hover {
+    transform: none;
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   2xs — ≤ 375px  (minimum supported: iPhone SE 2020)
+   ════════════════════════════════════════════════════════════ */
+@media (max-width: 375px) {
+
+  /* Headings: tightest size */
+  .md-content .md-h1, .md-content h1 { font-size: 1.2rem; }
+  .md-content .md-h2, .md-content h2 { font-size: 1rem;   }
+  .md-content .md-h3, .md-content h3 { font-size: 0.92rem;}
+
+  /* Inline code: prevent wrapping breaking layout */
+  .md-content .md-inline,
+  .md-content code {
+    font-size: 0.78em;
+    word-break: break-all;
+  }
 }

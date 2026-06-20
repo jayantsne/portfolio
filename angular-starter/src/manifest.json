@@ -86,6 +86,22 @@
       "description": "Chat with AI Assistant",
       "url": "/ai-chat",
       "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Save to Notes",
+      "short_name": "Save Note",
+      "description": "Save text to Learn With AI Notes",
+      "url": "/notes",
+      "icons": [{ "src": "/assets/icons/icon-96x96.png", "sizes": "96x96" }]
     }
-  ]
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "GET",
+    "params": {
+      "title": "title",
+      "text":  "text",
+      "url":   "url"
+    }
+  }
 }

@@ -110,6 +110,8 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   savedNotes: SavedNote[] = [];
   noteSaved = false;
   showNotesDrawer = false;
+  /** Controls the floating related-questions panel visibility */
+  showToolsPanel = false;
   /** Mobile: controls sidebar drawer open/close */
   showMobileSidebar = false;
   /** Shown when a guest tries to save — prompts them to sign in. */
@@ -296,8 +298,8 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
   private sub!: Subscription;
   private aiSub?: Subscription;
 
-  /** Whether the current visitor is authenticated. */
-  get isLoggedIn(): boolean { return this.customAuth.isLoggedIn; }
+  /** Whether the current visitor is authenticated. Updated reactively via currentUser$. */
+  isLoggedIn = false;
 
   constructor(
     private questionsData: QuestionsDataService,
@@ -319,8 +321,10 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
       try { this.savedNotes = JSON.parse(stored); } catch { this.savedNotes = []; }
     }
 
-    // When a guest logs in, automatically restore the tab they were trying to open
+    // Sync auth state reactively so template updates when user logs in/out
+    this.isLoggedIn = this.customAuth.isLoggedIn;
     this.customAuth.currentUser$.subscribe(user => {
+      this.isLoggedIn = !!user;
       if (user && this.pendingTab) {
         this.sidebarTab = this.pendingTab;
         this.pendingTab = null;
@@ -1143,6 +1147,21 @@ export class InterviewPrepComponent implements OnInit, OnDestroy {
 
   toggleNotesDrawer(): void {
     this.showNotesDrawer = !this.showNotesDrawer;
+  }
+
+  /** Copy an AI message text to clipboard */
+  copyMessage(text: string): void {
+    navigator.clipboard.writeText(text).catch(() => {
+      // fallback for older browsers
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    });
   }
 
   /* ─────────────────────────────────────────────────────────────────────────

@@ -28,9 +28,9 @@ export class AuthModalComponent implements OnInit, OnDestroy {
   signupForm!: FormGroup;
 
   constructor(
-    private fb:      FormBuilder,
-    private authSvc: CustomAuthService,
-    private ngZone:  NgZone
+    private fb:            FormBuilder,
+    private authSvc:       CustomAuthService,
+    private ngZone:        NgZone
   ) {}
 
   ngOnInit(): void {
@@ -128,6 +128,12 @@ export class AuthModalComponent implements OnInit, OnDestroy {
   }
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
+
+  async loginWithGoogle(): Promise<void> {
+    this.isLoading = true;
+    this.errorMsg  = '';
+    this.authSvc.startGoogleLogin();
+  }
 
   private passwordsMatch(group: AbstractControl) {
     const p  = group.get('password')?.value;

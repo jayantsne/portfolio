@@ -15,6 +15,7 @@
 
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="color-scheme" content="light dark">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Learn with AI</title>
 
@@ -26,10 +27,36 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="JB Portfolio">
 
+  <!-- Favicon: canvas-drawn to bypass Chrome's favicon cache entirely -->
+  <script>
+    (function() {
+      var c = document.createElement('canvas');
+      c.width = 32; c.height = 32;
+      var ctx = c.getContext('2d');
+      var g = ctx.createLinearGradient(0, 0, 32, 32);
+      g.addColorStop(0, '#6366f1');
+      g.addColorStop(1, '#8b5cf6');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(7, 0); ctx.lineTo(25, 0); ctx.quadraticCurveTo(32, 0, 32, 7);
+      ctx.lineTo(32, 25); ctx.quadraticCurveTo(32, 32, 25, 32);
+      ctx.lineTo(7, 32); ctx.quadraticCurveTo(0, 32, 0, 25);
+      ctx.lineTo(0, 7); ctx.quadraticCurveTo(0, 0, 7, 0);
+      ctx.closePath(); ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 20px Arial,sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('C', 16, 17);
+      var link = document.createElement('link');
+      link.rel = 'icon'; link.type = 'image/png';
+      link.href = c.toDataURL('image/png');
+      document.head.appendChild(link);
+    })();
+  </script>
+
   <!-- PWA Manifest & Icons -->
   <link rel="manifest" href="/manifest.json">
-  <link rel="icon" type="image/x-icon" href="/assets/favicon.ico">
-  <link rel="icon" href="/assets/images/1553054_blue_j_letter_alphabet_letters_icon.png" type="image/png">
   <link rel="apple-touch-icon" sizes="72x72"  href="/assets/icons/icon-72x72.svg">
   <link rel="apple-touch-icon" sizes="96x96"  href="/assets/icons/icon-96x96.svg">
   <link rel="apple-touch-icon" sizes="128x128" href="/assets/icons/icon-128x128.svg">
@@ -38,12 +65,6 @@
   <link rel="apple-touch-icon" sizes="192x192" href="/assets/icons/icon-192x192.svg">
   <link rel="apple-touch-icon" sizes="384x384" href="/assets/icons/icon-384x384.svg">
   <link rel="apple-touch-icon" sizes="512x512" href="/assets/icons/icon-512x512.svg">
-
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="crossorigin"/>
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;700;800&amp;display=swap"/>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;700;800&amp;display=swap" media="print" onload="this.media='all'"/>
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@300;400;700;800&amp;display=swap"/></noscript>
 
   <!-- Bootstrap Icons (single copy) -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
@@ -60,6 +81,18 @@
   <noscript>
     <style>[data-aos] { opacity: 1 !important; transform: translate(0) scale(1) !important; }</style>
   </noscript>
+
+  <!-- ── Theme: apply BEFORE first paint to prevent flash of wrong theme ── -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem('am_theme');
+        var dark = saved ? saved === 'dark'
+                        : window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>

@@ -7,6 +7,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { CustomAuthService } from './custom-auth.service';
+import { environment } from '../../environments/environment';
 
 /**
  * AuthInterceptor
@@ -25,31 +26,42 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     // Skip auth header for public endpoints (register / login)
     const isAuthEndpoint = req.url.includes('/auth/register') ||
-                           req.url.includes('/auth/login');
+                           req.url.includes('/auth/login') ||
+                           req.url.includes('/auth/google') ||
+                           req.url.includes('/auth/me') ||
+                           req.url.includes('/auth/logout');
 
-    // Subscription / payment endpoints may be hosted on a separate service with a
-    // different JWT-validation setup.  A 401 from these does NOT mean the user's
-    // core session is invalid — callers already handle the error with catchError.
-    // Auto-logging-out on their 401 would sign the user out immediately after login.
+    // These endpoints may return 401 for reasons unrelated to the user's core
+    // session (e.g. backend feature not deployed, separate JWT config, etc.).
+    // Callers already handle their errors gracefully (empty state / localStorage
+    // fallback).  Auto-logging-out on their 401 would sign the user out
+    // immediately after a successful login.
     const isAuxiliaryEndpoint = req.url.includes('/subscription') ||
-                                req.url.includes('/payment');
+                                req.url.includes('/payment') ||
+                                req.url.includes('/conversation') ||
+                                req.url.includes('/usage');
 
     const token = this.auth.getToken();
-    const authReq = (token && !isAuthEndpoint)
-      ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-      : req;
+    const headers: Record<string, string> = {};
+    if (token && !isAuthEndpoint) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    const isApiRequest = req.url.startsWith('/api') || req.url.startsWith(environment.apiUrl);
+    const authReq = req.clone({
+      setHeaders: headers,
+      withCredentials: isApiRequest ? true : req.withCredentials
+    });
 
     return next.handle(authReq).pipe(
       catchError((err: HttpErrorResponse) => {
         console.warn(`[AuthInterceptor] ${err.status} on ${req.url} | isAuth:${isAuthEndpoint} | isAux:${isAuxiliaryEndpoint} | hasToken:${!!token}`);
-        if (err.status === 401 && !isAuthEndpoint && !isAuxiliaryEndpoint && token) {
+        if (err.status === 401 && !isAuthEndpoint && !isAuxiliaryEndpoint && this.auth.isLoggedIn) {
           // Token WAS sent but was rejected (expired/invalid) — clear session.
           // If no token was sent (unauthenticated request to a protected endpoint),
           // do NOT log the user out — just let the error propagate to the caller.
           console.warn('AuthInterceptor: 401 received on authenticated request — clearing session.');
-          this.auth.logout();
-          this.router.navigate(['/']);
-        } else if (err.status === 401 && !isAuthEndpoint && !token) {
+          this.auth.clearLocalSession(true);
+        } else if (err.status === 401 && !isAuthEndpoint && !this.auth.isLoggedIn) {
           // Public endpoint returned 401 with no token — ignore, don't touch session.
           console.warn('AuthInterceptor: 401 on unauthenticated request — ignoring.');
         } else if (err.status === 401 && isAuxiliaryEndpoint) {

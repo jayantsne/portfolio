@@ -46,6 +46,9 @@ export class LwPlaygroundComponent implements OnChanges {
    */
   @Input() lessonCodeBlocks: string[] = [];
 
+  /** When true, the playground panel starts in the open/expanded state */
+  @Input() set initiallyOpen(val: boolean) { if (val) this.open = true; }
+
   // ── Outputs ─────────────────────────────────────────────────────────────
 
   @Output() codeChange   = new EventEmitter<string>();

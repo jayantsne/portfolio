@@ -522,8 +522,24 @@
           <button class="ws-mentor-chip" (click)="quickMentorAsk('Show a practical code example using ' + selectedTopic.name)">
             &#128104;&#8205;&#128187; Code Example
           </button>
+          <button class="ws-mentor-chip" (click)="quickMentorAsk('Explain the code for ' + selectedTopic.name + ' line by line. Comment every important line clearly.')">
+            &#128270; Line-by-Line
+          </button>
           <button class="ws-mentor-chip" (click)="quickMentorAsk('How does ' + selectedTopic.name + ' appear in Azure AI-102 exam questions? Give tips.')">
             &#128218; Exam Tips
+          </button>
+        </div>
+
+        <!-- Tone mode toggle -->
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px; padding: 0 2px;">
+          <span style="font-size:11px; color:#64748b;">Tone:</span>
+          <button class="ws-mentor-chip"
+                  [style.background]="toneMode === 'friendly' ? '#eef2ff' : '#f1f5f9'"
+                  [style.border-color]="toneMode === 'friendly' ? '#c7d2fe' : '#e2e8f0'"
+                  [style.color]="toneMode === 'friendly' ? '#6366f1' : '#475569'"
+                  (click)="toggleToneMode()"
+                  title="Switch between Friendly and Professional AI tone">
+            {{ toneMode === 'friendly' ? '😊 Friendly' : '💼 Professional' }}
           </button>
         </div>
 
@@ -668,6 +684,16 @@
     </div>
   </div>
 </div>
+
+<!-- Save-to-Notes Drawer -->
+<app-save-notes-modal
+  [isVisible]="showNotesDrawer"
+  [topic]="drawerTopic"
+  [content]="drawerContent"
+  [contextType]="'mentor'"
+  (closed)="onDrawerClosed()"
+  (saved)="onDrawerSaved()">
+</app-save-notes-modal>
 
 <!-- AI Understanding Modal -->
 <div *ngIf="showAiModal" class="ai-modal-overlay" [class.dark-mode]="darkMode" (click)="closeAiModal()">

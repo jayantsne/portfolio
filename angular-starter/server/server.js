@@ -4,11 +4,16 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 
+require('dotenv').config({ path: process.env.APP_ENV_FILE || '/etc/jayant-backend.env' });
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// MongoDB Connection String
-const MONGODB_URI = 'mongodb+srv://bjayantsne_db_user:H3Y4FWCZ3t0ZIzu6@cluster0.9liq2qs.mongodb.net/jayant-portfolio?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI || process.env.MONGODB_URL;
+
+if (!MONGODB_URI) {
+  throw new Error('Missing MONGODB_URI or MONGODB_URL environment variable');
+}
 
 // Middleware
 app.use(cors());
@@ -283,7 +288,12 @@ async function initializeDefaultUser() {
   try {
     const adminExists = await Auth.findOne({ username: 'admin' });
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
+      if (!process.env.DEFAULT_ADMIN_PASSWORD) {
+        console.warn('Default admin user not created: DEFAULT_ADMIN_PASSWORD is not set');
+        return;
+      }
+
+      const hashedPassword = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD, 10);
       const admin = new Auth({
         userId: 'admin',
         username: 'admin',
@@ -291,7 +301,7 @@ async function initializeDefaultUser() {
         isAuthenticated: false
       });
       await admin.save();
-      console.log('✅ Default admin user created (username: admin, password: admin123)');
+      console.log('Default admin user created');
     }
   } catch (error) {
     console.error('Error initializing default user:', error);

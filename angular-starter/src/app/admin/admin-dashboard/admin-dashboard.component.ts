@@ -28,16 +28,14 @@ export class AdminDashboardComponent implements OnInit {
   ) {}
 
   async ngOnInit() {
-    // Accept either old admin_token (legacy) OR new CustomAuthService admin role
-    const isOldAdmin = this.adminService.isLoggedIn();
-    const isNewAdmin = this.customAuth.isAdmin;
+    const isAdmin = this.adminService.isLoggedIn() || this.customAuth.isAdmin;
 
-    if (!isOldAdmin && !isNewAdmin) {
+    if (!isAdmin) {
       this.router.navigate(['/admin-login']);
       return;
     }
 
-    this.user = isOldAdmin
+    this.user = this.adminService.isLoggedIn()
       ? this.adminService.getUser()
       : { username: this.customAuth.currentUser?.username ?? 'Admin', role: 'admin' };
 

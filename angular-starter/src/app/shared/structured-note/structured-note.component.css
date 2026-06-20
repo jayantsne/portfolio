@@ -1,0 +1,418 @@
+/* ── Variables ────────────────────────────────────────────────────── */
+:host {
+  --sn-bg:         #0f1117;
+  --sn-surface:    #1a1d27;
+  --sn-surface2:   #20243a;
+  --sn-border:     #2a2d3e;
+  --sn-accent:     #6c63ff;
+  --sn-accent2:    #1a73e8;
+  --sn-green:      #34a853;
+  --sn-orange:     #fb8c00;
+  --sn-text:       #e8eaed;
+  --sn-muted:      #9aa0b2;
+  --sn-radius:     10px;
+  --sn-font:       system-ui, -apple-system, 'Segoe UI', sans-serif;
+  display: block;
+  overflow-y: auto;
+  height: 100%;
+  padding-bottom: 40px;
+}
+
+/* ── Root wrapper ────────────────────────────────────────────────── */
+.sn-root {
+  font-family: var(--sn-font);
+  color: var(--sn-text);
+  background: var(--sn-bg);
+  min-height: 100%;
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.sn-header {
+  border-left: 4px solid var(--sn-accent);
+  padding-left: 14px;
+}
+.sn-title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  color: #fff;
+  line-height: 1.3;
+}
+.sn-summary {
+  font-size: 14px;
+  color: var(--sn-muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* ── Block title ─────────────────────────────────────────────────── */
+.sn-block-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--sn-muted);
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sn-icon { font-size: 16px; }
+
+/* ── Sections accordion ──────────────────────────────────────────── */
+.sn-sections { display: flex; flex-direction: column; gap: 0; }
+
+.sn-section-card {
+  border: 1px solid var(--sn-border);
+  border-radius: var(--sn-radius);
+  overflow: hidden;
+  margin-bottom: 8px;
+  transition: border-color .2s;
+}
+.sn-section-card--open { border-color: var(--sn-accent); }
+
+.sn-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: var(--sn-surface);
+  border: none;
+  padding: 12px 14px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--sn-text);
+  font-size: 14px;
+  font-weight: 600;
+  transition: background .15s;
+}
+.sn-section-heading:hover { background: var(--sn-surface2); }
+
+.sn-section-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sn-accent);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sn-section-title-text { flex: 1; }
+.sn-chevron {
+  font-size: 18px;
+  color: var(--sn-muted);
+  transition: transform .2s;
+  line-height: 1;
+}
+.sn-chevron--open { transform: rotate(90deg); }
+
+.sn-section-body {
+  padding: 14px 16px;
+  background: var(--sn-bg);
+  animation: snFadeIn .2s ease;
+}
+.sn-section-content {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--sn-text);
+  margin: 0 0 10px;
+}
+
+/* ── Bullets ─────────────────────────────────────────────────────── */
+.sn-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.sn-bullets li {
+  font-size: 13px;
+  color: var(--sn-text);
+  padding-left: 20px;
+  position: relative;
+  line-height: 1.5;
+}
+.sn-bullets li::before {
+  content: '▸';
+  position: absolute;
+  left: 0;
+  color: var(--sn-accent);
+  font-size: 12px;
+}
+
+/* ── Code example ────────────────────────────────────────────────── */
+.sn-example {
+  background: #0d1117;
+  border: 1px solid var(--sn-border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-top: 10px;
+}
+.sn-example-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--sn-muted);
+  padding: 6px 12px 4px;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+  background: rgba(255,255,255,.03);
+  border-bottom: 1px solid var(--sn-border);
+}
+.sn-example-code {
+  margin: 0;
+  padding: 12px;
+  font-family: 'Consolas', 'SF Mono', monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: #c9d1d9;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ── Steps Stepper ───────────────────────────────────────────────── */
+.sn-steps-block {}
+
+.sn-step-counter {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--sn-surface2);
+  border-radius: 12px;
+  padding: 2px 10px;
+  color: var(--sn-text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.sn-progress-track {
+  height: 4px;
+  background: var(--sn-border);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+.sn-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sn-accent), var(--sn-accent2));
+  border-radius: 2px;
+  transition: width .4s cubic-bezier(.4, 0, .2, 1);
+}
+
+.sn-steps-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.sn-step-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--sn-radius);
+  border: 1px solid var(--sn-border);
+  background: var(--sn-surface);
+  transition: all .3s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Revealed but not current */
+.sn-step-card--done {
+  opacity: .75;
+  border-color: var(--sn-border);
+  animation: snFadeIn .35s ease;
+}
+
+/* Currently active step */
+.sn-step-card--active {
+  border-color: var(--sn-accent);
+  background: rgba(108, 99, 255, .08);
+  box-shadow: 0 0 12px rgba(108, 99, 255, .2);
+  animation: snSlideIn .35s cubic-bezier(.4, 0, .2, 1);
+}
+
+/* Not yet revealed — invisible but takes no space? Let's hide and collapse */
+.sn-step-card--hidden {
+  display: none;
+}
+
+.sn-step-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--sn-accent);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.sn-step-card--done .sn-step-dot { background: var(--sn-border); color: var(--sn-muted); }
+.sn-step-card--active .sn-step-dot { background: var(--sn-accent); box-shadow: 0 0 8px var(--sn-accent); }
+
+.sn-step-text {
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--sn-text);
+  margin: 0;
+  padding-top: 4px;
+}
+
+/* ── Stepper controls ────────────────────────────────────────────── */
+.sn-step-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.sn-all-done {
+  font-size: 13px;
+  color: var(--sn-green);
+  font-weight: 600;
+  flex: 1;
+}
+
+/* ── Visual Block ────────────────────────────────────────────────── */
+.sn-visual-block {}
+
+/* Flow diagram */
+.sn-flow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: var(--sn-surface);
+  border: 1px solid var(--sn-border);
+  border-radius: var(--sn-radius);
+  padding: 16px 18px;
+}
+.sn-flow-node {
+  background: var(--sn-surface2);
+  border: 1px solid var(--sn-accent);
+  border-radius: 6px;
+  padding: 7px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sn-text);
+  white-space: nowrap;
+}
+.sn-flow-arrow {
+  font-size: 18px;
+  color: var(--sn-accent);
+  font-weight: 700;
+}
+
+/* Comparison table */
+.sn-comparison { overflow-x: auto; }
+.sn-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.sn-table th {
+  background: var(--sn-surface2);
+  color: var(--sn-accent);
+  font-weight: 600;
+  padding: 10px 14px;
+  text-align: left;
+  border: 1px solid var(--sn-border);
+  white-space: nowrap;
+}
+.sn-table td {
+  padding: 9px 14px;
+  border: 1px solid var(--sn-border);
+  color: var(--sn-text);
+  vertical-align: top;
+}
+.sn-table tbody tr:nth-child(even) td { background: rgba(255,255,255,.02); }
+
+/* Diagram */
+.sn-diagram { background: var(--sn-surface); border: 1px solid var(--sn-border); border-radius: var(--sn-radius); padding: 16px; }
+.sn-diagram-pre {
+  font-family: 'Consolas', 'SF Mono', monospace;
+  font-size: 13px;
+  color: var(--sn-text);
+  margin: 0;
+  white-space: pre;
+  line-height: 1.6;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+.sn-btn {
+  padding: 7px 16px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all .15s;
+  line-height: 1;
+}
+.sn-btn:disabled { opacity: .35; cursor: not-allowed; }
+
+.sn-btn--primary {
+  background: var(--sn-accent);
+  color: #fff;
+}
+.sn-btn--primary:hover:not(:disabled) { background: #5a52d4; }
+
+.sn-btn--ghost {
+  background: transparent;
+  border: 1px solid var(--sn-border);
+  color: var(--sn-muted);
+}
+.sn-btn--ghost:hover:not(:disabled) { color: var(--sn-text); border-color: var(--sn-muted); }
+
+.sn-btn--accent {
+  background: rgba(251,140,0,.12);
+  border: 1px solid var(--sn-orange);
+  color: var(--sn-orange);
+}
+.sn-btn--accent:hover:not(:disabled) { background: rgba(251,140,0,.22); }
+
+/* ── Loading skeleton ────────────────────────────────────────────── */
+.sn-skeleton {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.sn-skeleton-bar {
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--sn-surface) 25%, var(--sn-surface2) 50%, var(--sn-surface) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+.sn-skeleton-bar--title   { height: 28px; width: 55%; }
+.sn-skeleton-bar--subtitle{ height: 16px; width: 80%; }
+.sn-skeleton-bar--body    { height: 80px; width: 100%; }
+
+/* ── Animations ──────────────────────────────────────────────────── */
+@keyframes snFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes snSlideIn {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
+}

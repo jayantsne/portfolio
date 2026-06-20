@@ -90,6 +90,11 @@
 
   <!-- Footer -->
   <div class="chat-footer">
+    <div class="chat-footer-top">
+      <button class="tone-toggle" (click)="toggleToneMode()" [title]="'Switch to ' + (toneMode === 'friendly' ? 'Professional' : 'Friendly') + ' mode'">
+        {{ toneMode === 'friendly' ? '😊 Friendly' : '💼 Professional' }}
+      </button>
+    </div>
     <input
       [(ngModel)]="input"
       placeholder="Ask about my work…"

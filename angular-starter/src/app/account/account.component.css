@@ -1,0 +1,210 @@
+/* ── Account page ───────────────────────────────────────────────────────── */
+
+.acct-page {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 2rem 1rem 4rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ── Loading ─────────────────────────────────────────────────────────────── */
+.acct-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.acct-spinner {
+  width: 36px; height: 36px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: acctSpin 0.8s linear infinite;
+}
+@keyframes acctSpin { to { transform: rotate(360deg); } }
+
+/* ── Guest state ─────────────────────────────────────────────────────────── */
+.acct-guest {
+  max-width: 420px;
+  margin: 80px auto;
+  text-align: center;
+  background: #fff;
+  border-radius: 16px;
+  padding: 2.5rem 2rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.06), 0 4px 20px rgba(0,0,0,.07);
+}
+
+.acct-guest .acct-icon { font-size: 3rem; margin-bottom: 1rem; }
+.acct-guest h2 { font-size: 1.3rem; font-weight: 700; color: #1e293b; margin: 0 0 .5rem; }
+.acct-guest p { color: #64748b; font-size: 0.9rem; margin: 0 0 1.5rem; }
+
+/* ── Main content ────────────────────────────────────────────────────────── */
+.acct-content { max-width: 720px; margin: 0 auto; }
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+.acct-header {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.06);
+}
+
+.acct-avatar {
+  width: 56px; height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.5rem; font-weight: 700;
+  flex-shrink: 0;
+}
+
+.acct-username { font-size: 1.2rem; font-weight: 700; color: #1e293b; margin: 0 0 .15rem; }
+.acct-email    { font-size: 0.83rem; color: #64748b; margin: 0 0 .5rem; }
+
+/* ── Plan badge ──────────────────────────────────────────────────────────── */
+.acct-plan-badge {
+  display: inline-block;
+  padding: .2rem .7rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+.badge-pro    { background: #fef3c7; color: #92400e; }
+.badge-trial  { background: #ede9fe; color: #5b21b6; }
+.badge-admin  { background: #fce7f3; color: #be185d; }
+.badge-free   { background: #f1f5f9; color: #475569; }
+
+/* ── Grid ────────────────────────────────────────────────────────────────── */
+.acct-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ── Card ────────────────────────────────────────────────────────────────── */
+.acct-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,.05), 0 4px 14px rgba(0,0,0,.05);
+}
+
+.acct-card--wide {
+  grid-column: 1 / -1; /* spans both columns */
+}
+
+.acct-card-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  color: #94a3b8;
+  margin-bottom: .85rem;
+}
+
+/* ── Usage bar ───────────────────────────────────────────────────────────── */
+.acct-usage-track {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: .6rem;
+}
+
+.acct-usage-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+}
+.acct-usage-fill.acct-usage-full { background: linear-gradient(90deg, #ef4444, #f97316); }
+
+.acct-usage-label { font-size: 0.85rem; color: #334155; margin: .1rem 0 .4rem; }
+.acct-hint        { font-size: 0.8rem; color: #64748b; margin: .25rem 0 0; }
+.acct-link        { color: #6366f1; text-decoration: none; font-weight: 600; }
+.acct-link:hover  { text-decoration: underline; }
+.acct-unlimited   { font-size: 0.88rem; color: #059669; font-weight: 600; }
+
+/* ── Subscription detail ─────────────────────────────────────────────────── */
+.acct-sub-detail  { font-size: 0.88rem; margin: 0 0 .85rem; color: #334155; }
+.acct-sub-ok      { color: #059669; }
+.acct-sub-trial   { color: #7c3aed; }
+.acct-sub-warn    { color: #64748b; }
+
+/* ── Perks list ──────────────────────────────────────────────────────────── */
+.acct-perks {
+  list-style: none;
+  padding: 0; margin: 0 0 1rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: .35rem .75rem;
+}
+.acct-perks li { font-size: 0.84rem; color: #334155; }
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.acct-btn {
+  display: inline-block;
+  padding: .6rem 1.25rem;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+  text-align: center;
+}
+.acct-btn--primary {
+  background: #6366f1;
+  color: #fff;
+}
+.acct-btn--upgrade {
+  display: block;
+  width: 100%;
+  padding: .65rem 1rem;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  box-sizing: border-box;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.15s;
+}
+.acct-btn--upgrade:hover { opacity: 0.9; }
+.acct-btn--wide { margin-top: 0; }
+
+/* ── Loader ──────────────────────────────────────────────────────────────── */
+.acct-mini-loader {
+  width: 20px; height: 20px;
+  border: 2px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: acctSpin 0.8s linear infinite;
+  margin: .5rem 0;
+}
+
+/* ── Footer ──────────────────────────────────────────────────────────────── */
+.acct-footer { margin-top: 1.5rem; }
+.acct-back-link { color: #6366f1; text-decoration: none; font-size: 0.88rem; font-weight: 600; }
+.acct-back-link:hover { text-decoration: underline; }
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 560px) {
+  .acct-grid { grid-template-columns: 1fr; }
+  .acct-perks { grid-template-columns: 1fr; }
+  .acct-header { flex-direction: column; text-align: center; }
+  .acct-avatar { margin: 0 auto; }
+}

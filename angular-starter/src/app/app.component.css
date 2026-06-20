@@ -7,11 +7,11 @@
 
 :host {
   display: block;
+  height: 100vh;     /* app-root fills exactly the viewport */
+  overflow: hidden;  /* footer below layout never causes body scroll */
 }
 
-.header-spacer {
-  height: var(--header-h, 72px);
-}
+/* .header-spacer removed: global header no longer rendered */
 
 /* ===============================
    GLOBAL

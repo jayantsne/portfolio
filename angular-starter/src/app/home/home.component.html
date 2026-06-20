@@ -26,7 +26,7 @@
               (keydown.enter)="onSearchEnter()"
               placeholder="Ask AI about any programming concept..."
               autocomplete="off">
-            <span class="ai-badge">✨ AI</span>
+            <span class="ai-badge" (click)="askAIFromSearch()" role="button" style="cursor:pointer" title="Ask AI to explain">✨ AI</span>
           </div>
 
           <!-- Search Results Dropdown -->
@@ -155,128 +155,152 @@
 
 
   <!-- ══════════════════════════════════════════════
-       3-COLUMN AI MENTOR VIEW  (shown when topic selected)
+       2-COLUMN AI MENTOR VIEW  (shown when topic selected)
   ══════════════════════════════════════════════ -->
-  <div class="am-shell" *ngIf="showModal" [class.am-focus-mode]="isFocusMode">
+  <div class="am-shell" *ngIf="showModal"
+       [class.am-tools-collapsed]="toolsCollapsed || !hasActiveChat"
+       [class.am-sidebar-visible]="sidebarOpen && customAuth.isLoggedIn">
 
-    <!-- ── Col 1: Topics Navigation ── -->
-    <aside class="am-nav" *ngIf="!isFocusMode">
+    <!-- ── Chat History Sidebar ── -->
+    <aside class="am-nav" *ngIf="sidebarOpen && customAuth.isLoggedIn">
       <div class="am-nav-header">
-        <button class="am-back-btn" (click)="closeModal()">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
-          Back
+        <!-- Left: sidebar collapse button -->
+        <button class="am-nav-icon-btn" (click)="sidebarOpen = false" title="Close sidebar" aria-label="Close sidebar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2"/>
+            <line x1="9" y1="3" x2="9" y2="21"/>
+          </svg>
         </button>
-        <div class="am-brand">
-          <div class="am-brand-icon">🤖</div>
-          <div class="am-brand-info">
-            <div class="am-brand-title">AI Mentor</div>
-            <div class="am-brand-sub">
-              <span class="am-brand-dot" [class.am-brand-dot-busy]="isLoadingAI"></span>
-              {{ isLoadingAI ? 'Thinking…' : 'Online' }}
-            </div>
-          </div>
-        </div>
+        <div class="am-nav-hd-spacer"></div>
+        <!-- Right: new chat compose button -->
+        <button class="am-nav-icon-btn" (click)="startNewConversation()" title="New chat" aria-label="New chat">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+          </svg>
+        </button>
       </div>
-
       <div class="am-nav-body">
-        <!-- Current topic indicator -->
-        <div class="am-nav-section" *ngIf="currentTopicName">
-          <div class="am-nav-label">Current Topic</div>
-          <div class="am-nav-current-item">
-            <span class="am-nav-active-dot"></span>
-            <span class="am-nav-current-name">{{ currentTopicName }}</span>
-          </div>
+        <!-- New Chat button — top of list, ChatGPT-style -->
+        <button class="am-new-chat-btn" (click)="startNewConversation()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          New Chat
+        </button>
+        <!-- Loading skeletons -->
+        <ng-container *ngIf="conversationsLoading">
+          <div class="am-conv-sk" *ngFor="let n of [1,2,3,4,5]"></div>
+        </ng-container>
+        <!-- Error -->
+        <div class="am-conv-error" *ngIf="conversationsError && !conversationsLoading">
+          <span>Could not load history</span>
+          <button class="am-conv-retry" (click)="loadConversations()">Retry</button>
         </div>
-
-        <!-- Curriculum modules tree -->
-        <div class="am-nav-section">
-          <div class="am-nav-label">Learning Curriculum</div>
-          <div class="am-curriculum-tree">
-            <div class="am-module" *ngFor="let mod of learningModules">
-              <!-- Module header (collapsible) -->
-              <button class="am-module-hd" (click)="toggleModule(mod.name)"
-                      [class.am-module-hd--open]="mod.expanded">
-                <span class="am-module-icon">{{ mod.icon }}</span>
-                <span class="am-module-name">{{ mod.name }}</span>
-                <svg class="am-module-chevron" width="10" height="10" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <polyline points="6 9 12 15 18 9"/>
-                </svg>
-              </button>
-              <!-- Module topics list -->
-              <div class="am-module-topics" [class.am-module-topics--open]="mod.expanded">
-                <button class="am-mod-topic"
-                        *ngFor="let t of mod.topics"
-                        [class.am-mod-topic--active]="t.name === currentTopicName"
-                        (click)="openTopicLesson(t.name)">
-                  <span class="am-mod-topic-icon">{{ t.icon }}</span>
-                  <span class="am-mod-topic-name">{{ t.name }}</span>
-                </button>
-              </div>
-            </div>
+        <!-- Grouped conversation list -->
+        <ng-container *ngIf="!conversationsLoading && !conversationsError">
+          <ng-container *ngFor="let group of conversationGroups">
+            <div class="am-conv-group-label">{{ group.label }}</div>
+            <button class="am-conv-item"
+                    *ngFor="let c of group.items"
+                    [class.am-conv-item-active]="c.id === activeConversationId"
+                    (click)="openConversation(c.id)">
+              <span class="am-conv-item-title" title="{{ c.title }}">{{ c.title }}</span>
+              <span class="am-conv-del-btn"
+                    role="button"
+                    (click)="$event.stopPropagation(); deleteConversation(c.id)"
+                    title="Delete conversation">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </span>
+            </button>
+          </ng-container>
+          <!-- Empty state -->
+          <div class="am-conv-empty" *ngIf="conversations.length === 0">
+            <div class="am-conv-empty-icon">💬</div>
+            <p>No conversations yet</p>
+            <small>Start chatting to see your history here</small>
           </div>
-        </div>
-      </div>
-
-      <div class="am-nav-footer">
-        <a routerLink="/interview-prep" class="am-nav-footer-link">
-          <span>📝</span> Interview Prep
-        </a>
-        <a routerLink="/notes" class="am-nav-footer-link">
-          <span>📌</span> My Notes
-        </a>
+        </ng-container>
       </div>
     </aside>
 
-
-    <!-- ── Col 2: Chat Area ── -->
+    <!-- ── Chat Area ── -->
     <main class="am-chat">
 
-      <!-- Chat Header -->
-      <div class="am-chat-header">
-        <div class="am-chat-hd-left">
-          <!-- Mobile-only back button (nav sidebar is hidden on mobile) -->
-          <button class="am-mobile-back-btn" (click)="closeModal()" aria-label="Back">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      <!-- Floating sidebar-open button (no vertical space — absolute positioned) -->
+      <button class="am-chat-sidebar-fab"
+              *ngIf="customAuth.isLoggedIn && !sidebarOpen"
+              (click)="sidebarOpen = true"
+              title="Open chat history"
+              aria-label="Open chat history">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <line x1="9" y1="3" x2="9" y2="21"/>
+        </svg>
+      </button>
+
+      <!-- ══ LANDING VIEW — AI Mentor hero center ══ -->
+      <div class="am-landing-view" *ngIf="!hasActiveChat">
+
+        <!-- Avatar -->
+        <div class="am-lv-avatar am-lv-s1">✨</div>
+
+        <!-- Heading -->
+        <div class="am-lv-heading am-lv-s1">
+          <h2 class="am-lv-title">Codexa AI</h2>
+          <p class="am-lv-sub">Learn programming faster with AI-powered explanations,
+            real-world examples, and interview insights.</p>
+        </div>
+
+        <!-- Centered input -->
+        <div class="am-lv-input-wrap am-lv-s2">
+          <input class="am-lv-input" type="text"
+                 [(ngModel)]="currentQuestion"
+                 (keyup.enter)="sendFollowUpQuestion(currentQuestion)"
+                 [placeholder]="currentPlaceholder"
+                 autofocus>
+          <button class="am-lv-send"
+                  (click)="sendFollowUpQuestion(currentQuestion)"
+                  [disabled]="!currentQuestion.trim()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+            </svg>
           </button>
-          <div class="am-chat-avatar-sm">🤖</div>
-          <div class="am-chat-hd-info">
-            <div class="am-chat-hd-name">AI Mentor</div>
-            <div class="am-chat-hd-status">
-              <span class="am-status-dot" [class.am-status-busy]="isLoadingAI || !!streamingText"></span>
-              {{ isLoadingAI ? 'Thinking…' : (streamingText ? 'Responding…' : 'Online') }}
-            </div>
+        </div>
+
+        <!-- Quick actions -->
+        <div class="am-lv-quick-wrap am-lv-s3">
+          <span class="am-lv-quick-label">Try asking about</span>
+          <div class="am-lv-suggestions">
+            <button class="am-lv-suggest" (click)="sendFollowUpQuestion('Explain Promises in JavaScript with a real-world example')">
+              <span class="am-lv-suggest-icon">💡</span>
+              <span class="am-lv-suggest-text">Explain Promises</span>
+            </button>
+            <button class="am-lv-suggest" (click)="sendFollowUpQuestion('Show me an async/await example with a real-world use case')">
+              <span class="am-lv-suggest-icon">⚡</span>
+              <span class="am-lv-suggest-text">Async / await</span>
+            </button>
+            <button class="am-lv-suggest" (click)="sendFollowUpQuestion('What are the top 5 JavaScript interview questions I should know?')">
+              <span class="am-lv-suggest-icon">🎯</span>
+              <span class="am-lv-suggest-text">Interview prep</span>
+            </button>
+            <button class="am-lv-suggest" (click)="sendFollowUpQuestion('Explain closures in JavaScript with clear examples')">
+              <span class="am-lv-suggest-icon">🔒</span>
+              <span class="am-lv-suggest-text">Explain closures</span>
+            </button>
           </div>
         </div>
-        <div class="am-chat-hd-right">
-          <span class="am-topic-chip">
-            <span class="am-topic-chip-icon">✨</span>
-            {{ currentTopicName }}
-          </span>
-          <!-- Focus Mode toggle -->
-          <button class="am-focus-btn" (click)="toggleFocusMode()"
-                  [class.am-focus-btn--active]="isFocusMode"
-                  [title]="isFocusMode ? 'Exit Focus Mode' : 'Focus Mode'">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <ng-container *ngIf="!isFocusMode">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/>
-                <path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/>
-              </ng-container>
-              <ng-container *ngIf="isFocusMode">
-                <path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/>
-                <path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/>
-              </ng-container>
-            </svg>
-            <span class="am-focus-btn-label">{{ isFocusMode ? 'Exit Focus' : 'Focus' }}</span>
-          </button>
-          <button class="am-close-btn" (click)="closeModal()" title="Close (ESC)">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
+
+        <!-- Free usage indicator -->
+        <div class="am-lv-usage am-lv-s4" *ngIf="!hasSubscriptionAccess && !customAuth.isAdmin">
+          <span class="am-lv-usage-icon">⚡</span>
+          <span>{{ remainingSearches }} free search{{ remainingSearches !== 1 ? 'es' : '' }} remaining</span>
+          <span class="am-lv-usage-sep">·</span>
+          <button class="am-lv-upgrade-link" (click)="showPaywall()">Upgrade for unlimited</button>
         </div>
+
       </div>
 
       <!-- Scrollable Chat Body -->
-      <div class="am-chat-body" #mentorBody>
+      <div class="am-chat-body" #mentorBody *ngIf="hasActiveChat">
 
         <!-- Duplicate Detection Overlay -->
         <div class="dup-overlay" *ngIf="duplicateDialogMode">
@@ -393,13 +417,13 @@
                 <p class="am-lcard-text">{{ lessonData.practiceQuestion }}</p>
                 <button class="am-lcard-chat-btn"
                         (click)="sendFollowUpQuestion('Walk me through the solution to: ' + lessonData.practiceQuestion)">
-                  Solve with AI Mentor →
+                  Solve with Codexa →
                 </button>
               </div>
 
               <!-- Continue in chat CTA -->
               <div class="am-lesson-chat-cta">
-                <p class="am-lesson-chat-cta-text">Want to go deeper? Ask the AI Mentor anything about <strong>{{ lessonData.topic }}</strong></p>
+                <p class="am-lesson-chat-cta-text">Want to go deeper? Ask Codexa anything about <strong>{{ lessonData.topic }}</strong></p>
                 <div class="am-lesson-cta-chips">
                   <button class="am-lc-chip" (click)="sendFollowUpQuestion('Explain ' + lessonData.topic + ' in even simpler terms with a beginner-friendly analogy')">💡 Explain simpler</button>
                   <button class="am-lc-chip" (click)="sendFollowUpQuestion('What are the most common mistakes with ' + lessonData.topic + '?')">⚠️ Common mistakes</button>
@@ -410,76 +434,72 @@
             </ng-container>
           </div>
 
-          <!-- Welcome / Empty State (shown when no lesson loaded yet) -->
-          <div class="am-welcome" *ngIf="!lessonView && !lessonLoading && (!isAIMode || (aiMessages.length === 0 && !isLoadingAI && !streamingText))">
-            <div class="am-welcome-avatar">🤖
-              <span class="am-welcome-pulse"></span>
-            </div>
-            <h3 class="am-welcome-title">Hi! I'm your AI Mentor</h3>
-            <p class="am-welcome-sub">I'll teach you <strong>{{ currentTopicName }}</strong> with clear explanations, live code examples, and interview tips — one message at a time.</p>
-            <div class="am-welcome-features">
-              <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Concept breakdown</span>
-              <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Code examples</span>
-              <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Interview tips</span>
-              <span class="am-welcome-feat"><span class="am-feat-check">✓</span> Follow-up Q&amp;A</span>
-            </div>
-            <!-- Quick starter prompts -->
-            <div class="am-welcome-starters">
-              <p class="am-welcome-starters-label">Quick start:</p>
-              <div class="am-welcome-starter-chips">
-                <button class="am-starter-chip" (click)="sendFollowUpQuestion('Explain ' + currentTopicName + ' like I am a beginner with a simple analogy')">
-                  🐣 Explain for beginners
-                </button>
-                <button class="am-starter-chip" (click)="sendFollowUpQuestion('Show me a real-world code example of ' + currentTopicName)">
-                  💻 Show code example
-                </button>
-                <button class="am-starter-chip" (click)="sendFollowUpQuestion('What are the top interview questions about ' + currentTopicName + '?')">
-                  🎯 Interview prep
-                </button>
-                <button class="am-starter-chip" (click)="sendFollowUpQuestion('What are common mistakes developers make with ' + currentTopicName + '?')">
-                  ⚠️ Common mistakes
-                </button>
-              </div>
-            </div>
-          </div>
+
 
           <!-- Message Thread -->
-          <div class="am-messages" *ngIf="isAIMode && aiMessages.length > 0">
-            <div class="am-message"
-                 *ngFor="let msg of aiMessages; let last = last"
-                 [class.am-message-user]="msg.role === 'user'"
-                 [class.am-message-ai]="msg.role === 'assistant'">
+          <div class="am-messages" *ngIf="aiMessages.length > 0">
+            <ng-container *ngFor="let group of groupedMessages; let lastGroup = last">
+              <ng-container *ngFor="let msg of group.messages; let mi = index; let lastMsgInGroup = last">
+                <div class="am-message"
+                     [class.am-message-user]="group.role === 'user'"
+                     [class.am-message-ai]="group.role === 'assistant'"
+                     [class.am-msg-group--first]="mi === 0"
+                     [class.am-msg-group--cont]="mi > 0">
 
               <!-- AI message -->
-              <ng-container *ngIf="msg.role === 'assistant'">
+              <ng-container *ngIf="group.role === 'assistant'">
                 <div class="am-msg-row">
-                  <div class="am-msg-avatar">🤖</div>
+                  <div class="am-msg-avatar am-msg-avatar-ai">
+                    <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="17" height="17" aria-hidden="true">
+                      <path d="M7 4.5L3.5 10L7 15.5" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M13 4.5L16.5 10L13 15.5" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                      <path d="M11.5 4L8.5 16" stroke="#a5f3fc" stroke-width="1.7" stroke-linecap="round"/>
+                    </svg>
+                  </div>
                   <div class="am-msg-col">
-                    <div class="am-msg-label">AI Mentor
-                      <span class="am-msg-time-inline">{{ msg.timestamp | date:'shortTime' }}</span>
-                    </div>
                     <!-- Main card -->
                     <div class="am-msg-card">
 
-                      <!-- Mentor card header — compact topic + depth strip -->
-                      <div class="am-mentor-card-hd">
-                        <span class="am-mentor-card-hd-avatar">🤖</span>
-                        <div class="am-mentor-card-hd-text">
-                          <span class="am-mentor-card-hd-topic">{{ currentTopicName }}</span>
-                        </div>
-                        <div class="am-mentor-card-hd-sections">
-                          <span class="am-section-tag am-section-concept">📘 Concept</span>
-                          <span class="am-section-tag am-section-example">💻 Code</span>
-                          <span class="am-section-tag am-section-tip">🎯 Tips</span>
-                        </div>
-                      </div>
-
                       <div class="am-msg-text md-content" [innerHTML]="msg.content | markdown" appTryNow></div>
 
-                      <!-- ── Toolbar: save + timestamp only (actions live in right sidebar) ── -->
+                      <!-- ── Toolbar: like / copy / regen / save ── -->
                       <div class="am-action-toolbar">
+                        <!-- Left: thumbs feedback -->
+                        <div class="am-toolbar-left">
+                          <button class="am-tb-icon"
+                                  [class.am-tb-liked]="likedMessageIds.has(msg.timestamp.getTime().toString())"
+                                  (click)="likeMessage(msg)"
+                                  title="Good response">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M5.5 7.5V13H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h2.5zm0 0L7 3s.5-.5 1-.5 1 .5 1 1V6h3.5s.5 0 .5.5L12.5 11s-.1.5-.5.5H5.5"/></svg>
+                          </button>
+                          <button class="am-tb-icon"
+                                  [class.am-tb-disliked]="dislikedMessageIds.has(msg.timestamp.getTime().toString())"
+                                  (click)="dislikeMessage(msg)"
+                                  title="Poor response">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M10.5 8.5V3H13a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2.5zm0 0L9 13s-.5.5-1 .5-1-.5-1-1V10H2.5s-.5 0-.5-.5L3.5 5s.1-.5.5-.5h6.5"/></svg>
+                          </button>
+                        </div>
+                        <!-- Right: time / copy / regen / save -->
                         <div class="am-toolbar-right">
                           <span class="am-toolbar-time">{{ msg.timestamp | date:'shortTime' }}</span>
+                          <!-- Copy with tooltip -->
+                          <div class="am-tb-copy-wrap">
+                            <button class="am-tb-icon"
+                                    (click)="copyMessage(msg)"
+                                    title="Copy response">
+                              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><rect x="5" y="5" width="8" height="10" rx="1.5"/><path d="M3 11V3a1 1 0 0 1 1-1h8"/></svg>
+                            </button>
+                            <span class="am-copy-tooltip" [class.am-copy-tooltip--visible]="copiedMessageIds.has(msg.timestamp.getTime().toString())">Copied!</span>
+                          </div>
+                          <!-- Regenerate last AI message only -->
+                          <button class="am-tb-icon am-tb-regen"
+                                  *ngIf="lastGroup && lastMsgInGroup"
+                                  (click)="regenerateLastResponse()"
+                                  [disabled]="isLoadingAI || !!streamingText"
+                                  title="Regenerate response">
+                            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M13.5 8A5.5 5.5 0 1 1 8 2.5"/><polyline points="12,1 14,3 12,5"/><line x1="14" y1="3" x2="9" y2="3"/></svg>
+                          </button>
+                          <!-- Save -->
                           <button class="am-tb-save"
                                   [class.saved]="savedMessageIds.has(msg.timestamp.getTime().toString())"
                                   [class.saving]="savingMessageIds.has(msg.timestamp.getTime().toString())"
@@ -494,33 +514,8 @@
                         </div>
                       </div>
 
-                      <!-- Suggested chips (show on last AI message) -->
-                      <div class="am-msg-chips" *ngIf="last">
-                        <span class="am-msg-chips-label">Ask more:</span>
-                        <button class="am-msg-chip"
-                                (click)="sendFollowUpQuestion('Give me a real-world example of ' + currentTopicName + ' used in a modern web app')"
-                                [disabled]="isLoadingAI || !!streamingText">
-                          🌍 Real world example
-                        </button>
-                        <button class="am-msg-chip"
-                                (click)="sendFollowUpQuestion('What are the most common mistakes developers make with ' + currentTopicName + ' and how to fix them?')"
-                                [disabled]="isLoadingAI || !!streamingText">
-                          ⚠️ Common mistakes
-                        </button>
-                        <button class="am-msg-chip"
-                                (click)="sendFollowUpQuestion('Give me the best interview answer for a question about ' + currentTopicName)"
-                                [disabled]="isLoadingAI || !!streamingText">
-                          🎯 Interview answer
-                        </button>
-                        <button class="am-msg-chip"
-                                (click)="sendFollowUpQuestion('Ask me a short quiz question about ' + currentTopicName + ' to test if I understood the concept')"
-                                [disabled]="isLoadingAI || !!streamingText">
-                          🧪 Test me
-                        </button>
-                      </div>
-
                       <!-- ══ Visual Animated Diagram Panel ══ -->
-                      <div class="am-diagram-panel" *ngIf="last && (diagramOpen || diagramLoading)">
+                      <div class="am-diagram-panel" *ngIf="lastGroup && lastMsgInGroup && (diagramOpen || diagramLoading)">
                         <!-- Header bar -->
                         <div class="am-diagram-panel-hd">
                           <span class="am-diagram-panel-hd-icon">
@@ -588,62 +583,111 @@
                       </div><!-- end am-diagram-panel -->
 
                     </div><!-- end am-msg-card -->
+
+                    <!-- ── Learning Action Bar ── -->
+                    <div class="lrn-action-bar" *ngIf="lastGroup && lastMsgInGroup">
+
+                      <!-- Primary CTA buttons -->
+                      <!-- <div class="lrn-primary-btns">
+                        <button class="lrn-btn lrn-btn--visualize"
+                                (click)="showVisualDiagram()"
+                                [disabled]="isLoadingAI || !!streamingText"
+                                title="Generate a visual flow diagram">
+                          <span>🎬</span> Visualize
+                        </button>
+                        <button class="lrn-btn lrn-btn--practice"
+                                (click)="runQuickAction('quiz')"
+                                [disabled]="isLoadingAI || !!streamingText"
+                                title="Quiz yourself on this topic">
+                          <span>🧪</span> Practice
+                        </button>
+                        <button class="lrn-btn lrn-btn--interview"
+                                (click)="runQuickAction('interview')"
+                                [disabled]="isLoadingAI || !!streamingText"
+                                title="Interview prep for this topic">
+                          <span>🎯</span> Interview Prep
+                        </button>
+                      </div> -->
+
+                      <!-- Secondary explore chips -->
+                      <!-- <div class="lrn-chip-row">
+                        <button class="lrn-chip"
+                                (click)="runQuickAction('breakdown')"
+                                [disabled]="isLoadingAI || !!streamingText">🧩 Break it down</button>
+                        <button class="lrn-chip"
+                                (click)="runQuickAction('realworld')"
+                                [disabled]="isLoadingAI || !!streamingText">🏗️ Real world</button>
+                        <button class="lrn-chip"
+                                (click)="runQuickAction('code')"
+                                [disabled]="isLoadingAI || !!streamingText">💻 Show code</button>
+                        <button class="lrn-chip"
+                                (click)="runQuickAction('mistakes')"
+                                [disabled]="isLoadingAI || !!streamingText">⚠️ Gotchas</button>
+                      </div> -->
+
+                    </div>
+
+                    <!-- ── AI-generated contextual follow-ups (when available) ── -->
+                    <!-- <div class="ai-followups" *ngIf="lastGroup && lastMsgInGroup && followUpQuestions.length > 0">
+                      <button class="ai-followup-pill"
+                              *ngFor="let q of followUpQuestions.slice(0, 4)"
+                              (click)="sendFollowUpQuestion(q)"
+                              [disabled]="isLoadingAI || !!streamingText">
+                        {{ q }}
+                      </button>
+                    </div> -->
+
                   </div>
                 </div>
               </ng-container>
 
               <!-- User message -->
-              <ng-container *ngIf="msg.role === 'user'">
+              <ng-container *ngIf="group.role === 'user'">
                 <div class="am-msg-row am-msg-row-user">
                   <div class="am-msg-col am-msg-col-user">
                     <div class="am-msg-user-bubble">{{ msg.content }}</div>
                     <div class="am-msg-time-user">{{ msg.timestamp | date:'shortTime' }}</div>
                   </div>
-                  <div class="am-msg-avatar am-msg-avatar-user">👤</div>
+                  <div class="am-msg-avatar am-msg-avatar-user" [attr.data-initials]="customAuth.currentUser?.username?.charAt(0)?.toUpperCase() || null">
+                    <span *ngIf="customAuth.currentUser">{{ customAuth.currentUser.username.charAt(0).toUpperCase() }}</span>
+                    <span *ngIf="!customAuth.currentUser">👤</span>
+                  </div>
                 </div>
               </ng-container>
 
-            </div>
-          </div>
-
-          <!-- Practice Reinforcement Block (after conversation, before typing) -->
-          <div class="am-practice-block"
-               *ngIf="aiMessages.length > 0 && !isLoadingAI && !streamingText">
-            <div class="am-practice-block-left">
-              <span class="am-practice-block-icon">🧪</span>
-              <div>
-                <div class="am-practice-block-title">Test Your Understanding</div>
-                <div class="am-practice-block-sub">Ask the mentor to quiz you on <strong>{{ currentTopicName }}</strong></div>
-              </div>
-            </div>
-            <button class="am-practice-block-btn"
-                    (click)="sendFollowUpQuestion('Give me a short practice question about ' + currentTopicName + ' — a coding challenge or concept quiz — then explain the answer step by step')">
-              Start Quiz →
-            </button>
+                </div><!-- end am-message -->
+              </ng-container><!-- end inner ngFor -->
+            </ng-container><!-- end group ngFor -->
           </div>
 
           <!-- Typing indicator -->
           <div class="am-typing-row" *ngIf="isLoadingAI && !streamingText">
-            <div class="am-msg-avatar">🤖</div>
+            <div class="am-msg-avatar am-msg-avatar-ai">
+              <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="17" height="17" aria-hidden="true">
+                <path d="M7 4.5L3.5 10L7 15.5" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M13 4.5L16.5 10L13 15.5" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M11.5 4L8.5 16" stroke="#a5f3fc" stroke-width="1.7" stroke-linecap="round"/>
+              </svg>
+            </div>
             <div class="am-typing-card">
               <div class="am-typing-dots">
                 <span></span><span></span><span></span>
               </div>
-              <span class="am-typing-label">AI Mentor is typing…</span>
+              <span class="am-typing-label">Thinking…</span>
             </div>
           </div>
 
           <!-- Streaming Response -->
           <div class="am-message am-message-ai am-message-streaming" *ngIf="streamingText">
             <div class="am-msg-row">
-              <div class="am-msg-avatar">🤖</div>
+              <div class="am-msg-avatar am-msg-avatar-ai">
+                <svg viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" width="17" height="17" aria-hidden="true">
+                  <path d="M7 4.5L3.5 10L7 15.5" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M13 4.5L16.5 10L13 15.5" stroke="white" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path d="M11.5 4L8.5 16" stroke="#a5f3fc" stroke-width="1.7" stroke-linecap="round"/>
+                </svg>
+              </div>
               <div class="am-msg-col">
-                <div class="am-msg-label">
-                  AI Mentor
-                  <span class="am-streaming-badge">
-                    <span class="am-streaming-dot"></span> Live
-                  </span>
-                </div>
                 <div class="am-msg-card am-msg-card-streaming">
                   <div class="am-msg-text md-content" [innerHTML]="streamingText | markdown" appTryNow></div>
                   <span class="am-cursor"></span>
@@ -656,24 +700,8 @@
 
       </div><!-- end am-chat-body -->
 
-      <!-- Input Bar -->
-      <div class="am-input-bar">
-
-        <!-- Quick-ask shortcuts (shown after first reply, when idle) -->
-        <div class="am-quick-asks" *ngIf="aiMessages.length > 0 && !isLoadingAI && !streamingText">
-          <button class="am-qa-chip" (click)="sendFollowUpQuestion('Summarize ' + currentTopicName + ' in 3 clear bullet points')">
-            📋 Summarize
-          </button>
-          <button class="am-qa-chip" (click)="sendFollowUpQuestion('Give me a simple real-world analogy for ' + currentTopicName)">
-            🎭 Analogy
-          </button>
-          <button class="am-qa-chip" (click)="sendFollowUpQuestion('What are the most common interview questions about ' + currentTopicName + '?')">
-            🎯 Interview Q
-          </button>
-          <button class="am-qa-chip" (click)="sendFollowUpQuestion('What concepts should I learn after mastering ' + currentTopicName + '?')">
-            🔭 What\'s next?
-          </button>
-        </div>
+      <!-- Input Bar — visible in chat / lesson mode only -->
+      <div class="am-input-bar" *ngIf="hasActiveChat">
 
         <div class="am-input-row">
           <input class="am-input" type="text"
@@ -690,177 +718,36 @@
             </svg>
           </button>
         </div>
-        <div class="am-input-hint" *ngIf="!isLoadingAI && !streamingText">Press <kbd>Enter</kbd> to send</div>
+        <div class="am-input-footer">
+          <div class="am-input-hint" *ngIf="!isLoadingAI && !streamingText">Press <kbd>Enter</kbd> to send</div>
+          <div class="am-usage-counter" *ngIf="!hasSubscriptionAccess && !customAuth.isAdmin">
+            <span [class.am-usage-low]="remainingSearches <= 1 && remainingSearches > 0"
+                  [class.am-usage-empty]="remainingSearches <= 0">
+              ⚡ {{ remainingSearches }}/{{ FREE_SEARCH_LIMIT }} free
+            </span>
+            <button class="am-usage-upgrade" *ngIf="remainingSearches <= 1" (click)="showPaywall()">Upgrade</button>
+          </div>
+        </div>
+        <div class="am-input-disclaimer">
+          Codexa AI can make mistakes. Consider checking important information.
+        </div>
       </div>
     </main>
 
 
-    <!-- ── Col 3: Learning Tools ── -->
-    <aside class="am-tools">
-      <div class="am-tools-hd">
-        <span class="am-tools-hd-icon">🎯</span>
-        <span class="am-tools-hd-title">Learning Tools</span>
-        <span class="am-tools-hd-count" *ngIf="aiMessages.length > 0">{{ (aiMessages.length / 2 | number:'1.0-0') }} Q&amp;A</span>
-      </div>
 
-      <div class="am-tools-body">
-
-        <!-- ── AI Mentor Quick Actions ── -->
-        <div class="am-mentor-actions">
-          <div class="am-mentor-actions-hd">
-            <span class="am-mentor-actions-icon">⚡</span>
-            <span class="am-mentor-actions-title">Quick Actions</span>
-          </div>
-          <div class="am-mentor-chips">
-            <button class="am-mentor-chip"
-                    (click)="runQuickAction('breakdown')"
-                    [disabled]="isLoadingAI || !!streamingText"
-                    title="Step-by-step mental model with micro code snippets">
-              🧩 Break it down
-            </button>
-            <button class="am-mentor-chip"
-                    (click)="runQuickAction('realworld')"
-                    [disabled]="isLoadingAI || !!streamingText"
-                    title="Before/after production scenario showing why this concept matters">
-              🏗 Real-world scenario
-            </button>
-            <button class="am-mentor-chip"
-                    (click)="runQuickAction('code')"
-                    [disabled]="isLoadingAI || !!streamingText"
-                    title="Production-quality code with line-by-line walkthrough">
-              💻 Code + walkthrough
-            </button>
-            <button class="am-mentor-chip"
-                    (click)="runQuickAction('quiz')"
-                    [disabled]="isLoadingAI || !!streamingText"
-                    title="3-question quiz: concept check, code reading, application">
-              ❓ Quiz me
-            </button>
-            <button class="am-mentor-chip"
-                    (click)="runQuickAction('mistakes')"
-                    [disabled]="isLoadingAI || !!streamingText"
-                    title="4 real production mistake patterns with broken vs fixed code">
-              ❌ What trips devs up
-            </button>
-            <button class="am-mentor-chip"
-                    (click)="runQuickAction('interview')"
-                    [disabled]="isLoadingAI || !!streamingText"
-                    title="3 interview Q&As with model answers + what interviewers test">
-              🎯 Ace the interview
-            </button>
-          </div>
-        </div>
-
-        <!-- Lesson Load Button (if no lesson loaded) -->
-        <div class="am-load-lesson-card" *ngIf="!lessonView && !lessonLoading && currentTopicName">
-          <div class="am-load-lesson-icon">📖</div>
-          <div class="am-load-lesson-body">
-            <div class="am-load-lesson-title">Structured Lesson</div>
-            <p class="am-load-lesson-sub">Get an AI-generated lesson for <strong>{{ currentTopicName }}</strong></p>
-            <button class="am-load-lesson-btn" (click)="loadStructuredLesson(currentTopicName)">
-              Load Lesson →
-            </button>
-          </div>
-        </div>
-
-        <!-- Session Progress Card (shown after first AI response) -->
-        <div class="am-session-card" *ngIf="aiMessages.length > 0">
-          <div class="am-session-meta">
-            <div class="am-session-topic-icon">✨</div>
-            <div class="am-session-info">
-              <div class="am-session-topic">{{ currentTopicName }}</div>
-              <div class="am-session-depth-label">{{ aiMessages.length }} messages · Session in progress</div>
-            </div>
-          </div>
-          <div class="am-session-bar-wrap">
-            <div class="am-session-bar-fill"
-                 [style.width]="(aiMessages.length > 12 ? 100 : aiMessages.length * 8) + '%'"></div>
-          </div>
-          <div class="am-session-bar-labels">
-            <span>Intro</span>
-            <span>Exploring</span>
-            <span>Deep dive</span>
-          </div>
-        </div>
-
-        <!-- Follow-up Questions (appears after first AI response) -->
-      <div class="am-tool-card am-tool-card-followups" *ngIf="followUpQuestions.length > 0">
-        <div class="am-tool-card-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-          Follow-up Questions
-        </div>
-        <div class="am-followup-list">
-          <button class="am-followup-pill"
-                  *ngFor="let q of followUpQuestions.slice(0, 5)"
-                  (click)="sendFollowUpQuestion(q)"
-                  [disabled]="isLoadingAI || !!streamingText">
-            {{ q }}
-          </button>
-        </div>
-      </div>
-
-      <!-- AI Capabilities (before first response) -->
-      <div class="am-tool-card am-tool-card-features" *ngIf="followUpQuestions.length === 0">
-        <div class="am-tool-card-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-          What I Can Teach
-        </div>
-        <ul class="am-feature-list">
-          <li><span class="am-feat-check">✓</span> Step-by-step explanation</li>
-          <li><span class="am-feat-check">✓</span> Real code examples</li>
-          <li><span class="am-feat-check">✓</span> Common mistakes &amp; fixes</li>
-          <li><span class="am-feat-check">✓</span> Interview tips &amp; Q&amp;A</li>
-          <li><span class="am-feat-check">✓</span> Practice challenges</li>
-          <li><span class="am-feat-check">✓</span> Save to your notes</li>
-        </ul>
-      </div>
-
-      <!-- Related Concepts -->
-      <div class="am-tool-card am-tool-card-related">
-        <div class="am-tool-card-title">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-          Related Concepts
-        </div>
-        <div class="am-related-list">
-          <button class="am-related-item"
-                  *ngFor="let c of popularConcepts.slice(0, 5)"
-                  [class.am-related-item-active]="c.name === currentTopicName"
-                  (click)="searchQuery = c.name; onSearchEnter()">
-            <span class="am-related-icon">{{ c.icon }}</span>
-            <div class="am-related-info">
-              <div class="am-related-name">{{ c.name }}</div>
-              <div class="am-related-desc">{{ c.desc }}</div>
-            </div>
-            <svg class="am-related-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
-          </button>
-        </div>
-      </div>
-
-      <!-- Quick Action: Interview Tips -->
-      <div class="am-tool-card am-tool-cta-card" *ngIf="!isLoadingAI && !streamingText">
-        <div class="am-tool-cta-emoji">🎯</div>
-        <div class="am-tool-cta-title">Interview Tips</div>
-        <p class="am-tool-cta-sub">Get top interview Q&amp;A about <strong>{{ currentTopicName }}</strong></p>
-        <button class="am-tool-cta-btn"
-                (click)="sendFollowUpQuestion('Give me the top 3 interview questions and model answers about ' + currentTopicName)">
-          Ask Interview Tips
-        </button>
-      </div>
-
-      <!-- Quick Action: Practice Challenge -->
-      <div class="am-tool-card am-tool-practice-card" *ngIf="!isLoadingAI && !streamingText">
-        <div class="am-tool-cta-emoji">🧪</div>
-        <div class="am-tool-cta-title">Practice Challenge</div>
-        <p class="am-tool-cta-sub">Test your understanding with a coding exercise</p>
-        <button class="am-tool-practice-btn"
-                (click)="sendFollowUpQuestion('Give me a practical coding exercise to practice ' + currentTopicName + ', then explain the solution step-by-step')">
-          Get Challenge
-        </button>
-      </div>
-      </div><!-- end am-tools-body -->
-    </aside>
 
   </div><!-- end am-shell -->
+
+  <!-- ── Save-to-Notes slide-in drawer ── -->
+  <app-save-notes-modal
+    [isVisible]="showNotesDrawer"
+    [topic]="drawerTopic"
+    [content]="drawerContent"
+    contextType="AI_MENTOR"
+    (saved)="onDrawerSaved()"
+    (closed)="onDrawerClosed()">
+  </app-save-notes-modal>
 
   <!-- ══ AI Playground (bottom, full-width) — only for code-capable topics ══ -->
   <div class="am-playground-wrap" *ngIf="showModal && topicHasPlayground">
@@ -936,5 +823,32 @@
 
   <!-- ── Copyright footer: visible only on the landing view, hidden in the AI Mentor workspace ── -->
   <app-footer *ngIf="!showModal"></app-footer>
+
+  <!-- ══ PAYWALL MODAL ══ -->
+  <div class="am-paywall-overlay" *ngIf="showPaywallModal" (click)="closePaywall()" role="dialog" aria-modal="true">
+    <div class="am-paywall-modal" (click)="$event.stopPropagation()">
+      <button class="am-paywall-x" (click)="closePaywall()" aria-label="Close">✕</button>
+
+      <div class="am-paywall-icon">🔓</div>
+      <h2 class="am-paywall-title">You've used your free searches</h2>
+      <p class="am-paywall-desc">
+        You've used your {{ FREE_SEARCH_LIMIT }} free AI searches.
+        Upgrade to continue learning with unlimited access.
+      </p>
+
+      <div class="am-paywall-features">
+        <div class="am-paywall-feature">✅ Unlimited AI explanations &amp; follow-ups</div>
+        <div class="am-paywall-feature">✅ Save notes &amp; view full history</div>
+        <div class="am-paywall-feature">✅ Visual animated diagrams</div>
+        <div class="am-paywall-feature">✅ Interview prep &amp; quiz mode</div>
+        <div class="am-paywall-feature">✅ Priority response speed</div>
+      </div>
+
+      <button class="am-paywall-cta" routerLink="/subscription">
+        ⚡ Upgrade Now &mdash; &#8377;199/month
+      </button>
+      <button class="am-paywall-later" (click)="closePaywall()">Maybe later</button>
+    </div>
+  </div>
 
 </div><!-- end ai-learning-home -->

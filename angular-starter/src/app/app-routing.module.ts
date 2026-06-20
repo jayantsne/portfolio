@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { InterviewQuestionsComponent } from './interview-questions/interview-questions.component';
 import { AuthGuard } from './shared/auth.guard';
 import { HomeComponent } from './home/home.component';
+import { ChatHomeComponent } from './chat-home/chat-home.component';
 import { QuestionsListComponent } from './ai-qa/questions-list/questions-list.component';
 import { LearnQuestComponent } from './learn-quest/learn-quest.component';
 import { DsaGameComponent } from './dsa-game/dsa-game.component';
@@ -22,62 +23,99 @@ import { SubscribeComponent }    from './subscribe/subscribe.component';
 import { SubscriptionGuard }     from './shared/subscription.guard';
 import { CodePlaygroundComponent } from './code-playground/code-playground.component';
 import { QuizComponent }          from './quiz/quiz.component';
+import { SemanticKernelLearnComponent } from './semantic-kernel/semantic-kernel.component';
+import { RevisionDashboardComponent } from './revision/revision-dashboard.component';
+import { RevisionSessionComponent }  from './revision/revision-session.component';
+import { ShareTargetComponent }       from './share-target/share-target.component';
+import { AccountComponent }           from './account/account.component';
+import { LayoutComponent }            from './layout/layout.component';
+import { VisualLearnComponent }       from './visual-learn/visual-learn.component';
+import { AuthCallbackComponent }      from './auth-callback/auth-callback.component';
 
 
 const routes: Routes = [
-  // ── Test / debug ────────────────────────────────────────────────
+
+  // ── Standalone routes (NO layout shell) ────────────────────────
+  // These run without the sidebar/navbar — used for test/debug pages
   { path: 'test', component: TestPageComponent },
+  { path: 'share', component: ShareTargetComponent },
+  { path: 'auth/google/callback', component: AuthCallbackComponent },
 
-  // ── Home ─────────────────────────────────────────────────────────
-  { path: '',    component: HomeComponent },
-  { path: 'home', component: HomeComponent },
+  /**
+   * ── App Shell layout routes ─────────────────────────────────────
+   *
+   * All routes below are CHILDREN of LayoutComponent.
+   * LayoutComponent renders:
+   *   .layout (flex-row)
+   *     app-sidebar  (child #1, fixed width)
+   *     .right       (child #2, take remaining width)
+   *       app-navbar ← scoped to .right width, NOT full-viewport
+   *       .content
+   *         <router-outlet> ← child route renders here
+   *
+   * Adding a route here automatically gives it the full
+   * ChatGPT-style sidebar + navbar layout.
+   */
+  {
+    path: '',
+    component: LayoutComponent,
+    children: [
 
-  // ── /learn/* aliases → existing flat routes ──────────────────────
-  { path: 'ai-learn',          redirectTo: 'home',         pathMatch: 'full' },
-  { path: 'ai-learn/questions', redirectTo: 'questions',   pathMatch: 'full' },
-  { path: 'learn',              redirectTo: 'home',         pathMatch: 'full' },
-  { path: 'learn/ai-tutor',    redirectTo: 'home',         pathMatch: 'full' },
-  { path: 'learn/roadmap',     redirectTo: 'roadmap',      pathMatch: 'full' },
-  { path: 'learn/notes',       redirectTo: 'notes',        pathMatch: 'full' },
+      // ── Redirects / aliases ──────────────────────────────────────
+      { path: 'ai-learn',           redirectTo: '',          pathMatch: 'full' },
+      { path: 'ai-learn/questions', redirectTo: 'questions', pathMatch: 'full' },
+      { path: 'learn',              redirectTo: '',          pathMatch: 'full' },
+      { path: 'learn/ai-tutor',     redirectTo: '',          pathMatch: 'full' },
+      { path: 'learn/roadmap',      redirectTo: 'roadmap',   pathMatch: 'full' },
+      { path: 'learn/notes',        redirectTo: 'notes',     pathMatch: 'full' },
+      { path: 'practice',               redirectTo: 'interview-prep', pathMatch: 'full' },
+      { path: 'practice/interview-prep', redirectTo: 'interview-prep', pathMatch: 'full' },
+      { path: 'practice/interview-qa',   redirectTo: 'questions',      pathMatch: 'full' },
+      { path: 'practice/azure-ai102',    redirectTo: 'azure-ai-102',   pathMatch: 'full' },
+      { path: 'home', redirectTo: '', pathMatch: 'full' },
 
-  // ── /practice/* aliases → existing flat routes ──────────────────
-  { path: 'practice',                  redirectTo: 'interview-prep', pathMatch: 'full' },
-  { path: 'practice/interview-prep',   redirectTo: 'interview-prep', pathMatch: 'full' },
-  { path: 'practice/interview-qa',     redirectTo: 'questions',      pathMatch: 'full' },
-  { path: 'practice/azure-ai102',      redirectTo: 'azure-ai-102',   pathMatch: 'full' },
+      // ── Home / AI Chat ───────────────────────────────────────────
+      { path: '',        redirectTo: 'explore', pathMatch: 'full' },
+      { path: 'explore', component: HomeComponent     },
 
-  // ── Learn content (requires subscription) ────────────────────────
-  { path: 'notes',        component: NotesComponent,         canActivate: [LoginGuard, SubscriptionGuard] },
-  { path: 'learn-quest',  component: LearnQuestComponent,    canActivate: [SubscriptionGuard] },
-  { path: 'dsa-game',     component: DsaGameComponent,       canActivate: [SubscriptionGuard] },
-  { path: 'memory-game',  component: MemoryGameComponent,    canActivate: [SubscriptionGuard] },
-  { path: 'azure-ai-102', component: AzureAiLearnComponent,  canActivate: [SubscriptionGuard] },
-  { path: 'roadmap',      component: RoadmapComponent,       canActivate: [LoginGuard, SubscriptionGuard] },
-  { path: 'quiz/module/:moduleId', component: QuizComponent, canActivate: [LoginGuard, SubscriptionGuard] },
-  { path: 'playground',   component: CodePlaygroundComponent, canActivate: [SubscriptionGuard] },
+      // ── Learn content (requires subscription) ───────────────────
+      { path: 'notes',        component: NotesComponent,           canActivate: [LoginGuard, SubscriptionGuard] },
+      { path: 'revision',     component: RevisionDashboardComponent, canActivate: [LoginGuard, SubscriptionGuard] },
+      { path: 'revision/session/:noteId', component: RevisionSessionComponent, canActivate: [LoginGuard, SubscriptionGuard] },
+      { path: 'learn-quest',  component: LearnQuestComponent,      canActivate: [SubscriptionGuard] },
+      { path: 'dsa-game',     component: DsaGameComponent,         canActivate: [SubscriptionGuard] },
+      { path: 'memory-game',  component: MemoryGameComponent,      canActivate: [SubscriptionGuard] },
+      { path: 'azure-ai-102', component: AzureAiLearnComponent,    canActivate: [SubscriptionGuard] },
+      { path: 'roadmap',      component: RoadmapComponent,         canActivate: [LoginGuard, SubscriptionGuard] },
+      { path: 'quiz/module/:moduleId', component: QuizComponent,   canActivate: [LoginGuard, SubscriptionGuard] },
+      { path: 'playground',   component: CodePlaygroundComponent,  canActivate: [SubscriptionGuard] },
+      { path: 'code-playground', component: CodePlaygroundComponent, canActivate: [SubscriptionGuard] },
+      { path: 'learn/semantic-kernel', component: SemanticKernelLearnComponent, canActivate: [LoginGuard, SubscriptionGuard] },
 
-  // ── Practice (public) ──────────────────────────────────────────────
-  { path: 'interview-prep', component: InterviewPrepComponent },
+      // ── Visual Learning Mode ──────────────────────────────────────
+      { path: 'visual-learn', component: VisualLearnComponent },
 
-  // ── Practice Q&A (requires subscription) ────────────────────────────
-  { path: 'questions',      component: QuestionsListComponent,  canActivate: [SubscriptionGuard] },
+      // ── Practice ─────────────────────────────────────────────────
+      { path: 'interview-prep', component: InterviewPrepComponent },
+      { path: 'questions',      component: QuestionsListComponent, canActivate: [SubscriptionGuard] },
 
-  // ── Subscription / payment ───────────────────────────────────────
-  { path: 'subscribe', component: SubscribeComponent },
+      // ── Account / subscription ───────────────────────────────────
+      { path: 'subscribe', component: SubscribeComponent },
+      { path: 'account',   component: AccountComponent   },
 
-  // ── Admin routes (requires admin role via AuthGuard) ─────────────
-  { path: 'admin',           redirectTo: 'admin/users',           pathMatch: 'full' },
-  { path: 'admin/users',     component: AdminUsersComponent,      canActivate: [AuthGuard] },
-  { path: 'admin/questions', component: InterviewQuestionsComponent, canActivate: [AuthGuard] },
+      // ── Admin routes ─────────────────────────────────────────────
+      { path: 'admin',           redirectTo: 'admin/users', pathMatch: 'full' },
+      { path: 'admin/users',     component: AdminUsersComponent,       canActivate: [AuthGuard] },
+      { path: 'admin/questions', component: InterviewQuestionsComponent, canActivate: [AuthGuard] },
+      { path: 'admin-login',     component: AdminLoginComponent },
+      { path: 'admin-dashboard', component: AdminDashboardComponent },
+      { path: 'admin-deploy',    component: DeploymentComponent },
+      { path: 'admin-analytics', component: AnalyticsDashboardComponent },
 
-  // ── Standalone admin tools (JWT-guarded at backend level) ────────
-  { path: 'admin-login',     component: AdminLoginComponent },
-  { path: 'admin-dashboard', component: AdminDashboardComponent },
-  { path: 'admin-deploy',    component: DeploymentComponent },
-  { path: 'admin-analytics', component: AnalyticsDashboardComponent },
-
-  // ── Fallback — unknown paths go to home (no blank page on refresh)
-  { path: '**', redirectTo: '', pathMatch: 'full' },
+      // Fallback inside shell
+      { path: '**', redirectTo: '', pathMatch: 'full' },
+    ],
+  },
 ];
 
 @NgModule({

@@ -1,0 +1,132 @@
+<div class="sn-root" *ngIf="note">
+
+  <!-- ─── Title + Summary ──────────────────────────────────────────────── -->
+  <header class="sn-header">
+    <h1 class="sn-title">{{ note.title }}</h1>
+    <p  class="sn-summary">{{ note.summary }}</p>
+  </header>
+
+  <!-- ─── Sections (accordion) ────────────────────────────────────────── -->
+  <section class="sn-sections" *ngIf="note.sections?.length">
+    <h2 class="sn-block-title">
+      <span class="sn-icon">📖</span> Concepts
+    </h2>
+
+    <div class="sn-section-card"
+         *ngFor="let s of note.sections; let i = index"
+         [class.sn-section-card--open]="isSectionOpen(i)">
+
+      <!-- Heading row (click to expand/collapse) -->
+      <button class="sn-section-heading" (click)="toggleSection(i)">
+        <span class="sn-section-num">{{ i + 1 }}</span>
+        <span class="sn-section-title-text">{{ s.heading }}</span>
+        <span class="sn-chevron" [class.sn-chevron--open]="isSectionOpen(i)">›</span>
+      </button>
+
+      <!-- Collapsible body -->
+      <div class="sn-section-body" *ngIf="isSectionOpen(i)">
+        <p class="sn-section-content">{{ s.content }}</p>
+
+        <ul class="sn-bullets" *ngIf="s.bullets?.length">
+          <li *ngFor="let b of s.bullets">{{ b }}</li>
+        </ul>
+
+        <div class="sn-example" *ngIf="s.example">
+          <span class="sn-example-label">Example</span>
+          <pre class="sn-example-code"><code>{{ s.example }}</code></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Steps Stepper ────────────────────────────────────────────────── -->
+  <section class="sn-steps-block" *ngIf="steps.length">
+    <h2 class="sn-block-title">
+      <span class="sn-icon">🚶</span> Step-by-Step
+      <span class="sn-step-counter">{{ revealedUntil + 1 }} / {{ steps.length }}</span>
+    </h2>
+
+    <!-- Progress bar -->
+    <div class="sn-progress-track">
+      <div class="sn-progress-fill" [style.width.%]="stepProgress"></div>
+    </div>
+
+    <!-- Step cards -->
+    <div class="sn-steps-list">
+      <div class="sn-step-card"
+           *ngFor="let step of steps; let i = index"
+           [class.sn-step-card--active]="isStepActive(i)"
+           [class.sn-step-card--done]="!isStepActive(i) && isStepVisible(i)"
+           [class.sn-step-card--hidden]="!isStepVisible(i)">
+        <span class="sn-step-dot">{{ i + 1 }}</span>
+        <p class="sn-step-text">{{ step }}</p>
+      </div>
+    </div>
+
+    <!-- Stepper controls -->
+    <div class="sn-step-controls" *ngIf="!allRevealed">
+      <button class="sn-btn sn-btn--ghost"
+              [disabled]="currentStep === 0"
+              (click)="prevStep()">← Prev</button>
+      <button class="sn-btn sn-btn--primary"
+              [disabled]="currentStep === steps.length - 1"
+              (click)="nextStep()">Next Step →</button>
+      <button class="sn-btn sn-btn--accent" (click)="revealAll()">Show All</button>
+    </div>
+    <div class="sn-step-controls" *ngIf="allRevealed">
+      <span class="sn-all-done">✅ All steps revealed</span>
+      <button class="sn-btn sn-btn--ghost" (click)="resetSteps()">↺ Reset</button>
+    </div>
+  </section>
+
+  <!-- ─── Visual Block ──────────────────────────────────────────────────── -->
+  <section class="sn-visual-block" *ngIf="visual?.data?.length">
+    <h2 class="sn-block-title">
+      <span class="sn-icon">🗺️</span>
+      <ng-container [ngSwitch]="visual!.type">
+        <ng-container *ngSwitchCase="'flow'">Flow Diagram</ng-container>
+        <ng-container *ngSwitchCase="'comparison'">Comparison</ng-container>
+        <ng-container *ngSwitchDefault>Diagram</ng-container>
+      </ng-container>
+    </h2>
+
+    <!-- Flow: A → B → C → ... -->
+    <div class="sn-flow" *ngIf="visual!.type === 'flow'">
+      <ng-container *ngFor="let node of visual!.data; let last = last">
+        <div class="sn-flow-node">{{ node }}</div>
+        <div class="sn-flow-arrow" *ngIf="!last">→</div>
+      </ng-container>
+    </div>
+
+    <!-- Comparison table -->
+    <div class="sn-comparison" *ngIf="visual!.type === 'comparison' && comparisonRows.length">
+      <table class="sn-table">
+        <thead>
+          <tr>
+            <th *ngFor="let h of comparisonHeaders">{{ h }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of comparisonBodyRows">
+            <td *ngFor="let cell of row">{{ cell }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Diagram (monospace text) -->
+    <div class="sn-diagram" *ngIf="visual!.type === 'diagram'">
+      <pre class="sn-diagram-pre"><ng-container *ngFor="let line of visual!.data">{{ line }}
+</ng-container></pre>
+    </div>
+  </section>
+
+</div>
+
+<!-- Loading skeleton (displayed by the host until note is set) -->
+<div class="sn-skeleton" *ngIf="!note">
+  <div class="sn-skeleton-bar sn-skeleton-bar--title"></div>
+  <div class="sn-skeleton-bar sn-skeleton-bar--subtitle"></div>
+  <div class="sn-skeleton-bar sn-skeleton-bar--body"></div>
+  <div class="sn-skeleton-bar sn-skeleton-bar--body"></div>
+</div>

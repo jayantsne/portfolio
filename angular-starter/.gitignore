@@ -34,6 +34,10 @@ speed-measure-plugin*.json
 .history/*
 
 # misc
+.env
+.env.*
+!.env.example
+/src/environments/firebase.generated.ts
 /.angular/cache
 /.sass-cache
 /connect.lock

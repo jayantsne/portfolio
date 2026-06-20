@@ -1,7 +1,0 @@
-{
-  "YourApi.Api, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\YourApi.Api",
-  "YourApi.Application, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\YourApi.Application",
-  "YourApi.Domain, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\YourApi.Domain",
-  "YourApi.Infrastructure, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\YourApi.Infrastructure",
-  "YourApi.Shared, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null": "D:\\folio\\jayant-angular-ui\\enterprise-dotnet-api\\src\\YourApi.Shared"
-}

@@ -1,0 +1,144 @@
+<!-- ══════════════════════════════════════════════════════════════
+     SEMANTIC KERNEL LEARNING MODULE
+     Uses the LearningWorkspace 3-column shell:
+       Col 1 (Sidebar)  — topic list with module grouping
+       Col 2 (Lesson)   — AI-generated lesson content + playground
+       Col 3 (Mentor)   — AI mentor Q&A + notes
+══════════════════════════════════════════════════════════════ -->
+
+<div class="sk-page">
+
+  <!-- ── Top progress bar ─────────────────────────────────────────────── -->
+  <div class="sk-header">
+    <div class="sk-header-left">
+      <button class="sk-panel-toggle" (click)="toggleLeftPanel()"
+              [title]="leftPanelCollapsed ? 'Show Topics' : 'Hide Topics'">
+        {{ leftPanelCollapsed ? '▶' : '◀' }}
+      </button>
+      <span class="sk-badge sk-badge--purple">🔮 Semantic Kernel</span>
+      <span class="sk-badge">C# / .NET</span>
+      <span class="sk-badge">{{ allTopics.length }} topics</span>
+      <span *ngIf="activeModeLabel" class="sk-badge sk-mode-badge">✨ {{ activeModeLabel }}</span>
+    </div>
+    <div class="sk-header-center">
+      <div class="sk-progress-wrap">
+        <div class="sk-progress-bar">
+          <div class="sk-progress-fill" [style.width.%]="overallProgress"></div>
+        </div>
+        <span class="sk-progress-pct">{{ overallProgress }}%</span>
+      </div>
+    </div>
+    <div class="sk-header-right">
+      <span class="sk-topics-done">{{ completedTopics.size }}/{{ allTopics.length }} done</span>
+      <button class="sk-panel-toggle" (click)="toggleRightPanel()"
+              [title]="rightPanelCollapsed ? 'Show Mentor' : 'Hide Mentor'">
+        {{ rightPanelCollapsed ? '◀' : '▶' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- ── 3-column Learning Workspace ──────────────────────────────────── -->
+  <app-lw-workspace [heightFill]="true"
+                    [leftCollapsed]="leftPanelCollapsed"
+                    [rightCollapsed]="rightPanelCollapsed">
+
+    <!-- ── Col 1: Topic sidebar ─────────────────────────────────────── -->
+    <app-lw-sidebar lwSidebar
+      roadmapTitle="Semantic Kernel"
+      roadmapIcon="🔮"
+      [topics]="lwTopics"
+      [modules]="skModules"
+      [activeTopicId]="activeTopicId"
+      (topicSelect)="onLwTopicSelect($event)">
+    </app-lw-sidebar>
+
+    <!-- ── Col 2: Lesson content ─────────────────────────────────────── -->
+    <app-lw-lesson-content lwLesson
+      *ngIf="activeMode !== 'structured'"
+      [topic]="activeTopic"
+      [sections]="lwSections"
+      [loading]="lessonLoading"
+      [error]="lessonError"
+      [hasPlayground]="true"
+      [streamingText]="lessonStreamingText"
+      [isStreaming]="lessonIsStreaming"
+      [followUpMessages]="lwFollowUpMessages"
+      [followUpLoading]="lessonFollowUpLoading"
+      [hasPrev]="lwHasPrev"
+      [hasNext]="lwHasNext"
+      [mentorChips]="mentorChips"
+      (markComplete)="markComplete()"
+      (prevTopic)="prevTopic()"
+      (nextTopic)="nextTopic()"
+      (retry)="retryLesson()"
+      (mentorChip)="onMentorSend($event)"
+      (sendToPlayground)="onRunInPlayground($event)">
+    </app-lw-lesson-content>
+
+    <!-- ── Col 2: Structured Notes mode ─────────────────────────────── -->
+    <div lwLesson class="sk-structured-host" *ngIf="activeMode === 'structured'">
+      <div class="sk-structured-loading" *ngIf="structuredLoading">
+        <div class="sk-spinner"></div>
+        <p>Building structured lesson&hellip;</p>
+      </div>
+      <div class="sk-structured-error" *ngIf="structuredError && !structuredLoading">
+        <p>Could not generate structured lesson.
+          <button class="sk-retry-btn" (click)="retryLesson()">Retry</button>
+        </p>
+      </div>
+      <app-structured-note
+        *ngIf="structuredNote && !structuredLoading"
+        [note]="structuredNote">
+      </app-structured-note>
+    </div>
+
+    <!-- ── Col 2 bottom: Code Playground ────────────────────────────── -->
+    <app-lw-playground lwPlayground
+      [initiallyOpen]="true"
+      [code]="pgCode"
+      [loadToken]="pgLoadToken"
+      [output]="pgOutputSafe"
+      [loading]="pgLoading"
+      [error]="pgError"
+      [ms]="pgMs"
+      [language]="pgLanguage"
+      [topicTitle]="activeTopic?.title || 'Semantic Kernel'"
+      [lessonCodeBlocks]="pgLessonCodeBlocks"
+      (codeChange)="pgCode = $event"
+      (run)="onPgRun($event)"
+      (reset)="resetPg()"
+      (saveNote)="onPgSaveNote($event)">
+    </app-lw-playground>
+
+    <!-- ── Col 3: AI Mentor panel ────────────────────────────────────── -->
+    <app-lw-mentor-panel lwMentor
+      [topicTitle]="activeTopic?.title || 'Semantic Kernel'"
+      [lessonId]="activeTopicId"
+      [messages]="lwMentorMessages"
+      [loading]="lessonFollowUpLoading"
+      [notes]="lwNotes"
+      [activeTab]="mentorPanelTab"
+      (activeTabChange)="mentorPanelTab = $event"
+      (sendMessage)="onMentorSend($event)"
+      (addNote)="onMentorAddNote($event)"
+      (deleteNote)="deleteInlineNote($event)">
+    </app-lw-mentor-panel>
+
+  </app-lw-workspace>
+
+  <!-- ── Toast notification ────────────────────────────────────────────── -->
+  <div class="sk-toast"
+       *ngIf="toast"
+       [class.sk-toast--success]="toast.type === 'success'"
+       [class.sk-toast--error]="toast.type === 'error'">
+    {{ toast.msg }}
+  </div>
+
+  <!-- ── Completion banner ─────────────────────────────────────────────── -->
+  <div *ngIf="overallProgress === 100" class="sk-completion-banner">
+    <div class="sk-completion-icon">🏆</div>
+    <h3>Semantic Kernel Mastered!</h3>
+    <p>You've completed all {{ allTopics.length }} topics. Time to build something great!</p>
+  </div>
+
+</div>

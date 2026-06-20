@@ -1,0 +1,107 @@
+<div class="acct-page">
+
+  <!-- Loading -->
+  <div class="acct-loading" *ngIf="loading">
+    <div class="acct-spinner"></div>
+    <p>Loading your account…</p>
+  </div>
+
+  <!-- Not logged in -->
+  <div class="acct-guest" *ngIf="!loading && !auth.isLoggedIn">
+    <div class="acct-icon">🔐</div>
+    <h2>Sign in to view your account</h2>
+    <p>Track your usage, manage your subscription, and unlock AI Learn Pro.</p>
+    <a class="acct-btn acct-btn--primary" routerLink="/">← Back to Home</a>
+  </div>
+
+  <!-- Main content -->
+  <div class="acct-content" *ngIf="!loading && auth.isLoggedIn">
+
+    <!-- Profile header -->
+    <div class="acct-header">
+      <div class="acct-avatar">{{ auth.currentUser?.username?.[0]?.toUpperCase() || '?' }}</div>
+      <div class="acct-user-info">
+        <h1 class="acct-username">{{ auth.currentUser?.username }}</h1>
+        <p class="acct-email">{{ auth.currentUser?.email }}</p>
+        <span class="acct-plan-badge" [ngClass]="planClass">{{ planLabel }}</span>
+      </div>
+    </div>
+
+    <div class="acct-grid">
+
+      <!-- AI Usage card (hidden for admins who have unlimited) -->
+      <div class="acct-card" *ngIf="!auth.isAdmin">
+        <div class="acct-card-title">⚡ AI Searches</div>
+        <div *ngIf="usageLoading" class="acct-mini-loader"></div>
+        <ng-container *ngIf="!usageLoading">
+          <ng-container *ngIf="!subSvc.hasAccess">
+            <div class="acct-usage-track">
+              <div class="acct-usage-fill"
+                   [style.width.%]="usagePercent"
+                   [class.acct-usage-full]="usagePercent >= 100"></div>
+            </div>
+            <p class="acct-usage-label">
+              <strong>{{ usage?.totalUsed ?? 0 }}</strong> / {{ usage?.freeLimit ?? 2 }} free searches used
+            </p>
+            <p class="acct-hint" *ngIf="(usage?.remainingSearches ?? 2) <= 0">
+              You've used all free searches.
+              <a routerLink="/subscribe" class="acct-link">Upgrade to continue →</a>
+            </p>
+            <p class="acct-hint" *ngIf="(usage?.remainingSearches ?? 2) > 0">
+              {{ usage?.remainingSearches ?? 2 }} search{{ (usage?.remainingSearches ?? 2) !== 1 ? 'es' : '' }} remaining.
+            </p>
+          </ng-container>
+          <p class="acct-unlimited" *ngIf="subSvc.hasAccess">✅ Unlimited searches</p>
+        </ng-container>
+      </div>
+
+      <!-- Subscription card -->
+      <div class="acct-card">
+        <div class="acct-card-title">💳 Subscription</div>
+        <ng-container *ngIf="auth.isAdmin">
+          <p class="acct-sub-detail acct-sub-ok">Admin — unrestricted access.</p>
+        </ng-container>
+        <ng-container *ngIf="!auth.isAdmin">
+          <p class="acct-sub-detail acct-sub-ok" *ngIf="status?.isSubscriptionActive">
+            Active until <strong>{{ status?.subscriptionExpiry | date:'dd MMM yyyy' }}</strong>
+          </p>
+          <p class="acct-sub-detail acct-sub-trial" *ngIf="status?.isTrialActive">
+            Free trial — <strong>{{ status?.trialDaysRemaining }} day(s) remaining</strong>
+          </p>
+          <p class="acct-sub-detail acct-sub-warn"
+             *ngIf="status?.subscriptionStatus === 'expired' || (!status?.isTrialActive && !status?.isSubscriptionActive)">
+            No active subscription.
+          </p>
+          <a class="acct-btn acct-btn--upgrade" routerLink="/subscribe"
+             *ngIf="!status?.isSubscriptionActive">
+            ⚡ Upgrade to Pro — ₹199/month
+          </a>
+        </ng-container>
+      </div>
+
+      <!-- What's included card (shown to non-pro users) -->
+      <div class="acct-card acct-card--wide" *ngIf="!auth.isAdmin && !status?.isSubscriptionActive">
+        <div class="acct-card-title">🔓 Unlock with Pro</div>
+        <ul class="acct-perks">
+          <li>⚡ Unlimited AI Mentor searches</li>
+          <li>🎯 Interview Prep sessions</li>
+          <li>🗺️ Personalized Learning Roadmaps</li>
+          <li>📝 Smart Notes with AI summaries</li>
+          <li>💡 500+ Practice Questions</li>
+          <li>☁️ Azure AI-102 Full Course</li>
+        </ul>
+        <a class="acct-btn acct-btn--upgrade acct-btn--wide" routerLink="/subscribe">
+          🚀 Get Pro — ₹199/month
+        </a>
+      </div>
+
+    </div><!-- /acct-grid -->
+
+    <!-- Back link -->
+    <div class="acct-footer">
+      <a routerLink="/" class="acct-back-link">← Back to AI Learn</a>
+    </div>
+
+  </div><!-- /acct-content -->
+
+</div>

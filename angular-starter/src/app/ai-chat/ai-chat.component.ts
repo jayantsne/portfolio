@@ -31,6 +31,7 @@ export class AiChatComponent
   input = '';
   typing = false;
   showSuggestions = true;
+  toneMode: 'friendly' | 'professional' = 'friendly';
 
   messages: ChatMessage[] = [];
 
@@ -56,6 +57,8 @@ export class AiChatComponent
     this.checkMobile();
     this.restoreSession();
     this.addWelcomeMessage();
+    const saved = localStorage.getItem('chatToneMode');
+    if (saved === 'professional') this.toneMode = 'professional';
   }
 
   /* ---------- AUTO SCROLL ---------- */
@@ -81,6 +84,11 @@ export class AiChatComponent
     this.isOpen = !this.isOpen;
   }
 
+  toggleToneMode(): void {
+    this.toneMode = this.toneMode === 'friendly' ? 'professional' : 'friendly';
+    localStorage.setItem('chatToneMode', this.toneMode);
+  }
+
   quickAsk(text: string): void {
     this.input = text;
     this.send();
@@ -104,7 +112,7 @@ export class AiChatComponent
     const userInput = this.input;
     this.input = '';
 
-    this.aiChat.sendMessage(userInput).subscribe({
+    this.aiChat.sendMessage(userInput, this.toneMode).subscribe({
       next: (res) => {
         this.typing = false;
         this.typeMessage(res.reply);

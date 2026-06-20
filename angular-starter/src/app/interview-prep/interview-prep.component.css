@@ -3,59 +3,47 @@
     */
 
 :host {
-  --bg:        #f7f8fc;
+  --bg:        #f9fafb;
   --surface:   #ffffff;
-  --border:    #e8ecf5;
-  --purple:    #6366f1;
-  --purple-2:  #8b5cf6;
-  --purple-dim:rgba(99,102,241,0.08);
-  --purple-mid:rgba(99,102,241,0.15);
-  --text:      #1a1d2e;
-  --muted:     #64748b;
+  --border:    #e5e7eb;
+  --purple:    #374151;
+  --purple-2:  #4b5563;
+  --purple-dim:rgba(0,0,0,0.04);
+  --purple-mid:rgba(0,0,0,0.07);
+  --text:      #111827;
+  --muted:     #6b7280;
   --easy:      #10b981;
   --medium:    #f59e0b;
   --hard:      #ef4444;
   --radius:    14px;
   --input-h:   52px;
+  --sidebar-bg: #f9fafb;
+  --content-w: 1180px;
   display: block;
   background: var(--bg);
   height: calc(100vh - var(--header-h, 64px));
   overflow: hidden;
 }
 
-/*  CSS layout tokens — matches Mentor's 3-column workspace architecture  */
+/* Chat-first 2-column layout: sidebar + content */
 .ip-shell {
-  --ip-nav-w: 240px;
-  --ip-tools-w: 244px;
+  --ip-nav-w: 316px;
   display: grid;
-  grid-template-columns: var(--ip-nav-w) 1fr var(--ip-tools-w);
+  grid-template-columns: var(--ip-nav-w) 1fr;
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 78% 4%, rgba(16,185,129,0.08), transparent 24rem),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
   position: relative;
 }
 
-/* ≤ 1200px — maintain standard widths */
 @media (max-width: 1200px) {
-  .ip-shell { 
-    --ip-nav-w: 224px;
-    --ip-tools-w: 220px;
-  }
+  .ip-shell { --ip-nav-w: 292px; }
 }
 
-/* ≤ 1000px — compress sidebar and tools panel */
 @media (max-width: 1000px) {
-  .ip-shell { 
-    --ip-nav-w: 200px;
-    --ip-tools-w: 200px;
-  }
-}
-
-/* ≤ 768px — single column, hide tools panel on mobile */
-@media (max-width: 768px) {
-  .ip-shell {
-    grid-template-columns: 1fr;
-  }
+  .ip-shell { --ip-nav-w: 260px; }
 }
 
 /*  SIDEBAR  */
@@ -64,8 +52,9 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--surface);
-  border-right: 1.5px solid var(--border);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border-right: 1px solid var(--border);
+  box-shadow: 10px 0 30px rgba(15,23,42,0.04);
 }
 
 /*  Brand header  */
@@ -73,8 +62,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 1.1rem 1.25rem 0.875rem;
-  border-bottom: 1.5px solid var(--border);
+  padding: 0.9rem 1rem 0.8rem;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 .ip-sidebar-brand {
@@ -85,16 +74,16 @@
   min-width: 0;
 }
 .ip-brand-avatar {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 12px;
-  background: linear-gradient(135deg, var(--purple), var(--purple-2));
+  background: #f3f4f6;
+  border: 1.5px solid #e5e7eb;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 1.1rem;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
 }
 .ip-brand-info {
   display: flex;
@@ -169,7 +158,7 @@
   overflow: hidden;
   transition: max-height 0.32s cubic-bezier(0.4,0,0.2,1);
   border-bottom: 0 solid var(--border);
-  background: rgba(99,102,241,0.025);
+  background: #f9fafb;
   flex-shrink: 0;
 }
 .ip-notes-drawer-open {
@@ -233,7 +222,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 10px 10px 0;
+  margin: 12px 12px 0;
   padding: 0 10px;
   background: var(--bg);
   border: 1.5px solid #d1d8ea;
@@ -241,7 +230,7 @@
   transition: border-color 0.15s;
   flex-shrink: 0;
 }
-.ip-search-box:focus-within { border-color: rgba(99,102,241,0.5); background: #fff; box-shadow: 0 0 0 3px rgba(99,102,241,0.07); }
+.ip-search-box:focus-within { border-color: #d1d5db; background: #fff; box-shadow: 0 0 0 3px rgba(0,0,0,0.05); }
 .ip-search-ico { color: var(--muted); flex-shrink: 0; }
 .ip-search-input {
   flex: 1;
@@ -270,7 +259,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 5px;
-  padding: 8px 10px 6px;
+  padding: 9px 12px 7px;
   flex-shrink: 0;
 }
 .ip-pill {
@@ -328,50 +317,34 @@
 .ip-qlist {
   list-style: none;
   margin: 0;
-  padding: 0 6px;
+  padding: 0 10px;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 6px;
 }
 .ip-qitem {
   display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 11px 10px 11px 8px;
-  border-radius: 10px;
+  align-items: stretch;
+  gap: 10px;
+  padding: 13px 12px 13px 10px;
+  border-radius: 12px;
   cursor: pointer;
-  transition: background 0.15s, box-shadow 0.15s, border-color 0.15s;
+  transition: background 0.15s, box-shadow 0.15s;
   border: 1.5px solid transparent;
-  margin-bottom: 2px;
 }
-.ip-qitem:hover { background: var(--purple-dim); box-shadow: 0 1px 4px rgba(99,102,241,0.08); }
+.ip-qitem:hover { background: var(--purple-dim); }
 .ip-qitem-active {
-  background: var(--purple-dim) !important;
+  background: #eef2ff !important;
   border-color: rgba(99,102,241,0.35) !important;
-  box-shadow: 0 2px 8px rgba(99,102,241,0.13) !important;
-  border-left-color: var(--purple) !important;
-  border-left-width: 3px !important;
-}
-.ip-qitem-left {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding-top: 2px;
-  flex-shrink: 0;
-}
-.ip-qitem-num {
-  font-size: 0.62rem;
-  font-weight: 700;
-  color: var(--muted);
-  min-width: 20px;
-  text-align: center;
+  box-shadow: 0 8px 22px rgba(99,102,241,0.12) !important;
 }
 .ip-qitem-accent {
   width: 3px;
-  height: 22px;
   border-radius: 99px;
   background: var(--border);
+  flex-shrink: 0;
+  align-self: stretch;
+  margin: 2px 0;
 }
 .ip-qitem-accent.badge-easy { background: var(--easy); }
 .ip-qitem-accent.badge-medium { background: var(--medium); }
@@ -385,8 +358,8 @@
 }
 .ip-qitem-text {
   margin: 0;
-  font-size: 0.83rem;
-  font-weight: 500;
+  font-size: 0.84rem;
+  font-weight: 650;
   color: var(--text);
   line-height: 1.45;
   display: -webkit-box;
@@ -394,7 +367,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.ip-qitem-active .ip-qitem-text { color: var(--purple); font-weight: 700; }
+.ip-qitem-active .ip-qitem-text { color: var(--text); font-weight: 700; }
 .ip-qitem-meta {
   display: flex;
   align-items: center;
@@ -472,27 +445,25 @@
   flex-direction: column;
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
+  background: transparent;
 }
 
-/*  Chat header — centered to match content width  */
+/*  Chat header — unified title + breadcrumb + actions  */
 .ip-chat-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0.8rem 2rem;
-  background: var(--surface);
-  border-bottom: 1.5px solid var(--border);
+  background: rgba(255,255,255,0.82);
+  border-bottom: 1px solid rgba(203,213,225,0.85);
+  backdrop-filter: blur(14px);
   flex-shrink: 0;
   position: relative;
   z-index: 10;
-  box-shadow: 0 1px 0 var(--border);
 }
 .ip-chat-header-inner {
   display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
+  align-items: flex-start;
+  gap: 14px;
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 1.05rem 2.25rem 1rem;
 }
 .ip-back-btn {
   width: 34px;
@@ -507,14 +478,40 @@
   cursor: pointer;
   transition: all 0.15s;
   flex-shrink: 0;
+  margin-top: 1px;
 }
 .ip-back-btn:hover { border-color: var(--purple); color: var(--purple); background: var(--purple-dim); }
-.ip-chat-topic {
+/* Meta: breadcrumb row + question title */
+.ip-chat-meta {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ip-chat-breadcrumb {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   flex-wrap: wrap;
+}
+.ip-breadcrumb-sep {
+  color: var(--muted);
+  font-size: 0.72rem;
+  line-height: 1;
+}
+.ip-chat-title {
+  margin: 0;
+  font-size: 1.52rem;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: 0;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .ip-chat-cat-badge {
   font-size: 0.75rem;
@@ -528,6 +525,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 .ip-hdr-btn {
   width: 34px;
@@ -546,80 +545,37 @@
 .ip-hdr-btn:disabled { opacity: 0.4; cursor: default; }
 .ip-hdr-btn-saved { color: var(--purple) !important; border-color: rgba(99,102,241,0.4) !important; background: var(--purple-dim) !important; }
 
-/*  Question banner — natural full-width layout  */
-.ip-question-banner {
-  padding: 0.8rem 2rem;
-  background: var(--surface);
-  border-bottom: 1.5px solid var(--border);
-  flex-shrink: 0;
-}
-.ip-question-text {
-  margin: 0;
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--text);
-  line-height: 1.5;
-  letter-spacing: -0.01em;
-}
+/* ip-question-banner removed — title is now inside ip-chat-header-inner */
+.ip-question-banner-inner { max-width: var(--content-w); margin: 0 auto; padding: 1rem 2rem; }
 
-/* ─── Answer mode selector bar ──────────────────────────────────── */
-.ip-mode-bar {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  margin-top: 10px;
-}
-.ip-mode-btn {
-  background: transparent;
-  border: 1px solid var(--border, rgba(99,102,241,0.18));
-  color: var(--text-muted, #8b8ba7);
-  border-radius: 20px;
-  padding: 3px 11px;
-  font-size: 0.71rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-  white-space: nowrap;
-  line-height: 1.6;
-}
-.ip-mode-btn:hover:not(:disabled) {
-  background: rgba(99, 102, 241, 0.10);
-  color: #a5b4fc;
-  border-color: rgba(99, 102, 241, 0.35);
-}
-.ip-mode-btn-active {
-  background: rgba(99, 102, 241, 0.18) !important;
-  color: #a5b4fc !important;
-  border-color: rgba(99, 102, 241, 0.45) !important;
-  font-weight: 600;
-}
-.ip-mode-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-/*  Messages — natural width from grid layout (matches Mentor)  */
+/* Messages: scrollable container — centering handled by inner wrapper */
 .ip-messages {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 1.5rem 2rem 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  background: #F6F7FB;
+  background: transparent;
   scrollbar-width: thin;
   scrollbar-color: rgba(99,102,241,0.15) transparent;
 }
 .ip-messages::-webkit-scrollbar { width: 5px; }
 .ip-messages::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.15); border-radius: 99px; }
 
+/* Inner wrapper: centers content and adds padding */
+.ip-messages-inner {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 1.5rem 2.25rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
 /*  Message row  */
 .ip-msg-row {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  max-width: 82%;
+  gap: 12px;
+  max-width: min(100%, 1040px);
 }
 .ip-msg-row-user {
   flex-direction: row-reverse;
@@ -644,6 +600,9 @@
   background: linear-gradient(135deg, var(--purple), var(--purple-2));
   color: #fff;
   box-shadow: 0 3px 10px rgba(99,102,241,0.35);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
 }
 .ip-avatar-user {
   background: linear-gradient(135deg, #818cf8, #a78bfa);
@@ -654,16 +613,25 @@
 /*  Bubbles  */
 .ip-bubble {
   border-radius: var(--radius);
-  padding: 14px 16px;
-  line-height: 1.65;
-  font-size: 0.88rem;
+  padding: 22px 28px;
+  line-height: 1.74;
+  font-size: 0.92rem;
 }
 .ip-bubble-ai {
   background: var(--surface);
-  border: 1px solid var(--border);
+  border: 1px solid rgba(203,213,225,0.86);
   color: var(--text);
   border-top-left-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 18px 55px rgba(15,23,42,0.08);
+  position: relative;
+}
+.ip-bubble-ai::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: linear-gradient(90deg, #14b8a6, #6366f1, #f59e0b);
 }
 .ip-bubble-user {
   background: linear-gradient(135deg, var(--purple), var(--purple-2));
@@ -674,30 +642,61 @@
 .ip-bubble-label {
   font-size: 0.68rem;
   font-weight: 700;
-  color: var(--purple);
+  color: #475569;
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: 6px;
 }
-.ip-bubble-time {
+/* Bubble footer: time + action buttons */
+.ip-bubble-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-top: 8px;
+  min-height: 20px;
+}
+.ip-bubble-time {
   font-size: 0.67rem;
   opacity: 0.5;
-  text-align: right;
+}
+.ip-msg-actions {
+  display: flex;
+  gap: 3px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.ip-msg-row:hover .ip-msg-actions { opacity: 1; }
+.ip-msg-action-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: none;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.ip-msg-action-btn:hover {
+  border-color: var(--border);
+  color: var(--purple);
+  background: var(--purple-dim);
 }
 
 /*  Markdown content inside bubbles  */
 .ip-bubble-body h1,
 .ip-bubble-body h2,
 .ip-bubble-body h3 {
-  margin: 12px 0 6px;
-  font-size: 0.92rem;
-  font-weight: 700;
+  margin: 16px 0 8px;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--text);
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
-.ip-bubble-body h2 { color: var(--purple); }
-.ip-bubble-body p { margin: 0 0 8px; }
+.ip-bubble-body h2 { color: #1f2937; }
+.ip-bubble-body p { margin: 0 0 10px; }
 .ip-bubble-body p:last-child { margin-bottom: 0; }
 .ip-bubble-body ul, .ip-bubble-body ol {
   margin: 4px 0 8px 16px;
@@ -713,10 +712,10 @@
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
 }
 .ip-bubble-body pre {
-  background: #1e1e2e;
-  border-radius: 10px;
-  padding: 14px 16px;
-  margin: 10px 0;
+  background: #0f172a;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin: 18px 0;
   overflow-x: auto;
   font-size: 0.82rem;
   font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
@@ -767,13 +766,18 @@
 .ip-spin { animation: ip-spin 0.8s linear infinite; }
 @keyframes ip-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-/*  Input area — natural full-width layout  */
+/* Input area */
 .ip-input-area {
   flex-shrink: 0;
-  padding: 0.55rem 2rem 0.85rem;
-  background: var(--surface);
-  border-top: 1.5px solid var(--border);
-  box-shadow: 0 -4px 16px rgba(0,0,0,0.04);
+  background: rgba(248,250,252,0.9);
+  border-top: 1px solid rgba(203,213,225,0.8);
+  box-shadow: 0 -10px 30px rgba(15,23,42,0.06);
+  backdrop-filter: blur(14px);
+}
+.ip-input-area-inner {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 0.7rem 2.25rem 0.85rem;
 }
 .ip-input-wrap {
   display: flex;
@@ -787,7 +791,7 @@
 }
 .ip-input-wrap:focus-within {
   border-color: var(--purple);
-  box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+  box-shadow: 0 0 0 3.5px rgba(99,102,241,0.12);
   background: #f4f6ff;
 }
 .ip-input {
@@ -1020,7 +1024,7 @@
 @media (max-width: 860px) {
   /* Host: always fill space between header and bottom of screen */
   :host {
-    height: calc(100vh - 64px);
+    height: calc(100vh - 52px);
     overflow: hidden;
     display: block;
   }
@@ -1067,34 +1071,32 @@
   }
 
   /* ── Sidebar internals ───────────────────────────────────────── */
-  /* Brand header: purple gradient bar (matches app language) */
+  /* Brand header: flat white — clean, no gradient */
+  /* Sidebar header is visible — mobile bar is removed, this IS the title */
   .ip-sidebar-header {
-    padding: 14px 14px 12px;
-    background: linear-gradient(135deg, #4338ca 0%, #6d28d9 60%, #7c3aed 100%);
-    border-bottom: none;
-    flex-shrink: 0;
+    display: flex;
   }
-  .ip-brand-title { color: #ffffff; font-size: 0.92rem; }
-  .ip-brand-mode  { color: rgba(255,255,255,0.72); }
-  .ip-mode-dot    { background: #6ee7b7; }
+  .ip-brand-title { color: var(--text); font-size: 0.92rem; }
+  .ip-brand-mode  { color: var(--muted); }
+  .ip-mode-dot    { background: #10b981; }
   .ip-brand-avatar {
-    background: rgba(255,255,255,0.18);
-    border: 1.5px solid rgba(255,255,255,0.3);
+    background: rgba(99,102,241,0.1);
+    border: 1.5px solid rgba(99,102,241,0.2);
   }
   .ip-notes-toggle-btn {
-    border-color: rgba(255,255,255,0.3);
-    background: rgba(255,255,255,0.1);
-    color: rgba(255,255,255,0.85);
+    border-color: var(--border);
+    background: transparent;
+    color: var(--muted);
   }
   .ip-notes-toggle-btn:hover {
-    background: rgba(255,255,255,0.2);
-    border-color: rgba(255,255,255,0.5);
-    color: white;
+    background: var(--purple-dim);
+    border-color: rgba(99,102,241,0.35);
+    color: var(--purple);
   }
   .ip-notes-toggle-active {
-    background:   rgba(255,255,255,0.22) !important;
-    border-color: rgba(255,255,255,0.5)  !important;
-    color: white !important;
+    background: var(--purple-dim) !important;
+    border-color: rgba(99,102,241,0.4) !important;
+    color: var(--purple) !important;
   }
 
   /* Search box */
@@ -1139,8 +1141,9 @@
   .ip-suggestions { display: none; }
 
   /* ── Chat panel internals ─────────────────────────────────── */
-  .ip-chat-header { padding: 0.65rem 0.875rem; flex-shrink: 0; }
-  .ip-question-banner { padding: 0.65rem 0.875rem; flex-shrink: 0; }
+  .ip-chat-header { flex-shrink: 0; }
+  .ip-chat-header-inner { padding: 0.75rem 0.875rem 0.7rem; }
+  .ip-chat-title { font-size: 0.92rem; overflow: hidden; -webkit-line-clamp: 1; line-clamp: 1; }
   .ip-messages {
     flex: 1;
     min-height: 0;
@@ -1542,7 +1545,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 13px 14px 11px;
+  padding: 12px 12px 10px;
   border-bottom: 1.5px solid var(--border);
   flex-shrink: 0;
   gap: 8px;
@@ -1594,6 +1597,9 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  max-width: 128px;
 }
 .ip-rh-save-btn {
   display: inline-flex;
@@ -1655,7 +1661,7 @@
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  padding: 8px 10px;
+  padding: 10px 12px 12px;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
 }
@@ -1664,8 +1670,8 @@
 
 .ip-rm-section {
   border: 1.5px solid var(--border);
-  border-radius: 10px;
-  margin-bottom: 7px;
+  border-radius: 12px;
+  margin-bottom: 9px;
   overflow: hidden;
   background: var(--surface);
   transition: box-shadow 0.15s;
@@ -1678,7 +1684,7 @@
   align-items: center;
   gap: 8px;
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px;
   border: none;
   background: var(--surface);
   cursor: pointer;
@@ -1689,7 +1695,7 @@
 .ip-rm-sec-emoji { font-size: 1rem; flex-shrink: 0; }
 .ip-rm-sec-title {
   flex: 1;
-  font-size: 0.83rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: var(--text);
   min-width: 0;
@@ -1718,14 +1724,14 @@
 .ip-rm-topics {
   list-style: none;
   margin: 0;
-  padding: 0 4px 6px;
+  padding: 0 6px 8px;
 }
 .ip-rm-topic {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 5px 8px;
-  border-radius: 7px;
+  padding: 8px 9px;
+  border-radius: 9px;
   cursor: pointer;
   transition: background 0.13s;
 }
@@ -1759,9 +1765,9 @@
 /* ── Topic text & ask button ─────────────────────────────── */
 .ip-rm-topic-text {
   flex: 1;
-  font-size: 0.79rem;
+  font-size: 0.82rem;
   color: var(--text);
-  line-height: 1.35;
+  line-height: 1.42;
   cursor: pointer;
   min-width: 0;
 }
@@ -1777,7 +1783,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
+  opacity: 0.75;
   transition: opacity 0.13s, background 0.13s, color 0.13s;
 }
 .ip-rm-topic:hover .ip-rm-ask-btn { opacity: 1; }
@@ -1835,16 +1841,19 @@
   to   { transform: rotate(360deg); }
 }
 
-/* ═══ QUICK ACTION CHIPS ══════════════════════════════════════════ */
-/* Bottom action bar — all quick actions live here */
+/* ═══ QUICK ACTION CHIPS ═══════════════════════════════════════════ */
 .ip-quick-chips {
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.ip-quick-chips-inner {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 8px 2rem 10px;
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  padding: 8px 1.5rem 10px;
-  background: #f6f7fb;
-  border-top: 1.5px solid var(--border);
-  flex-shrink: 0;
 }
 
 .ip-chip {
@@ -1889,100 +1898,104 @@
 }
 
 
-/* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-   RIGHT TOOLS PANEL  (matches Mentor's .am-tools structure)
-   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
-
-.ip-tools {
+/* ─── Floating Related Questions FAB ────────────────────────────────── */
+.ip-tools-fab-wrap {
+  position: absolute;
+  bottom: 90px;
+  right: 22px;
+  z-index: 120;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border-left: 1.5px solid var(--border);
-  height: 100%;
-  overflow: hidden;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: none; /* panel receives pointer events individually */
 }
+.ip-tools-fab-wrap > * { pointer-events: all; }
 
-.ip-tools-hd {
+.ip-tools-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  width: 300px;
+  max-height: 380px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateY(10px) scale(0.96);
+  pointer-events: none;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.ip-tools-panel-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: all;
+}
+.ip-tools-panel-hd {
   display: flex;
   align-items: center;
-  gap: 0.55rem;
-  padding: 1rem 1rem 0.875rem;
-  border-bottom: 1.5px solid var(--border);
+  justify-content: space-between;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
-
-.ip-tools-hd-icon { font-size: 1.1rem; }
-
-.ip-tools-hd-title {
-  font-size: 0.82rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--muted);
-  flex: 1;
-}
-
-.ip-tools-hd-count {
-  font-size: 0.68rem;
+.ip-tools-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.8rem;
   font-weight: 700;
-  background: rgba(99,102,241,0.1);
-  color: var(--purple);
-  border-radius: 999px;
-  padding: 0.15rem 0.55rem;
+  color: var(--text);
 }
-
-.ip-tools-body {
+.ip-tools-panel-title svg { stroke: var(--purple); }
+.ip-tools-panel-close {
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+}
+.ip-tools-panel-close:hover { color: var(--text); background: var(--bg); }
+.ip-tools-panel-body {
   flex: 1;
   overflow-y: auto;
-  padding: 0.875rem 0.875rem 1.25rem;
+  padding: 8px;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 4px;
   scrollbar-width: thin;
   scrollbar-color: rgba(99,102,241,0.15) transparent;
 }
-.ip-tools-body::-webkit-scrollbar { width: 3px; }
-.ip-tools-body::-webkit-scrollbar-thumb {
-  background: rgba(99,102,241,0.2);
-  border-radius: 4px;
-}
 
-/* ── Generic Tool Card ── */
-.ip-tool-card {
-  background: #fafbff;
-  border: 1.5px solid var(--border);
-  border-radius: 12px;
-  padding: 0.75rem;
-  animation: ipToolFadeUp 0.3s ease-out;
-}
-
-.ip-tool-card-title {
+/* FAB button */
+.ip-tools-fab {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, var(--purple), var(--purple-2));
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.38);
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
-  font-weight: 800;
-  color: var(--text);
-  margin-bottom: 0.5rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-}
-
-.ip-tool-card-title svg {
-  width: 13px;
-  height: 13px;
-  stroke: var(--purple);
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
   flex-shrink: 0;
 }
-
-/* ── Session Progress Card ── */
-/* Session depth pill — compact, no redundant question text */
-.ip-session-card {
-  background: linear-gradient(135deg, #f0f4ff 0%, #ede9fe 100%);
-  border: 1.5px solid rgba(99,102,241,0.2);
-  border-radius: 10px;
-  padding: 0.65rem 0.875rem;
-  animation: ipToolFadeUp 0.4s ease-out;
+.ip-tools-fab:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 22px rgba(99,102,241,0.48);
+}
+.ip-tools-fab-open {
+  background: linear-gradient(135deg, #4338ca, #6d28d9) !important;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1999,63 +2012,32 @@
 /* MOBILE OVERRIDES  (≤ 860px)            */
 /* ─────────────────────────────────────── */
 @media (max-width: 860px) {
-  /* Mobile top bar */
-  .ip-mobile-bar {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    background: var(--surface);
-    border-bottom: 1.5px solid var(--border);
+  /* Mobile bar removed — sidebar-header serves as the title */
+  .ip-mobile-bar { display: none !important; }
+
+  /* Inner wrappers: reduce padding on small screens */
+  .ip-messages-inner { padding: 0.875rem 0.875rem 1rem; }
+  .ip-input-area-inner { padding: 0.5rem 0.875rem 0.75rem; }
+  .ip-quick-chips-inner { padding: 6px 0.875rem 8px; }
+
+  /* FAB: push above the mobile input area */
+  .ip-tools-fab-wrap { bottom: 80px; right: 14px; }
+  .ip-tools-panel { width: 260px; }
+
+  /* Backdrop: covers the full shell */
+  .ip-sidebar-backdrop {
     position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 20;
-    height: 52px;
-    box-sizing: border-box;
-  }
-
-  .ip-mobile-menu-btn {
-    flex-shrink: 0;
-    width: 34px;
-    height: 34px;
-    border-radius: 8px;
-    border: 1.5px solid var(--border);
-    background: transparent;
-    color: var(--text);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.15s, border-color 0.15s;
-  }
-  .ip-mobile-menu-btn:hover {
-    background: var(--purple-dim);
-    border-color: rgba(99,102,241,0.35);
-  }
-
-  .ip-mobile-title {
-    flex: 1;
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: var(--text);
-    letter-spacing: -0.01em;
-  }
-
-  .ip-mobile-notes-btn {
-    flex-shrink: 0;
-  }
-
-  /* Push all panels down below the bar */
-  .ip-shell {
-    padding-top: 52px;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 14;
   }
 
   /* Sidebar: hidden by default (slide left), revealed as drawer */
   .ip-sidebar {
-    top: 52px !important;
-    height: calc(100% - 52px) !important;
+    top: 0 !important;
+    height: 100% !important;
+    width: 80%;
+    max-width: 320px;
     transform: translateX(-100%);
     transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 15;
@@ -2066,11 +2048,30 @@
     box-shadow: 6px 0 24px rgba(0, 0, 0, 0.15);
   }
 
-  /* Welcome / Chat panels: below bar, full remaining height */
+  /* No question selected: sidebar IS the main full-screen panel */
+  .ip-shell:not(.ip-split) .ip-sidebar {
+    transform: none;
+    width: 100%;
+    max-width: 100%;
+    box-shadow: none;
+    z-index: 2;
+  }
+
+  /* Question selected: re-enable sidebar as overlay drawer (un-hide from first media block) */
+  .ip-shell.ip-split .ip-sidebar {
+    display: flex !important;
+    transform: translateX(-100%);
+  }
+  .ip-shell.ip-split .ip-sidebar.ip-sidebar-mobile-open {
+    transform: translateX(0);
+    box-shadow: 6px 0 24px rgba(0, 0, 0, 0.15);
+  }
+
+  /* Welcome / Chat panels: full height */
   .ip-welcome,
   .ip-chat {
-    top: 52px !important;
-    height: calc(100% - 52px) !important;
+    top: 0 !important;
+    height: 100% !important;
   }
 }
 
@@ -2170,3 +2171,39 @@
 @media (max-width: 768px) {
   .ip-tools { display: none; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   DARK MODE — override design tokens + fix hardcoded colours
+══════════════════════════════════════════════════════════════ */
+:host-context([data-theme="dark"]) {
+  --bg:        #0b0e1c;
+  --surface:   #111527;
+  --border:    #1e2235;
+  --text:      rgba(241,245,249,0.96);
+  --muted:     #94a3b8;
+  --purple-dim: rgba(99,102,241,0.12);
+  --purple-mid: rgba(99,102,241,0.2);
+  --sidebar-bg: #0c0f1c;
+}
+
+:host-context([data-theme="dark"]) .ip-messages    { background: #0b0e1c; }
+:host-context([data-theme="dark"]) .ip-quick-chips { background: #0e1225; border-top-color: #1e2235; }
+:host-context([data-theme="dark"]) .ip-input-wrap  { background: #111527; border-color: #2d3148; }
+:host-context([data-theme="dark"]) .ip-input-wrap:focus-within { background: #1a1d2e; border-color: rgba(99,102,241,0.5); }
+:host-context([data-theme="dark"]) .ip-search-box:focus-within { background: #1a1d2e; }
+:host-context([data-theme="dark"]) .ip-tools-panel { background: #111527; border-color: #1e2235; }
+:host-context([data-theme="dark"]) .ip-tools-panel-hd { border-bottom-color: #1e2235; }
+:host-context([data-theme="dark"]) .ip-related-item { background: #0e1225; border-color: #1e2235; }
+:host-context([data-theme="dark"]) .ip-related-item:hover { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.35); }
+:host-context([data-theme="dark"]) .ip-msg-action-btn:hover { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.25); }
+:host-context([data-theme="dark"]) .ip-sync-badge--error { background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.2); color: #f87171; }
+:host-context([data-theme="dark"]) .ip-sync-badge--saved { background: rgba(16,185,129,0.15); color: #34d399; }
+:host-context([data-theme="dark"]) .ip-sync-badge--saving { background: rgba(139,92,246,0.2); color: #c4b5fd; }
+:host-context([data-theme="dark"]) .ip-pill-on { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.4); }
+:host-context([data-theme="dark"]) .ip-chip { background: #0e1225; border-color: #1e2235; color: rgba(241,245,249,0.8); }
+:host-context([data-theme="dark"]) .ip-chip:hover { border-color: rgba(99,102,241,0.5); background: rgba(99,102,241,0.12); color: #a5b4fc; }
+:host-context([data-theme="dark"]) .ip-qitem-active { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.3); }
+:host-context([data-theme="dark"]) .ip-notes-drawer { background: #111527; border-color: #1e2235; }
+:host-context([data-theme="dark"]) .ip-chat-title { color: rgba(241,245,249,0.97); }
+:host-context([data-theme="dark"]) .ip-breadcrumb-sep { color: #475569; }
+:host-context([data-theme="dark"]) .ip-bubble-ai { border-color: rgba(255,255,255,0.07); box-shadow: none; }

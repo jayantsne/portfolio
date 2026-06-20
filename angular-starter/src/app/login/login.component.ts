@@ -601,7 +601,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     
     // Set credentials and trigger login
     this.username = 'admin'; // Default user for face login
-    this.password = 'admin'; // This would be handled securely in backend
+    this.password = '';
     
     // Track successful face login
     if (typeof gtag !== 'undefined') {
@@ -804,7 +804,7 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
       
       // Set credentials for demo
       this.username = 'admin';
-      this.password = 'admin';
+      this.password = '';
       
       // Auto-login
       this.login();

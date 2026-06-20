@@ -12,8 +12,11 @@ app.use(cors({ origin: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
-// MongoDB Connection String - Update this with your connection string
-const MONGODB_URI = 'mongodb+srv://bjayantsne_db_user:H3Y4FWCZ3t0ZIzu6@cluster0.9liq2qs.mongodb.net/jayant-portfolio?retryWrites=true&w=majority';
+const MONGODB_URI = process.env.MONGODB_URI || functions.config().mongodb?.uri;
+
+if (!MONGODB_URI) {
+  throw new Error('Missing MONGODB_URI environment variable or firebase functions config mongodb.uri');
+}
 
 // MongoDB Connection
 mongoose.connect(MONGODB_URI, {
@@ -348,7 +351,12 @@ async function initializeDefaultUser() {
   try {
     const adminExists = await Auth.findOne({ username: 'admin' });
     if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('admin123', 10);
+      if (!process.env.DEFAULT_ADMIN_PASSWORD) {
+        console.warn('Default admin user not created: DEFAULT_ADMIN_PASSWORD is not set');
+        return;
+      }
+
+      const hashedPassword = await bcrypt.hash(process.env.DEFAULT_ADMIN_PASSWORD, 10);
       const adminUser = new Auth({
         userId: 'admin',
         username: 'admin',
@@ -356,7 +364,7 @@ async function initializeDefaultUser() {
         isAuthenticated: false
       });
       await adminUser.save();
-      console.log('✅ Default admin user created (username: admin, password: admin123)');
+      console.log('Default admin user created');
     }
   } catch (error) {
     console.error('Error creating default user:', error);

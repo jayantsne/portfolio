@@ -1,0 +1,175 @@
+﻿<aside class="sidebar"
+       [class.sidebar--collapsed]="collapsed"
+       role="navigation"
+       aria-label="Main navigation">
+
+  <!-- Header: toggle + compose -->
+  <div class="sidebar-hd">
+    <button class="icon-btn"
+            (click)="handleToggle()"
+            [title]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'"
+            [attr.aria-label]="collapsed ? 'Expand sidebar' : 'Collapse sidebar'">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2.5"/>
+        <line x1="9" y1="3" x2="9" y2="21"/>
+      </svg>
+    </button>
+    <button class="icon-btn compose-btn"
+            routerLink="/"
+            title="New chat"
+            aria-label="Start new chat">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.8"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Scrollable body: nav + history -->
+  <div class="sidebar-body">
+
+    <!-- Navigation -->
+    <nav class="nav-section" aria-label="Pages">
+
+      <a class="nav-item"
+         routerLink="/"
+         routerLinkActive="nav-item--active"
+         [routerLinkActiveOptions]="{ exact: true }"
+         title="AI Tutor">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </span>
+        <span class="nav-label">AI Tutor</span>
+      </a>
+
+      <a class="nav-item"
+         routerLink="/explore"
+         routerLinkActive="nav-item--active"
+         title="Explore">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </span>
+        <span class="nav-label">Explore</span>
+      </a>
+
+      <a class="nav-item"
+         routerLink="/notes"
+         routerLinkActive="nav-item--active"
+         title="Notes">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </span>
+        <span class="nav-label">Notes</span>
+      </a>
+
+      <a class="nav-item"
+         routerLink="/interview-prep"
+         routerLinkActive="nav-item--active"
+         title="Interview Prep">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 2H3v16h5l3 3 3-3h7V2z"/>
+            <line x1="8" y1="9" x2="16" y2="9"/>
+            <line x1="8" y1="13" x2="14" y2="13"/>
+          </svg>
+        </span>
+        <span class="nav-label">Interview Prep</span>
+      </a>
+
+      <a class="nav-item"
+         routerLink="/playground"
+         routerLinkActive="nav-item--active"
+         title="Playground">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="16 18 22 12 16 6"/>
+            <polyline points="8 6 2 12 8 18"/>
+          </svg>
+        </span>
+        <span class="nav-label">Playground</span>
+      </a>
+
+      <a class="nav-item"
+         routerLink="/roadmap"
+         routerLinkActive="nav-item--active"
+         title="Roadmap">
+        <span class="nav-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2"
+               stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </span>
+        <span class="nav-label">Roadmap</span>
+      </a>
+
+    </nav>
+
+    <!-- Chat history (hidden when collapsed) -->
+    <section class="hist-section" *ngIf="!collapsed" aria-label="Recent chats">
+
+      <ng-container *ngIf="todayItems.length">
+        <div class="hist-label">Today</div>
+        <button class="hist-item" *ngFor="let item of todayItems"
+                [title]="item.label" [attr.aria-label]="item.label">
+          {{ item.label }}
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="yesterdayItems.length">
+        <div class="hist-label">Yesterday</div>
+        <button class="hist-item" *ngFor="let item of yesterdayItems"
+                [title]="item.label" [attr.aria-label]="item.label">
+          {{ item.label }}
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="prev7Items.length">
+        <div class="hist-label">Previous 7 days</div>
+        <button class="hist-item" *ngFor="let item of prev7Items"
+                [title]="item.label" [attr.aria-label]="item.label">
+          {{ item.label }}
+        </button>
+      </ng-container>
+
+    </section>
+
+  </div><!-- /sidebar-body -->
+
+  <!-- User footer -->
+  <div class="sidebar-ft">
+    <a routerLink="/account" class="user-row" title="Account settings">
+      <div class="user-avatar" aria-hidden="true">J</div>
+      <div class="user-info">
+        <span class="user-name">Jayant</span>
+        <span class="user-plan">Pro Plan</span>
+      </div>
+    </a>
+  </div>
+
+</aside>

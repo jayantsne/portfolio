@@ -14,13 +14,16 @@
     </button>
   </div>
 
+  <!-- Backdrop overlay (mobile drawer) -->
+  <div class="ip-sidebar-backdrop" *ngIf="showMobileSidebar" (click)="showMobileSidebar = false"></div>
+
   <!--  SIDEBAR  -->
   <section class="ip-sidebar" [class.ip-sidebar-mobile-open]="showMobileSidebar" aria-label="Interview questions list">
 
     <!-- Brand header -->
     <div class="ip-sidebar-header">
       <div class="ip-sidebar-brand">
-        <div class="ip-brand-avatar"></div>
+        <div class="ip-brand-avatar">🎯</div>
         <div class="ip-brand-info">
           <span class="ip-brand-title">Interview Prep</span>
           <span class="ip-brand-mode">
@@ -68,7 +71,7 @@
         <div class="ip-note-item" *ngFor="let note of savedNotes">
           <div class="ip-note-meta">
             <span class="ip-note-cat">{{ note.category }}</span>
-            <button class="ip-note-del" (click)="deleteNote(note.questionId)" title="Delete"></button>
+            <button class="ip-note-del" (click)="deleteNote(note.questionId)" title="Delete">✕</button>
           </div>
           <p class="ip-note-q" (click)="openNoteQuestion(note)">{{ note.question }}</p>
           <span class="ip-note-time">{{ note.savedAt | date:'MMM d, HH:mm' }}</span>
@@ -119,10 +122,7 @@
           [class.ip-qitem-active]="selectedQuestion?.id === q.id"
           (click)="selectQuestion(q)"
           role="listitem">
-          <div class="ip-qitem-left">
-            <span class="ip-qitem-num">#{{ i + 1 }}</span>
-            <div class="ip-qitem-accent" [ngClass]="difficultyClass(q.difficulty)"></div>
-          </div>
+          <div class="ip-qitem-accent" [ngClass]="difficultyClass(q.difficulty)"></div>
           <div class="ip-qitem-body">
             <p class="ip-qitem-text">{{ q.question }}</p>
             <div class="ip-qitem-meta">
@@ -130,7 +130,6 @@
               <span class="ip-diff-badge" [ngClass]="difficultyClass(q.difficulty)">{{ q.difficulty || 'Medium' }}</span>
             </div>
           </div>
-          <svg class="ip-qitem-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
         </li>
       </ul>
     </div>
@@ -331,15 +330,19 @@
   <!--  CHAT AREA  -->
   <main class="ip-chat" *ngIf="selectedQuestion" [@panelSlide] aria-label="AI chat">
 
-    <!-- Sticky chat header -->
+    <!-- Unified chat header: back + breadcrumb + question title + actions -->
     <div class="ip-chat-header">
       <div class="ip-chat-header-inner">
         <button class="ip-back-btn" (click)="closeSidePanel()" aria-label="Back" title="Back to questions">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
         </button>
-        <div class="ip-chat-topic">
-          <span class="ip-chat-cat-badge">{{ selectedQuestion.category }}</span>
-          <span class="ip-diff-badge" [ngClass]="difficultyClass(selectedQuestion.difficulty)">{{ selectedQuestion.difficulty || 'Medium' }}</span>
+        <div class="ip-chat-meta">
+          <div class="ip-chat-breadcrumb">
+            <span class="ip-chat-cat-badge">{{ selectedQuestion.category }}</span>
+            <span class="ip-breadcrumb-sep">•</span>
+            <span class="ip-diff-badge" [ngClass]="difficultyClass(selectedQuestion.difficulty)">{{ selectedQuestion.difficulty || 'Medium' }}</span>
+          </div>
+          <h1 class="ip-chat-title">{{ selectedQuestion.question }}</h1>
         </div>
         <div class="ip-chat-actions">
           <button class="ip-hdr-btn" title="Retry answer" (click)="retryExplanation()" [disabled]="isLoadingAI">
@@ -356,100 +359,91 @@
       </div>
     </div>
 
-    <!-- Question title banner -->
-    <div class="ip-question-banner">
-      <h2 class="ip-question-text">{{ selectedQuestion.question }}</h2>
-      <!-- Answer mode selector -->
-      <div class="ip-mode-bar">
-        <span class="ip-mode-label">Mode:</span>
-        <button
-          *ngFor="let m of MODE_LABELS"
-          class="ip-mode-btn"
-          [class.ip-mode-btn-active]="answerMode === m.key"
-          (click)="setMode(m.key)"
-          [disabled]="isLoadingAI || isFollowUpLoading"
-          [title]="m.hint">
-          {{ m.label }}
-        </button>
-      </div>
-    </div>
-
     <!-- Messages -->
     <div class="ip-messages" #msgContainer>
+      <div class="ip-messages-inner">
 
-      <div class="ip-msg-row"
-        [class.ip-msg-row-user]="msg.role === 'user'"
-        [class.ip-msg-row-ai]="msg.role === 'ai'"
-        *ngFor="let msg of aiMessages"
-        [@msgFade]>
+        <div class="ip-msg-row"
+          [class.ip-msg-row-user]="msg.role === 'user'"
+          [class.ip-msg-row-ai]="msg.role === 'ai'"
+          *ngFor="let msg of aiMessages"
+          [@msgFade]>
 
-        <div class="ip-avatar ip-avatar-ai" *ngIf="msg.role === 'ai'">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <div class="ip-avatar ip-avatar-ai" *ngIf="msg.role === 'ai'">AI</div>
+
+          <div class="ip-bubble" [class.ip-bubble-ai]="msg.role === 'ai'" [class.ip-bubble-user]="msg.role === 'user'">
+            <div class="ip-bubble-label" *ngIf="msg.role === 'ai'">AI Mentor</div>
+            <div class="ip-bubble-body" [innerHTML]="msg.text | markdown"></div>
+            <div class="ip-bubble-footer">
+              <span class="ip-bubble-time">{{ msg.timestamp | date:'HH:mm' }}</span>
+              <div class="ip-msg-actions" *ngIf="msg.role === 'ai'">
+                <button class="ip-msg-action-btn" (click)="copyMessage(msg.text)" title="Copy response">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div class="ip-avatar ip-avatar-user" *ngIf="msg.role === 'user'">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+          </div>
+
         </div>
 
-        <div class="ip-bubble" [class.ip-bubble-ai]="msg.role === 'ai'" [class.ip-bubble-user]="msg.role === 'user'">
-          <div class="ip-bubble-label" *ngIf="msg.role === 'ai'">AI Mentor</div>
-          <div class="ip-bubble-body" [innerHTML]="msg.text | markdown"></div>
-          <div class="ip-bubble-time">{{ msg.timestamp | date:'HH:mm' }}</div>
-        </div>
-
-        <div class="ip-avatar ip-avatar-user" *ngIf="msg.role === 'user'">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-        </div>
-
-      </div>
-
-      <!-- Streaming / thinking -->
-      <div class="ip-msg-row ip-msg-row-ai" *ngIf="isLoadingAI || isFollowUpLoading || streamingText" [@msgFade]>
-        <div class="ip-avatar ip-avatar-ai">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
-        </div>
-        <div class="ip-bubble ip-bubble-ai">
-          <div class="ip-bubble-label">AI Mentor</div>
-          <div *ngIf="streamingText" class="ip-bubble-body" [innerHTML]="streamingText | markdown"></div>
-          <div class="ip-thinking" *ngIf="(isLoadingAI || isFollowUpLoading) && !streamingText">
-            <span class="ip-dot"></span>
-            <span class="ip-dot"></span>
-            <span class="ip-dot"></span>
+        <!-- Streaming / thinking -->
+        <div class="ip-msg-row ip-msg-row-ai" *ngIf="isLoadingAI || isFollowUpLoading || streamingText" [@msgFade]>
+          <div class="ip-avatar ip-avatar-ai">AI</div>
+          <div class="ip-bubble ip-bubble-ai">
+            <div class="ip-bubble-label">AI Mentor</div>
+            <div *ngIf="streamingText" class="ip-bubble-body" [innerHTML]="streamingText | markdown"></div>
+            <div class="ip-thinking" *ngIf="(isLoadingAI || isFollowUpLoading) && !streamingText">
+              <span class="ip-dot"></span>
+              <span class="ip-dot"></span>
+              <span class="ip-dot"></span>
+            </div>
           </div>
         </div>
-      </div>
 
+      </div><!-- /ip-messages-inner -->
     </div><!-- /ip-messages -->
 
     <!-- Suggested follow-up chips (extracted from AI response) -->
     <div class="ip-quick-chips" *ngIf="selectedQuestion && suggestedFollowUps.length > 0 && !isLoadingAI && !isFollowUpLoading">
-      <button class="ip-chip"
-        *ngFor="let s of suggestedFollowUps"
-        (click)="sendSuggestedFollowUp(s)">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-        {{ s }}
-      </button>
+      <div class="ip-quick-chips-inner">
+        <button class="ip-chip"
+          *ngFor="let s of suggestedFollowUps"
+          (click)="sendSuggestedFollowUp(s)">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          {{ s }}
+        </button>
+      </div>
     </div>
 
     <!-- Sticky input -->
     <div class="ip-input-area">
-      <div class="ip-input-wrap">
-        <textarea
-          class="ip-input"
-          rows="1"
-          placeholder="Ask your AI mentor about this topic"
-          [(ngModel)]="followUpText"
-          (keydown)="onFollowUpKeydown($event)"
-          [disabled]="isLoadingAI || isFollowUpLoading"
-          aria-label="Ask a follow-up question"
-        ></textarea>
-        <button
-          class="ip-send-btn"
-          [class.ip-send-btn-active]="followUpText.trim()"
-          [disabled]="!followUpText.trim() || isLoadingAI || isFollowUpLoading"
-          (click)="sendFollowUp()"
-          aria-label="Send">
-          <svg *ngIf="!isFollowUpLoading" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-          <svg *ngIf="isFollowUpLoading" class="ip-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path></svg>
-        </button>
+      <div class="ip-input-area-inner">
+        <div class="ip-input-wrap">
+          <textarea
+            class="ip-input"
+            rows="1"
+            placeholder="Ask a follow-up question..."
+            [(ngModel)]="followUpText"
+            (keydown)="onFollowUpKeydown($event)"
+            [disabled]="isLoadingAI || isFollowUpLoading"
+            aria-label="Ask a follow-up question"
+          ></textarea>
+          <button
+            class="ip-send-btn"
+            [class.ip-send-btn-active]="followUpText.trim()"
+            [disabled]="!followUpText.trim() || isLoadingAI || isFollowUpLoading"
+            (click)="sendFollowUp()"
+            aria-label="Send">
+            <svg *ngIf="!isFollowUpLoading" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            <svg *ngIf="isFollowUpLoading" class="ip-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10"></path></svg>
+          </button>
+        </div>
+        <p class="ip-input-hint">Press <kbd>Enter</kbd> to send &middot; <kbd>Shift+Enter</kbd> for new line</p>
       </div>
-      <p class="ip-input-hint">Press <kbd>Enter</kbd> to send &middot; <kbd>Shift+Enter</kbd> for new line</p>
     </div>
 
   </main><!-- /ip-chat -->
@@ -515,48 +509,32 @@
     </div>
   </main>
 
-  <!--  RIGHT TOOLS PANEL  -->
-  <aside class="ip-tools" *ngIf="selectedQuestion">
-    <div class="ip-tools-hd">
-      <span class="ip-tools-hd-icon">🎯</span>
-      <span class="ip-tools-hd-title">Interview Tools</span>
-      <span class="ip-tools-hd-count" *ngIf="aiMessages.length > 0">{{ aiMessages.length }}</span>
-    </div>
-
-    <div class="ip-tools-body">
-
-      <!-- Session Depth (shown after first AI response) -->
-      <div class="ip-session-card" *ngIf="aiMessages.length > 0">
-        <div class="ip-session-meta">
-          <div class="ip-session-icon">✨</div>
-          <div class="ip-session-info">
-            <div class="ip-session-depth">{{ aiMessages.length }} messages · Active</div>
-          </div>
-        </div>
-        <div class="ip-session-bar-wrap">
-          <div class="ip-session-bar-fill" 
-               [style.width]="Math.min(aiMessages.length * 15, 100) + '%'"></div>
-        </div>
-      </div>
-
-      <!-- Related Questions -->
-      <div class="ip-tool-card" *ngIf="getRelatedQuestions().length > 0">
-        <div class="ip-tool-card-title">
+  <!-- Floating Related Questions Panel -->
+  <div class="ip-tools-fab-wrap" *ngIf="selectedQuestion && getRelatedQuestions().length > 0">
+    <div class="ip-tools-panel" [class.ip-tools-panel-open]="showToolsPanel">
+      <div class="ip-tools-panel-hd">
+        <span class="ip-tools-panel-title">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 4.78 2.83c-.67.37-1.07.85-1.07 1.67v.5"></path><circle cx="12" cy="17.5" r=".5" fill="currentColor"></circle></svg>
           Related Questions
-        </div>
-        <div class="ip-related-list">
-          <button class="ip-related-item"
-                  *ngFor="let q of getRelatedQuestions().slice(0, 5)"
-                  (click)="selectQuestion(q)">
-            <span class="ip-related-cat">{{ q.category }}</span>
-            <div class="ip-related-text">{{ q.question }}</div>
-          </button>
-        </div>
+        </span>
+        <button class="ip-tools-panel-close" (click)="showToolsPanel = false" aria-label="Close">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
       </div>
-
+      <div class="ip-tools-panel-body">
+        <button class="ip-related-item"
+          *ngFor="let q of getRelatedQuestions().slice(0, 6)"
+          (click)="selectQuestion(q); showToolsPanel = false">
+          <span class="ip-related-cat">{{ q.category }}</span>
+          <div class="ip-related-text">{{ q.question }}</div>
+        </button>
+      </div>
     </div>
-  </aside>
+    <button class="ip-tools-fab" (click)="showToolsPanel = !showToolsPanel"
+      [class.ip-tools-fab-open]="showToolsPanel" title="Related questions">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 4.78 2.83c-.67.37-1.07.85-1.07 1.67v.5"></path><circle cx="12" cy="17.5" r=".5" fill="currentColor"></circle></svg>
+    </button>
+  </div>
 
   <!-- Login-required snackbar — shown when a guest presses a save button -->
   <div class="ip-login-toast" *ngIf="showLoginPrompt" role="alert">

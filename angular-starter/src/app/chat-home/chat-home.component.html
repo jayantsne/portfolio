@@ -1,0 +1,83 @@
+<!--
+  ════════════════════════════════════════════════════════════
+  CHAT HOME — ChatGPT-style landing page
+  ────────────────────────────────────────────────────────────
+  Layout:
+    .chat-home   → full-height flex centering wrapper
+    .landing     → centered column, max-width 680px
+      .landing-icon  → small app icon
+      h1             → heading
+      p.sub          → subtext
+      .input-box     → textarea + send button
+      .chips         → 2×2 grid of quick-action cards
+  ════════════════════════════════════════════════════════════
+-->
+
+<div class="chat-home">
+  <div class="landing">
+
+    <!-- ── App icon ── -->
+    <div class="landing-icon" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.2"
+           stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="16 18 22 12 16 6"/>
+        <polyline points="8 6 2 12 8 18"/>
+      </svg>
+    </div>
+
+    <!-- ── Heading ── -->
+    <h1 class="landing-title">What can I help you learn?</h1>
+    <p class="landing-sub">
+      Ask me anything about programming, or jump into a topic below.
+    </p>
+
+    <!-- ── Input ── -->
+    <div class="input-box">
+      <textarea
+        class="chat-input"
+        [(ngModel)]="inputValue"
+        (keydown)="onInputKeydown($event)"
+        placeholder="Ask anything…"
+        rows="1"
+        aria-label="Chat input"
+        autocomplete="off">
+      </textarea>
+
+      <!-- Send button -->
+      <button
+        class="send-btn"
+        (click)="onSend()"
+        [disabled]="!inputValue.trim()"
+        title="Send"
+        aria-label="Send message">
+        <!-- Up-arrow icon -->
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+             stroke="currentColor" stroke-width="2.5"
+             stroke-linecap="round" stroke-linejoin="round"
+             aria-hidden="true">
+          <line x1="12" y1="19" x2="12" y2="5"/>
+          <polyline points="5 12 12 5 19 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- ── Suggestion chips ── -->
+    <div class="chips" role="list">
+      <button
+        class="chip"
+        *ngFor="let s of suggestions"
+        (click)="navigate(s.route)"
+        role="listitem"
+        [title]="s.label">
+        <span class="chip-icon" aria-hidden="true">{{ s.icon }}</span>
+        <span class="chip-text">
+          <span class="chip-label">{{ s.label }}</span>
+          <span class="chip-sub">{{ s.sublabel }}</span>
+        </span>
+      </button>
+    </div>
+
+  </div>
+  <!-- /landing -->
+</div>

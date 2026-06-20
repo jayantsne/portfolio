@@ -14,7 +14,19 @@ export class PlaygroundService {
   private readonly _request$ = new BehaviorSubject<PlaygroundRequest | null>(null);
   readonly request$ = this._request$.asObservable();
 
+  /**
+   * Optional override registered by embedded-playground pages (e.g. SK learn).
+   * When set, `openWith` calls this instead of navigating to /playground.
+   * Return true to cancel the default navigation.
+   */
+  private _tryNowOverride: ((code: string, lang: string) => boolean) | null = null;
+
   constructor(private router: Router) {}
+
+  /** Register an override handler (call with null to unregister). */
+  setTryNowOverride(fn: ((code: string, lang: string) => boolean) | null): void {
+    this._tryNowOverride = fn;
+  }
 
   /**
    * Load code into the Code Playground and navigate to it.
@@ -22,6 +34,7 @@ export class PlaygroundService {
    */
   openWith(code: string, language: string): void {
     const lang = this.normaliseLanguage(language);
+    if (this._tryNowOverride?.(code, lang)) return;
     this._request$.next({ code, language: lang });
     this.router.navigate(['/playground']);
   }

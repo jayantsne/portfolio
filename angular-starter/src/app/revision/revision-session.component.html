@@ -1,0 +1,120 @@
+<div class="rs-page">
+
+  <!-- Toast -->
+  <div class="rs-toast" *ngIf="toast" [class.rs-toast--error]="toast.type === 'error'">{{ toast.msg }}</div>
+
+  <!-- ── Loading ───────────────────────────────────────────────────────── -->
+  <div class="rs-loading" *ngIf="screenState === 'loading'">
+    <div class="rs-spinner"></div>
+    <p>Generating AI questions…</p>
+  </div>
+
+  <!-- ── Error ─────────────────────────────────────────────────────────── -->
+  <div class="rs-error-card" *ngIf="screenState === 'error'">
+    <p>⚠️ Could not load questions.</p>
+    <div class="rs-error-actions">
+      <button class="rs-btn rs-btn--primary" (click)="loadQuestions()">Retry</button>
+      <button class="rs-btn rs-btn--ghost"   (click)="goToDashboard()">← Dashboard</button>
+    </div>
+  </div>
+
+  <!-- ── Session content ───────────────────────────────────────────────── -->
+  <ng-container *ngIf="screenState === 'question' || screenState === 'answer'">
+
+    <!-- Header -->
+    <header class="rs-header">
+      <button class="rs-back-btn" (click)="goToDashboard()">← Back</button>
+      <div class="rs-header-center">
+        <p class="rs-note-topic">{{ noteTopic }}</p>
+        <p class="rs-fallback-notice" *ngIf="isFallback">
+          ℹ️ Using template questions (AI unavailable)
+        </p>
+      </div>
+      <span class="rs-progress-label">{{ currentIndex + 1 }} / {{ totalQuestions }}</span>
+    </header>
+
+    <!-- Progress bar -->
+    <div class="rs-progress-track">
+      <div class="rs-progress-fill" [style.width.%]="progressPercent"></div>
+    </div>
+
+    <!-- Question card -->
+    <div class="rs-card" *ngIf="current">
+
+      <!-- Question type chip -->
+      <div class="rs-type-chip">{{ questionTypeLabel }}</div>
+
+      <!-- Question text -->
+      <h2 class="rs-question">{{ current.question.question }}</h2>
+
+      <!-- ── Answer hidden ─────────────────────────────────────────────── -->
+      <div class="rs-answer-hidden" *ngIf="!current.revealed">
+        <p class="rs-hint">Think about your answer, then reveal below.</p>
+        <button class="rs-btn rs-btn--reveal" (click)="revealAnswer()">
+          👁️ Show Answer
+        </button>
+      </div>
+
+      <!-- ── Answer revealed ───────────────────────────────────────────── -->
+      <div class="rs-answer-revealed" *ngIf="current.revealed">
+        <div class="rs-answer-block">
+          <p class="rs-answer-label">Answer</p>
+          <p class="rs-answer-text">{{ current.question.answer }}</p>
+        </div>
+        <div class="rs-explanation-block">
+          <p class="rs-answer-label">Why it matters</p>
+          <p class="rs-explanation-text">{{ current.question.explanation }}</p>
+        </div>
+
+        <!-- Difficulty feedback -->
+        <div class="rs-feedback-row">
+          <p class="rs-feedback-label">How well did you know this?</p>
+          <div class="rs-feedback-btns">
+            <button [class]="feedbackClass('hard')"
+                    [disabled]="submittingFeedback"
+                    (click)="submitFeedback('hard')">
+              😓 Hard
+            </button>
+            <button [class]="feedbackClass('medium')"
+                    [disabled]="submittingFeedback"
+                    (click)="submitFeedback('medium')">
+              🤔 Medium
+            </button>
+            <button [class]="feedbackClass('easy')"
+                    [disabled]="submittingFeedback"
+                    (click)="submitFeedback('easy')">
+              😊 Easy
+            </button>
+          </div>
+          <p class="rs-submitting" *ngIf="submittingFeedback">Saving…</p>
+        </div>
+      </div>
+
+    </div>
+
+  </ng-container>
+
+  <!-- ── Done screen ───────────────────────────────────────────────────── -->
+  <div class="rs-done" *ngIf="screenState === 'done'">
+    <div class="rs-done-icon">🎉</div>
+    <h2 class="rs-done-title">Session complete!</h2>
+    <p class="rs-done-sub">You reviewed {{ totalQuestions }} question{{ totalQuestions === 1 ? '' : 's' }} for <strong>{{ noteTopic }}</strong>.</p>
+
+    <!-- Feedback summary -->
+    <div class="rs-summary">
+      <div class="rs-summary-row" *ngFor="let q of questions; let i = index">
+        <span class="rs-summary-num">Q{{ i + 1 }}</span>
+        <span class="rs-summary-q">{{ q.question.question }}</span>
+        <span class="rs-summary-badge rs-summary-badge--{{ q.feedback ?? 'none' }}">
+          {{ q.feedback ?? '—' }}
+        </span>
+      </div>
+    </div>
+
+    <div class="rs-done-actions">
+      <button class="rs-btn rs-btn--primary" (click)="loadQuestions()">🔄 New Questions</button>
+      <button class="rs-btn rs-btn--ghost"   (click)="goToDashboard()">← Dashboard</button>
+    </div>
+  </div>
+
+</div>

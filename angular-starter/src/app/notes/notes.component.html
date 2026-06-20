@@ -48,26 +48,51 @@
     <p>Loading notes&hellip;</p>
   </div>
 
-  <!-- MAIN CONTENT — IP-style split layout -->
-  <div class="notes-shell" *ngIf="user && !isLoading && !createMode" [class.has-ai]="activeNote && !editMode">
+  <!-- Sidebar open button — top-left icon, visible when sidebar is collapsed -->
+  <button class="notes-expand-floating"
+          *ngIf="user && !isLoading && !createMode && sidebarCollapsed"
+          (click)="toggleSidebar()"
+          title="Open notes list" aria-label="Open notes list">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="2"/>
+      <line x1="9" y1="3" x2="9" y2="21"/>
+    </svg>
+  </button>
+
+  <!-- MAIN CONTENT — 2-column split layout -->
+  <div class="notes-shell" *ngIf="user && !isLoading && !createMode" [class.notes-shell--collapsed]="sidebarCollapsed">
+
+    <!-- Mobile sidebar backdrop — close on tap outside -->
+    <div class="notes-sidebar-backdrop" *ngIf="!sidebarCollapsed" (click)="toggleSidebar()"></div>
+
+    <!-- FAB: New Note (mobile only) -->
+    <!-- <button class="notes-fab" (click)="openCreateNote()" aria-label="New note" title="New note">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5"
+           stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    </button> -->
 
     <!-- ═══════════════════ LEFT PANEL (30%) ═══════════════════ -->
     <section class="notes-left">
 
       <!-- Hero header -->
       <div class="notes-hero">
-        <div class="notes-hero-glow" aria-hidden="true"></div>
-        <div class="notes-hero-content">
-          <div class="notes-hero-icon">📝</div>
-          <div>
-            <h1 class="notes-hero-title">My Notes</h1>
-            <p class="notes-hero-sub">AI-saved explanations &amp; custom notes</p>
-          </div>
+        <div class="notes-hero-row1">
+          <span class="notes-hero-icon">📝</span>
+          <h1 class="notes-hero-title">My Notes</h1>
+          <!-- <a class="notes-revision-icon-btn" routerLink="/revision" title="Revision Mode">🔁</a> -->
+          <button class="notes-sidebar-toggle" (click)="toggleSidebar()" title="Collapse sidebar" aria-label="Collapse sidebar">‹</button>
         </div>
-        <div class="notes-hero-badge" *ngIf="notes.length > 0">
-          <span class="notes-hero-count">{{ filteredNotes.length }}</span>
-          <span class="notes-hero-label">notes</span>
-        </div>
+        <p class="notes-hero-stats" *ngIf="notes.length > 0">
+          {{ notes.length }} note{{ notes.length === 1 ? '' : 's' }}
+          <span class="nhstat-dot">·</span>
+          {{ allCategories.length - 1 }} topic{{ (allCategories.length - 1) === 1 ? '' : 's' }}
+          <span class="nhstat-dot">·</span>
+          {{ allTags.length }} tag{{ allTags.length === 1 ? '' : 's' }}
+        </p>
       </div>
 
       <!-- Search -->
@@ -80,40 +105,59 @@
         </div>
       </div>
 
-      <!-- Category filter -->
-      <div class="notes-filters">
-        <div class="notes-filter-group">
-          <span class="notes-filter-label">Category</span>
-          <div class="notes-pill-track">
-            <button class="notes-pill" [class.notes-pill-active]="filterCategory === 'All'"
-              (click)="filterCategory = 'All'">All</button>
-            <button class="notes-pill" *ngFor="let cat of categories"
-              [class.notes-pill-active]="filterCategory === cat"
-              (click)="filterCategory = cat">{{ cat }}</button>
+      <!-- ── Filters ──────────────────────────────────────────── -->
+      <div class="notes-filter-section" [class.is-open]="filtersOpen">
+
+        <!-- Toggle header -->
+        <button class="notes-filter-toggle" (click)="filtersOpen = !filtersOpen"
+          type="button" [attr.aria-expanded]="filtersOpen" aria-label="Toggle filters">
+          <span class="nft-label">Filters</span>
+          <span class="nft-active-dot" *ngIf="hasActiveFilter" title="Filter active"></span>
+          <span class="nft-active-hint" *ngIf="hasActiveFilter && !filtersOpen">{{ filterCategory !== 'All' ? filterCategory : ('#' + filterTag) }}</span>
+          <svg class="nft-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+
+        <!-- Collapsible body -->
+        <div class="notes-filter-body">
+
+          <!-- Category -->
+          <div class="notes-filter-group">
+            <span class="notes-filter-label">Category</span>
+            <div class="notes-seg-track">
+              <button class="notes-seg-btn" [class.active]="filterCategory === 'All'"
+                (click)="filterCategory = 'All'">All</button>
+              <button class="notes-seg-btn" *ngFor="let cat of categories"
+                [class.active]="filterCategory === cat"
+                (click)="filterCategory = cat">{{ cat }}</button>
+            </div>
           </div>
-        </div>
+
+          <!-- Tags -->
+          <div class="notes-filter-group" *ngIf="allTags.length > 0">
+            <span class="notes-filter-label">Tags</span>
+            <div class="notes-tag-track" [class.notes-tag-track--expanded]="showAllTags">
+              <button class="notes-tag-chip" [class.active]="filterTag === ''"
+                (click)="filterTag = ''">All</button>
+              <button class="notes-tag-chip" *ngFor="let tag of visibleTags"
+                [class.active]="filterTag === tag"
+                (click)="filterTag = tag">#{{ tag }}</button>
+              <button class="notes-tag-more-btn" *ngIf="allTags.length > TAG_VISIBLE_LIMIT"
+                (click)="showAllTags = !showAllTags">
+                {{ showAllTags ? '↑ Less' : '+' + (allTags.length - TAG_VISIBLE_LIMIT) + ' more' }}
+              </button>
+            </div>
+          </div>
+
+        </div><!-- /notes-filter-body -->
+
       </div>
 
-      <!-- Tag filter -->
-      <div class="notes-filters notes-tag-filter" *ngIf="allTags.length > 0">
-        <div class="notes-filter-group">
-          <span class="notes-filter-label">Tags</span>
-          <div class="notes-pill-track">
-            <button class="notes-pill" [class.notes-pill-active]="filterTag === ''"
-              (click)="filterTag = ''">All</button>
-            <button class="notes-pill" *ngFor="let tag of allTags"
-              [class.notes-pill-active]="filterTag === tag"
-              (click)="filterTag = tag">#{{ tag }}</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- New note + count row -->
-      <div class="notes-new-row">
-        <button class="notes-new-btn" (click)="openCreateNote()">✏️ New Note</button>
-        <span class="notes-count-lbl" *ngIf="filteredNotes.length > 0">
-          {{ filteredNotes.length }} note{{ filteredNotes.length !== 1 ? 's' : '' }}
-        </span>
+      <!-- Filter result count (replaces duplicate New Note button) -->
+      <div class="notes-count-row" *ngIf="filteredNotes.length !== notes.length && filteredNotes.length > 0">
+        <span class="notes-count-lbl">Showing {{ filteredNotes.length }} of {{ notes.length }}</span>
+        <button class="notes-count-clear" (click)="filterCategory = 'All'; searchQuery = ''; filterTag = ''">Clear</button>
       </div>
 
       <!-- Scrollable list -->
@@ -121,10 +165,11 @@
 
         <!-- Empty: no notes at all -->
         <div class="notes-list-empty" *ngIf="notes.length === 0">
-          <div class="notes-empty-icon">📭</div>
-          <p>No notes yet.<br>Create your first note or chat with AI.</p>
-          <button class="notes-empty-cta" (click)="openCreateNote()">✏️ Create Note</button>
-          <button class="ip-btn-ghost" (click)="goHome()">→ Go to AI Chat</button>
+          <div class="notes-empty-icon">📝</div>
+          <p class="notes-empty-title">No notes yet</p>
+          <p class="notes-empty-copy">Start a focused notebook for what you are learning.</p>
+          <button class="notes-empty-cta" (click)="openCreateNote()">Create Note</button>
+          <button class="ip-btn-ghost" (click)="goHome()">Open AI Chat</button>
         </div>
 
         <!-- Empty: filters hide everything -->
@@ -136,22 +181,30 @@
 
         <!-- Note cards -->
         <ul class="notes-qlist" *ngIf="filteredNotes.length > 0">
+          <ng-container *ngFor="let note of filteredNotes; let i = index">
+          <li class="notes-list-section-header" *ngIf="isFirstInDateGroup(note, i)" aria-hidden="true">
+            {{ noteDateGroupLabel(note.savedAtMs) }}
+          </li>
           <li class="notes-qitem"
-              *ngFor="let note of filteredNotes; let i = index"
               [class.notes-qitem-active]="activeNote?.id === note.id"
-              (click)="openNote(note)">
+              tabindex="0"
+              role="button"
+              [attr.aria-current]="activeNote?.id === note.id ? 'true' : null"
+              [attr.aria-label]="'Open note: ' + note.topic"
+              (click)="openNote(note)"
+              (keydown.enter)="openNote(note)"
+              (keydown.space)="$event.preventDefault(); openNote(note)">
             <div class="notes-qitem-accent"></div>
             <div class="notes-qitem-body">
-              <div class="notes-qitem-top">
-                <span class="notes-qitem-num">#{{ i + 1 }}</span>
-                <span class="notes-qitem-cat">{{ note.category }}</span>
-                <span class="notes-qitem-pin-badge" *ngIf="isPinned(note)" title="Pinned">📌</span>
-              </div>
               <p class="notes-qitem-text">{{ note.topic }}</p>
+              <div class="notes-qitem-meta">
+                <span class="notes-qitem-cat">{{ note.category }}</span>
+                <span class="notes-qitem-pin-indicator" *ngIf="isPinned(note)">📌</span>
+                <span class="notes-qitem-date">{{ formatDate(note.savedAtMs) }}</span>
+              </div>
               <div class="notes-qitem-bottom" *ngIf="(note.tags ?? []).length > 0">
                 <span class="notes-tag" *ngFor="let t of (note.tags ?? []) | slice:0:3">#{{ t }}</span>
               </div>
-              <span class="notes-qitem-date">{{ formatDate(note.savedAtMs) }}</span>
             </div>
             <button class="notes-qitem-pin" [class.pinned]="isPinned(note)"
                     (click)="$event.stopPropagation(); togglePin(note)"
@@ -171,6 +224,7 @@
               </div>
             </ng-container>
           </li>
+          </ng-container>
         </ul>
 
       </div><!-- /notes-left-scroll -->
@@ -179,96 +233,397 @@
     <!-- ═══════════════════ RIGHT PANEL (70%) ══════════════════ -->
     <main class="notes-right">
 
+      <!-- Scrollable panel body ──────────────────────────────── -->
+      <div class="nr-content">
+
       <!-- Welcome / placeholder -->
-      <div class="notes-welcome" *ngIf="!activeNote">
-        <div class="notes-welcome-glow" aria-hidden="true"></div>
+      <!-- ═══════════ WELCOME / EMPTY STATE ════════════ -->
+      <div class="notes-welcome-v2" *ngIf="!activeNote" tabindex="0" aria-label="Notes overview" @fadeSlide>
 
-        <div class="notes-welcome-icon"><span>📝</span></div>
-        <h2 class="notes-welcome-title">Your personal knowledge base</h2>
-        <p class="notes-welcome-sub">Pick any note on the left — read, edit, or export instantly.</p>
-
-        <div class="notes-feat-grid">
-          <div class="notes-feat">
-            <span class="notes-feat-icon">📖</span>
-            <div><strong>Read Notes</strong><span>Full markdown rendering</span></div>
-          </div>
-          <div class="notes-feat">
-            <span class="notes-feat-icon">✏️</span>
-            <div><strong>Edit &amp; Update</strong><span>Keep notes fresh</span></div>
-          </div>
-          <div class="notes-feat">
-            <span class="notes-feat-icon">🤖</span>
-            <div><strong>AI Formatting</strong><span>Clean up raw text</span></div>
-          </div>
-          <div class="notes-feat">
-            <span class="notes-feat-icon">🔍</span>
-            <div><strong>Search</strong><span>Find anything fast</span></div>
-          </div>
-          <div class="notes-feat">
-            <span class="notes-feat-icon">🏷️</span>
-            <div><strong>Tags &amp; Categories</strong><span>Stay organised</span></div>
-          </div>
-          <div class="notes-feat">
-            <span class="notes-feat-icon">💾</span>
-            <div><strong>Export</strong><span>TXT, MD, PDF</span></div>
+        <!-- Greeting -->
+        <div class="nwv2-greeting">
+          <button class="nwv2-drawer-btn"
+                  *ngIf="sidebarCollapsed"
+                  (click)="toggleSidebar()"
+                  title="Open notes list" aria-label="Open notes list">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="3" width="18" height="18" rx="2"/>
+              <line x1="9" y1="3" x2="9" y2="21"/>
+            </svg>
+          </button>
+          <div class="nwv2-avatar">🧠</div>
+          <div>
+            <h2 class="nwv2-greeting-title">
+              Welcome back{{ user?.username ? ', ' + user!.username.split(' ')[0] : '' }}
+            </h2>
+            <p class="nwv2-greeting-sub">
+              Your AI-powered knowledge base · {{ notes.length }} note{{ notes.length === 1 ? '' : 's' }}
+            </p>
           </div>
         </div>
 
-        <div class="notes-welcome-arrow" *ngIf="notes.length > 0">
-          ← Select a note to begin
+        <div class="nwv2-empty-lab" *ngIf="notes.length === 0">
+          <div class="nwv2-empty-card nwv2-empty-card--primary">
+            <div class="nwv2-empty-card-top">
+              <span class="nwv2-empty-mark">01</span>
+              <span class="nwv2-empty-chip">Start</span>
+            </div>
+            <h3>Write your first note</h3>
+            <p>Keep the idea, example, command, or explanation you do not want to lose.</p>
+          </div>
+          <div class="nwv2-empty-card">
+            <div class="nwv2-empty-card-top">
+              <span class="nwv2-empty-mark">02</span>
+              <span class="nwv2-empty-chip">Shape</span>
+            </div>
+            <h3>Organize by topic</h3>
+            <p>Use categories and tags so revision stays easy when notes grow.</p>
+          </div>
+          <div class="nwv2-empty-card">
+            <div class="nwv2-empty-card-top">
+              <span class="nwv2-empty-mark">03</span>
+              <span class="nwv2-empty-chip">Review</span>
+            </div>
+            <h3>Return with context</h3>
+            <p>Your saved notes become a searchable learning base.</p>
+          </div>
         </div>
-        <button class="notes-welcome-cta" *ngIf="notes.length === 0" (click)="openCreateNote()">
-          ✏️ Create your first note
-        </button>
+
+        <div class="nwv2-empty-actions" *ngIf="notes.length === 0">
+          <button class="nwv2-primary-cta" (click)="openCreateNote()">Create your first note</button>
+          <button class="nwv2-secondary-cta" (click)="goHome()">Open AI Chat</button>
+        </div>
+
+        <!-- Stats bar -->
+        <div class="nwv2-stats" *ngIf="notes.length > 0">
+          <div class="nwv2-stat">
+            <span class="nwv2-stat-num">{{ notes.length }}</span>
+            <span class="nwv2-stat-label">Notes</span>
+          </div>
+          <div class="nwv2-stat">
+            <span class="nwv2-stat-num">{{ allCategories.length - 1 }}</span>
+            <span class="nwv2-stat-label">Topics</span>
+          </div>
+          <div class="nwv2-stat">
+            <span class="nwv2-stat-num">{{ allTags.length }}</span>
+            <span class="nwv2-stat-label">Tags</span>
+          </div>
+        </div>
+
+        <!-- Quick action cards -->
+        <div class="nwv2-actions">
+          <button class="nwv2-action-card" *ngIf="filteredNotes.length > 0"
+                  (click)="openNote(filteredNotes[0])">
+            <span class="nwv2-action-icon">🔖</span>
+            <div>
+              <p class="nwv2-action-title">Continue Reading</p>
+              <p class="nwv2-action-desc">{{ filteredNotes[0].topic | slice:0:32 }}…</p>
+            </div>
+          </button>
+          <button class="nwv2-action-card" *ngIf="pinnedNotes.length > 0"
+                  (click)="openNote(pinnedNotes[0])">
+            <span class="nwv2-action-icon">📌</span>
+            <div>
+              <p class="nwv2-action-title">Pinned</p>
+              <p class="nwv2-action-desc">{{ pinnedNotes.length }} pinned note{{ pinnedNotes.length === 1 ? '' : 's' }}</p>
+            </div>
+          </button>
+        </div>
+
+        <!-- Recent notes grid -->
+        <div class="nwv2-recent" *ngIf="filteredNotes.length > 0">
+          <h3 class="nwv2-section-title">Recent Notes</h3>
+          <div class="nwv2-recent-grid">
+            <button class="nwv2-recent-card" type="button" *ngFor="let note of filteredNotes.slice(0, 4)"
+                 (click)="openNote(note)"
+                 [attr.aria-label]="'Open recent note: ' + note.topic">
+              <div class="nwv2-recent-icon-wrap">
+                <span class="nwv2-recent-cat-dot" [attr.data-cat]="note.category"></span>
+              </div>
+              <div class="nwv2-recent-info">
+                <p class="nwv2-recent-topic">{{ note.topic }}</p>
+                <p class="nwv2-recent-meta">{{ note.category || 'Other' }} · {{ noteReadingTime(note) }}</p>
+              </div>
+              <span class="nwv2-recent-arrow">→</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- AI learning modes promo -->
+        <div class="nwv2-modes-promo" *ngIf="notes.length > 0">
+          <h3 class="nwv2-section-title">AI Learning Modes</h3>
+          <div class="nwv2-modes-grid">
+            <div class="nwv2-mode-card">
+              <span class="nwv2-mode-card-icon">📖</span>
+              <span class="nwv2-mode-card-label">Read</span>
+              <span class="nwv2-mode-card-desc">Formatted viewer</span>
+            </div>
+            <div class="nwv2-mode-card nwv2-mode-card--ai">
+              <span class="nwv2-mode-card-icon">🧠</span>
+              <span class="nwv2-mode-card-label">AI Breakdown</span>
+              <span class="nwv2-mode-card-desc">Smart summary</span>
+            </div>
+            <div class="nwv2-mode-card nwv2-mode-card--steps">
+              <span class="nwv2-mode-card-icon">🎬</span>
+              <span class="nwv2-mode-card-label">Step-by-Step</span>
+              <span class="nwv2-mode-card-desc">Guided flow</span>
+            </div>
+          </div>
+          <p class="nwv2-modes-hint">← Select any note to unlock AI-powered learning modes</p>
+        </div>
+
+        <!-- Arrow / CTA -->
+        <div class="notes-welcome-arrow" *ngIf="notes.length > 0">← Select a note to begin</div>
+        <button class="notes-welcome-cta" *ngIf="notes.length === 0" (click)="openCreateNote()">Create note</button>
+
       </div>
 
-      <!-- READ MODE -->
-      <div class="reader-content" *ngIf="activeNote && !editMode">
+      <!-- READ / BREAKDOWN / STEPS MODE -->
+      <div class="reader-content" #readerPanel tabindex="-1" [class.reader-content--dark]="viewMode !== 'read'" *ngIf="activeNote && !editMode" [attr.aria-label]="'Reading note: ' + activeNote.topic">
         <div class="reader-header">
-          <div class="reader-topic-row">
-            <span class="reader-topic-icon"></span>
+
+          <!-- Title + action buttons -->
+          <div class="reader-title-row">
             <h2 class="reader-topic">{{ activeNote.topic }}</h2>
-            <span class="reader-cat-badge" *ngIf="activeNote.category">{{ activeNote.category }}</span>
-          </div>
-          <div class="reader-tags-row" *ngIf="(activeNote.tags ?? []).length > 0">
-            <span class="reader-tag" *ngFor="let t of (activeNote.tags ?? [])">#{{ t }}</span>
-          </div>
-          <div class="reader-actions">
-            <div class="reader-meta">
-              <span class="reader-date">{{ formatDate(activeNote.savedAtMs) }}</span>
-              <span class="reader-meta-sep">·</span>
-              <span class="reader-stats">{{ noteWordCount(activeNote) }} words · {{ noteReadingTime(activeNote) }}</span>
-            </div>
-            <div class="reader-btns">
-              <div class="export-menu-wrap">
-                <button class="reader-icon-btn" title="Export" (click)="showExportMenu = !showExportMenu">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Export
+            <div class="reader-header-actions">
+              <!-- Focus mode toggle -->
+              <button class="reader-action-btn" (click)="toggleSidebar()"
+                      [title]="sidebarCollapsed ? 'Show sidebar' : 'Focus mode'"
+                      aria-label="Toggle focus mode">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+              </button>
+              <!-- More actions menu -->
+              <div class="reader-more-wrap">
+                <button class="reader-action-btn" (click)="showMoreMenu = !showMoreMenu" aria-label="More options">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
                 </button>
-                <div class="export-dropdown" *ngIf="showExportMenu">
-                  <button (click)="exportAsTxt(); showExportMenu=false">📄 TXT</button>
-                  <button (click)="exportAsMd(); showExportMenu=false">📝 MD</button>
-                  <button (click)="exportAsPdf(); showExportMenu=false">🖨 PDF</button>
+                <div class="reader-more-menu" *ngIf="showMoreMenu" (click)="$event.stopPropagation()">
+                  <button (click)="startEdit(); showMoreMenu = false">✏️ Edit</button>
+                  <button [class.menu-active]="isPinned(activeNote)"
+                          (click)="togglePin(activeNote); showMoreMenu = false">
+                    {{ isPinned(activeNote) ? '📌 Unpin' : '📌 Pin note' }}
+                  </button>
+                  <div class="menu-divider"></div>
+                  <button (click)="exportAsTxt(); showMoreMenu = false">📄 Export TXT</button>
+                  <button (click)="exportAsMd(); showMoreMenu = false">📝 Export Markdown</button>
+                  <button (click)="exportAsPdf(); showMoreMenu = false">🖨 Export PDF</button>
+                  <div class="menu-divider"></div>
+                  <button class="menu-danger" (click)="requestDelete(activeNote!); showMoreMenu = false">🗑 Delete note</button>
                 </div>
               </div>
-              <button class="reader-icon-btn" [class.reader-icon-btn--active]="isPinned(activeNote)"
-                      (click)="togglePin(activeNote)"
-                      [title]="isPinned(activeNote) ? 'Unpin note' : 'Pin to top'">
-                {{ isPinned(activeNote) ? '📌 Pinned' : '📌 Pin' }}
-              </button>
-              <button class="reader-edit-btn" (click)="startEdit()">✏️ Edit</button>
-              <button class="reader-icon-btn reader-icon-btn--danger" (click)="requestDelete(activeNote!)" title="Delete note">🗑</button>
             </div>
           </div>
+
+          <!-- Metadata row: category · date · read time · tags -->
+          <div class="reader-meta-row">
+            <span class="reader-cat-badge" *ngIf="activeNote.category">{{ activeNote.category }}</span>
+            <span class="reader-meta-dot" *ngIf="activeNote.category">·</span>
+            <span class="reader-date">{{ formatDate(activeNote.savedAtMs) }}</span>
+            <span class="reader-meta-dot">·</span>
+            <span class="reader-stats-txt">{{ noteReadingTime(activeNote) }}</span>
+            <ng-container *ngIf="(activeNote.tags ?? []).length > 0">
+              <span class="reader-meta-dot">·</span>
+              <span class="reader-tag-inline" *ngFor="let t of (activeNote.tags ?? []) | slice:0:2">#{{ t }}</span>
+            </ng-container>
+            <span class="reader-pinned-badge" *ngIf="isPinned(activeNote)">📌</span>
+          </div>
+
         </div>
-        <div class="reader-body md-content" [innerHTML]="activeNote.content | markdown" appTryNow></div>
+
+        <!-- ── Learning mode tabs ──────────────────────────────────────── -->
+        <!-- <div class="reader-tabs">
+          <button class="rtab" [class.rtab--active]="viewMode === 'read'"
+                  (click)="setViewMode('read')">Read</button>
+          <button class="rtab" [class.rtab--active]="viewMode === 'breakdown'"
+                  (click)="setViewMode('breakdown')">AI Breakdown</button>
+          <button class="rtab" [class.rtab--active]="viewMode === 'steps'"
+                  (click)="setViewMode('steps')">Step-by-Step</button>
+        </div> -->
+
+        <!-- ── READ mode ──────────────────────────────────────────────── -->
+        <div class="reader-workspace" *ngIf="viewMode === 'read'" @fadeSlide>
+          <div class="reader-body md-content"
+               [innerHTML]="activeNote.content | markdown" appTryNow></div>
+
+          <aside class="reader-study-panel" aria-label="Note study tools">
+            <div class="rsp-card rsp-card--hero">
+              <span class="rsp-kicker">Quick scan</span>
+              <strong>{{ noteWordCount(activeNote) }} words</strong>
+              <span>{{ noteReadingTime(activeNote) }}</span>
+            </div>
+
+            <div class="rsp-card rsp-meta-card">
+              <div class="rsp-meta-item">
+                <span>Topic</span>
+                <strong>{{ activeNote.category || 'Other' }}</strong>
+              </div>
+              <div class="rsp-meta-item">
+                <span>Saved</span>
+                <strong>{{ formatDate(activeNote.savedAtMs) }}</strong>
+              </div>
+            </div>
+
+            <div class="rsp-card">
+              <div class="rsp-card-title">Actions</div>
+              <div class="rsp-actions">
+                <button type="button" (click)="startEdit()">Edit note</button>
+                <button type="button" (click)="aiDrawerOpen = true">AI tools</button>
+                <button type="button" (click)="exportAsMd()">Export MD</button>
+              </div>
+            </div>
+
+            <div class="rsp-card">
+              <div class="rsp-card-title">Tags</div>
+              <div class="rsp-tags" *ngIf="(activeNote.tags ?? []).length > 0; else rspNoTags">
+                <span *ngFor="let t of (activeNote.tags ?? [])">#{{ t }}</span>
+              </div>
+              <ng-template #rspNoTags>
+                <p class="rsp-empty">No tags added</p>
+              </ng-template>
+            </div>
+          </aside>
+        </div>
+
+        <!-- ── AI BREAKDOWN mode ──────────────────────────────────────── -->
+        <div class="reader-breakdown" *ngIf="viewMode === 'breakdown'" @fadeSlide>
+
+          <!-- Loading -->
+          <div class="rbd-loading" *ngIf="breakdownLoading">
+            <div class="rbd-spinner"></div>
+            <p>AI is generating a structured breakdown…</p>
+          </div>
+
+          <!-- Error -->
+          <div class="rbd-error" *ngIf="breakdownError && !breakdownLoading">
+            <span>⚠️ Could not generate breakdown.</span>
+            <button class="rbd-retry-btn" (click)="loadBreakdown()">Retry</button>
+          </div>
+
+          <!-- Content -->
+          <div class="rbd-content" *ngIf="breakdownData && !breakdownLoading">
+
+            <!-- Summary block -->
+            <div class="rbd-block">
+              <h3 class="rbd-block-title"><span class="rbd-block-icon">🧠</span> Summary</h3>
+              <p class="rbd-summary">{{ breakdownData.summary }}</p>
+            </div>
+
+            <!-- Sections accordion -->
+            <div class="rbd-block" *ngIf="breakdownData.sections?.length > 0">
+              <h3 class="rbd-block-title"><span class="rbd-block-icon">⚡</span> Key Sections</h3>
+              <div class="rbd-section" *ngFor="let s of breakdownData.sections; let i = index">
+                <button class="rbd-section-btn" (click)="toggleBreakdownSection(i)">
+                  <span class="rbd-section-num">{{ i + 1 }}</span>
+                  <span class="rbd-section-heading">{{ s.heading }}</span>
+                  <span class="rbd-chevron" [class.rbd-chevron--open]="breakdownOpenSection === i">›</span>
+                </button>
+                <div class="rbd-section-body" *ngIf="breakdownOpenSection === i" @fadeSlide>
+                  <p *ngIf="s.content">{{ s.content }}</p>
+                  <ul class="rbd-bullets" *ngIf="s.bullets?.length">
+                    <li *ngFor="let b of s.bullets">{{ b }}</li>
+                  </ul>
+                  <div class="rbd-example" *ngIf="s.example">
+                    <span class="rbd-example-label">Example</span>
+                    <pre class="rbd-example-code">{{ s.example }}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- CTA actions -->
+            <div class="rbd-actions">
+              <button class="rbd-cta rbd-cta--primary" (click)="setViewMode('steps')">
+                🎬 Learn Step-by-Step
+              </button>
+              <a class="rbd-cta rbd-cta--ghost" routerLink="/revision">
+                🔁 Add to Revision
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- ── STEP-BY-STEP mode ──────────────────────────────────────── -->
+        <div class="reader-steps" *ngIf="viewMode === 'steps'" @fadeSlide>
+
+          <!-- Loading -->
+          <div class="rbd-loading" *ngIf="breakdownLoading">
+            <div class="rbd-spinner"></div>
+            <p>Preparing steps…</p>
+          </div>
+
+          <!-- Error -->
+          <div class="rbd-error" *ngIf="breakdownError && !breakdownLoading">
+            <span>⚠️ Could not load steps.</span>
+            <button class="rbd-retry-btn" (click)="loadBreakdown()">Retry</button>
+          </div>
+
+          <!-- Steps -->
+          <div class="rst-container" *ngIf="breakdownData && !breakdownLoading">
+
+            <!-- Progress header -->
+            <div class="rst-progress-header">
+              <span class="rst-counter">Step {{ stepIndex + 1 }} of {{ breakdownSteps.length }}</span>
+              <div class="rst-progress-track">
+                <div class="rst-progress-fill" [style.width.%]="stepProgress"></div>
+              </div>
+            </div>
+
+            <!-- Current step card — wrap in *ngFor to animate on index change -->
+            <ng-container *ngFor="let step of [breakdownSteps[stepIndex]]">
+              <div class="rst-step-card" @stepAnim>
+                <div class="rst-step-dot">{{ stepIndex + 1 }}</div>
+                <p class="rst-step-text">{{ step }}</p>
+              </div>
+            </ng-container>
+
+            <!-- Previous steps (greyed out) -->
+            <div class="rst-prev-steps" *ngIf="stepIndex > 0">
+              <div class="rst-prev-step" *ngFor="let s of breakdownSteps.slice(0, stepIndex); let i = index">
+                <span class="rst-prev-num">{{ i + 1 }}</span>
+                <span class="rst-prev-text">{{ s }}</span>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="rst-controls">
+              <button class="rst-btn rst-btn--ghost"
+                      [disabled]="stepIndex === 0"
+                      (click)="prevStep()">← Prev</button>
+              <button class="rst-btn rst-btn--auto"
+                      (click)="toggleAutoPlay()">
+                {{ stepsAutoPlaying ? '⏸ Pause' : '▶ Auto' }}
+              </button>
+              <button class="rst-btn rst-btn--primary"
+                      [disabled]="stepIndex === breakdownSteps.length - 1"
+                      (click)="nextStep()">Next →</button>
+            </div>
+
+            <!-- Completion -->
+            <div class="rst-done" *ngIf="stepIndex === breakdownSteps.length - 1">
+              <span class="rst-done-icon">🎉</span>
+              <p>All {{ breakdownSteps.length }} steps complete!</p>
+              <div class="rst-done-actions">
+                <button class="rst-btn rst-btn--primary" (click)="setViewMode('read')">📖 Full Note</button>
+                <a class="rst-btn rst-btn--ghost" routerLink="/revision">🔁 Revise</a>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
       </div>
 
       <!-- EDIT MODE -->
       <div class="editor-panel" *ngIf="activeNote && editMode">
+
+        <!-- Scrollable body ───────────────────────────────────── -->
+        <div class="editor-panel-body">
+        <div class="editor-panel-inner">
+
         <div class="editor-header">
-          <h3 class="editor-title"> Edit Note</h3>
-          <button class="editor-close-btn" (click)="cancelEdit()"></button>
+          <h3 class="editor-title">Edit Note</h3>
+          <button class="editor-close-btn" (click)="cancelEdit()" title="Close editor" aria-label="Close editor">✕</button>
         </div>
         <div class="editor-field">
           <label class="editor-label">Title</label>
@@ -294,7 +649,14 @@
         </div>
         <div class="editor-field">
           <label class="editor-label">Content</label>
-          <textarea class="editor-textarea" rows="10" [(ngModel)]="editContent"></textarea>
+          <app-tiptap-editor
+            #editTiptap
+            [initialContent]="editContent"
+            placeholder="Edit your note here…"
+            [editorClass]="meFormatLoading ? 'is-streaming' : 'edit-tiptap'"
+            (contentChange)="editContent = $event"
+            class="editor-tiptap-host">
+          </app-tiptap-editor>
         </div>
         <div class="editor-field append-section">
           <label class="editor-label">
@@ -305,6 +667,9 @@
             placeholder="Add extra thoughts, corrections, or updates&hellip;"></textarea>
         </div>
         <div class="editor-error" *ngIf="updateError">{{ updateError }}</div>
+
+        </div><!-- /editor-panel-inner -->
+        </div><!-- /editor-panel-body -->
         <div class="editor-footer">
           <!-- Format with AI: left-aligned, uses same handler as mobile editor -->
           <div class="editor-footer-ai">
@@ -315,192 +680,52 @@
             </button>
             <button class="editor-format-btn" type="button"
               (click)="formatMobileWithAI()"
-              [disabled]="meFormatLoading || isUpdating || !editContent.trim()"
-              [class.loading]="meFormatLoading"
-              title="Format with AI (Ctrl+Shift+F)">
-              <span class="editor-format-spinner" *ngIf="meFormatLoading"></span>
-              <span *ngIf="!meFormatLoading">✨ Format with AI</span>
-              <span *ngIf="meFormatLoading">Formatting…</span>
+              [disabled]="isUpdating || (editTiptap ? editTiptap.isEmpty() : !editContent.trim())"
+              title="Auto-Format (Ctrl+Shift+F)">
+              ⚡ Auto-Format
             </button>
           </div>
           <div class="editor-footer-actions">
-            <button class="editor-cancel-btn" type="button" (click)="cancelEdit()" [disabled]="isUpdating || meFormatLoading">Cancel</button>
+            <button class="editor-cancel-btn" type="button" (click)="cancelEdit()" [disabled]="isUpdating">Cancel</button>
             <button class="editor-save-btn" type="button" (click)="saveEdit()"
-              [disabled]="isUpdating || meFormatLoading || !editTopic.trim()">
+              [disabled]="isUpdating || !editTopic.trim()">
               {{ isUpdating ? 'Saving…' : '💾 Save Changes' }}
             </button>
           </div>
         </div>
       </div>
 
+      </div><!-- /nr-content -->
+
     </main><!-- /notes-right -->
-
-    <!-- ═══════════════ DESKTOP AI ACTIONS PANEL ═══════════════ -->
-    <aside class="notes-ai-panel" *ngIf="activeNote && !editMode">
-
-      <!-- Header -->
-      <div class="nap-header">
-        <div class="nap-title-row">
-          <span class="nap-icon">🤖</span>
-          <span class="nap-title">AI Assistant</span>
-        </div>
-        <span class="nap-subtitle">Ask anything about this note</span>
-      </div>
-
-      <!-- ── Ask AI free-text input ── -->
-      <div class="nap-ask-wrap">
-        <textarea class="nap-ask-input" [(ngModel)]="aiAskQuery"
-                  placeholder="Ask anything about this note…"
-                  rows="2"
-                  (keydown.enter)="onAskKeydown($event)"
-                  [disabled]="aiActionLoading"></textarea>
-        <button class="nap-ask-btn" (click)="askAiAboutNote()"
-                [disabled]="aiActionLoading || !aiAskQuery.trim()">
-          {{ aiActionLoading ? '…' : 'Ask' }}
-        </button>
-      </div>
-
-      <!-- ── Quick action groups ── -->
-      <div class="nap-groups">
-
-        <!-- Understand -->
-        <div class="nap-group">
-          <button class="nap-group-toggle" (click)="toggleAiGroup('understand')"
-                  [class.open]="aiGroupOpen === 'understand'">
-            <span>💡 Understand</span>
-            <span class="nap-chevron">{{ aiGroupOpen === 'understand' ? '▲' : '▼' }}</span>
-          </button>
-          <div class="nap-group-items" *ngIf="aiGroupOpen === 'understand'">
-            <button class="nap-chip" (click)="runAiAction('summarize')" [disabled]="aiActionLoading">📋 Summarize</button>
-            <button class="nap-chip" (click)="runAiAction('explain')"   [disabled]="aiActionLoading">🗣 Explain</button>
-          </div>
-        </div>
-
-        <!-- Improve -->
-        <div class="nap-group">
-          <button class="nap-group-toggle" (click)="toggleAiGroup('improve')"
-                  [class.open]="aiGroupOpen === 'improve'">
-            <span>🔧 Improve</span>
-            <span class="nap-chevron">{{ aiGroupOpen === 'improve' ? '▲' : '▼' }}</span>
-          </button>
-          <div class="nap-group-items" *ngIf="aiGroupOpen === 'improve'">
-            <button class="nap-chip" (click)="runAiAction('simplify')" [disabled]="aiActionLoading">🔤 Simplify</button>
-            <button class="nap-chip" (click)="runAiAction('expand')"   [disabled]="aiActionLoading">🔭 Expand</button>
-            <button class="nap-chip" (click)="runAiAction('example')"  [disabled]="aiActionLoading">💡 Example</button>
-            <button class="nap-chip" (click)="runAiAction('code')"     [disabled]="aiActionLoading">💻 Code</button>
-          </div>
-        </div>
-
-        <!-- Practice -->
-        <div class="nap-group">
-          <button class="nap-group-toggle" (click)="toggleAiGroup('practice')"
-                  [class.open]="aiGroupOpen === 'practice'">
-            <span>📝 Practice</span>
-            <span class="nap-chevron">{{ aiGroupOpen === 'practice' ? '▲' : '▼' }}</span>
-          </button>
-          <div class="nap-group-items" *ngIf="aiGroupOpen === 'practice'">
-            <button class="nap-chip" (click)="runAiAction('quiz')"       [disabled]="aiActionLoading">📝 Quiz</button>
-            <button class="nap-chip" (click)="runAiAction('flashcards')" [disabled]="aiActionLoading">🗂 Flashcards</button>
-            <button class="nap-chip" (click)="runAiAction('interview')"  [disabled]="aiActionLoading">🎤 Interview Answer</button>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Suggest Tags link -->
-      <button class="nap-tags-link" (click)="suggestTags()" [disabled]="aiActionLoading">🏷️ Suggest Tags</button>
-
-      <!-- Loading -->
-      <div class="nap-loading-state" *ngIf="aiActionLoading && !aiActionResult">
-        <span class="nap-spinner"></span>
-        <span>Thinking…</span>
-        <button class="nap-stop-btn" (click)="stopAiAction()">■ Stop</button>
-      </div>
-
-      <!-- Tag suggestions -->
-      <div class="nap-tag-suggestions" *ngIf="aiTagSuggestions.length > 0">
-        <div class="nap-tag-header">✨ Suggested Tags — click to apply</div>
-        <div class="nap-suggested-tags">
-          <button *ngFor="let t of aiTagSuggestions" class="nap-sugg-tag"
-                  (click)="applySuggestedTag(t)">#{{ t }}</button>
-        </div>
-      </div>
-
-      <!-- Streaming result -->
-      <div class="nap-result-block" *ngIf="aiActionResult">
-        <div class="nap-result-header">
-          <span class="nap-result-label">
-            <span *ngIf="aiActionStreaming" class="nap-stream-dot"></span>
-            Result
-          </span>
-          <div class="nap-result-actions">
-            <button *ngIf="!aiActionStreaming && aiActionResult" class="nap-append-btn"
-                    (click)="saveAiResultToNote()"
-                    [title]="aiSavedToNote ? 'Saved!' : 'Append this result to the note'">
-              {{ aiSavedToNote ? '✅ Saved' : '+ Append to Note' }}
-            </button>
-            <button class="nap-clear-btn" (click)="aiActionResult = ''; aiActionError = ''; aiTagSuggestions = []">✕</button>
-          </div>
-        </div>
-        <div class="nap-result-text md-content" [innerHTML]="aiActionResult | markdown" appTryNow></div>
-      </div>
-
-      <!-- Error -->
-      <div class="nap-error-block" *ngIf="aiActionError">
-        ⚠️ {{ aiActionError }}
-        <button class="nap-clear-btn" (click)="aiActionError = ''">✕</button>
-      </div>
-
-      <!-- Context pill -->
-      <div class="nap-context-hint">
-        <span class="nap-hint-icon">📌</span>
-        <span>Acting on: <strong>{{ activeNote.topic }}</strong></span>
-      </div>
-
-    </aside>
 
     <!-- ══════════════════ MOBILE READER OVERLAY ══════════════════ -->
     <div class="mobile-reader" *ngIf="mobileReaderOpen && activeNote && !editMode">
 
-      <!-- Top bar -->
-      <div class="mr-topbar">
-        <button class="mr-back-btn" (click)="closeMobileReader()">
-          <span class="mr-back-arrow">‹</span> Back
-        </button>
-        <span class="mr-topbar-title">{{ activeNote.topic }}</span>
-        <div class="mr-more-wrap">
-          <button class="mr-more-btn" (click)="showMoreMenu = !showMoreMenu" aria-label="More options">⋮</button>
-          <div class="mr-more-menu" *ngIf="showMoreMenu">
-            <button (click)="openMobileEditor(); showMoreMenu = false">✏️ Edit</button>
-            <button class="danger" (click)="requestDelete(activeNote!); showMoreMenu = false">🗑 Delete</button>
-          </div>
-        </div>
-      </div>
-
       <!-- Scrollable content area -->
       <div class="mr-scroll">
 
-        <!-- Note title -->
-        <h1 class="mr-note-title">{{ activeNote.topic }}</h1>
-
-        <!-- Metadata row -->
-        <div class="mr-meta">
-          <div class="mr-meta-top">
-            <span class="mr-date">📅 {{ formatDate(activeNote.savedAtMs) }}</span>
-            <span class="mr-cat-badge" *ngIf="activeNote.category">{{ activeNote.category }}</span>
+        <!-- Flat inline page header — no card, no gradient -->
+        <div class="mr-page-header">
+          <div class="mr-title-row">
+            <button class="mr-back-btn" (click)="closeMobileReader()" title="Back to notes">
+              <span class="mr-back-arrow">‹</span>
+            </button>
+            <h1 class="mr-note-title">{{ activeNote.topic }}</h1>
           </div>
-          <div class="mr-tags" *ngIf="(activeNote.tags ?? []).length > 0">
-            <span class="mr-tag" *ngFor="let t of (activeNote.tags ?? [])">#{{ t }}</span>
-          </div>
-          <div class="mr-export-row">
-            <span class="mr-export-label">Export:</span>
-            <button class="mr-export-btn" (click)="exportAsTxt()">📄 TXT</button>
-            <button class="mr-export-btn" (click)="exportAsMd()">📝 MD</button>
+          <div class="mr-meta">
+            <div class="mr-inline-meta">
+              <span class="mr-date">{{ formatDate(activeNote.savedAtMs) }}</span>
+              <span class="mr-meta-sep">·</span>
+              <span class="mr-rs-item">{{ noteReadingTime(activeNote) }}</span>
+              <span class="mr-meta-sep" *ngIf="activeNote.category">·</span>
+              <span class="mr-cat-badge" *ngIf="activeNote.category">{{ activeNote.category }}</span>
+            </div>
+            <div class="mr-tags" *ngIf="(activeNote.tags ?? []).length > 0">
+              <span class="mr-tag" *ngFor="let t of (activeNote.tags ?? [])">#{{ t }}</span>
+            </div>
           </div>
         </div>
-
-        <!-- Divider -->
-        <div class="mr-divider"></div>
 
         <!-- Markdown body -->
         <div class="mr-body md-content" [innerHTML]="activeNote.content | markdown" appTryNow></div>
@@ -545,20 +770,62 @@
         </div>
       </div>
 
-      <!-- Bottom action bar -->
-      <div class="mr-bottombar">
-        <button class="mr-action-btn" (click)="openMobileEditor()">
-          <span class="mr-action-icon">✏️</span>
-          <span class="mr-action-label">Edit</span>
-        </button>
-        <button class="mr-action-btn" (click)="shareNote()">
-          <span class="mr-action-icon">🔗</span>
-          <span class="mr-action-label">Share</span>
-        </button>
-        <button class="mr-action-btn" [class.mr-action-active]="showAiActions"
-                (click)="showAiActions = !showAiActions">
-          <span class="mr-action-icon">🤖</span>
-          <span class="mr-action-label">AI Actions</span>
+      <!-- ── Reader FAB — speed dial for note actions ────────────── -->
+      <!-- FAB backdrop must be OUTSIDE mr-fab-wrap so z:1491 is below wrap's z:1492 stacking context -->
+      <div class="mr-fab-backdrop" *ngIf="showFabMenu" (click)="showFabMenu = false"></div>
+      <div class="mr-fab-wrap">
+        <!-- Speed dial items -->
+        <div class="mr-fab-menu" [class.open]="showFabMenu">
+          <div class="mr-fab-item mr-fab-item--danger" (click)="requestDelete(activeNote!); showFabMenu = false">
+            <div class="mr-fab-item-icon-wrap mr-fab-item-icon-wrap--delete">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="3 6 5 6 21 6"/>
+                <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                <path d="M10 11v6"/><path d="M14 11v6"/>
+                <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+              </svg>
+            </div>
+            <span class="mr-fab-item-label">Delete</span>
+          </div>
+          <div class="mr-fab-item" (click)="shareNote(); showFabMenu = false">
+            <div class="mr-fab-item-icon-wrap mr-fab-item-icon-wrap--share">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+              </svg>
+            </div>
+            <span class="mr-fab-item-label">Share</span>
+          </div>
+          <div class="mr-fab-item" (click)="showAiActions = true; showFabMenu = false">
+            <div class="mr-fab-item-icon-wrap mr-fab-item-icon-wrap--ai">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+                <line x1="12" y1="17" x2="12.01" y2="17"/>
+              </svg>
+            </div>
+            <span class="mr-fab-item-label">AI Actions</span>
+          </div>
+          <div class="mr-fab-item" (click)="openMobileEditor(); showFabMenu = false">
+            <div class="mr-fab-item-icon-wrap mr-fab-item-icon-wrap--edit">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+              </svg>
+            </div>
+            <span class="mr-fab-item-label">Edit Note</span>
+          </div>
+        </div>
+        <!-- Main FAB button -->
+        <button class="mr-fab-btn" [class.open]="showFabMenu"
+                (click)="showFabMenu = !showFabMenu" aria-label="Note actions">
+          <svg class="mr-fab-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <svg class="mr-fab-icon mr-fab-icon--close" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
         </button>
       </div>
 
@@ -575,7 +842,7 @@
         <input class="me-title-input" type="text" [(ngModel)]="editTopic"
                placeholder="Note title…" maxlength="120" />
         <button class="me-save-btn" (click)="saveEdit()"
-                [disabled]="isUpdating || !editTopic.trim() || meFormatLoading">
+                [disabled]="isUpdating || !editTopic.trim()">
           {{ isUpdating ? '…' : 'Save' }}
         </button>
       </div>
@@ -583,12 +850,10 @@
       <!-- Formatting toolbar -->
       <div class="me-toolbar">
         <button class="me-tb-btn me-tb-ai" (click)="formatMobileWithAI()"
-                [disabled]="meFormatLoading || !editContent.trim()" [class.loading]="meFormatLoading">
-          <span class="me-tb-spinner" *ngIf="meFormatLoading"></span>
-          <span *ngIf="!meFormatLoading">✨ Format with AI</span>
-          <span *ngIf="meFormatLoading">Formatting…</span>
+                [disabled]="!editContent.trim()">
+          ⚡ Auto-Format
         </button>
-        <button class="me-tb-btn me-tb-undo" *ngIf="mePreFormatContent !== null && !meFormatLoading"
+        <button class="me-tb-btn me-tb-undo" *ngIf="mePreFormatContent !== null"
                 (click)="undoMeFormat()">↩ Undo</button>
         <div class="me-tb-sep"></div>
         <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'heading')" title="Heading">H1</button>
@@ -619,6 +884,135 @@
     </div><!-- /mobile-editor -->
 
   </div><!-- /notes-shell -->
+
+  <!-- ═══════════════ FLOATING AI BUTTON (desktop) ═══════════════ -->
+  <button class="ai-fab"
+          *ngIf="user && activeNote && !editMode && !createMode"
+          (click)="aiDrawerOpen = !aiDrawerOpen"
+          [class.ai-fab--active]="aiDrawerOpen"
+          aria-label="Open AI assistant">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2zM9 14a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm6 0a1 1 0 1 0 0-2 1 1 0 0 0 0 2z"/>
+    </svg>
+    <span class="ai-fab-label">AI</span>
+    <span class="ai-fab-dot" *ngIf="aiActionStreaming"></span>
+  </button>
+
+  <!-- ═══════════════ DESKTOP AI ASSISTANT DRAWER ═══════════════ -->
+  <div class="ai-drawer" [class.ai-drawer--open]="aiDrawerOpen" *ngIf="activeNote && !editMode">
+    <div class="ai-drawer-backdrop" (click)="aiDrawerOpen = false"></div>
+    <div class="ai-drawer-panel">
+
+      <!-- Header -->
+      <div class="ai-drawer-header">
+        <div class="ai-drawer-title-row">
+          <span class="ai-drawer-title">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z"/></svg>
+            AI Assistant
+          </span>
+          <button class="ai-drawer-close" (click)="aiDrawerOpen = false" aria-label="Close AI assistant">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+        <p class="ai-drawer-subtitle">Acting on: <strong>{{ activeNote.topic | slice:0:45 }}</strong></p>
+      </div>
+
+      <!-- Ask AI -->
+      <div class="ai-drawer-ask">
+        <div class="ai-ask-row">
+          <input class="ai-ask-input" type="text" [(ngModel)]="aiAskQuery"
+                 placeholder="Ask anything about this note…"
+                 (keydown.enter)="!aiActionLoading && !!aiAskQuery.trim() && askAiAboutNote()"
+                 [disabled]="aiActionLoading" />
+          <button class="ai-ask-send" (click)="askAiAboutNote()"
+                  [disabled]="aiActionLoading || !aiAskQuery.trim()" aria-label="Send">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Action Grid -->
+      <div class="ai-drawer-quick">
+        <button class="ai-quick-btn" (click)="runAiAction('summarize')" [disabled]="aiActionLoading">
+          <span class="ai-quick-icon">📋</span> Summarize
+        </button>
+        <button class="ai-quick-btn" (click)="runAiAction('explain')" [disabled]="aiActionLoading">
+          <span class="ai-quick-icon">💡</span> Explain
+        </button>
+        <button class="ai-quick-btn" (click)="runAiAction('interview')" [disabled]="aiActionLoading">
+          <span class="ai-quick-icon">🎯</span> Interview
+        </button>
+        <button class="ai-quick-btn" (click)="runAiAction('quiz')" [disabled]="aiActionLoading">
+          <span class="ai-quick-icon">📝</span> Quiz
+        </button>
+      </div>
+
+      <!-- More action chips -->
+      <div class="ai-drawer-chips">
+        <button class="ai-chip" (click)="runAiAction('simplify')" [disabled]="aiActionLoading">Simplify</button>
+        <button class="ai-chip" (click)="runAiAction('expand')" [disabled]="aiActionLoading">Expand</button>
+        <button class="ai-chip" (click)="runAiAction('example')" [disabled]="aiActionLoading">Example</button>
+        <button class="ai-chip" (click)="runAiAction('code')" [disabled]="aiActionLoading">Code</button>
+        <button class="ai-chip" (click)="runAiAction('flashcards')" [disabled]="aiActionLoading">Flashcards</button>
+        <button class="ai-chip ai-chip--tags" (click)="suggestTags()" [disabled]="aiActionLoading">🏷 Suggest Tags</button>
+      </div>
+
+      <!-- Loading indicator -->
+      <div class="ai-drawer-loading" *ngIf="aiActionLoading && !aiActionResult">
+        <div class="ai-load-dot"></div><div class="ai-load-dot"></div><div class="ai-load-dot"></div>
+        <span>Thinking…</span>
+        <button class="ai-stop-btn" (click)="stopAiAction()">Stop</button>
+      </div>
+
+      <!-- Tag suggestions -->
+      <div class="ai-tag-suggestions" *ngIf="aiTagSuggestions.length > 0">
+        <p class="ai-tag-sugg-label">Suggested tags</p>
+        <div class="ai-tag-sugg-chips">
+          <button *ngFor="let t of aiTagSuggestions" class="ai-sugg-tag"
+                  (click)="applySuggestedTag(t)">#{{ t }}</button>
+        </div>
+      </div>
+
+      <!-- AI Result -->
+      <div class="ai-drawer-result" *ngIf="aiActionResult">
+        <div class="ai-result-header">
+          <span class="ai-result-label">
+            <span class="ai-stream-dot" *ngIf="aiActionStreaming"></span>
+            Result
+          </span>
+          <div class="ai-result-actions">
+            <button *ngIf="!aiActionStreaming" class="ai-result-append" (click)="saveAiResultToNote()">
+              {{ aiSavedToNote ? '✅ Saved' : 'Append to note' }}
+            </button>
+            <button class="ai-result-clear"
+                    (click)="aiActionResult = ''; aiActionError = ''; aiTagSuggestions = []"
+                    aria-label="Clear result">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="ai-result-content md-content" [innerHTML]="aiActionResult | markdown" appTryNow></div>
+      </div>
+
+      <!-- Error -->
+      <div class="ai-drawer-error" *ngIf="aiActionError">
+        ⚠️ {{ aiActionError }}
+        <button (click)="aiActionError = ''">✕</button>
+      </div>
+
+    </div><!-- /ai-drawer-panel -->
+  </div><!-- /ai-drawer -->
+
+  <!-- Floating AI Selection Menu -->
+  <div class="note-selection-menu"
+       *ngIf="showSelectionMenu && activeNote && !editMode"
+       [style.top.px]="selectionMenuPos.y"
+       [style.left.px]="selectionMenuPos.x">
+    <button class="note-sel-btn note-sel-copy" (click)="copySelectionToClipboard()" title="Copy">📋 Copy</button>
+    <button class="note-sel-btn" (click)="runSelectionAction('explain')"   [disabled]="aiActionLoading">🗣 Explain</button>
+    <button class="note-sel-btn" (click)="runSelectionAction('simplify')"  [disabled]="aiActionLoading">✂️ Simplify</button>
+    <button class="note-sel-btn" (click)="runSelectionAction('example')"   [disabled]="aiActionLoading">💡 Example</button>
+  </div>
 
   <!-- ════════════════ DELETE CONFIRMATION MODAL ════════════════ -->
   <div class="del-modal-backdrop" *ngIf="deleteModal" (click)="cancelDelete()" aria-modal="true" role="dialog">
@@ -654,101 +1048,111 @@
 
     <!-- ── Top navigation bar ─────────────────────────────────────────── -->
     <div class="cn-topbar">
-      <button class="cn-back-btn" (click)="closeCreateNote()" [disabled]="isFormatting || isSavingNew">
-        ‹ Back
+      <button class="cn-back-btn" (click)="closeCreateNote()" [disabled]="isSavingNew">
+        <span class="cn-back-icon">‹</span>
+        <span>Back</span>
       </button>
-      <span class="cn-page-title">New Note</span>
+      <div class="cn-topbar-title">
+        <span class="cn-page-kicker">Notes</span>
+        <span class="cn-page-title">New note</span>
+      </div>
       <button class="cn-save-btn" (click)="saveNewNote()"
-              [disabled]="isSavingNew || isFormatting || !createTopic.trim() || !createContent.trim()">
-        {{ isSavingNew ? '…' : 'Save' }}
+              [disabled]="isSavingNew || !createTopic.trim() || !createContent.trim() || !user"
+              [title]="!user ? 'Please log in to save notes' : ''">
+        {{ isSavingNew ? 'Saving' : 'Save note' }}
       </button>
     </div>
 
-    <!-- ── Metadata fields ────────────────────────────────────────────── -->
-    <div class="cn-fields">
+    <div class="cn-compose-shell">
 
-      <!-- Title -->
-      <input class="cn-title-input" type="text" [(ngModel)]="createTopic"
-             placeholder="Note title…" maxlength="120" />
+      <!-- ── Metadata rail ─────────────────────────────────────────────── -->
+      <aside class="cn-fields" aria-label="Note details">
+        <div class="cn-rail-head">
+          <span class="cn-rail-eyebrow">Draft setup</span>
+          <span class="cn-rail-count">{{ createWordCount }} words</span>
+        </div>
 
-      <!-- Category — horizontal scrollable chips -->
-      <div class="cn-cats-scroll">
-        <button *ngFor="let cat of categories" class="cn-cat-chip" type="button"
-          [class.active]="createCategory === cat" (click)="createCategory = cat">{{ cat }}</button>
-      </div>
+        <label class="cn-field-label" for="create-note-title">Title</label>
+        <input id="create-note-title" #createTitleInput class="cn-title-input" type="text" [(ngModel)]="createTopic"
+               placeholder="Name this note" maxlength="120" />
 
-      <!-- Tags -->
-      <div class="cn-tags-wrap">
-        <span class="cn-tag-chip" *ngFor="let tag of createTags">
-          #{{ tag }}<button class="cn-tag-rm" type="button" (click)="removeCreateTag(tag)">×</button>
-        </span>
-        <input class="cn-tag-input" type="text" [(ngModel)]="createTagInput"
-          (keydown)="addCreateTagOnKey($event)" (blur)="addCreateTag()"
-          [placeholder]="createTags.length === 0 ? '+ Add tags (optional)' : ''" />
-      </div>
+        <div class="cn-field-block">
+          <span class="cn-field-label">Category</span>
+          <div class="cn-cats-scroll" role="listbox" aria-label="Choose note category">
+            <button *ngFor="let cat of categories" class="cn-cat-chip" type="button"
+              [class.active]="createCategory === cat" (click)="createCategory = cat">{{ cat }}</button>
+          </div>
+        </div>
 
-    </div>
+        <div class="cn-field-block">
+          <span class="cn-field-label">Tags</span>
+          <div class="cn-tags-wrap">
+            <span class="cn-tag-chip" *ngFor="let tag of createTags">
+              #{{ tag }}<button class="cn-tag-rm" type="button" (click)="removeCreateTag(tag)" [attr.aria-label]="'Remove ' + tag">×</button>
+            </span>
+            <input class="cn-tag-input" type="text" [(ngModel)]="createTagInput"
+              (keydown)="addCreateTagOnKey($event)" (blur)="addCreateTag()"
+              [placeholder]="createTags.length === 0 ? 'Add tags' : ''" />
+          </div>
+        </div>
 
-    <!-- ── Editor bar: Edit/Preview tabs + Format AI ─────────────────── -->
-    <div class="cn-editor-bar">
-      <div class="cn-tabs">
-        <button class="cn-tab" [class.active]="!createPreviewMode" (click)="createPreviewMode = false">
-          ✏️ Edit
-        </button>
-        <button class="cn-tab" [class.active]="createPreviewMode"
-                (click)="createPreviewMode = true" [disabled]="!createContent.trim()">
-          👁 Preview
-        </button>
-      </div>
-      <div class="cn-ai-row">
-        <button class="cn-undo-btn" *ngIf="preAIContent !== null && !isFormatting" (click)="undoAIFormat()">
-          ↩ Undo
-        </button>
-        <button class="cn-auto-toggle" (click)="autoFormatEnabled = !autoFormatEnabled"
-                [class.cn-auto-on]="autoFormatEnabled"
-                title="Auto-format pasted text with AI">
-          <span class="cn-auto-dot"></span>
-          <span>Auto</span>
-        </button>
-        <button class="cn-format-btn" (click)="formatNoteWithAI()"
-                [disabled]="isFormatting || isSavingNew || !createContent.trim()"
-                [class.cn-formatting]="isFormatting">
-          <span class="cn-ai-spinner" *ngIf="isFormatting"></span>
-          <span *ngIf="!isFormatting">✨ Format with AI</span>
-          <span *ngIf="isFormatting">Formatting…</span>
-        </button>
-      </div>
-    </div>
+        <div class="cn-draft-status" [class.cn-draft-status--ready]="createTopic.trim() && createContent.trim()">
+          <span class="cn-draft-dot"></span>
+          <span>{{ createTopic.trim() && createContent.trim() ? 'Ready to save' : 'Title and note body required' }}</span>
+        </div>
 
-    <!-- Error -->
-    <div class="cn-error" *ngIf="createError">⚠️ {{ createError }}</div>
+        <div class="cn-rail-actions">
+          <button class="cn-rail-save-btn" type="button"
+                  (click)="saveNewNote()"
+                  [disabled]="isSavingNew || !createTopic.trim() || !createContent.trim() || !user">
+            {{ isSavingNew ? 'Saving...' : 'Save note' }}
+          </button>
+          <button class="cn-rail-title-btn" type="button"
+                  *ngIf="!createTopic.trim()"
+                  (click)="focusCreateTitle()">
+            Add title
+          </button>
+        </div>
+      </aside>
 
-    <!-- ── Textarea / Preview ─────────────────────────────────────────── -->
-    <div class="cn-content-area">
+      <!-- ── Writing canvas ────────────────────────────────────────────── -->
+      <main class="cn-writing-pane">
+        <div class="cn-editor-bar">
+          <div class="cn-editor-label">
+            <span class="cn-editor-dot"></span>
+            <span>Focused editor</span>
+          </div>
+          <div class="cn-ai-row">
+            <button class="cn-undo-btn" *ngIf="preAIContent !== null && !isFormatting" (click)="undoAIFormat()">
+              Undo
+            </button>
+            <button class="cn-auto-toggle" (click)="autoFormatEnabled = !autoFormatEnabled"
+                    [class.cn-auto-on]="autoFormatEnabled"
+                    title="Auto-format pasted text instantly">
+              <span class="cn-auto-dot"></span>
+              <span>Auto</span>
+            </button>
+            <button class="cn-format-btn" (click)="formatNoteWithAI()"
+                    [disabled]="isSavingNew || (cnTiptap ? cnTiptap.isEmpty() : !createContent.trim())">
+              Auto-format
+            </button>
+          </div>
+        </div>
 
-      <textarea [hidden]="createPreviewMode" class="cn-textarea" #cnTextarea
-                [(ngModel)]="createContent"
-                (paste)="onCreateNotePaste($event)"
-                [class.cn-streaming]="isFormatting"
-                placeholder="Type or paste your raw notes here…&#10;&#10;✨ Tip: Paste messy text and tap 'Format with AI' to get clean structured notes instantly.">
-      </textarea>
+        <div class="cn-error" *ngIf="createError">{{ createError }}</div>
 
-      <div *ngIf="createPreviewMode && createContent.trim()"
-           class="cn-preview md-content" [innerHTML]="createContent | markdown" appTryNow>
-      </div>
-      <div class="cn-preview-empty" *ngIf="createPreviewMode && !createContent.trim()">
-        Nothing to preview yet.
-      </div>
+        <div class="cn-content-area">
+          <app-tiptap-editor
+            #cnTiptap
+            [initialContent]="createContent"
+            [placeholder]="'Start writing here…\n\nPaste rough thoughts, code notes, interview points, or AI output. Keep typing; formatting tools stay ready above.'"
+            [editorClass]="''"
+            (contentChange)="createContent = $event"
+            class="cn-tiptap-host">
+          </app-tiptap-editor>
+        </div>
+      </main>
 
-    </div>
-
-    <!-- ── Bottom markdown toolbar ────────────────────────────────────── -->
-    <div class="cn-md-bar" *ngIf="!createPreviewMode">
-      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'heading')" title="Heading">H1</button>
-      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'bold')" title="Bold"><strong>B</strong></button>
-      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'bullet')" title="Bullet list">•≡</button>
-      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'checklist')" title="Checklist">☑</button>
-      <button class="cn-md-btn" (click)="insertCreateSyntax(cnTextarea, 'code')" title="Code block">&lt;/&gt;</button>
     </div>
 
   </div>

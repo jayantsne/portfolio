@@ -33,6 +33,13 @@ export class MarkdownPipe implements PipeTransform {
   }
 
   private parse(text: string): string {
+    // If the content is already HTML (from Tiptap / AI), return it as-is so we
+    // don't double-process it through the markdown parser.
+    if (text.replace(/^\s+/, '').startsWith('<')) return this.decorateHtml(text);
+
+    // Normalize CRLF → LF (AI responses often use \r\n, which breaks line-end regex like /\|$/)
+    text = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
     // Close any unclosed code fence so partial streams render safely
     const fences = (text.match(/```/g) || []).length;
     if (fences % 2 !== 0) text += '\n```';
@@ -49,13 +56,14 @@ export class MarkdownPipe implements PipeTransform {
         `<div class="md-code-block">` +
         `<div class="md-code-header">${langLabel}` +
         `<div class="md-code-header-actions">` +
-        `<button class="md-copy-btn" data-code="${encoded}"` +
-        ` onclick="navigator.clipboard.writeText(decodeURIComponent(this.dataset.code))` +
-        `.then(()=>{this.textContent='✓ Copied';setTimeout(()=>{this.textContent='Copy'},1500)})">Copy</button>` +
-        `<button class="md-try-btn" data-code="${encoded}" data-lang="${langName}">` +
-        `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">` +
-        `<polygon points="5 3 19 12 5 21 5 3"/></svg>` +
-        ` Try Now</button>` +
+        `<button class="md-copy-btn" data-code="${encoded}" title="Copy code" aria-label="Copy code"` +
+        ` onclick="var b=this;navigator.clipboard.writeText(decodeURIComponent(b.dataset.code))` +
+        `.then(()=>{b.classList.add('md-copy-btn--copied');setTimeout(()=>b.classList.remove('md-copy-btn--copied'),1800)})">` +
+        `<svg class="md-btn-icon md-copy-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">` +
+        `<rect x="4" y="4" width="9" height="10" rx="1.5"/><path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11"/></svg>` +
+        `<svg class="md-btn-icon md-check-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="14" height="14" aria-hidden="true">` +
+        `<polyline points="2.5 8.5 6 12 13.5 4"/></svg>` +
+        `</button>` +
         `</div>` +
         `</div>` +
         `<pre class="md-pre hljs"><code class="hljs language-${langName}">${highlighted}</code></pre>` +
@@ -153,7 +161,36 @@ export class MarkdownPipe implements PipeTransform {
     let html = out.join('');
     codeBlocks.forEach((b, i) => { html = html.replace(`\x00CODE${i}\x00`, b); });
     inlineCodes.forEach((c, i) => { html = html.replace(`\x00INLINE${i}\x00`, c); });
-    return html;
+    return this.decorateHtml(html);
+  }
+
+  private decorateHtml(html: string): string {
+    const protectedParts: string[] = [];
+    const tokenized = html.replace(/<(?:pre|code)\b[\s\S]*?<\/(?:pre|code)>/gi, match => {
+      protectedParts.push(match);
+      return `\x00HTMLPROTECT${protectedParts.length - 1}\x00`;
+    });
+
+    const hooks = [
+      'constructor',
+      'ngOnChanges',
+      'ngOnInit',
+      'ngDoCheck',
+      'ngAfterContentInit',
+      'ngAfterContentChecked',
+      'ngAfterViewInit',
+      'ngAfterViewChecked',
+      'ngOnDestroy',
+    ];
+    const hookPattern = new RegExp(`\\b(${hooks.join('|')})\\s*\\(\\)`, 'g');
+    let decorated = tokenized.replace(hookPattern, (_match, hook) => {
+      return `<code class="md-inline md-hook">${hook}()</code>`;
+    });
+
+    protectedParts.forEach((part, i) => {
+      decorated = decorated.replace(`\x00HTMLPROTECT${i}\x00`, part);
+    });
+    return decorated;
   }
 
   private inline(text: string): string {

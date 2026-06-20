@@ -4,6 +4,15 @@
   <!-- ── Top navigation bar ── -->
   <div class="pg-topbar">
     <div class="pg-topbar-left">
+      <button class="pg-sb-toggle-btn"
+              (click)="toggleSidebar()"
+              [class.pg-sb-toggle-btn--active]="sidebarOpen"
+              [title]="sidebarOpen ? 'Hide Explorer' : 'Show Explorer'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+          <line x1="9" y1="3" x2="9" y2="21"></line>
+        </svg>
+      </button>
       <span class="pg-topbar-icon">⚡</span>
       <div>
         <h1 class="pg-topbar-title">Code Playground</h1>
@@ -11,13 +20,14 @@
       </div>
     </div>
 
-    <!-- Language selector -->
+    <!-- Project type tabs -->
     <div class="pg-lang-row">
-      <button *ngFor="let l of langs"
+      <button *ngFor="let t of templates"
               class="pg-lang-btn"
-              [class.pg-lang-btn--active]="selectedLang.id === l.id"
-              (click)="selectLang(l)">
-        <span>{{ l.icon }}</span> {{ l.label }}
+              [class.pg-lang-btn--active]="selectedTemplate.id === t.id"
+              (click)="selectTemplate(t)"
+              [title]="t.description">
+        <span>{{ t.icon }}</span> {{ t.label }}
       </button>
     </div>
 
@@ -49,11 +59,84 @@
         </svg>
         {{ isFullscreen ? 'Exit' : 'Full' }}
       </button>
+      <button class="pg-action-btn pg-action-btn--ai"
+              (click)="aiModalOpen = !aiModalOpen"
+              [class.pg-action-btn--ai-active]="aiModalOpen"
+              title="AI Code Assistant">
+        🤖 AI
+      </button>
     </div>
   </div>
 
   <!-- ── Main 2-column layout ── -->
   <div class="pg-body">
+
+    <!-- ═══ SIDEBAR: File Explorer ═══ -->
+    <div class="pg-sidebar" [class.pg-sidebar--hidden]="!sidebarOpen">
+      <div class="pg-sb-header">
+        <span class="pg-sb-title">EXPLORER</span>
+        <button class="pg-sb-new" (click)="addFile()" title="New File">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Project root folder -->
+      <div class="pg-sb-folder-row" (click)="toggleAllDirs()">
+        <svg class="pg-sb-chevron"
+             [class.pg-sb-chevron--open]="expandedDirs.size > 0"
+             width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
+        <svg width="15" height="13" viewBox="0 0 24 20" fill="#e6aa3a">
+          <path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+        </svg>
+        <span class="pg-sb-folder-name">{{ selectedTemplate.label | uppercase }}</span>
+      </div>
+
+      <!-- Flat tree of dirs + files -->
+      <div class="pg-sb-files">
+        <ng-container *ngFor="let entry of sidebarEntries">
+
+          <!-- Directory row -->
+          <div *ngIf="entry.kind === 'dir'"
+               class="pg-sb-dir-row"
+               [style.padding-left]="(entry.depth * 12 + 8) + 'px'"
+               (click)="toggleDir(entry.path)">
+            <svg class="pg-sb-chevron" [class.pg-sb-chevron--open]="expandedDirs.has(entry.path)"
+                 width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="9 18 15 12 9 6"></polyline>
+            </svg>
+            <svg width="13" height="12" viewBox="0 0 24 20" fill="#e6aa3a" style="flex-shrink:0">
+              <path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+            </svg>
+            <span class="pg-sb-dir-name">{{ entry.name }}</span>
+          </div>
+
+          <!-- File row -->
+          <div *ngIf="entry.kind === 'file'"
+               class="pg-sb-file-row"
+               [class.pg-sb-file-row--active]="entry.path === activeFilePath"
+               [style.padding-left]="(entry.depth * 12 + 8) + 'px'"
+               (click)="selectFile($any(entry).file)">
+            <span class="pg-sb-file-icon">{{ getFileIcon($any(entry).file) }}</span>
+            <span class="pg-sb-file-name">{{ entry.name }}</span>
+            <button class="pg-sb-del"
+                    *ngIf="projectFiles.length > 1"
+                    (click)="deleteFile($any(entry).file, $event)"
+                    title="Delete file">
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+
+        </ng-container>
+      </div>
+    </div>
 
     <!-- ═══ LEFT: Editor + Output ═══ -->
     <div class="pg-left">
@@ -69,8 +152,31 @@
         </div>
       </div>
 
+      <!-- stdin panel (Python, C#, Java, C++) -->
+      <div class="pg-stdin-wrap" *ngIf="needsStdin">
+        <button class="pg-stdin-toggle" (click)="stdinOpen = !stdinOpen">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+               [style.transform]="stdinOpen ? 'rotate(90deg)' : 'rotate(0deg)'"
+               style="transition: transform 0.18s ease; flex-shrink:0">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+          stdin
+          <span class="pg-stdin-hint">— input for your program</span>
+        </button>
+        <div *ngIf="stdinOpen" class="pg-stdin-body">
+          <textarea class="pg-stdin-area"
+                    [(ngModel)]="stdinText"
+                    placeholder="Enter standard input here (one value per line)…"
+                    rows="3"
+                    spellcheck="false"></textarea>
+        </div>
+      </div>
+
+      <!-- Resize handle: drag to resize the output panel -->
+      <div class="pg-resize-handle" (mousedown)="startResize($event)" title="Drag to resize"></div>
+
       <!-- Output panel -->
-      <div class="pg-output">
+      <div class="pg-output" [style.height.px]="outputHeight">
         <div class="pg-output-header">
           <span class="pg-output-title">📤 Output</span>
           <button class="pg-output-clear" *ngIf="outputLines.length > 0"
@@ -111,83 +217,63 @@
         </div>
       </div>
 
+      <!-- Angular live preview removed — JS runs in Web Worker, no iframe needed -->
+
     </div><!-- /pg-left -->
 
-    <!-- ═══ RIGHT: AI Assistant ═══ -->
-    <div class="pg-right">
+    <!-- ═══ AI ASSISTANT DRAWER (slide-in overlay) ═══ -->
+    <div class="pg-ai-drawer-overlay" [class.pg-ai-drawer-overlay--open]="aiModalOpen">
+      <div class="pg-ai-drawer-backdrop" (click)="aiModalOpen = false"></div>
+      <div class="pg-ai-drawer-panel">
 
-      <div class="pg-ai-header">
-        <span class="pg-ai-title">🤖 AI Code Assistant</span>
-        <span class="pg-ai-sub">Select an action to analyse your code</span>
-      </div>
-
-      <!-- Action chips -->
-      <div class="pg-ai-actions">
-        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('explain')">
-          💡 Explain Code
-        </button>
-        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('improve')">
-          ✨ Improve Code
-        </button>
-        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('bugs')">
-          🔍 Find Bugs
-        </button>
-        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('tests')">
-          🧪 Generate Tests
-        </button>
-        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('refactor')">
-          🔧 Refactor Code
-        </button>
-        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('comments')">
-          💬 Add Comments
-        </button>
-        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('convert')">
-          🔄 Convert Language
-        </button>
-        <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('optimize')">
-          ⚡ Optimise
-        </button>
-        <button class="pg-ai-chip pg-ai-chip--exercise" [disabled]="aiPanel === 'loading'" (click)="runAiAction('exercise')">
-          🎯 Generate Exercise
-        </button>
-      </div>
-
-      <!-- AI result area -->
-      <div class="pg-ai-result-wrap" #aiScroll>
-
-        <!-- Idle state -->
-        <div *ngIf="aiPanel === 'idle'" class="pg-ai-idle">
-          <div class="pg-ai-idle-icon">🤖</div>
-          <p>Ask AI to explain, improve or test your code.<br>Results appear here as a streaming response.</p>
-        </div>
-
-        <!-- Loading / streaming -->
-        <div *ngIf="aiPanel === 'loading' || (aiPanel === 'result' && aiStreamText)">
-          <div *ngIf="aiActionLabel" class="pg-ai-action-label">
-            <span *ngIf="aiPanel === 'loading'" class="pg-spinner pg-spinner--sm"></span>
-            {{ aiActionLabel }}
-            <button *ngIf="aiPanel === 'loading'" class="pg-ai-stop" (click)="stopAi()">■ Stop</button>
+        <div class="pg-ai-header">
+          <div>
+            <span class="pg-ai-title">🤖 AI Code Assistant</span>
+            <span class="pg-ai-sub">Select an action to analyse your code</span>
           </div>
-          <div class="pg-ai-stream md-content" [innerHTML]="aiStreamText | markdown" appTryNow></div>
+          <button class="pg-ai-drawer-close" (click)="aiModalOpen = false" title="Close">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
         </div>
 
-      </div>
-
-      <!-- Save to Notes button -->
-      <div class="pg-ai-footer">
-        <div class="pg-save-feedback" *ngIf="saveSuccess">✅ Saved to Notes!</div>
-        <div class="pg-save-feedback pg-save-feedback--error" *ngIf="saveFail">
-          ⚠️ Could not save. Sign in first.
+        <div class="pg-ai-actions">
+          <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('explain')">💡 Explain Code</button>
+          <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('improve')">✨ Improve Code</button>
+          <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('bugs')">🔍 Find Bugs</button>
+          <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('tests')">🧪 Generate Tests</button>
+          <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('refactor')">🔧 Refactor Code</button>
+          <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('comments')">💬 Comments</button>
+          <button class="pg-ai-chip" [disabled]="aiPanel === 'loading'" (click)="runAiAction('optimize')">⚡ Optimise</button>
+          <button class="pg-ai-chip pg-ai-chip--exercise" [disabled]="aiPanel === 'loading'" (click)="runAiAction('exercise')">🎯 Generate Exercise</button>
         </div>
-        <button class="pg-save-btn"
-                [disabled]="!currentCode"
-                (click)="saveToNotes()">
-          💾 Save to Notes
-        </button>
-      </div>
 
-    </div><!-- /pg-right -->
+        <div class="pg-ai-result-wrap" #aiScroll>
+          <div *ngIf="aiPanel === 'idle'" class="pg-ai-idle">
+            <div class="pg-ai-idle-icon">🤖</div>
+            <p>Ask AI to explain, improve or test your code.<br>Results appear here as a streaming response.</p>
+          </div>
+          <div *ngIf="aiPanel === 'loading' || (aiPanel === 'result' && aiStreamText)">
+            <div *ngIf="aiActionLabel" class="pg-ai-action-label">
+              <span *ngIf="aiPanel === 'loading'" class="pg-spinner pg-spinner--sm"></span>
+              {{ aiActionLabel }}
+              <button *ngIf="aiPanel === 'loading'" class="pg-ai-stop" (click)="stopAi()">■ Stop</button>
+            </div>
+            <div class="pg-ai-stream md-content" [innerHTML]="aiStreamText | markdown" appTryNow></div>
+            <span *ngIf="aiPanel === 'loading' && aiStreamText" class="pg-ai-cursor">▋</span>
+          </div>
+        </div>
+
+        <div class="pg-ai-footer">
+          <div class="pg-save-feedback" *ngIf="saveSuccess">✅ Saved to Notes!</div>
+          <div class="pg-save-feedback pg-save-feedback--error" *ngIf="saveFail">⚠️ Could not save. Sign in first.</div>
+          <button class="pg-save-btn" [disabled]="!currentCode" (click)="saveToNotes()">💾 Save to Notes</button>
+        </div>
+
+      </div><!-- /pg-ai-drawer-panel -->
+    </div><!-- /pg-ai-drawer-overlay -->
 
   </div><!-- /pg-body -->
-
 </div>

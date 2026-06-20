@@ -1,0 +1,103 @@
+:host {
+  --vl-bg:      #f3f4f6;
+  --vl-surface: #ffffff;
+  --vl-border:  #e5e7eb;
+  --vl-text:    #111827;
+  --vl-muted:   #6b7280;
+  --vl-accent:  #6366f1;
+
+  display: block;
+  background: var(--vl-bg);
+  min-height: 100%;
+}
+:host-context([data-theme="dark"]) {
+  --vl-bg:      #0a0a14;
+  --vl-surface: #111122;
+  --vl-border:  rgba(255,255,255,0.08);
+  --vl-text:    #f1f5f9;
+  --vl-muted:   #94a3b8;
+  --vl-accent:  #818cf8;
+}
+
+.vl-page {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 28px 24px 48px;
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────────── */
+.vl-hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.vl-hero-icon {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--vl-accent), #4f46e5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  box-shadow: 0 6px 20px rgba(99,102,241,0.3);
+}
+.vl-hero-title {
+  margin: 0 0 6px;
+  font-size: 1.45rem;
+  font-weight: 800;
+  color: var(--vl-text);
+  letter-spacing: -0.025em;
+}
+.vl-hero-sub {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--vl-muted);
+  line-height: 1.65;
+  max-width: 560px;
+}
+
+/* ── Diagram tabs ─────────────────────────────────────────────────────────── */
+.vl-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 4px;
+  background: var(--vl-surface);
+  border: 1.5px solid var(--vl-border);
+  border-radius: 11px;
+  width: fit-content;
+}
+.vl-tab {
+  padding: 7px 18px;
+  border-radius: 8px;
+  font-size: 0.83rem;
+  font-weight: 700;
+  color: var(--vl-muted);
+  background: transparent;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: background 0.17s, color 0.17s, border-color 0.17s;
+}
+.vl-tab:hover { background: rgba(99,102,241,0.07); color: var(--vl-accent); }
+.vl-tab--active {
+  background: var(--vl-accent);
+  color: #fff;
+  border-color: var(--vl-accent);
+}
+
+/* ── Visualizer wrapper ───────────────────────────────────────────────────── */
+.vl-visualizer {
+  border-radius: 18px;
+  overflow: hidden;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .vl-page { padding: 16px 12px 32px; }
+  .vl-hero { gap: 12px; }
+  .vl-hero-icon { width: 42px; height: 42px; border-radius: 11px; }
+  .vl-hero-title { font-size: 1.2rem; }
+}

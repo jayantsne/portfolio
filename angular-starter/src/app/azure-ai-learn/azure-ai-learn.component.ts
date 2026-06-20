@@ -108,6 +108,11 @@ export class AzureAiLearnComponent implements OnInit, OnDestroy {
   noteError         = '';
   isLoggedIn        = false;
 
+  // ── Save-to-Notes Drawer ─────────────────────────────────────────────────
+  showNotesDrawer   = false;
+  drawerTopic       = '';
+  drawerContent     = '';
+
   // ── Architecture Diagram ─────────────────────────────────────────────────
   archDiagramOpen   = false;
   archDiagramLoading= false;
@@ -234,6 +239,7 @@ export class AzureAiLearnComponent implements OnInit, OnDestroy {
   mentorMessages:   { role: 'user' | 'ai'; text: string }[] = [];
   mentorInput       = '';
   mentorLoading     = false;
+  toneMode: 'friendly' | 'professional' = 'friendly';
   private mentorSub: Subscription | null = null;
   
   // Loading messages
@@ -267,6 +273,11 @@ export class AzureAiLearnComponent implements OnInit, OnDestroy {
     this.darkMode = !this.darkMode;
     localStorage.setItem('darkMode', this.darkMode.toString());
     document.body.classList.toggle('dark-mode', this.darkMode);
+  }
+
+  toggleToneMode(): void {
+    this.toneMode = this.toneMode === 'friendly' ? 'professional' : 'friendly';
+    localStorage.setItem('mentorToneMode', this.toneMode);
   }
   
   toggleSection(section: string): void {
@@ -2040,6 +2051,10 @@ results.forEach(result => {
       this.darkMode = true;
       document.body.classList.add('dark-mode');
     }
+
+    // Load tone mode preference
+    const savedTone = localStorage.getItem('mentorToneMode');
+    if (savedTone === 'professional') this.toneMode = 'professional';
   }
 
   selectModule(module: LearningModule): void {
@@ -2257,23 +2272,20 @@ results.forEach(result => {
       this.noteError = 'Please sign in to save notes.';
       return;
     }
-    this.noteSaving = true;
-    this.noteSaved  = false;
-    this.noteError  = '';
-    try {
-      await this.notesService.saveNote(
-        this.aiResponse.topicName,
-        'Azure AI-102',
-        this.aiResponse.explanation,
-        ['AI-102', 'Azure', this.aiResponse.topicName]
-      );
-      this.noteSaved = true;
-      setTimeout(() => { this.noteSaved = false; }, 3000);
-    } catch (err: any) {
-      this.noteError = 'Could not save note. Try again.';
-    } finally {
-      this.noteSaving = false;
-    }
+    // Open drawer pre-filled with topic + content
+    this.drawerTopic   = this.aiResponse.topicName;
+    this.drawerContent = this.aiResponse.explanation;
+    this.showNotesDrawer = true;
+  }
+
+  onDrawerSaved(): void {
+    this.showNotesDrawer = false;
+    this.noteSaved = true;
+    setTimeout(() => { this.noteSaved = false; }, 3000);
+  }
+
+  onDrawerClosed(): void {
+    this.showNotesDrawer = false;
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -2356,12 +2368,17 @@ results.forEach(result => {
       .map(m => `${m.role === 'user' ? 'Student' : 'Mentor'}: ${m.text}`)
       .join('\n');
 
+    const toneInstruction = this.toneMode === 'professional'
+      ? 'Be concise and direct. No filler phrases, no emojis. Precise technical language only. Every sentence must add value.'
+      : 'Be conversational and encouraging. Use **bold** for key terms. Light use of relevant emojis. End with one follow-up tip or question.';
+
     const prompt =
-      `You are an Azure AI-102 exam mentor. Answer conversationally in 100-200 words.\n` +
+      `You are an Azure AI-102 exam mentor. Answer in 100-200 words.\n` +
+      `Tone: ${toneInstruction}\n` +
       `Topic context: "${topic}"\n\n` +
       `Conversation:\n${history}\n\n` +
       `Student: ${q}\n\n` +
-      `Rules: Be direct, no filler. Use **bold** for key terms. End with one follow-up tip.`;
+      `Rules: Be direct, no filler. ${this.toneMode === 'professional' ? 'No emojis.' : 'Use **bold** for key terms.'} End with one follow-up tip.`;
 
     this.mentorSub?.unsubscribe();
     this.mentorSub = this.aiLearnService.getSimplifiedExplanation(prompt).subscribe({

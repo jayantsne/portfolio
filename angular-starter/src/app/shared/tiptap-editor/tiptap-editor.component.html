@@ -1,0 +1,38 @@
+<div class="tiptap-wrapper" [ngClass]="editorClass">
+  <!-- Formatting toolbar -->
+  <div class="tiptap-toolbar" *ngIf="editor">
+    <button class="tt-btn" [class.tt-btn--active]="editor.isActive('heading', {level: 2})"
+            (mousedown)="$event.preventDefault(); editor.chain().focus().toggleHeading({level: 2}).run()" title="Heading 2">H2</button>
+    <button class="tt-btn" [class.tt-btn--active]="editor.isActive('heading', {level: 3})"
+            (mousedown)="$event.preventDefault(); editor.chain().focus().toggleHeading({level: 3}).run()" title="Heading 3">H3</button>
+    <div class="tt-sep"></div>
+    <button class="tt-btn" [class.tt-btn--active]="editor.isActive('bold')"
+            (mousedown)="$event.preventDefault(); editor.chain().focus().toggleBold().run()" title="Bold (Ctrl+B)">
+      <strong>B</strong>
+    </button>
+    <button class="tt-btn tt-btn--italic" [class.tt-btn--active]="editor.isActive('italic')"
+            (mousedown)="$event.preventDefault(); editor.chain().focus().toggleItalic().run()" title="Italic (Ctrl+I)">
+      <em>I</em>
+    </button>
+    <div class="tt-sep"></div>
+    <button class="tt-btn" [class.tt-btn--active]="editor.isActive('bulletList')"
+            (mousedown)="$event.preventDefault(); editor.chain().focus().toggleBulletList().run()" title="Bullet list">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="9" y1="6" x2="20" y2="6"/><line x1="9" y1="12" x2="20" y2="12"/><line x1="9" y1="18" x2="20" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none"/><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <button class="tt-btn" [class.tt-btn--active]="editor.isActive('orderedList')"
+            (mousedown)="$event.preventDefault(); editor.chain().focus().toggleOrderedList().run()" title="Numbered list">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4" stroke-width="2"/><path d="M4 10h2" stroke-width="2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" stroke-width="2"/></svg>
+    </button>
+    <div class="tt-sep"></div>
+    <button class="tt-btn" [class.tt-btn--active]="editor.isActive('codeBlock')"
+            (mousedown)="$event.preventDefault(); editor.chain().focus().toggleCodeBlock().run()" title="Code block">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+    </button>
+    <button class="tt-btn" [class.tt-btn--active]="editor.isActive('blockquote')"
+            (mousedown)="$event.preventDefault(); editor.chain().focus().toggleBlockquote().run()" title="Blockquote">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M10 7H6a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2.586l-1.293 1.293A1 1 0 0 0 8 16h2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm10 0h-4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2.586l-1.293 1.293A1 1 0 0 0 18 16h2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"/></svg>
+    </button>
+  </div>
+
+  <div #editorEl class="tiptap-mount"></div>
+</div>

@@ -1,11 +1,16 @@
 import { AfterViewChecked, Component, ElementRef, HostListener, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { Subscription } from 'rxjs';
+import { distinctUntilChanged } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { HttpClient } from '@angular/common/http';
 import { AILearnService } from '../services/ai-learn.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService, SavedNote } from '../shared/notes.service';
 import { PlaygroundService } from '../services/playground.service';
+import { environment } from '../../environments/environment';
+import { ConversationService, ConversationSummary } from '../services/conversation.service';
+import { ThemeService } from '../shared/theme.service';
 
 interface ConceptStep {
   title: string;
@@ -84,9 +89,28 @@ export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
   private noteSavedTimer: any;
   savedMessageIds  = new Set<string>();    // message keys already saved
   savingMessageIds = new Set<string>();    // message keys currently being saved
+  copiedMessageIds = new Set<string>();    // message keys with active "Copied!" tooltip
+  likedMessageIds  = new Set<string>();    // message keys marked as good response
+  dislikedMessageIds = new Set<string>(); // message keys marked as poor response
+  private _copyTimers = new Map<string, any>();
+
+  // ── Chat History Sidebar ──────────────────────────────────────────────────
+  sidebarOpen = typeof window !== 'undefined' ? window.innerWidth > 820 : true;
+  conversations: ConversationSummary[] = [];
+  conversationsLoading = false;
+  conversationsError   = false;
+  activeConversationId: string | null = null;
+
+  // Save-to-Notes drawer state
+  showNotesDrawer   = false;
+  drawerTopic       = '';
+  drawerContent     = '';
+  private drawerPendingMsgKey = '';
 
   // Active follow-up subscription — cancelled before starting a new one
   private followUpSub: Subscription | null = null;
+  // Auth state subscription — drives conversation loading reactively
+  private authSub: Subscription | null = null;
 
   // ── Visual Animated Diagram ─────────────────────────────────────────────
   diagramOpen     = false;   // panel visible?
@@ -100,6 +124,21 @@ export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
   diagramIsPlaying  = false; // auto-play running
   diagramFullscreen = false; // fullscreen overlay open
   private _playInterval: any = null;
+
+  // Dynamic placeholder rotation
+  private readonly _placeholders = [
+    'Ask me anything about programming…',
+    'How does async/await work?',
+    'Explain closures with an example',
+    'What is dependency injection?',
+    'Difference between null and undefined?',
+    'How does event loop work in JS?',
+    'What are SOLID principles?',
+    'Explain Big O notation',
+  ];
+  currentPlaceholder = this._placeholders[0];
+  private _placeholderIdx = 0;
+  private _placeholderTimer: any = null;
 
   // Sentinel that tells ngAfterViewChecked to scroll to bottom
   private shouldScrollToBottom = false;
@@ -115,8 +154,35 @@ export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
     private notesService: NotesService,
     private router: Router,
     private sanitizer: DomSanitizer,
-    private pg: PlaygroundService
+    private pg: PlaygroundService,
+    private http: HttpClient,
+    private convSvc: ConversationService,
+    public themeSvc: ThemeService
   ) {}
+
+  // ── Message grouping: consecutive same-role messages share one avatar block ─
+  // Memoized by length: returns the same array reference when no messages have been
+  // added, preventing Angular from destroying/recreating the DOM during streaming.
+  private _groupsCacheLen = -1;
+  private _groupsCache: Array<{ role: 'user' | 'assistant'; messages: AIMessage[] }> = [];
+
+  get groupedMessages(): Array<{ role: 'user' | 'assistant'; messages: AIMessage[] }> {
+    if (this.aiMessages.length === this._groupsCacheLen) {
+      return this._groupsCache;
+    }
+    this._groupsCacheLen = this.aiMessages.length;
+    const groups: Array<{ role: 'user' | 'assistant'; messages: AIMessage[] }> = [];
+    for (const msg of this.aiMessages) {
+      const last = groups[groups.length - 1];
+      if (last && last.role === msg.role) {
+        last.messages.push(msg);
+      } else {
+        groups.push({ role: msg.role, messages: [msg] });
+      }
+    }
+    this._groupsCache = groups;
+    return this._groupsCache;
+  }
 
   // Input properties (for compatibility with main-portfolio component)
   @Input() fullName: string = '';
@@ -135,7 +201,7 @@ export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   // Search and Modal State
   searchQuery: string = '';
-  showModal: boolean = false;
+  showModal: boolean = true;
   searchResults: QuickConcept[] = [];
   showSearchResults: boolean = false;
 
@@ -486,14 +552,61 @@ const pool = new ThreadPool(4);`,
     this.currentTopicName = topicName;
     this.syncModuleName(topicName);
     this.showModal = true;
+    this.lockBodyScroll();
     this.isAIMode = false;
     this.aiMessages = [];
     this.followUpQuestions = [];
+    this.activeConversationId = null;
     this.searchQuery = '';
     this.showSearchResults = false;
     this.streamingText = '';
     this.diagramOpen = false;
     this.loadStructuredLesson(topicName);
+  }
+
+  // ── Per-topic history ─────────────────────────────────────────────────
+  topicHistories = new Map<string, { messages: any[]; followUps: string[]; }>();
+
+  // ── Topic picker UI state ─────────────────────────────────────────
+  showTopicPicker = false;
+  topicSearchQuery = '';
+
+  /** Switch to a different topic inside the workspace, preserving per-topic history. */
+  switchTopic(topicName: string): void {
+    const name = topicName.trim();
+    if (!name || name === this.currentTopicName) {
+      this.showTopicPicker = false;
+      this.topicSearchQuery = '';
+      return;
+    }
+    // Snapshot current topic's conversation
+    if (this.currentTopicName) {
+      this.topicHistories.set(this.currentTopicName, {
+        messages: [...this.aiMessages],
+        followUps: [...this.followUpQuestions],
+      });
+    }
+    // Restore or start fresh
+    const saved = this.topicHistories.get(name);
+    this.currentTopicName = name;
+    this.syncModuleName(name);
+    this.streamingText = '';
+    this.diagramOpen = false;
+    this.showTopicPicker = false;
+    this.topicSearchQuery = '';
+    if (saved && saved.messages.length > 0) {
+      this.aiMessages = saved.messages;
+      this.followUpQuestions = saved.followUps;
+      this.isAIMode = true;
+      this.lessonView = false;
+      this.lessonData = null;
+      this.lessonLoading = false;
+    } else {
+      this.aiMessages = [];
+      this.followUpQuestions = [];
+      this.isAIMode = false;
+      this.loadStructuredLesson(name);
+    }
   }
 
   // ── Structured Lesson State ─────────────────────────────────────────────
@@ -602,6 +715,19 @@ One sentence: the single most important thing to remember about ${topic} in a te
   isFocusMode = false;
   toggleFocusMode(): void { this.isFocusMode = !this.isFocusMode; }
 
+  // ── Tools Sidebar Collapse ────────────────────────────────────────────
+  toolsCollapsed = localStorage.getItem('am_tools_collapsed') !== 'false'; // collapsed by default
+
+  // ── Usage-limit tracking ─────────────────────────────────────────────────
+  readonly FREE_SEARCH_LIMIT = 2;
+  private _usageCount = 0;
+  hasSubscriptionAccess = false;
+  showPaywallModal = false;
+  toggleTools(): void {
+    this.toolsCollapsed = !this.toolsCollapsed;
+    localStorage.setItem('am_tools_collapsed', String(this.toolsCollapsed));
+  }
+
   // ── AI Playground (bottom section) ─────────────────────────────────────
   pgOpen     = false;
   pgLoading  = false;
@@ -659,15 +785,34 @@ One sentence: the single most important thing to remember about ${topic} in a te
   }
 
   ngOnInit(): void {
+    this.lockBodyScroll();
     // Generate particles for background animation
     this.particles = Array.from({ length: 30 }, () => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
       delay: Math.random() * 5
     }));
-
-    // No auto-select - waiting for AI search
-    // User will search and use AI dynamically
+    this.loadUsage();
+    // React to auth state changes so conversations load both on page load
+    // AND after the user logs in on the same page (no ngOnInit re-run in an SPA).
+    this.authSub = this.customAuth.isLoggedIn$.pipe(
+      distinctUntilChanged()
+    ).subscribe(isLoggedIn => {
+      if (isLoggedIn) {
+        this.loadConversations();
+      } else {
+        // User logged out — clear sidebar state
+        this.conversations = [];
+        this.activeConversationId = null;
+      }
+    });
+    // Rotate placeholder text every 3.5 s (only when landing view is visible)
+    this._placeholderTimer = setInterval(() => {
+      if (!this.hasActiveChat) {
+        this._placeholderIdx = (this._placeholderIdx + 1) % this._placeholders.length;
+        this.currentPlaceholder = this._placeholders[this._placeholderIdx];
+      }
+    }, 3500);
   }
 
   ngAfterViewChecked(): void {
@@ -678,11 +823,14 @@ One sentence: the single most important thing to remember about ${topic} in a te
   }
 
   ngOnDestroy(): void {
+    this.unlockBodyScroll(); // always restore body scroll when leaving the explore page
+    this.authSub?.unsubscribe();
     this.followUpSub?.unsubscribe();
     this.lessonSub?.unsubscribe();
     this.pgSub?.unsubscribe();
     clearTimeout(this.noteSavedTimer);
     clearInterval(this._playInterval);
+    clearInterval(this._placeholderTimer);
   }
 
   tryInPlayground(code: string, lang: string): void {
@@ -700,6 +848,7 @@ One sentence: the single most important thing to remember about ${topic} in a te
     this.selectedConcept = concept;
     this.currentStep = 0;
     this.showModal = true;
+    this.lockBodyScroll();
     this.searchQuery = '';
     this.showSearchResults = false;
   }
@@ -764,9 +913,90 @@ One sentence: the single most important thing to remember about ${topic} in a te
     this.selectConcept(concept);
   }
 
+  /** Lock the body from scrolling while the mentor workspace overlay is open. */
+  private lockBodyScroll(): void {
+    document.body.style.overflow = 'hidden';
+  }
+
+  private unlockBodyScroll(): void {
+    document.body.style.overflow = '';
+  }
+
+  // ── Usage helpers ────────────────────────────────────────────────────────
+  get remainingSearches(): number {
+    return Math.max(0, this.FREE_SEARCH_LIMIT - this._usageCount);
+  }
+
+  get isUsageLimitReached(): boolean {
+    return !this.hasSubscriptionAccess && !this.customAuth.isAdmin && this._usageCount >= this.FREE_SEARCH_LIMIT;
+  }
+
+  get userAvatarText(): string {
+    const name = this.customAuth.currentUser?.username;
+    return name ? name.charAt(0).toUpperCase() : '👤';
+  }
+
+  private loadUsage(): void {
+    // Seed from localStorage immediately so UI is not blank while request is in flight
+    const count = parseInt(localStorage.getItem('am_usage_count') ?? '0', 10);
+    this._usageCount = isNaN(count) ? 0 : count;
+
+    if (this.customAuth.isLoggedIn && this.customAuth.currentUser) {
+      // Server is the source of truth for logged-in users
+      this.http.get<{ remainingSearches: number; totalUsed: number; isPremium: boolean; freeLimit: number }>(
+        `${environment.apiUrl}/usage/status/${this.customAuth.currentUser.userId}`,
+        { headers: this.customAuth.getAuthHeaders() }
+      ).subscribe({
+        next: (data) => {
+          this._usageCount = data.totalUsed;
+          this.hasSubscriptionAccess = data.isPremium;
+          localStorage.setItem('am_usage_count', String(data.totalUsed));
+        },
+        error: () => {
+          // Fallback: check subscription access only
+          this.checkSubscriptionAccess(this.customAuth.currentUser!.userId);
+        }
+      });
+    }
+  }
+
+  private checkSubscriptionAccess(userId: string): void {
+    this.http.get<{ hasAccess: boolean }>(
+      `${environment.apiUrl}/subscription/check-access/${userId}`,
+      { headers: this.customAuth.getAuthHeaders() }
+    ).subscribe({
+      next: (r) => { this.hasSubscriptionAccess = r.hasAccess; },
+      error: () => { this.hasSubscriptionAccess = false; }
+    });
+  }
+
+  private consumeSearch(): void {
+    this._usageCount++;
+    localStorage.setItem('am_usage_count', String(this._usageCount));
+    // Also persist to server for logged-in users (fire-and-forget)
+    if (this.customAuth.isLoggedIn && this.customAuth.currentUser) {
+      this.http.post(
+        `${environment.apiUrl}/usage/increment/${this.customAuth.currentUser.userId}`,
+        {},
+        { headers: this.customAuth.getAuthHeaders() }
+      ).subscribe({ error: () => {} });
+    }
+  }
+
+  showPaywall(): void  { this.showPaywallModal = true; }
+  closePaywall(): void { this.showPaywallModal = false; }
+
+  // ── hasActiveChat ────────────────────────────────────────────────────────
+  /** True when there is an active conversation or lesson — derived, no manual flag needed. */
+  get hasActiveChat(): boolean {
+    return this.aiMessages.length > 0 || this.isLoadingAI || !!this.streamingText ||
+           this.lessonView || this.lessonLoading;
+  }
+
   // Modal controls
   closeModal(): void {
     this.showModal = false;
+    this.unlockBodyScroll();
     this.currentStep = 0;
     this.isTopicAccordionOpen = false;
     this.lessonView = false;
@@ -781,19 +1011,182 @@ One sentence: the single most important thing to remember about ${topic} in a te
     this.isTopicAccordionOpen = !this.isTopicAccordionOpen;
   }
 
-  /** Save a single assistant message as a note (per-message saving state) */
-  async saveMessageNote(msg: AIMessage): Promise<void> {
+  /** Save a single assistant message as a note — opens the slide-in drawer */
+  saveMessageNote(msg: AIMessage): void {
     const key = msg.timestamp.getTime().toString();
-    if (this.savedMessageIds.has(key) || this.savingMessageIds.has(key)) return;
-    this.savingMessageIds.add(key);
-    try {
-      const topic = this.currentTopicName || 'AI Mentor';
-      await this.notesService.saveNote(topic, 'Other', msg.content);
-      this.savedMessageIds.add(key);
-    } catch (e) {
-      console.error('[saveMessageNote]', e);
-    } finally {
-      this.savingMessageIds.delete(key);
+    if (this.savedMessageIds.has(key)) return;
+    this.drawerPendingMsgKey = key;
+    this.drawerTopic   = this.currentTopicName || 'AI Mentor';
+    this.drawerContent = msg.content;
+    this.showNotesDrawer = true;
+  }
+
+  onDrawerSaved(): void {
+    if (this.drawerPendingMsgKey) {
+      // Reassign the Set so Angular's change detection picks up the mutation
+      this.savedMessageIds = new Set([...this.savedMessageIds, this.drawerPendingMsgKey]);
+    }
+    this.showNotesDrawer = false;
+    this.drawerPendingMsgKey = '';
+  }
+
+  onDrawerClosed(): void {
+    this.showNotesDrawer = false;
+    this.drawerPendingMsgKey = '';
+  }
+
+  /** Copy message text to clipboard; show "Copied!" tooltip for 2 s */
+  copyMessage(msg: AIMessage): void {
+    const key = msg.timestamp.getTime().toString();
+    // Strip HTML tags for plain-text copy
+    const text = msg.content.replace(/<[^>]+>/g, '');
+    navigator.clipboard.writeText(text).then(() => {
+      this.copiedMessageIds = new Set([...this.copiedMessageIds, key]);
+      clearTimeout(this._copyTimers.get(key));
+      this._copyTimers.set(key, setTimeout(() => {
+        this.copiedMessageIds.delete(key);
+        this.copiedMessageIds = new Set(this.copiedMessageIds);
+      }, 2000));
+    });
+  }
+
+  /** Re-send the last user message to get a fresh AI answer */
+  regenerateLastResponse(): void {
+    if (this.isLoadingAI || !!this.streamingText) return;
+    const lastUser = [...this.aiMessages].reverse().find(m => m.role === 'user');
+    if (!lastUser) return;
+    const lastAiIdx = this.aiMessages.map(m => m.role).lastIndexOf('assistant');
+    if (lastAiIdx !== -1) {
+      this.aiMessages = [...this.aiMessages.slice(0, lastAiIdx)];
+    }
+    this.sendFollowUpQuestion(lastUser._sendContent ?? lastUser.content);
+  }
+
+  /** Mark a message as a good response (mutually exclusive with dislike) */
+  likeMessage(msg: AIMessage): void {
+    const key = msg.timestamp.getTime().toString();
+    this.dislikedMessageIds.delete(key);
+    this.dislikedMessageIds = new Set(this.dislikedMessageIds);
+    this.likedMessageIds = new Set([...this.likedMessageIds, key]);
+  }
+
+  /** Mark a message as a poor response (mutually exclusive with like) */
+  dislikeMessage(msg: AIMessage): void {
+    const key = msg.timestamp.getTime().toString();
+    this.likedMessageIds.delete(key);
+    this.likedMessageIds = new Set(this.likedMessageIds);
+    this.dislikedMessageIds = new Set([...this.dislikedMessageIds, key]);
+  }
+
+  // ── Chat History Sidebar ────────────────────────────────────────────────────
+
+  loadConversations(): void {
+    if (!this.customAuth.isLoggedIn) return;
+    this.conversationsLoading = true;
+    this.conversationsError = false;
+    this.convSvc.getAll(this.customAuth.getAuthHeaders()).subscribe({
+      next: (list) => {
+        this.conversations = Array.isArray(list) ? list : [];
+        this.syncActiveConversationFromStorage();
+        this.conversationsLoading = false;
+      },
+      error: (err) => {
+        console.warn('[Home] Could not load conversation history:', err?.status, err?.message);
+        this.conversationsLoading = false;
+        if (err?.status === 401) {
+          this.conversations = [];
+          this.activeConversationId = null;
+          this.conversationsError = false;
+          return;
+        }
+        this.conversationsError = true;
+      }
+    });
+  }
+
+  private syncActiveConversationFromStorage(): void {
+    const storedId = localStorage.getItem('conversationId');
+    if (storedId && this.conversations.some(c => c.id === storedId)) {
+      this.activeConversationId = storedId;
+    }
+  }
+
+  openConversation(id: string): void {
+    if (id === this.activeConversationId) return;
+    this.activeConversationId = id;
+    this.streamingText = '';
+    this.isLoadingAI = false;
+    this.lessonView = false;
+    this.lessonData = null;
+    this.followUpQuestions = [];
+    const convo = this.conversations.find(c => c.id === id);
+    if (convo) this.currentTopicName = convo.title.replace(/…$/, '').trim();
+    this.convSvc.getMessages(id, this.customAuth.getAuthHeaders()).subscribe({
+      next: (msgs) => {
+        this.aiMessages = msgs.map(m => ({
+          role: m.role as 'user' | 'assistant',
+          content: m.content,
+          timestamp: new Date(m.createdAt)
+        }));
+        this.shouldScrollToBottom = true;
+      },
+      error: () => {}
+    });
+  }
+
+  startNewConversation(): void {
+    this.aiLearnService.resetConversation(); // 🔄 Reset conversation ID for new chat
+    this.activeConversationId = null;
+    this.aiMessages = [];
+    this.followUpQuestions = [];
+    this.streamingText = '';
+    this.isLoadingAI = false;
+    this.currentTopicName = '';
+    this.lessonView = false;
+    this.lessonData = null;
+  }
+
+  deleteConversation(id: string): void {
+    this.conversations = this.conversations.filter(c => c.id !== id);
+    if (this.activeConversationId === id) this.startNewConversation();
+    this.convSvc.delete(id, this.customAuth.getAuthHeaders()).subscribe();
+  }
+
+  /** Group conversations into Today / Yesterday / Last 7 Days / Older */
+  get conversationGroups(): { label: string; items: ConversationSummary[] }[] {
+    const now = new Date();
+    const tod = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yest = new Date(tod); yest.setDate(tod.getDate() - 1);
+    const week = new Date(tod); week.setDate(tod.getDate() - 7);
+    const groups: { label: string; items: ConversationSummary[] }[] = [];
+    const push = (label: string, items: ConversationSummary[]) => { if (items.length) groups.push({ label, items }); };
+    push('Today',        this.conversations.filter(c => new Date(c.updatedAt) >= tod));
+    push('Yesterday',   this.conversations.filter(c => { const d = new Date(c.updatedAt); return d >= yest && d < tod; }));
+    push('Last 7 days', this.conversations.filter(c => { const d = new Date(c.updatedAt); return d >= week && d < yest; }));
+    push('Older',       this.conversations.filter(c => new Date(c.updatedAt) < week));
+    return groups;
+  }
+
+  /** Fire-and-forget: persist (user + AI) message pair to the active or new conversation */
+  private saveExchangeToHistory(userContent: string, aiContent: string): void {
+    if (!this.customAuth.isLoggedIn || !userContent || !aiContent) return;
+    const hdrs = this.customAuth.getAuthHeaders();
+    if (this.activeConversationId) {
+      //this.convSvc.addMessage(this.activeConversationId, 'user', userContent, hdrs).subscribe();
+      //this.convSvc.addMessage(this.activeConversationId, 'assistant', aiContent, hdrs).subscribe();
+    } else {
+      const title = userContent.slice(0, 60).trim() + (userContent.length > 60 ? '\u2026' : '');
+      this.convSvc.create(title, hdrs).subscribe({
+        next: (convo) => {
+          if (!convo) return;
+          this.activeConversationId = convo.id;
+          //this.convSvc.addMessage(convo.id, 'user', userContent, hdrs).subscribe();
+          // this.convSvc.addMessage(convo.id, 'assistant', aiContent, hdrs).subscribe({
+          //   next: () => this.loadConversations()  // reload sidebar so new conversation appears
+          // });
+          this.loadConversations();
+        }
+      });
     }
   }
 
@@ -948,6 +1341,7 @@ One sentence: the single most important thing to remember about ${topic} in a te
       this.currentTopicName = conceptName;
       this.syncModuleName(conceptName);
       this.showModal = true;
+      this.lockBodyScroll();
       this.isAIMode = true;
       this.isLoadingAI = false;
       this.streamingText = '';
@@ -972,10 +1366,19 @@ One sentence: the single most important thing to remember about ${topic} in a te
     }
 
     console.log('🚀 Starting AI explanation...');
+    // Usage gate: block guests / non-subscribers over the free limit
+    if (this.isUsageLimitReached) {
+      this.showModal = true;
+      this.lockBodyScroll();
+      this.showPaywall();
+      return;
+    }
+    this.consumeSearch();
     this.currentTopicName = conceptName;
     this.syncModuleName(conceptName);
     this.isLoadingAI = true;
     this.showModal = true;
+    this.lockBodyScroll();
     this.isAIMode = true;
     this.aiMessages = [];
     this.aiExplanation = null;
@@ -1001,11 +1404,12 @@ One sentence: the single most important thing to remember about ${topic} in a te
       // • deep-dive keywords → full structured study notes
       // • everything else → short, ChatGPT-style conversational answer
       const topicTitle = conceptName.trim();
+      const inputLang  = this.detectLanguage(topicTitle);
       const wantsDeepDive = /\b(deep dive|in depth|in detail|comprehensive|full explanation|advanced|internals?|under the hood|walk me through|step by step|explain everything)\b/i.test(topicTitle);
-      const prompt = wantsDeepDive
-        ? this.buildDeepDivePrompt(topicTitle)
-        : this.buildQuickAnswerPrompt(topicTitle);
-
+      // const prompt = wantsDeepDive
+      //   ? this.buildDeepDivePrompt(topicTitle, inputLang)
+      //   : this.buildQuickAnswerPrompt(topicTitle, inputLang);
+      const prompt = topicTitle;
       // Call AI service — handles real-time streaming
       this.streamingText = '';
       this.aiLearnService.getOllamaExplanation(prompt).subscribe({
@@ -1085,6 +1489,12 @@ One sentence: the single most important thing to remember about ${topic} in a te
           this.noteSaved = false;
           this.shouldScrollToBottom = true;
 
+          // Persist exchange to conversation history
+          const _askAiMsg = this.aiMessages[this.aiMessages.length - 1];
+          if (_askAiMsg?.role === 'assistant') {
+            this.saveExchangeToHistory(`Explain "${conceptName}" to me`, _askAiMsg.content);
+          }
+
           // Store in session cache so repeat asks are instant
           if (this.aiExplanation) {
             this.conceptCache.set(cacheKey, {
@@ -1117,6 +1527,13 @@ One sentence: the single most important thing to remember about ${topic} in a te
    */
   async sendFollowUpQuestion(question: string, displayText?: string): Promise<void> {
     if (this.isLoadingAI || !question.trim()) return;
+    // Usage gate
+    if (this.isUsageLimitReached) {
+      this.showPaywall();
+      return;
+    }
+    this.consumeSearch();
+    this.isAIMode = true;
 
     // Cancel any in-flight follow-up subscription
     this.followUpSub?.unsubscribe();
@@ -1139,33 +1556,48 @@ One sentence: the single most important thing to remember about ${topic} in a te
     this.shouldScrollToBottom = true;
 
     try {
+      // If first message in a fresh session, use the quick-answer prompt (best quality for cold starts)
+      const isFirstMessage = this.aiMessages.filter(m => m.role === 'assistant').length === 0;
+      if (!this.currentTopicName && question.trim().length > 0) {
+        // Derive a topic name from the question for context in follow-ups
+        this.currentTopicName = question.trim().slice(0, 80).replace(/[?!.]+$/, '');
+      }
+
       // If the user explicitly asks for a deep dive, generate full structured notes;
       // otherwise give a context-aware conversational reply.
+      const questionLang  = this.detectLanguage(question);
       const wantsDeepDive = /\b(deep dive|in depth|explain (everything|fully|in detail|more|further|all of it)|go deeper|comprehensive|full explanation|detailed|tell me everything|show me everything)\b/i.test(question.trim());
 
       let prompt: string;
       if (wantsDeepDive) {
         const topicForDive = (this.aiExplanation as any)?.concept ?? question.replace(/deep dive|in depth|explain (more|fully|in detail)/gi, '').trim();
-        prompt = this.buildDeepDivePrompt(topicForDive || question);
+        prompt = this.buildDeepDivePrompt(topicForDive || question, questionLang);
+      } else if (isFirstMessage) {
+        // No conversation history yet — use the focussed quick-answer prompt for best cold-start quality
+        prompt = this.buildQuickAnswerPrompt(question, questionLang);
       } else {
         // Context-aware conversational follow-up — intent-aware
         const historyLines = this.aiMessages
-          .slice(-6)
+          .slice(-4)  // keep last 4 messages to reduce token cost
           .map(m => {
             const text = m._sendContent ?? m.content;
-            return `${m.role === 'user' ? 'Student' : 'Mentor'}: ${text.slice(0, 600)}`;
+            return `${m.role === 'user' ? 'Student' : 'Mentor'}: ${text.slice(0, 400)}`;
           })
           .join('\n\n');
-
         // Pull the actual last assistant message for re-explanation context
-        const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'assistant')?.content?.slice(0, 800) ?? '';
+        const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'assistant')?.content?.slice(0, 500) ?? '';
         const topic = this.currentTopicName || 'this concept';
         const intent = this.detectIntent(question);
+        const followLang = this.detectLanguage(question);
+        const langInstruction = followLang !== 'English'
+          ? `IMPORTANT: You MUST reply entirely in ${followLang}. Do not use English.\n`
+          : '';
 
         const SYS =
-          `You are a brilliant, patient programming mentor with the warmth of a senior dev who genuinely enjoys teaching. ` +
-          `Never start with filler ("Sure!", "Great question!", "Certainly!"). ` +
-          `No rigid templates. Respond like you're in a chat — natural, human, clear.\n\n`;
+          langInstruction +
+          `You are a friendly expert developer. Respond conversationally — like a real person, not a textbook. ` +
+          `Never say "Sure!", "Great question!", "Certainly!". Go straight into the answer. ` +
+          `Short paragraphs. **Bold** key terms. 1-2 emojis max.\n\n`;
 
         const EXPLORE =
           `\n\nAfter your response add EXACTLY:\n` +
@@ -1227,8 +1659,8 @@ One sentence: the single most important thing to remember about ${topic} in a te
             EXPLORE;
         }
       }
-
-      this.followUpSub = this.aiLearnService.getOllamaExplanation(prompt).subscribe({
+      prompt = question.trim();
+      this.followUpSub = this.aiLearnService.getOllamaExplanation(prompt, 'chat', false).subscribe({
         next: (response: any) => {
           if (!response.done) {
             // Show streaming text in real-time — keep isLoadingAI true to block double-sends
@@ -1262,6 +1694,12 @@ One sentence: the single most important thing to remember about ${topic} in a te
             });
           }
 
+          // Persist exchange to conversation history
+          this.activeConversationId = localStorage.getItem('conversationId') || this.activeConversationId;
+          this.loadConversations();
+          //  const _lastUser = [...this.aiMessages].reverse().find(m => m.role === 'user');
+          //  this.saveExchangeToHistory(_lastUser?.content ?? '', displayText || '');
+
           this.shouldScrollToBottom = true;
           if (chips.length > 0) {
             this.followUpQuestions = chips;
@@ -1292,6 +1730,22 @@ One sentence: the single most important thing to remember about ${topic} in a te
    * Detects the student's intent from a short or vague follow-up message.
    * Used to choose the right response strategy in sendFollowUpQuestion.
    */
+  /** Detect the human language of a text string using Unicode ranges. Falls back to English. */
+  private detectLanguage(text: string): string {
+    if (/[\u0900-\u097F]/.test(text)) return 'Hindi';
+    if (/[\u0600-\u06FF]/.test(text)) return 'Arabic';
+    if (/[\u4E00-\u9FFF]/.test(text)) return 'Chinese';
+    if (/[\u3040-\u30FF]/.test(text)) return 'Japanese';
+    if (/[\uAC00-\uD7AF]/.test(text)) return 'Korean';
+    if (/[\u0400-\u04FF]/.test(text)) return 'Russian';
+    if (/[\u0370-\u03FF]/.test(text)) return 'Greek';
+    if (/[\u0980-\u09FF]/.test(text)) return 'Bengali';
+    if (/[\u0A00-\u0A7F]/.test(text)) return 'Punjabi';
+    if (/[\u0B80-\u0BFF]/.test(text)) return 'Tamil';
+    if (/[\u0C00-\u0C7F]/.test(text)) return 'Telugu';
+    return 'English';
+  }
+
   private detectIntent(text: string): 'confused' | 'why' | 'how' | 'example' | 'normal' {
     const t = text.trim().toLowerCase();
     const confused =
@@ -1306,77 +1760,105 @@ One sentence: the single most important thing to remember about ${topic} in a te
   }
 
   /**
-   * Builds a conversational, ChatGPT-style opening explanation.
-   * No rigid sections. Adapts tone to feel like a senior dev explaining over coffee.
+   * Senior-engineer style quick answer — interview-prep quality, no fluff.
    */
-  private buildQuickAnswerPrompt(topic: string): string {
+  private buildQuickAnswerPrompt(topic: string, lang = 'English'): string {
+    const langLine = lang !== 'English'
+      ? `IMPORTANT: You MUST reply entirely in ${lang}. Do not use English at all.\n\n`
+      : '';
     return (
-      `You are a brilliant, patient programming mentor — like a senior dev explaining to a colleague over Slack.\n` +
-      `Your personality: direct, warm, no-nonsense. You get to the point fast and make things click.\n\n` +
-      `The student just asked about: "${topic}"\n\n` +
-      `How to respond:\n` +
-      `- Open with the KEY INSIGHT in plain English — the one sentence that makes the concept click\n` +
-      `- Follow with 1-2 short paragraphs (3-4 sentences each) that build on the insight\n` +
-      `- Weave in an analogy naturally if one exists — don't announce it with "Analogy:"\n` +
-      `- Include a ≤10 line code snippet ONLY if it makes something clearer than words can\n` +
-      `- End with ONE short natural question — e.g. "Does that click?" or "Want to see this in action?"\n\n` +
-      `Style rules:\n` +
-      `- NO section headers (no ## Definition, ## Why it's used, ## Example)\n` +
-      `- NO bullet dumps or numbered lists unless genuinely listing things\n` +
-      `- NO filler phrases ("Sure!", "Great question!", "Certainly!")\n` +
-      `- Short paragraphs — max 4 sentences each\n` +
-      `- Bold key terms on first use inline, not as headers\n` +
-      `- Total: 120-250 words\n\n` +
-      `After your response, add EXACTLY this block:\n` +
-      `**Explore more:**\n` +
-      `- [specific follow-up question about ${topic}?]\n` +
-      `- [another question the learner might ask next?]\n` +
-      `- [a practical or interview-related question about ${topic}?]`
-    );
-  }
-
-  /**
-   * Builds a comprehensive structured study notes prompt for deep-dive requests.
-   * Response uses all sections: Definition, Why it matters, How it works, Code Example,
-   * Common Mistakes, Best Practices, Interview Tips, Follow-up Questions.
-   */
-  private buildDeepDivePrompt(topic: string): string {
-    return (
-      `You are an expert senior software engineer and programming mentor. ` +
-      `Explain "${topic}" as comprehensive study notes for an intermediate developer preparing for a technical interview. ` +
-      `Never start with filler phrases like "Sure!", "Certainly!", or "Great question!". Go straight into the explanation.\n\n` +
-
+      langLine +
+      `You are an expert technical mentor creating premium, interview-ready learning notes.\n` +
+      `Target: developer with 3–7 years experience. Write like a senior engineer, not a chatbot.\n` +
+      `Never open with "Sure!", "Great!", or any filler. Start immediately with the content.\n\n` +
+      `STRICT FORMAT RULES:\n` +
+      `- Use emojis EXACTLY as shown: 👉 ❌ ✅ 💡 🧑‍💻 🧠\n` +
+      `- No long paragraphs — bullet points over prose.\n` +
+      `- Blank line after every section block for clean spacing.\n` +
+      `- Feels like premium revision notes, not a chat reply.\n\n` +
+      `---\n\n` +
+      `Topic: **${topic}**\n\n` +
+      `Open with 1–2 friendly lines that set the context (not a definition yet).\n\n` +
       `## What is ${topic}?\n` +
-      `One-sentence definition. Then a real-world analogy that makes it click.\n\n` +
-
-      `## Why it matters\n` +
-      `The problem it solves and when developers actually encounter it in production code.\n\n` +
-
-      `## How it works (step-by-step)\n` +
-      `Numbered steps. Include a simple ASCII diagram if it helps visualise the concept.\n\n` +
-
-      `## Code Example\n` +
-      `A practical, self-contained example with inline comments explaining key lines.\n` +
-      `Use the most relevant language (TypeScript / JavaScript / Python / Java as appropriate).\n` +
-      `Wrap in a fenced block with the language identifier, e.g.:\n` +
-      `\`\`\`typescript\n// your code here\n\`\`\`\n\n` +
-
-      `## Common Mistakes ❌\n` +
-      `Exactly 3 common mistakes developers make, each with a one-line fix.\n\n` +
-
-      `## Best Practices ✅\n` +
-      `3-5 actionable best practices.\n\n` +
-
-      `## Interview Tips 🎯\n` +
-      `2-3 things an interviewer is really testing when they ask about ${topic}. Include one tricky follow-up question they might ask.\n\n` +
-
-      `## Follow-up Questions\n` +
-      `Exactly 3 numbered questions the reader might want to explore next.\n\n` +
-
-      `Formatting: use ## headings, **bold** key terms on first use, \`inline code\` for short snippets, ` +
-      `fenced code blocks with language identifier for multi-line code. No wall-of-text paragraphs.`
+      `- Precise definition in 2–3 bullet points\n` +
+      `- Why it matters in real projects or interviews\n\n` +
+      `If **${topic}** has multiple components, principles, or sub-concepts (e.g. S-O-L-I-D, HTTP verbs, ACID properties), create a numbered section for EACH one.\n` +
+      `If it is a single concept, use ONE main breakdown section.\n\n` +
+      `For EACH component (or the main concept), use EXACTLY this block structure:\n\n` +
+      `### [N]. [Component Name] ([Abbreviation if any])\n\n` +
+      `👉 [One unforgettable rule — 1 line]\n\n` +
+      `❌ **Bad:**\n` +
+      `- [Wrong approach or common anti-pattern]\n\n` +
+      `✅ **Good:**\n` +
+      `- [The correct approach]\n\n` +
+      `💡 **Example:**\n` +
+      `- [Simple real-world analogy — NOT code. Think: coffee shop, restaurant, traffic light]\n\n` +
+      `🧑‍💻 **Code:**\n` +
+      `\`\`\`[language]\n` +
+      `// Minimal clean example — 6–12 lines max\n` +
+      `\`\`\`\n\n` +
+      `🧠 **Remember:** [One-liner that sticks]\n\n` +
+      `---\n\n` +
+      `After all sections add EXACTLY:\n` +
+      `**Explore more:**\n` +
+      `- [deeper technical follow-up about ${topic}?]\n` +
+      `- [common interview question on ${topic}?]\n` +
+      `- [tricky edge case or gotcha about ${topic}?]`
     );
   }
+
+  private buildDeepDivePrompt(topic: string, lang = 'English'): string {
+    const langLine = lang !== 'English'
+      ? `IMPORTANT: Write the entire explanation in ${lang}. Only section headings and code comments may be in English.\n\n`
+      : '';
+    return (
+      langLine +
+      `You are an expert technical mentor creating premium, interview-ready deep-dive notes.\n` +
+      `Target: developer with 3–7 years experience preparing for senior-level interviews.\n` +
+      `Never open with filler. No "Sure!" or "Great question!". Start immediately.\n\n` +
+      `STRICT FORMAT RULES:\n` +
+      `- Use emojis EXACTLY as shown: 👉 ❌ ✅ 💡 🧑‍💻 🧠 ⚠️ 🎯 🔍\n` +
+      `- No long paragraphs — bullets and structure throughout.\n` +
+      `- Generous whitespace between every block.\n` +
+      `- Feels like premium documentation + revision notes combined.\n\n` +
+      `---\n\n` +
+      `**DEEP DIVE: ${topic}**\n\n` +
+      `Open with 1–2 lines framing why this topic matters for interviews and production.\n\n` +
+      `## What is ${topic}?\n` +
+      `- Precise definition in 2–3 bullet points\n` +
+      `- Why it exists — the problem it solves\n\n` +
+      `## How It Works\n` +
+      `- Core mechanics as numbered steps or tight bullets\n` +
+      `- No jargon without a one-line explanation\n\n` +
+      `If **${topic}** has multiple components, principles, or sub-concepts, create a FULL numbered section for EACH one using this exact block format:\n\n` +
+      `### [N]. [Component Name] ([Short form])\n\n` +
+      `👉 [Core rule — 1 memorable line]\n\n` +
+      `❌ **Bad:**\n` +
+      `- [Anti-pattern or common mistake with brief reason]\n\n` +
+      `✅ **Good:**\n` +
+      `- [The correct approach]\n\n` +
+      `💡 **Example:**\n` +
+      `- [Real-world analogy — non-code, relatable: coffee shop, restaurant, etc.]\n\n` +
+      `🧑‍💻 **Code:**\n` +
+      `\`\`\`[language]\n` +
+      `// Clean, self-contained — 8–15 lines\n` +
+      `\`\`\`\n\n` +
+      `🧠 **Remember:** [One-liner memory anchor]\n\n` +
+      `---\n\n` +
+      `## ⚠️ Common Mistakes\n` +
+      `For each mistake: ❌ what devs do wrong → ✅ one-line fix or rule\n\n` +
+      `## 🎯 Interview Answer\n` +
+      `1–2 confident sentences a senior dev would say out loud in an interview.\n\n` +
+      `## 🔍 Interview Deep-Dive\n` +
+      `- What the interviewer is really testing\n` +
+      `- One harder follow-up they will likely ask\n\n` +
+      `**Explore more:**\n` +
+      `- [harder technical question about ${topic}?]\n` +
+      `- [edge case or system design angle for ${topic}?]\n` +
+      `- [common interview follow-up about ${topic}?]`
+    );
+  }
+
 
   /**
    * Smart quick-action dispatcher.
@@ -1387,91 +1869,138 @@ One sentence: the single most important thing to remember about ${topic} in a te
     const topic = this.currentTopicName?.trim() || 'this concept';
 
     // Get the last AI message — quick actions always build on what was just said
-    const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'assistant')?.content?.slice(0, 1000) ?? '';
+    const lastAI = [...this.aiMessages].reverse().find(m => m.role === 'assistant')?.content?.slice(0, 600) ?? '';
+    const lastUser = [...this.aiMessages].reverse().find(m => m.role === 'user')?.content ?? '';
+    const actionLang = this.detectLanguage(lastUser);
     const prevCtx = lastAI
       ? `The student just read this explanation about **${topic}**:\n---\n${lastAI}\n---\n\n`
       : `The student is learning **${topic}**.\n\n`;
 
+    const langLine = actionLang !== 'English' ? `IMPORTANT: Reply entirely in ${actionLang}.\n` : '';
     const SYS =
-      `You are a brilliant programming mentor. Natural tone — like a senior dev continuing a Slack thread.\n` +
-      `Never start with filler ("Sure!", "Certainly!", "Great question!"). Go straight into the value.\n` +
-      `Build on what was already explained — don't repeat it, extend it.\n\n`;
+      langLine +
+      `You are a friendly expert developer. Continue the conversation naturally — don't repeat, extend.\n` +
+      `Never say "Sure!", "Certainly!", "Great question!". Go straight into the value.\n\n`;
 
     const prompts: Record<typeof action, string> = {
 
       // ── 1. Break it down — simplify the last explanation into digestible steps ──
       breakdown:
         SYS + prevCtx +
-        `The student wants this simplified. Break down what was just explained into a step-by-step mental model.\n\n` +
-        `How to respond:\n` +
-        `- 3-5 numbered steps written as short prose (2-3 sentences each), NOT bullet points\n` +
-        `- Each step has a bold title that captures the key idea in ≤5 words\n` +
-        `- Include a tiny code snippet (≤6 lines) for any step where code is clearer than words\n` +
-        `- End with one sentence: the mental shortcut a senior dev would use\n` +
-        `- Conversational tone throughout — this should feel like continuing a chat, not starting a new lesson\n` +
-        `- Wrap all code in fenced blocks with language identifier`,
+        `Simplify **${topic}** into a clean step-by-step mental model using the EXACT format below.\n\n` +
+        `## 🧩 Breaking Down: ${topic}\n\n` +
+        `For each step, use EXACTLY this structure:\n\n` +
+        `### Step [N]: [Bold title — ≤5 words]\n\n` +
+        `👉 [What happens in this step — 1-2 lines]\n\n` +
+        `🧑‍💻 **Code (if relevant):**\n` +
+        `\`\`\`[language]\n` +
+        `// ≤6 lines\n` +
+        `\`\`\`\n\n` +
+        `Use 3–5 steps. End with:\n\n` +
+        `🧠 **Mental shortcut:** [The one-liner a senior dev uses to remember this]`,
 
       // ── 2. Real-world scenario — extend with a concrete use case ───────────
       realworld:
         SYS + prevCtx +
-        `The student wants to see **${topic}** used in the real world. Build on the above explanation with a concrete production scenario.\n\n` +
-        `How to respond:\n` +
-        `- Open with 1 sentence naming a real-ish system ("In a ride-sharing app...", "On an e-commerce checkout...")\n` +
-        `- Show why ${topic} is necessary here — the pain without it (2-3 sentences)\n` +
-        `- Before/after code: ≤10 lines each, inline comments showing the difference\n` +
-        `- Close with 1–2 sentences on the actual impact (performance, reliability, readability)\n` +
-        `- No forced headers — let the narrative flow naturally\n` +
-        `- Wrap all code in fenced blocks with language identifier`,
+        `Show **${topic}** in a real production scenario using the EXACT format below.\n\n` +
+        `## 🏗️ Real-World: ${topic}\n\n` +
+        `💡 **Scenario:** [Name a real system — ride-sharing app, e-commerce checkout, banking API, etc.]\n\n` +
+        `❌ **Without ${topic}:**\n` +
+        `- [The pain point or problem that exists]\n\n` +
+        `✅ **With ${topic}:**\n` +
+        `- [How it solves the problem]\n\n` +
+        `🧑‍💻 **Code:**\n` +
+        `\`\`\`[language]\n` +
+        `// Before and after — ≤10 lines each, inline comments showing the difference\n` +
+        `\`\`\`\n\n` +
+        `🧠 **Impact:** [1 line on the actual result — performance, reliability, readability]`,
 
       // ── 3. Code + walkthrough — show the concept in running code ───────────
       code:
         SYS + prevCtx +
-        `The student wants to see **${topic}** in code. Give them a realistic, working example that extends the explanation above.\n\n` +
-        `How to respond:\n` +
-        `- ONE self-contained example (15-25 lines), real use case, not foo/bar\n` +
-        `- Inline comment on every non-obvious line\n` +
-        `- After the code: 2-3 short sentences pointing out the most important things to notice\n` +
-        `- ONE variation (≤8 lines) showing a meaningful edge case or alternative\n` +
-        `- No rigid "Line-by-Line Walkthrough" header — weave the explanation naturally\n` +
-        `- Wrap all code in fenced blocks with language identifier`,
+        `Show **${topic}** in clean, realistic code using the EXACT format below.\n\n` +
+        `## 🧑‍💻 Code: ${topic}\n\n` +
+        `🧑‍💻 **Main Example:**\n` +
+        `\`\`\`[language]\n` +
+        `// Self-contained, real use case — 15–20 lines. Inline comment on every non-obvious line.\n` +
+        `\`\`\`\n\n` +
+        `✅ **What to notice:**\n` +
+        `- [Key thing 1]\n` +
+        `- [Key thing 2]\n` +
+        `- [Key thing 3]\n\n` +
+        `🔀 **Variation / Edge Case:**\n` +
+        `\`\`\`[language]\n` +
+        `// Alternative or edge case — ≤8 lines\n` +
+        `\`\`\`\n\n` +
+        `🧠 **Remember:** [One-line takeaway from the code]`,
 
       // ── 4. Quiz me — test understanding of what was just explained ─────────
       quiz:
         SYS + prevCtx +
-        `Test the student's understanding of what was just explained about **${topic}**.\n\n` +
-        `How to respond:\n` +
-        `- 3 questions directly based on the explanation above (not generic ${topic} trivia)\n` +
-        `- Q1: concept check — "what/why" question answered in 1-2 sentences\n` +
-        `- Q2: code reading — show 5-8 lines, ask "what does this do?" or "spot the bug"\n` +
-        `- Q3: application — "given this scenario, how would you use ${topic}?"\n` +
-        `- Each answer immediately follows its question (no hiding answers)\n` +
-        `- End with one harder challenge question for students who want more\n` +
-        `- Wrap all code in fenced blocks with language identifier`,
+        `Quiz the student on **${topic}** using the EXACT format below.\n\n` +
+        `## ❓ Quiz: ${topic}\n\n` +
+        `**Q1 — Concept Check:**\n` +
+        `[A "what/why" question based directly on the explanation above]\n\n` +
+        `💡 **Answer:** [1–2 sentences]\n\n` +
+        `---\n\n` +
+        `**Q2 — Code Reading:**\n` +
+        `\`\`\`[language]\n` +
+        `// 5–8 lines — ask "What does this output?" or "Spot the bug"\n` +
+        `\`\`\`\n` +
+        `💡 **Answer:** [explanation of what it does or what the bug is]\n\n` +
+        `---\n\n` +
+        `**Q3 — Application:**\n` +
+        `[Given a real scenario, how would you use ${topic}?]\n\n` +
+        `💡 **Answer:** [2–3 bullet points]\n\n` +
+        `---\n\n` +
+        `🔥 **Bonus Challenge:** [One harder question for students who want more]`,
 
       // ── 5. What trips devs up — extend with common pitfalls ────────────────
       mistakes:
         SYS + prevCtx +
-        `Now show the student what trips developers up with **${topic}** — the mistakes that cause real bugs.\n\n` +
-        `How to respond:\n` +
-        `- 3-4 mistakes, each as a short story: "Here's a mistake devs often make..."\n` +
-        `- Broken code (4-8 lines) → fixed code (4-8 lines), inline comments showing WHY\n` +
-        `- One memorable rule-of-thumb after each mistake\n` +
-        `- Conversational tone — "the sneaky thing here is...", "you might think X, but actually..."\n` +
-        `- Close with one sentence: the single most dangerous misconception about ${topic}\n` +
-        `- Wrap all code in fenced blocks with language identifier`,
+        `Show what trips developers up with **${topic}** using the EXACT format below.\n\n` +
+        `## ⚠️ Common Mistakes: ${topic}\n\n` +
+        `For each mistake, use EXACTLY this structure:\n\n` +
+        `### Mistake [N]: [Name of the mistake]\n\n` +
+        `❌ **What devs do wrong:**\n` +
+        `\`\`\`[language]\n` +
+        `// Broken example — 4–8 lines\n` +
+        `\`\`\`\n\n` +
+        `✅ **The fix:**\n` +
+        `\`\`\`[language]\n` +
+        `// Corrected — 4–8 lines with a comment showing WHY\n` +
+        `\`\`\`\n\n` +
+        `🧠 **Rule:** [One memorable rule-of-thumb]\n\n` +
+        `---\n\n` +
+        `Use 3–4 mistakes. End with:\n\n` +
+        `🔴 **Most dangerous misconception:** [The single biggest trap about ${topic}]`,
 
       // ── 6. Ace the interview — extend with interview prep ──────────────────
       interview:
         SYS + prevCtx +
-        `Help the student answer **${topic}** interview questions confidently. Build on the explanation they just read.\n\n` +
-        `How to respond:\n` +
-        `- Q1 (definition): model answer in plain English, 3-4 sentences, first person, ends with an analogy\n` +
-        `- Q2 (depth): a harder follow-up an interviewer would ask; 2-3 sentence senior-level answer\n` +
-        `- Q3 (code): write [short task related to ${topic}] — 10-15 lines with comments\n` +
-        `- "What they're really testing": 2-3 bullet points on the underlying skills being probed\n` +
-        `- "Avoid these red flags": 2 things that would make an interviewer doubt the candidate\n` +
-        `- Write it conversationally — like coaching a friend, not writing a study guide\n` +
-        `- Wrap all code in fenced blocks with language identifier`
+        `Give the student interview prep for **${topic}** using the EXACT format below.\n\n` +
+        `## 🎯 Interview Prep: ${topic}\n\n` +
+        `### Q1 — Definition\n` +
+        `[Question an interviewer would ask about what ${topic} is]\n\n` +
+        `✅ **Model Answer:** [3–4 sentences, first person, ends with a real-world analogy]\n\n` +
+        `---\n\n` +
+        `### Q2 — Depth Check\n` +
+        `[A harder follow-up — "When would you NOT use it?" or "How does it compare to X?"]\n\n` +
+        `✅ **Model Answer:** [2–3 sentences, senior-level confidence]\n\n` +
+        `---\n\n` +
+        `### Q3 — Code Task\n` +
+        `[A short live coding task related to ${topic}]\n\n` +
+        `🧑‍💻 **Solution:**\n` +
+        `\`\`\`[language]\n` +
+        `// 10–15 lines with inline comments explaining key decisions\n` +
+        `\`\`\`\n\n` +
+        `---\n\n` +
+        `🔍 **What they're really testing:**\n` +
+        `- [Underlying skill 1]\n` +
+        `- [Underlying skill 2]\n\n` +
+        `🚩 **Avoid these red flags:**\n` +
+        `- [Red flag 1 that would lose the interviewer's trust]\n` +
+        `- [Red flag 2]`
     };
 
     const labels: Record<typeof action, string> = {

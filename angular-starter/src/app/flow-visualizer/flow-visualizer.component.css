@@ -1,0 +1,463 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   FlowVisualizerComponent — interactive animated flow diagram
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Design tokens ────────────────────────────────────────────────────────── */
+:host {
+  /* light theme defaults */
+  --fv-bg:            #f9fafb;
+  --fv-surface:       #ffffff;
+  --fv-border:        #e5e7eb;
+  --fv-text:          #111827;
+  --fv-muted:         #6b7280;
+  --fv-code-bg:       #1e1e2e;
+  --fv-code-text:     #cdd6f4;
+  --fv-code-ln:       #4b5563;
+  --fv-code-active:   rgba(99, 102, 241, 0.22);
+  --fv-code-done:     rgba(16, 185, 129, 0.14);
+
+  /* accent — indigo */
+  --fv-accent:        #6366f1;
+  --fv-accent-2:      #4f46e5;
+  --fv-accent-dim:    rgba(99, 102, 241, 0.10);
+  --fv-accent-glow:   rgba(99, 102, 241, 0.45);
+
+  /* success — emerald */
+  --fv-success:       #10b981;
+  --fv-success-dim:   rgba(16, 185, 129, 0.10);
+
+  /* node states */
+  --fv-node-idle-fill:       #ffffff;
+  --fv-node-idle-stroke:     #d1d5db;
+  --fv-node-active-fill:     rgba(99, 102, 241, 0.08);
+  --fv-node-active-stroke:   #6366f1;
+  --fv-node-done-fill:       rgba(16, 185, 129, 0.08);
+  --fv-node-done-stroke:     #10b981;
+
+  /* edge states */
+  --fv-edge-idle:       #d1d5db;
+  --fv-edge-traversed:  #818cf8;
+  --fv-edge-active:     #4f46e5;
+
+  display: block;
+  width: 100%;
+  border-radius: 16px;
+  border: 1.5px solid var(--fv-border);
+  background: var(--fv-bg);
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+}
+
+/* dark-mode overrides */
+:host-context([data-theme="dark"]) {
+  --fv-bg:            #0f0f1a;
+  --fv-surface:       #1a1a2e;
+  --fv-border:        rgba(255,255,255,0.09);
+  --fv-text:          #f1f5f9;
+  --fv-muted:         #94a3b8;
+  --fv-code-bg:       #12121e;
+  --fv-code-text:     #cdd6f4;
+  --fv-code-ln:       #374151;
+  --fv-code-active:   rgba(129, 140, 248, 0.20);
+  --fv-code-done:     rgba(52,  211, 153, 0.12);
+
+  --fv-accent:        #818cf8;
+  --fv-accent-2:      #6366f1;
+  --fv-accent-dim:    rgba(129,140,248,0.12);
+  --fv-accent-glow:   rgba(129,140,248,0.50);
+
+  --fv-success:       #34d399;
+  --fv-success-dim:   rgba(52,211,153,0.10);
+
+  --fv-node-idle-fill:      #1e1e30;
+  --fv-node-idle-stroke:    rgba(255,255,255,0.12);
+  --fv-node-active-fill:    rgba(129,140,248,0.10);
+  --fv-node-active-stroke:  #818cf8;
+  --fv-node-done-fill:      rgba(52,211,153,0.08);
+  --fv-node-done-stroke:    #34d399;
+
+  --fv-edge-idle:       rgba(255,255,255,0.15);
+  --fv-edge-traversed:  #6366f1;
+  --fv-edge-active:     #818cf8;
+}
+
+/* ── Shell ───────────────────────────────────────────────────────────────── */
+.fv-shell {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Header ─────────────────────────────────────────────────────────────── */
+.fv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 12px;
+  border-bottom: 1.5px solid var(--fv-border);
+  background: var(--fv-surface);
+  flex-shrink: 0;
+  gap: 12px;
+}
+.fv-header-left {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.fv-header-icon {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--fv-accent);
+}
+.fv-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--fv-text);
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.fv-badge {
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--fv-muted);
+  background: var(--fv-bg);
+  border: 1.5px solid var(--fv-border);
+  border-radius: 99px;
+  padding: 3px 10px;
+  white-space: nowrap;
+  transition: background 0.3s, color 0.3s, border-color 0.3s;
+}
+.fv-badge--done {
+  background: var(--fv-success-dim);
+  color: var(--fv-success);
+  border-color: var(--fv-success);
+}
+
+/* ── Body: side-by-side panels ──────────────────────────────────────────── */
+.fv-body {
+  display: grid;
+  grid-template-columns: 44% 56%;
+  min-height: 420px;
+  border-bottom: 1.5px solid var(--fv-border);
+}
+
+/* ── Code panel (left) ──────────────────────────────────────────────────── */
+.fv-code-panel {
+  display: flex;
+  flex-direction: column;
+  border-right: 1.5px solid var(--fv-border);
+  background: var(--fv-code-bg);
+  overflow: hidden;
+}
+.fv-code-header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+  flex-shrink: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: rgba(205,214,244,0.5);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.fv-code-pre {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 0;
+}
+.fv-code-line {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 3px 14px 3px 0;
+  border-left: 3px solid transparent;
+  transition:
+    background 0.35s ease,
+    border-color 0.35s ease;
+  min-height: 26px;
+}
+.fv-code-line--active {
+  background: var(--fv-code-active);
+  border-left-color: var(--fv-accent);
+}
+.fv-code-line--completed {
+  background: var(--fv-code-done);
+  border-left-color: var(--fv-success);
+}
+.fv-code-ln {
+  display: block;
+  width: 36px;
+  flex-shrink: 0;
+  text-align: right;
+  padding-right: 14px;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.78rem;
+  line-height: 1.7;
+  color: var(--fv-code-ln);
+  user-select: none;
+  transition: color 0.3s;
+}
+.fv-code-line--active   .fv-code-ln { color: rgba(129,140,248,0.7); }
+.fv-code-line--completed .fv-code-ln { color: rgba(52,211,153,0.6); }
+
+.fv-code-text {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+  font-size: 0.8rem;
+  line-height: 1.7;
+  color: var(--fv-code-text);
+  white-space: pre;
+}
+
+/* ── SVG Diagram panel (right) ──────────────────────────────────────────── */
+.fv-diagram-panel {
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--fv-bg);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 8px 4px;
+}
+.fv-svg {
+  width: 100%;
+  display: block;
+  overflow: visible;
+}
+
+/* ── SVG: Arrowhead markers ─────────────────────────────────────────────── */
+.fv-marker-idle      { fill: var(--fv-edge-idle);       transition: fill 0.35s; }
+.fv-marker-traversed { fill: var(--fv-edge-traversed);  transition: fill 0.35s; }
+.fv-marker-active    { fill: var(--fv-edge-active);      transition: fill 0.35s; }
+
+/* ── SVG: Edges ─────────────────────────────────────────────────────────── */
+.fv-edges path {
+  transition: stroke 0.4s ease, stroke-width 0.3s ease, opacity 0.35s ease;
+}
+.fv-edge--idle path {
+  stroke: var(--fv-edge-idle);
+  stroke-width: 1.5;
+  opacity: 0.65;
+}
+.fv-edge--traversed path {
+  stroke: var(--fv-edge-traversed);
+  stroke-width: 2;
+  opacity: 0.85;
+}
+.fv-edge--active path {
+  stroke: var(--fv-edge-active);
+  stroke-width: 2.5;
+  opacity: 1;
+  animation: fv-edge-pulse 1.4s ease infinite;
+}
+@keyframes fv-edge-pulse {
+  0%,  100% { opacity: 0.85; }
+  50%        { opacity: 1; }
+}
+
+/* ── SVG: Nodes ─────────────────────────────────────────────────────────── */
+.fv-node rect {
+  transition:
+    fill         0.35s ease,
+    stroke       0.35s ease,
+    stroke-width 0.3s  ease,
+    filter       0.35s ease;
+}
+.fv-node--idle rect {
+  fill:         var(--fv-node-idle-fill);
+  stroke:       var(--fv-node-idle-stroke);
+  stroke-width: 1.5;
+}
+.fv-node--active rect {
+  fill:         var(--fv-node-active-fill);
+  stroke:       var(--fv-node-active-stroke);
+  stroke-width: 2.2;
+  filter: drop-shadow(0 0 10px var(--fv-accent-glow));
+  animation: fv-node-glow 1.5s ease infinite;
+}
+.fv-node--completed rect {
+  fill:         var(--fv-node-done-fill);
+  stroke:       var(--fv-node-done-stroke);
+  stroke-width: 1.5;
+}
+
+@keyframes fv-node-glow {
+  0%,  100% { filter: drop-shadow(0 0  7px var(--fv-accent-glow)); }
+  50%        { filter: drop-shadow(0 0 15px var(--fv-accent-glow)); }
+}
+
+/* Node label text */
+.fv-node-label {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 12.5px;
+  font-weight: 600;
+  fill: var(--fv-text);
+  pointer-events: none;
+  transition: fill 0.3s;
+}
+.fv-node--active  .fv-node-label { fill: var(--fv-accent); font-weight: 700; }
+.fv-node--completed .fv-node-label { fill: var(--fv-success); }
+
+/* Step number badge (small circle on left of node) */
+.fv-step-num-circle {
+  fill: var(--fv-bg);
+  stroke: var(--fv-node-idle-stroke);
+  stroke-width: 1.5;
+  transition: fill 0.3s, stroke 0.3s;
+}
+.fv-node--active  .fv-step-num-circle { fill: var(--fv-accent); stroke: var(--fv-accent); }
+.fv-step-num-text {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 9px;
+  font-weight: 800;
+  fill: var(--fv-muted);
+  pointer-events: none;
+  transition: fill 0.3s;
+}
+.fv-node--active .fv-step-num-text { fill: #fff; }
+
+/* Checkmark badge (completed nodes) */
+.fv-check-circle { fill: var(--fv-success); }
+.fv-check-text {
+  font-size: 9px;
+  font-weight: 700;
+  fill: #ffffff;
+  pointer-events: none;
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+.fv-footer {
+  flex-shrink: 0;
+  background: var(--fv-surface);
+}
+
+/* Controls row */
+.fv-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--fv-border);
+}
+.fv-ctrl-btns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.fv-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: 9px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: background 0.17s, border-color 0.17s, color 0.17s, transform 0.12s, opacity 0.2s;
+  line-height: 1;
+  white-space: nowrap;
+}
+.fv-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none !important;
+}
+.fv-btn--ghost {
+  background: transparent;
+  border-color: var(--fv-border);
+  color: var(--fv-muted);
+}
+.fv-btn--ghost:not(:disabled):hover {
+  background: var(--fv-accent-dim);
+  border-color: var(--fv-accent);
+  color: var(--fv-accent);
+  transform: translateY(-1px);
+}
+.fv-btn--primary {
+  background: var(--fv-accent);
+  border-color: var(--fv-accent);
+  color: #fff;
+  box-shadow: 0 3px 12px var(--fv-accent-glow);
+}
+.fv-btn--primary:not(:disabled):hover {
+  background: var(--fv-accent-2);
+  border-color: var(--fv-accent-2);
+  transform: translateY(-1px);
+}
+
+/* Progress bar */
+.fv-progress {
+  flex: 1;
+  height: 6px;
+  background: var(--fv-border);
+  border-radius: 99px;
+  overflow: hidden;
+}
+.fv-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--fv-accent), var(--fv-accent-2));
+  border-radius: 99px;
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Step description */
+.fv-desc {
+  padding: 14px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 72px;
+}
+.fv-desc-tag {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--fv-accent);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.fv-desc-text {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--fv-muted);
+  line-height: 1.65;
+}
+.fv-desc--hint .fv-desc-text { color: var(--fv-muted); font-style: italic; }
+.fv-desc strong { color: var(--fv-text); font-weight: 700; }
+
+/* ── Empty state ────────────────────────────────────────────────────────── */
+.fv-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--fv-muted);
+  font-size: 0.875rem;
+  font-style: italic;
+}
+
+/* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 680px) {
+  .fv-body {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+  }
+  .fv-code-panel {
+    border-right: none;
+    border-bottom: 1.5px solid var(--fv-border);
+    max-height: 220px;
+  }
+  .fv-diagram-panel {
+    min-height: 320px;
+  }
+  .fv-ctrl-btns { gap: 6px; }
+  .fv-btn { padding: 7px 10px; font-size: 0.78rem; }
+}

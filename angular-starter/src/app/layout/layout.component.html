@@ -1,0 +1,54 @@
+<!--
+  ════════════════════════════════════════════════════════════
+  LAYOUT — App Shell (ChatGPT-style)
+  ────────────────────────────────────────────────────────────
+  Flex-column:
+    app-navbar     — sticky top bar, full-width, 52px
+    .content-wrapper — flex-row, fills remaining height
+      .panel       — contextual content (~300px), only rendered
+                     when the active page registers a template
+                     via SidebarContentService
+      .main        — primary scroll zone (flex:1)
+  ════════════════════════════════════════════════════════════
+-->
+
+<div class="layout" [class.layout--scrolled]="isScrolled">
+
+  <!-- ── Sticky top navbar ─────────────────────────────── -->
+  <app-navbar></app-navbar>
+
+  <!-- ── Content area ──────────────────────────────────── -->
+  <div class="content-wrapper">
+
+    <!-- Panel: contextual content registered by the active page -->
+    <aside class="panel"
+           *ngIf="hasPanel$ | async"
+           role="complementary"
+           [attr.aria-label]="panelTitle$ | async">
+
+      <!-- Panel header with title -->
+      <div class="panel-hd" *ngIf="(panelTitle$ | async) as title">
+        <span class="panel-title">{{ title }}</span>
+      </div>
+
+      <!-- Page-registered template content -->
+      <div class="panel-body">
+        <ng-container *ngTemplateOutlet="panelTpl$ | async"></ng-container>
+      </div>
+
+    </aside>
+
+    <!-- Main: primary content area -->
+    <main class="main"
+          #mainRef
+          id="main-content"
+          role="main"
+          tabindex="-1">
+      <router-outlet></router-outlet>
+    </main>
+
+  </div>
+  <!-- /content-wrapper -->
+
+</div>
+<!-- /layout -->

@@ -13,6 +13,7 @@ import { HeaderComponent } from './header/header.component';
 import { FooterComponent } from './footer/footer.component';
 import { ContactmeComponent } from './contactme/contactme.component';
 import { HomeComponent } from './home/home.component';
+import { ChatHomeComponent } from './chat-home/chat-home.component';
 import { AboutComponent } from './about/about.component';
 // import { ServicesComponent } from './services/services.component'; // Temporarily disabled
 import { SkillsComponent } from './skills/skills.component';
@@ -53,10 +54,22 @@ import { InterviewPrepComponent } from './interview-prep/interview-prep.componen
 import { SaveNotesModalComponent } from './shared/save-notes-modal/save-notes-modal.component';
 import { SubscribeComponent }      from './subscribe/subscribe.component';
 import { SubscriptionWallComponent } from './shared/subscription-wall/subscription-wall.component';
+import { AccountComponent }          from './account/account.component';
 import { AdminUsersComponent }       from './admin/admin-users/admin-users.component';
 import { LearningWorkspaceModule } from './shared/learning-workspace/learning-workspace.module';
+import { LayoutModule } from './layout/layout.module';
 import { CodePlaygroundComponent } from './code-playground/code-playground.component';
 import { QuizComponent }          from './quiz/quiz.component';
+import { SemanticKernelLearnComponent } from './semantic-kernel/semantic-kernel.component';
+import { StructuredNoteComponent } from './shared/structured-note/structured-note.component';
+import { RevisionDashboardComponent } from './revision/revision-dashboard.component';
+import { RevisionSessionComponent }  from './revision/revision-session.component';
+import { ShareTargetComponent }       from './share-target/share-target.component';
+import { TiptapEditorComponent }      from './shared/tiptap-editor/tiptap-editor.component';
+import { FlowVisualizerComponent }    from './flow-visualizer/flow-visualizer.component';
+import { VisualLearnComponent }       from './visual-learn/visual-learn.component';
+import { AuthCallbackComponent }      from './auth-callback/auth-callback.component';
+import { CustomAuthService }          from './shared/custom-auth.service';
 
 @NgModule({
   declarations: [
@@ -68,6 +81,7 @@ import { QuizComponent }          from './quiz/quiz.component';
     FooterComponent,
     ContactmeComponent,
     HomeComponent,
+    ChatHomeComponent,
     AboutComponent,
     // ServicesComponent, // Temporarily disabled
     SkillsComponent,
@@ -103,10 +117,20 @@ import { QuizComponent }          from './quiz/quiz.component';
     CodePlaygroundComponent, // Interactive Code Playground
     QuizComponent, // AI-generated module quiz
     InterviewPrepComponent,  // AI-powered Interview Practice
+    SemanticKernelLearnComponent, // Semantic Kernel learning module
+    StructuredNoteComponent,          // Structured AI Note renderer
+    RevisionDashboardComponent,        // Revision Mode dashboard
+    RevisionSessionComponent,          // Revision active-recall session
     SaveNotesModalComponent,    // Save conversation to Notes modal
+    ShareTargetComponent,       // PWA Web Share Target handler
+    TiptapEditorComponent,      // Tiptap rich-text editor wrapper
     SubscribeComponent,           // Subscription / payment page
     SubscriptionWallComponent,    // Paywall modal overlay
+    AccountComponent,             // User account / usage dashboard
     AdminUsersComponent,          // Admin user management panel
+    FlowVisualizerComponent,         // Reusable animated flow diagram
+    VisualLearnComponent,            // Visual Learning Mode page
+    AuthCallbackComponent,           // OAuth callback resolver
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],
@@ -121,6 +145,7 @@ import { QuizComponent }          from './quiz/quiz.component';
     AppRoutingModule,
     NgScrollbarModule,
     LearningWorkspaceModule,
+    LayoutModule,              // ChatGPT-style App Shell (sidebar + navbar + layout)
     // AdminUsersComponent removed from imports (now in declarations)
   ],
   providers: [
@@ -128,6 +153,12 @@ import { QuizComponent }          from './quiz/quiz.component';
       provide:    APP_INITIALIZER,
       useFactory: (appCfg: AppConfigService) => () => appCfg.load().toPromise(),
       deps:       [AppConfigService],
+      multi:      true,
+    },
+    {
+      provide:    APP_INITIALIZER,
+      useFactory: (auth: CustomAuthService) => () => auth.initSession(),
+      deps:       [CustomAuthService],
       multi:      true,
     },
     {

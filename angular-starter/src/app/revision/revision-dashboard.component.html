@@ -1,0 +1,144 @@
+<div class="rv-page">
+
+  <!-- Toast -->
+  <div class="rv-toast" *ngIf="toast" [class.rv-toast--error]="toast.type === 'error'">
+    {{ toast.msg }}
+  </div>
+
+  <!-- Loading -->
+  <div class="rv-loading" *ngIf="loading">
+    <div class="rv-spinner"></div>
+    <p>Loading revision data…</p>
+  </div>
+
+  <!-- Error -->
+  <div class="rv-error-card" *ngIf="error && !loading">
+    <p>⚠️ Could not load revision data.</p>
+    <button class="rv-btn rv-btn--primary" (click)="load()">Retry</button>
+  </div>
+
+  <!-- Main content -->
+  <ng-container *ngIf="!loading && !error">
+
+    <!-- ── Header ─────────────────────────────────────────────────────── -->
+    <header class="rv-header">
+      <div class="rv-header-left">
+        <span class="rv-header-icon">🔁</span>
+        <div>
+          <h1 class="rv-header-title">Revision Mode</h1>
+          <p class="rv-header-sub">Spaced-repetition practice for your saved notes</p>
+        </div>
+      </div>
+      <div class="rv-header-stats" *ngIf="today">
+        <div class="rv-stat">
+          <span class="rv-stat-value">{{ today.totalDue }}</span>
+          <span class="rv-stat-label">due today</span>
+        </div>
+        <div class="rv-stat">
+          <span class="rv-stat-value">{{ enrolled?.totalEnrolled ?? 0 }}</span>
+          <span class="rv-stat-label">enrolled</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- ── Tabs ───────────────────────────────────────────────────────── -->
+    <div class="rv-tabs">
+      <button class="rv-tab" [class.rv-tab--active]="tab === 'today'"   (click)="tab = 'today'">
+        Today's Revision
+        <span class="rv-tab-badge" *ngIf="today && today.totalDue > 0">{{ today.totalDue }}</span>
+      </button>
+      <button class="rv-tab" [class.rv-tab--active]="tab === 'all'"     (click)="tab = 'all'">
+        All Enrolled ({{ enrolled?.totalEnrolled ?? 0 }})
+      </button>
+    </div>
+
+    <!-- ════════════════ TAB: TODAY ════════════════ -->
+    <div *ngIf="tab === 'today'">
+
+      <!-- All done -->
+      <div class="rv-all-done" *ngIf="today && today.totalDue === 0">
+        <div class="rv-all-done-icon">🎉</div>
+        <h2>All caught up!</h2>
+        <p>No notes are due for revision today. Check back tomorrow.</p>
+      </div>
+
+      <!-- Due items -->
+      <div class="rv-list" *ngIf="today && today.totalDue > 0">
+        <div class="rv-item-card" *ngFor="let item of today.items">
+          <div class="rv-item-left">
+            <span [class]="difficultyClass(item.difficulty)">{{ difficultyLabel(item.difficulty) }}</span>
+            <div>
+              <p class="rv-item-topic">{{ item.noteTopic }}</p>
+              <p class="rv-item-cat">{{ item.noteCategory || 'Note' }} · {{ item.reviewCount }} reviews</p>
+            </div>
+          </div>
+          <div class="rv-item-right">
+            <button class="rv-btn rv-btn--primary"
+                    (click)="startSession(item)">
+              Start ▶
+            </button>
+            <button class="rv-btn rv-btn--ghost rv-btn--icon"
+                    title="Remove from revision"
+                    (click)="unenroll(item)">✕</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ════════════════ TAB: ALL ENROLLED ════════════════ -->
+    <div *ngIf="tab === 'all'">
+
+      <!-- Empty enrolled state -->
+      <div class="rv-empty" *ngIf="enrolled && enrolled.totalEnrolled === 0">
+        <p>No notes enrolled yet. Add notes below to start practising.</p>
+      </div>
+
+      <!-- Enrolled list -->
+      <div class="rv-list" *ngIf="enrolled && enrolled.totalEnrolled > 0">
+        <div class="rv-item-card" *ngFor="let item of enrolled.items">
+          <div class="rv-item-left">
+            <span [class]="difficultyClass(item.difficulty)">{{ difficultyLabel(item.difficulty) }}</span>
+            <div>
+              <p class="rv-item-topic">{{ item.noteTopic }}</p>
+              <p class="rv-item-cat">
+                Next: {{ formatDate(item.nextReviewDate) }} · interval {{ item.intervalDays }}d
+              </p>
+            </div>
+          </div>
+          <div class="rv-item-right">
+            <button class="rv-btn rv-btn--primary"
+                    *ngIf="item.isDueToday"
+                    (click)="startSession(item)">
+              Start ▶
+            </button>
+            <button class="rv-btn rv-btn--ghost rv-btn--icon"
+                    title="Remove from revision"
+                    (click)="unenroll(item)">✕</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Add more notes ─────────────────────────────────────────── -->
+      <div class="rv-add-section" *ngIf="unenrolledNotes.length > 0">
+        <h3 class="rv-add-title">Add notes to revision</h3>
+        <div class="rv-add-list">
+          <div class="rv-add-card" *ngFor="let note of unenrolledNotes">
+            <div class="rv-add-info">
+              <p class="rv-add-topic">{{ note.topic }}</p>
+              <p class="rv-add-cat">{{ note.category || 'Uncategorised' }}</p>
+            </div>
+            <button class="rv-btn rv-btn--accent"
+                    [disabled]="enrollingId === note.id"
+                    (click)="enroll(note)">
+              {{ enrollingId === note.id ? 'Adding…' : '+ Add' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </ng-container>
+
+</div>

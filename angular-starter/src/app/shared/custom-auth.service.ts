@@ -9,145 +9,103 @@ export interface AuthUser {
   userId:   string;
   username: string;
   email:    string;
-  role:     string;   // 'ADMIN' | 'USER'
-  token:    string;
+  role:     string;
+  token?:   string;
 }
 
 export interface LoginRequest   { email: string; password: string; }
 export interface SignupRequest  { username?: string; email: string; password: string; }
 export interface AuthResponse   {
-  message: string; userId: string; username: string; email: string; role: string; token: string;
+  message: string;
+  userId: string;
+  username: string;
+  email: string;
+  role: string;
+  token?: string;
 }
-
-const TOKEN_KEY = 'auth_jwt';
 
 @Injectable({ providedIn: 'root' })
 export class CustomAuthService {
-
   private readonly apiBase = environment.apiUrl;
 
-  private _user = new BehaviorSubject<AuthUser | null>(this.loadFromStorage());
-  /** Emits the current user or null when logged out. */
+  private _user = new BehaviorSubject<AuthUser | null>(null);
   currentUser$: Observable<AuthUser | null> = this._user.asObservable();
-  /** Emits true when logged in, false when logged out. No inner subscription leak. */
-  isLoggedIn$:  Observable<boolean>         = this._user.pipe(map(u => !!u));
+  isLoggedIn$: Observable<boolean> = this._user.pipe(map(u => !!u));
 
   constructor(
-    private http:   HttpClient,
+    private http: HttpClient,
     private router: Router,
     private ngZone: NgZone
   ) {}
 
-  // ─── Public getters ─────────────────────────────────────────────────────
-
   get currentUser(): AuthUser | null { return this._user.value; }
-  get isLoggedIn():  boolean         { return !!this._user.value; }
-  get isAdmin():     boolean         { return this._user.value?.role === 'ADMIN'; }
+  get isLoggedIn(): boolean { return !!this._user.value; }
+  get isAdmin(): boolean { return this._user.value?.role === 'ADMIN'; }
 
-  getToken(): string | null { return this._user.value?.token ?? null; }
+  getToken(): string | null { return null; }
 
-  /** Build Authorization header for JWT-protected endpoints */
-  getAuthHeaders(): HttpHeaders {
-    return new HttpHeaders({
-      'Content-Type':  'application/json',
-      'Authorization': `Bearer ${this.getToken() ?? ''}`
-    });
+  initSession(): Promise<void> {
+    return this.refreshSession().toPromise().then(() => undefined).catch(() => undefined);
   }
 
-  // ─── Auth methods ────────────────────────────────────────────────────────
+  getAuthHeaders(): HttpHeaders {
+    return new HttpHeaders({ 'Content-Type': 'application/json' });
+  }
 
   login(email: string, password: string): Observable<AuthResponse> {
-    console.log('[Auth] Sending login request to', `${this.apiBase}/auth/login`);
     return this.http
-      .post<AuthResponse>(`${this.apiBase}/auth/login`, { email, password })
-      .pipe(tap(r => {
-        console.log('[Auth] Login response received, userId:', r?.userId, 'token present:', !!r?.token);
-        this.persist(r);
-      }));
+      .post<AuthResponse>(`${this.apiBase}/auth/login`, { email, password }, { withCredentials: true })
+      .pipe(tap(r => this.persist(r)));
   }
 
   signup(email: string, password: string, username?: string): Observable<AuthResponse> {
     return this.http
-      .post<AuthResponse>(`${this.apiBase}/auth/register`, { email, password, username })
+      .post<AuthResponse>(`${this.apiBase}/auth/register`, { email, password, username }, { withCredentials: true })
+      .pipe(tap(r => this.persist(r)));
+  }
+
+  startGoogleLogin(returnUrl = this.router.url): void {
+    const safeReturnUrl = returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/explore';
+    window.location.href = `${this.apiBase}/auth/google/start?returnUrl=${encodeURIComponent(safeReturnUrl)}`;
+  }
+
+  refreshSession(): Observable<AuthResponse> {
+    return this.http
+      .get<AuthResponse>(`${this.apiBase}/auth/me`, { withCredentials: true })
       .pipe(tap(r => this.persist(r)));
   }
 
   logout(): void {
     const userId = this._user.value?.userId;
-    console.log('[Auth] logout() called, userId:', userId, '| caller stack:', new Error().stack?.split('\n')[2]?.trim());
     if (userId) {
-      // Fire-and-forget — no need to block UI
-      this.http.post(`${this.apiBase}/auth/logout`, { userId },
-        { headers: this.getAuthHeaders() }).subscribe();
+      this.http.post(
+        `${this.apiBase}/auth/logout`,
+        { userId },
+        { headers: this.getAuthHeaders(), withCredentials: true }
+      ).subscribe();
     }
-    localStorage.removeItem(TOKEN_KEY);
-    // Always emit inside NgZone so Angular's CD is guaranteed to run
-    this.ngZone.run(() => this._user.next(null));
-    this.router.navigate(['/']);
+    this.clearLocalSession(true);
   }
 
-  // ─── Private helpers ─────────────────────────────────────────────────────
+  clearLocalSession(redirectHome = false): void {
+    this.ngZone.run(() => this._user.next(null));
+    if (redirectHome) {
+      this.router.navigate(['/']);
+    }
+  }
 
   private persist(r: AuthResponse): void {
+    if (!r?.userId || !r?.email) {
+      throw new Error('The server returned an incomplete login response.');
+    }
+
     const user: AuthUser = {
-      userId:   r.userId,
+      userId: r.userId,
       username: r.username,
-      email:    r.email,
-      role:     r.role ?? 'USER',
-      token:    r.token
+      email: r.email,
+      role: r.role ?? 'USER'
     };
-    localStorage.setItem(TOKEN_KEY, JSON.stringify(user));
-    console.log('[Auth] User persisted to localStorage, emitting to BehaviorSubject');
-    // Wrap in ngZone.run() so the BehaviorSubject emission ALWAYS happens
-    // inside Angular's zone — even if the HTTP response callback ran outside
-    // (e.g. AOT/production builds, service-worker proxies, fetch-based HttpClient).
-    // Without this, markForCheck/detectChanges on the header never gets a CD cycle.
-    this.ngZone.run(() => {
-      this._user.next(user);
-      console.log('[Auth] BehaviorSubject updated, isLoggedIn now:', this.isLoggedIn);
-    });
-  }
 
-  private loadFromStorage(): AuthUser | null {
-    try {
-      const raw = localStorage.getItem(TOKEN_KEY);
-      if (!raw) return null;
-      const user: AuthUser = JSON.parse(raw);
-      // Discard expired tokens so the app never starts in a broken auth state
-      if (this.isTokenExpired(user.token)) {
-        localStorage.removeItem(TOKEN_KEY);
-        console.warn('Auth: stored token expired — logged out.');
-        return null;
-      }
-      return user;
-    } catch {
-      localStorage.removeItem(TOKEN_KEY);
-      return null;
-    }
-  }
-
-  /** Decode JWT payload and compare exp claim against current time.
-   *  IMPORTANT: JWT uses base64url (RFC 4648 §5) which replaces + with -
-   *  and / with _. Standard atob() does not handle this encoding, so we
-   *  must normalise the string first or atob() throws on production tokens
-   *  that happen to contain those characters — silently logging users out.
-   */
-  private isTokenExpired(token: string): boolean {
-    try {
-      const base64Url = token.split('.')[1];
-      if (!base64Url) return false;
-      // Normalise base64url → standard base64
-      const base64 = base64Url
-        .replace(/-/g, '+')
-        .replace(/_/g, '/')
-        .padEnd(base64Url.length + (4 - base64Url.length % 4) % 4, '=');
-      const payload = JSON.parse(atob(base64));
-      // exp is in seconds; Date.now() is in ms
-      return typeof payload.exp === 'number' && payload.exp * 1000 < Date.now();
-    } catch {
-      // Cannot parse → assume valid; server will reject stale tokens with 401
-      // which AuthInterceptor handles by calling logout()
-      return false;
-    }
+    this.ngZone.run(() => this._user.next(user));
   }
 }

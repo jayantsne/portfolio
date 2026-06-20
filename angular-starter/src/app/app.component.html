@@ -14,20 +14,15 @@
   </div>
 </div> -->
 
-<!-- Header - Always shown, but with different navigation based on route -->
-<app-header
-    [brandText]="fullName"
-    brandHref="/"
-    [roleText]="jobTitle"
-    [companyText]="companyName"
-></app-header>
-
-<div class="header-spacer" aria-hidden="true"></div>
-
-<!-- <div class="header-spacer"></div> -->
+<!-- Global header removed: NavbarComponent inside LayoutComponent replaces it.
+     NavbarComponent is scoped to the right panel (not full-width). -->
 <router-outlet></router-outlet>
 <!-- <app-ai-chat></app-ai-chat> -->
 
 <!-- Footer is embedded inside home component when on home page;
      show it here for all other routes -->
 <app-footer *ngIf="!isHomePage"></app-footer>
+
+<!-- Global auth modal — lives here (AppModule scope) and is opened via
+     AuthTriggerService.login$ from any component in the app. -->
+<app-auth-modal #globalAuthModal (loggedIn)="onGlobalLoggedIn()"></app-auth-modal>

@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 export interface AdminLoginResponse {
   success: boolean;
@@ -39,81 +40,59 @@ export interface AIProvider {
   providedIn: 'root'
 })
 export class AdminService {
-  private apiUrl = 'http://76.13.244.113:5000/api/admin';
-  private tokenKey = 'admin_token';
-  private userKey = 'admin_user';
+  private apiUrl = `${environment.apiUrl}/admin`;
+  private user: AdminLoginResponse['user'] | null = null;
 
   constructor(private http: HttpClient) {}
 
   async login(username: string, password: string): Promise<AdminLoginResponse> {
-    const response = await this.http.post<AdminLoginResponse>(`${this.apiUrl}/login`, {
-      username,
-      password
-    }).toPromise();
+    const response = await this.http.post<AdminLoginResponse>(
+      `${this.apiUrl}/login`,
+      { username, password },
+      { withCredentials: true }
+    ).toPromise();
 
-    if (response.success && response.token) {
-      localStorage.setItem(this.tokenKey, response.token);
-      if (response.user) {
-        localStorage.setItem(this.userKey, JSON.stringify(response.user));
-      }
+    if (response.success && response.user) {
+      this.user = response.user;
     }
 
     return response;
   }
 
   logout(): void {
-    localStorage.removeItem(this.tokenKey);
-    localStorage.removeItem(this.userKey);
+    this.user = null;
   }
 
   isLoggedIn(): boolean {
-    return !!localStorage.getItem(this.tokenKey);
+    return !!this.user;
   }
 
   getToken(): string | null {
-    return localStorage.getItem(this.tokenKey);
+    return null;
   }
 
   getUser(): any {
-    const userStr = localStorage.getItem(this.userKey);
-    return userStr ? JSON.parse(userStr) : null;
+    return this.user;
   }
 
   async getProviders(): Promise<AIProvider[]> {
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.getToken()}`
-    });
-
-    return await this.http.get<AIProvider[]>(`${this.apiUrl}/providers`, { headers }).toPromise() as AIProvider[];
+    return await this.http.get<AIProvider[]>(`${this.apiUrl}/providers`, { withCredentials: true }).toPromise() as AIProvider[];
   }
 
   async updateProvider(id: string, updates: any): Promise<any> {
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.getToken()}`
-    });
-
-    return await this.http.put(`${this.apiUrl}/providers/${id}`, updates, { headers }).toPromise();
+    return await this.http.put(`${this.apiUrl}/providers/${id}`, updates, { withCredentials: true }).toPromise();
   }
 
   async addApiKey(providerId: string, apiKey: string): Promise<any> {
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.getToken()}`
-    });
-
     return await this.http.post(`${this.apiUrl}/providers/add-key`, {
       providerId,
       apiKey
-    }, { headers }).toPromise();
+    }, { withCredentials: true }).toPromise();
   }
 
   async removeApiKey(providerId: string, apiKey: string): Promise<any> {
-    const headers = new HttpHeaders({
-      'Authorization': `Bearer ${this.getToken()}`,
-      'Content-Type': 'application/json'
-    });
-
     return await this.http.request('DELETE', `${this.apiUrl}/providers/remove-key`, {
-      headers,
+      withCredentials: true,
       body: { providerId, apiKey }
     }).toPromise();
   }

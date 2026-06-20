@@ -113,6 +113,8 @@ export class SubscribeComponent implements OnInit, OnDestroy {
         this.paymentBusy = false;
         if (res.success) {
           this.successMsg = '🎉 Payment successful! Your AI Learn Pro subscription is now active.';
+          // Clear free-tier usage counter so home component reflects unlimited access immediately
+          localStorage.removeItem('am_usage_count');
           // SubscriptionService auto-refreshes status; guard will allow through on next nav
           setTimeout(() => this.router.navigate(['/']), 2500);
         } else {

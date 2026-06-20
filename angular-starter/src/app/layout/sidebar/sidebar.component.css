@@ -1,0 +1,284 @@
+﻿/*
+ * ============================================================
+ * SIDEBAR - Permanent ChatGPT-style navigation sidebar
+ *
+ * Width states:
+ *   Expanded  260px  (nav + history + user footer all visible)
+ *   Collapsed   0px  (fully hidden; width transition)
+ *
+ * On mobile the sidebar becomes a position:fixed off-canvas
+ * drawer. :host.mobile-open slides it in via transform.
+ * ============================================================
+ */
+
+/* ---- Host ------------------------------------------------- */
+:host {
+  display: block;
+  flex-shrink: 0;
+  height: 100%;         /* fill the flex parent, not the full viewport */
+  overflow: hidden;     /* clips content when width = 0 */
+  z-index: 100;
+}
+
+/* ---- Inner panel ------------------------------------------ */
+.sidebar {
+  width: 260px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #f9f9f9;
+  border-right: 1px solid #e9e9e9;
+  overflow: hidden;
+  transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar--collapsed { width: 0; }
+
+/* ---- Header row ------------------------------------------- */
+.sidebar-hd {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 52px;
+  padding: 0 10px;
+  flex-shrink: 0;
+}
+
+/* Compose button fades when collapsed */
+.compose-btn {
+  transition: opacity 0.15s ease, visibility 0.15s ease,
+              width 0.25s ease, padding 0.25s ease;
+}
+.sidebar--collapsed .compose-btn {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  width: 0;
+  padding: 0;
+}
+
+/* ---- Scrollable body -------------------------------------- */
+.sidebar-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 8px 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #d5d5d5 transparent;
+}
+.sidebar-body::-webkit-scrollbar       { width: 4px; }
+.sidebar-body::-webkit-scrollbar-thumb { background: #d5d5d5; border-radius: 4px; }
+
+/* ---- Nav section ------------------------------------------ */
+.nav-section {
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ebebeb;
+  margin-bottom: 4px;
+}
+
+/* ---- Nav item --------------------------------------------- */
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  font-size: 0.84rem;
+  font-weight: 400;
+  color: #333;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.nav-item:hover         { background: rgba(0,0,0,0.05); color: #0d0d0d; }
+.nav-item--active       { background: rgba(0,0,0,0.07); color: #0d0d0d; font-weight: 500; }
+.nav-item--active .nav-icon { color: #0d0d0d; }
+
+/* ---- Nav icon --------------------------------------------- */
+.nav-icon {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #888;
+  transition: color 0.12s;
+}
+
+.nav-icon svg { display: block; }
+
+/* ---- Nav label -------------------------------------------- */
+.nav-label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  /* Fade label when collapsed */
+  max-width: 180px;
+  opacity: 1;
+  transition: max-width 0.2s ease, opacity 0.15s ease;
+}
+.sidebar--collapsed .nav-label {
+  max-width: 0;
+  opacity: 0;
+}
+
+/* ---- Chat history section --------------------------------- */
+.hist-section { padding-top: 4px; }
+
+.hist-label {
+  font-size: 0.69rem;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 10px 4px;
+  white-space: nowrap;
+}
+
+.hist-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  color: #555;
+  background: transparent;
+  border: none;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.1s, color 0.1s;
+}
+.hist-item:hover { background: rgba(0,0,0,0.05); color: #0d0d0d; }
+
+/* ---- User footer ------------------------------------------ */
+.sidebar-ft {
+  flex-shrink: 0;
+  border-top: 1px solid #ebebeb;
+  padding: 8px;
+}
+
+.user-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 10px;
+  border-radius: 8px;
+  text-decoration: none;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+.user-row:hover { background: rgba(0,0,0,0.05); }
+
+.user-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  overflow: hidden;
+  max-width: 160px;
+  opacity: 1;
+  transition: max-width 0.2s ease, opacity 0.15s ease;
+}
+.sidebar--collapsed .user-info { max-width: 0; opacity: 0; }
+
+.user-name {
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #0d0d0d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-plan {
+  font-size: 0.71rem;
+  color: #999;
+  white-space: nowrap;
+}
+
+/* ---- Icon button ------------------------------------------ */
+.icon-btn {
+  width: 34px;
+  height: 34px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-family: inherit;
+  transition: background 0.12s, color 0.12s;
+}
+.icon-btn:hover { background: rgba(0,0,0,0.06); color: #0d0d0d; }
+.icon-btn svg   { pointer-events: none; }
+
+/* =============================================================
+   RESPONSIVE
+   ============================================================= */
+
+/*
+ * MOBILE (768px and below):
+ * Sidebar becomes a position:fixed off-canvas drawer.
+ * Width stays 260px; visibility is controlled by transform.
+ * :host.mobile-open slides the panel into view.
+ * Because it is position:fixed, .right fills full width.
+ */
+@media (max-width: 768px) {
+  :host {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: 260px;
+    overflow: visible;
+    z-index: 300;
+    transform: translateX(-100%);
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  :host.mobile-open { transform: translateX(0); }
+
+  .sidebar {
+    width: 260px !important;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+    border-right: none;
+  }
+
+  /* Always show labels on mobile regardless of collapsed state */
+  .sidebar--collapsed .nav-label,
+  .sidebar--collapsed .user-info,
+  .sidebar--collapsed .compose-btn {
+    max-width: 200px !important;
+    opacity: 1      !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+    width: 34px !important;
+    padding: initial !important;
+  }
+}

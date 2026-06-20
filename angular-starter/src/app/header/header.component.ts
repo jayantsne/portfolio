@@ -7,6 +7,7 @@ import { AuthService }      from '../shared/auth.service';
 import { ApiService }       from '../shared/api.service';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { AuthTriggerService } from '../shared/auth-trigger.service';
+import { ThemeService } from '../shared/theme.service';
 import { SubscriptionService } from '../shared/subscription.service';
 import { AuthModalComponent } from '../auth-modal/auth-modal.component';
 import { UserSettingsComponent } from '../user-settings/user-settings.component';
@@ -43,6 +44,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
    * during its diffing pass, but it DOES track changes to component properties.
    */
   isSignedIn = false;
+  isDark = false;
+  private _themeSub?: Subscription;
 
   @Input() brandText = 'My Portfolio';
   @Input() brandHref = '#';
@@ -67,7 +70,8 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private appRef: ApplicationRef,
-    private authTrigger: AuthTriggerService
+    private authTrigger: AuthTriggerService,
+    public themeSvc: ThemeService
   ) {
     // Check initial route
     this.checkRoute(this.router.url);
@@ -99,7 +103,12 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     this.isAILearnPage  = true;
     // Show portfolio links on root, portfolio, or home routes (but not on AI Learn pages)
     this.isPortfolioRoute = (url === '/' || url.includes('/portfolio') || url.includes('/home')) && !this.isAILearnPage;
+    // Minimal header on standalone utility pages (no full nav needed)
+    this.isMinimalPage = url.startsWith('/subscribe') || url.startsWith('/account');
   }
+
+  // ── Minimal nav variant ────────────────────────────────────────────────────
+  isMinimalPage = false;
 
   isMenuOpen = false;
   activeDropdown: string | null = null;
@@ -241,6 +250,9 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
     // We defer tick() one microtask (Promise.resolve) so it never runs inside
     // an already-executing CD cycle, eliminating the
     // "detectChanges called recursively" error.
+    // Sync isDark as a stable component property to avoid ExpressionChangedAfterChecked
+    this._themeSub = this.themeSvc.isDark$.subscribe(v => { this.isDark = v; });
+
     this.authSub = this.customAuth.currentUser$.subscribe(user => {
       this.isSignedIn = !!user;
       console.log('[Header] currentUser$ fired, isSignedIn:', this.isSignedIn, 'user:', user?.username ?? null);
@@ -250,6 +262,7 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
 
   ngOnDestroy() {
     this.authSub?.unsubscribe();
+    this._themeSub?.unsubscribe();
     this.sectionObserver?.disconnect();
 
     if (this.scrollListener) {
@@ -476,6 +489,14 @@ export class HeaderComponent implements AfterViewInit, OnDestroy {
   /** Open the auth modal (login / signup) */
   openAuthModal(mode: 'login' | 'signup' = 'login'): void {
     this.authModal?.open(mode);
+  }
+
+  /** Get label for Pro/Admin status pill */
+  get proStatusLabel(): string {
+    if (this.customAuth.isAdmin)                          return '🛡️ Admin';
+    if (this.subSvc.currentStatus?.isSubscriptionActive) return '⚡ Pro';
+    if (this.subSvc.currentStatus?.isTrialActive)        return `⏰ ${this.subSvc.currentStatus.trialDaysRemaining}d`;
+    return '';
   }
 
   /** Open the user-settings panel */

@@ -1,34 +1,74 @@
-<div class="modal-overlay" *ngIf="isVisible" (click)="close()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
+<!-- Drawer overlay + panel — renders while `rendered` is true, removed after close animation -->
+<ng-container *ngIf="rendered">
 
-    <div class="modal-header">
-      <h3>📓 Save as Notes</h3>
-      <button class="close-btn" (click)="close()" aria-label="Close">&#10005;</button>
+  <!-- Backdrop -->
+  <div class="drawer-backdrop"
+       [@overlayFade]="drawerState"
+       (@overlayFade.done)="onDrawerDone($event)"
+       (click)="close()">
+  </div>
+
+  <!-- Drawer panel -->
+  <div class="drawer-panel"
+       [@drawerSlide]="drawerState"
+       role="dialog"
+       aria-modal="true"
+       aria-label="Save to Notes"
+       (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="drawer-header">
+      <div class="drawer-header-left">
+        <span class="drawer-icon">📓</span>
+        <div>
+          <h2 class="drawer-title">Save to Notes</h2>
+          <p class="drawer-subtitle" *ngIf="editableTopic">{{ editableTopic }}</p>
+        </div>
+      </div>
+      <button class="drawer-close" (click)="close()" aria-label="Close drawer">✕</button>
     </div>
 
-    <div class="modal-body">
+    <!-- Body -->
+    <div class="drawer-body">
 
-      <!-- Topic -->
-      <div class="form-group">
-        <label for="noteTopic">Topic / Title</label>
+      <!-- Topic / Title -->
+      <div class="field-group">
+        <label class="field-label" for="drawerTopic">Title</label>
         <input
-          id="noteTopic"
+          #titleInput
+          id="drawerTopic"
           type="text"
-          class="topic-input"
+          class="field-input"
           [(ngModel)]="editableTopic"
           placeholder="e.g. JavaScript Promises"
           maxlength="120"
+          autocomplete="off"
         />
       </div>
 
+      <!-- Content textarea -->
+      <div class="field-group field-group--grow">
+        <label class="field-label" for="drawerContent">
+          Note Content
+          <span class="field-hint">Edit, paste, or refine the text below</span>
+        </label>
+        <textarea
+          id="drawerContent"
+          class="field-textarea"
+          [(ngModel)]="editableContent"
+          placeholder="Paste or write your notes here…"
+          rows="8"
+        ></textarea>
+      </div>
+
       <!-- Category -->
-      <div class="form-group">
-        <label for="noteCategory">Category</label>
-        <div class="category-grid">
+      <div class="field-group">
+        <label class="field-label">Category</label>
+        <div class="cat-grid">
           <button
             *ngFor="let cat of categories"
             class="cat-chip"
-            [class.active]="selectedCategory === cat"
+            [class.cat-chip--active]="selectedCategory === cat"
             type="button"
             (click)="selectedCategory = cat">
             {{ cat }}
@@ -37,40 +77,41 @@
       </div>
 
       <!-- Tags -->
-      <div class="form-group">
-        <label>Tags <span class="label-hint">(press Enter or comma to add)</span></label>
-        <div class="tags-input-wrap">
+      <div class="field-group">
+        <label class="field-label">
+          Tags
+          <span class="field-hint">Enter or comma to add</span>
+        </label>
+        <div class="tags-wrap">
           <span class="tag-chip" *ngFor="let tag of tags">
             #{{ tag }}
             <button class="tag-remove" (click)="removeTag(tag)" type="button">×</button>
           </span>
           <input
-            class="tag-text-input"
+            class="tag-input"
             type="text"
             [(ngModel)]="tagInput"
             (keydown)="addTagOnEnter($event)"
             (blur)="addTag()"
-            placeholder="{{ tags.length === 0 ? 'e.g. promises, async' : '' }}"
+            [placeholder]="tags.length === 0 ? 'e.g. promises, async' : ''"
           />
         </div>
       </div>
 
-      <!-- Content preview -->
-      <div class="content-preview">
-        <label>Conversation Preview</label>
-        <div class="preview-box">{{ content }}</div>
-      </div>
-
+      <!-- Error -->
       <div class="error-msg" *ngIf="errorMessage">{{ errorMessage }}</div>
-    </div>
 
-    <div class="modal-footer">
+    </div><!-- /drawer-body -->
+
+    <!-- Footer -->
+    <div class="drawer-footer">
       <button class="btn-cancel" (click)="close()" [disabled]="isSaving">Cancel</button>
-      <button class="btn-save"   (click)="save()"  [disabled]="isSaving">
-        <span *ngIf="isSaving">Saving…</span>
+      <button class="btn-save" (click)="save()" [disabled]="isSaving || !editableTopic.trim()">
+        <span *ngIf="isSaving" class="saving-dots">Saving<span>.</span><span>.</span><span>.</span></span>
         <span *ngIf="!isSaving">💾 Save Note</span>
       </button>
     </div>
 
-  </div>
-</div>
+  </div><!-- /drawer-panel -->
+
+</ng-container>

@@ -1,0 +1,38 @@
+<div class="vl-page">
+
+  <!-- ── Page header ─────────────────────────────────────────────────────── -->
+  <div class="vl-hero">
+    <div class="vl-hero-icon">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+           stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+        <path d="M2 17l10 5 10-5"/>
+        <path d="M2 12l10 5 10-5"/>
+      </svg>
+    </div>
+    <div class="vl-hero-text">
+      <h1 class="vl-hero-title">Visual Learning Mode</h1>
+      <p class="vl-hero-sub">
+        Step through programming concepts as interactive animated flow diagrams.
+        Watch the execution unfold — node by node, edge by edge.
+      </p>
+    </div>
+  </div>
+
+  <!-- ── Diagram selector tabs ───────────────────────────────────────────── -->
+  <div class="vl-tabs" *ngIf="diagrams.length > 1">
+    <button
+      class="vl-tab"
+      *ngFor="let d of diagrams"
+      [class.vl-tab--active]="d.id === activeDiagramId"
+      (click)="selectDiagram(d.id)">
+      {{ d.label }}
+    </button>
+  </div>
+
+  <!-- ── Visualizer ──────────────────────────────────────────────────────── -->
+  <div class="vl-visualizer">
+    <app-flow-visualizer [diagram]="activeDiagram"></app-flow-visualizer>
+  </div>
+
+</div>
