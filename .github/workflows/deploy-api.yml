@@ -112,8 +112,8 @@ jobs:
               DEFAULT_ADMIN_PASSWORD_VALUE="$EXISTING_DEFAULT_ADMIN_PASSWORD"
             fi
             if [ -z "$LLM_PROVIDER_ENCRYPTION_KEY_VALUE" ]; then
-              echo "Missing LLM provider encryption key. Set GitHub secret LLM_PROVIDER_ENCRYPTION_KEY or preconfigure LlmProvider__EncryptionKey in $ENV_FILE." >&2
-              exit 1
+              LLM_PROVIDER_ENCRYPTION_KEY_VALUE="$(openssl rand -base64 32)"
+              echo "Generated LlmProvider__EncryptionKey because no existing server value or GitHub secret was found."
             fi
             DEFAULT_ADMIN_PASSWORD_LINE=""
             if [ -n "$DEFAULT_ADMIN_PASSWORD_VALUE" ]; then
