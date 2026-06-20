@@ -64,24 +64,9 @@ export class AILearnService {
   private currentOllamaModelIndex = 0;
   private readonly USE_BACKEND_PROXY   = true;
   private readonly ASPNET_API_BASE_URL = AI_BACKEND.BASE_URL;
-  
-  // 💡 Cloudflare Workers (Backup for API)
-  // Create new free Cloudflare account → Deploy same worker → Add URL below
-  private readonly BACKEND_WORKERS = [
-    'https://jayant-portfolio-api.jayant-ai.workers.dev/api/ai',  // Worker 1 - Primary (100K/day)
-    // 'https://jayant-portfolio-api-2.YOUR-ACCOUNT-2.workers.dev/api/ai',  // Worker 2 - Add account 2 (100K/day)
-    // 'https://jayant-portfolio-api-3.YOUR-ACCOUNT-3.workers.dev/api/ai',  // Worker 3 - Add account 3 (100K/day)
-    // 'https://jayant-portfolio-api-4.YOUR-ACCOUNT-4.workers.dev/api/ai',  // Worker 4 - Add account 4 (100K/day)
-    // 'https://jayant-portfolio-api-5.YOUR-ACCOUNT-5.workers.dev/api/ai',  // Worker 5 - Add account 5 (100K/day)
-  ];
-  
-  private currentWorkerIndex = 0; // Round-robin index for load balancing
-  private workerRequestCounts: number[] = new Array(this.BACKEND_WORKERS.length).fill(0); // Track usage per worker
-  private readonly MAX_REQUESTS_PER_WORKER_DAY = 95000; // Stay under 100K limit (5K buffer)
-  
-  // Get current backend URL with automatic load balancing
+  // Get current ASP.NET API endpoint
   private get BACKEND_API_URL(): string {
-    return this.getNextAvailableWorker();
+    return `${this.ASPNET_API_BASE_URL}/ai`;
   }
   
   // 🎯 Start with Groq (fastest & most reliable free tier) → then try backend → then others
@@ -156,7 +141,6 @@ export class AILearnService {
     this.loadRequestCount();
     this.loadApiStats();
     this.checkDailyReset();
-    this.loadWorkerUsage(); // Load multi-worker usage tracking
     this.checkApiKeysConfiguration(); // Validate API keys and show helpful setup message
   }
   
@@ -364,150 +348,7 @@ Total capacity: ${groqKeys.length * 14400 + geminiKeys.length * 1500}+ requests/
         : '✅ Good key availability - system running smoothly'
     };
   }
-  
   // =========================================
-  // 🚀 MULTI-WORKER LOAD BALANCING (FREE 300K-500K/day!)
-  // =========================================
-  
-  /**
-   * Get next available worker using round-robin with usage tracking
-   * Automatically switches to next worker when one approaches daily limit
-   */
-  private getNextAvailableWorker(): string {
-    const validWorkers = this.BACKEND_WORKERS.filter(w => w && !w.includes('YOUR-ACCOUNT'));
-    
-    if (validWorkers.length === 0) {
-      return this.BACKEND_WORKERS[0]; // Fallback to first if none configured
-    }
-    
-    if (validWorkers.length === 1) {
-      return validWorkers[0]; // Only one worker, use it
-    }
-    
-    // Check if current worker is approaching limit
-    const currentUsage = this.workerRequestCounts[this.currentWorkerIndex] || 0;
-    
-    if (currentUsage >= this.MAX_REQUESTS_PER_WORKER_DAY) {
-      console.log(`⚠️ Worker ${this.currentWorkerIndex + 1} approaching daily limit (${currentUsage}/${this.MAX_REQUESTS_PER_WORKER_DAY})`);
-      
-      // Find next available worker
-      for (let i = 0; i < validWorkers.length; i++) {
-        const nextIndex = (this.currentWorkerIndex + i + 1) % validWorkers.length;
-        const nextUsage = this.workerRequestCounts[nextIndex] || 0;
-        
-        if (nextUsage < this.MAX_REQUESTS_PER_WORKER_DAY) {
-          this.currentWorkerIndex = nextIndex;
-          console.log(`🔄 Switched to Worker ${nextIndex + 1} (${nextUsage}/${this.MAX_REQUESTS_PER_WORKER_DAY} used)`);
-          break;
-        }
-      }
-      
-      // If all workers exhausted, reset counters (new day)
-      if (this.workerRequestCounts.every(count => count >= this.MAX_REQUESTS_PER_WORKER_DAY)) {
-        console.warn('⚠️ All workers exhausted for today! Resetting counters...');
-        this.workerRequestCounts = new Array(validWorkers.length).fill(0);
-        this.currentWorkerIndex = 0;
-      }
-    }
-    
-    return validWorkers[this.currentWorkerIndex];
-  }
-  
-  /**
-   * Track request to current worker
-   */
-  private trackWorkerRequest(): void {
-    this.workerRequestCounts[this.currentWorkerIndex]++;
-    
-    // Save to localStorage for persistence across sessions
-    try {
-      const today = new Date().toDateString();
-      const data = {
-        date: today,
-        counts: this.workerRequestCounts,
-        currentIndex: this.currentWorkerIndex
-      };
-      localStorage.setItem('worker_usage_tracker', JSON.stringify(data));
-    } catch (e) {
-      console.warn('Failed to save worker usage:', e);
-    }
-    
-    // Log when approaching limit (every 10K requests)
-    const currentUsage = this.workerRequestCounts[this.currentWorkerIndex];
-    if (currentUsage % 10000 === 0 && currentUsage > 0) {
-      console.log(`📊 Worker ${this.currentWorkerIndex + 1} usage: ${currentUsage}/${this.MAX_REQUESTS_PER_WORKER_DAY}`);
-    }
-  }
-  
-  /**
-   * Load worker usage from localStorage
-   */
-  private loadWorkerUsage(): void {
-    try {
-      const saved = localStorage.getItem('worker_usage_tracker');
-      if (saved) {
-        const data = JSON.parse(saved);
-        const today = new Date().toDateString();
-        
-        // Reset if it's a new day
-        if (data.date === today) {
-          this.workerRequestCounts = data.counts || new Array(this.BACKEND_WORKERS.length).fill(0);
-          this.currentWorkerIndex = data.currentIndex || 0;
-          console.log('📊 Loaded worker usage:', this.workerRequestCounts);
-        } else {
-          console.log('🔄 New day detected - resetting worker usage counters');
-          this.workerRequestCounts = new Array(this.BACKEND_WORKERS.length).fill(0);
-          this.currentWorkerIndex = 0;
-        }
-      }
-    } catch (e) {
-      console.warn('Failed to load worker usage:', e);
-    }
-  }
-  
-  /**
-   * Get worker usage statistics (public method)
-   */
-  getWorkerStats() {
-    const validWorkers = this.BACKEND_WORKERS.filter(w => w && !w.includes('YOUR-ACCOUNT'));
-    
-    const stats = validWorkers.map((worker, index) => {
-      const used = this.workerRequestCounts[index] || 0;
-      const remaining = this.MAX_REQUESTS_PER_WORKER_DAY - used;
-      
-      return {
-        workerNumber: index + 1,
-        url: worker.substring(0, 50) + '...',
-        requestsUsed: used,
-        requestsRemaining: Math.max(0, remaining),
-        percentUsed: Math.round((used / this.MAX_REQUESTS_PER_WORKER_DAY) * 100),
-        status: remaining > 10000 ? '✅ Healthy' : remaining > 1000 ? '⚠️ Low' : '❌ Exhausted'
-      };
-    });
-    
-    const totalUsed = this.workerRequestCounts.reduce((sum, count) => sum + count, 0);
-    const totalCapacity = validWorkers.length * this.MAX_REQUESTS_PER_WORKER_DAY;
-    const totalRemaining = totalCapacity - totalUsed;
-    
-    return {
-      workers: stats,
-      summary: {
-        totalWorkers: validWorkers.length,
-        totalCapacity: totalCapacity,
-        totalUsed: totalUsed,
-        totalRemaining: totalRemaining,
-        overallHealth: Math.round((totalRemaining / totalCapacity) * 100),
-        currentWorker: this.currentWorkerIndex + 1,
-        recommendation: validWorkers.length === 1 
-          ? '💡 Deploy to 2-4 more Cloudflare accounts to get 300K-500K requests/day FREE!'
-          : validWorkers.length < 3
-          ? '📈 Good! Add 1-2 more workers for even more capacity'
-          : '🎉 Excellent! You have massive capacity across multiple workers'
-      }
-    };
-  }
-  
-  // ========================================="
   
   // =========================================
   // 🎯 SMART RATE LIMIT HANDLER (AUTO-RECOVERY)
@@ -927,7 +768,7 @@ Backend proxy is enabled but all 9 keys are exhausted.
    * Switch to next available provider on failure
    */
   private switchToNextProvider(): boolean {
-    // Priority order: groq (fastest free) > backend (Cloudflare) > openrouter > gemini > huggingface > together > ollama (local fallback)
+    // Priority order: groq (fastest free) > backend (.NET API) > openrouter > gemini > huggingface > together > ollama (local fallback)
     const providers = [
       'groq' as const,
       ...(this.USE_BACKEND_PROXY ? ['backend' as const] : []),
@@ -1308,12 +1149,6 @@ Backend proxy is enabled but all 9 keys are exhausted.
         return this.http.post(this.getApiUrl(), requestBody, { headers }).pipe(
           map((response: any) => {
             console.log(`✅ ${this.currentProvider.toUpperCase()} Response received:`, response);
-            
-            // Track worker usage for load balancing
-            if (this.currentProvider === 'backend') {
-              this.trackWorkerRequest();
-            }
-            
             // Track successful key usage
             const currentKey = this.getCurrentApiKey();
             this.trackKeyUsage(currentKey, false); // Success!
@@ -1734,12 +1569,6 @@ Backend proxy is enabled but all 9 keys are exhausted.
           return this.http.post(`${this.ASPNET_API_BASE_URL}/ai/simplified`, backendPayload, { headers }).pipe(
             switchMap((response: any) => {
               console.log('✅ BACKEND Visual Diagram response received:', response);
-              
-              // Track worker usage
-              if (this.currentProvider === 'backend') {
-                this.trackWorkerRequest();
-              }
-              
               if (response.success && response.explanation && response.explanation.trim().length > 0) {
                 this.providerFailCount.backend = 0;
                 

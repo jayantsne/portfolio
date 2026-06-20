@@ -1,18 +1,8 @@
 /**
- * API Service - Cloudflare KV Storage
- * 
- * This service communicates with the Cloudflare Worker backend API which stores
- * ALL data in Cloudflare KV (Key-Value) storage, NOT MongoDB.
- * 
- * Data Storage Architecture:
- * ========================
- * - AUTH_KV namespace: User authentication, auth settings, face enrollment data, portfolio settings
- * - QUESTIONS_KV namespace: Interview questions and answers
- * - PROGRESS_KV namespace: User progress, bookmarks, study statistics
- * - CHAT_KV namespace: AI Q&A conversations and saved responses
- * 
- * All data is persisted in Cloudflare's global KV store and accessible via the Worker API.
- * Backend URL: https://jayant-portfolio-api.jayant-ai.workers.dev/api
+ * API Service
+ *
+ * This service communicates with the ASP.NET backend API.
+ * Data is persisted by the backend.
  */
 
 import { Injectable } from '@angular/core';
@@ -72,7 +62,7 @@ export class ApiService {
 
   constructor(private http: HttpClient) {}
 
-  // ==================== QUESTIONS (KV Storage) ====================
+  // ==================== QUESTIONS ====================
 
   getQuestions(): Observable<QuestionData> {
     return this.http.get<QuestionData>(`${this.apiUrl}/questions`);
@@ -98,7 +88,7 @@ export class ApiService {
     return this.http.post(`${this.apiUrl}/questions/import`, data);
   }
 
-  // ==================== USER PROGRESS (KV Storage) ====================
+  // ==================== USER PROGRESS ====================
 
   getUserProgress(userId?: string): Observable<UserProgress> {
     const uid = userId || this.userId;

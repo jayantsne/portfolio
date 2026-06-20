@@ -303,9 +303,8 @@ You now have:
 ## 🔗 Quick Links
 
 - Login Page: https://jayantbhardwaj.com/login
-- Backend API: https://jayant-portfolio-api.jayant-ai.workers.dev
+- Backend API: https://learnwithai.tech/api
 - Firebase Console: https://console.firebase.google.com
-- Cloudflare Dashboard: https://dash.cloudflare.com
 - Google Analytics: https://analytics.google.com
 
 ## 📞 Support

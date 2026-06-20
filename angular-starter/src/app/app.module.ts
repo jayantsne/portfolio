@@ -28,7 +28,6 @@ import { QuestionsPublicComponent } from './questions-public/questions-public.co
 import { AiQaComponent } from './ai-qa/ai-qa.component';
 // MarkdownPipe is now declared + exported by LearningWorkspaceModule (imported below)
 // import { LoginComponent } from './login/login.component'; // Temporarily disabled
-// import { NamespaceManagementComponent } from './namespace-management/namespace-management.component'; // Temporarily disabled
 // import { AuthManagementComponent } from './auth-management/auth-management.component'; // Temporarily disabled
 // import { AskAiComponent } from './ai-qa/ask-ai/ask-ai.component'; // Temporarily disabled - API method missing
 import { QuestionsListComponent } from './ai-qa/questions-list/questions-list.component';
@@ -81,7 +80,6 @@ import { QuizComponent }          from './quiz/quiz.component';
     AiQaComponent,
     // MarkdownPipe — now via LearningWorkspaceModule
     // LoginComponent, // Temporarily disabled - FormsModule issues
-    // NamespaceManagementComponent, // Temporarily disabled - FormsModule/DatePipe issues
     // AuthManagementComponent, // Temporarily disabled - FormsModule issues
     // AskAiComponent, // Temporarily disabled - API method missing
     QuestionsListComponent,
