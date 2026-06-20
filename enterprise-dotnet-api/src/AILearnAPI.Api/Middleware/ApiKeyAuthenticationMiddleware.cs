@@ -26,7 +26,8 @@ public class ApiKeyAuthenticationMiddleware
         // Browser-owned authentication routes must never require the shared
         // X-API-Key. Google OAuth starts as a top-level redirect, so the
         // frontend cannot and should not attach server secrets to this request.
-        if (path.Equals("/api/auth") || path.StartsWith("/api/auth/"))
+        if (path.Equals("/api/auth") || path.StartsWith("/api/auth/") ||
+            path.Equals("/auth") || path.StartsWith("/auth/"))
         {
             await _next(context);
             return;
