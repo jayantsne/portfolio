@@ -59,6 +59,8 @@ public sealed class FlowGeneratorService : IFlowGeneratorService
         if (response == null)
             throw new InvalidOperationException("Flow AI response was empty.");
 
+        NormalizeResponse(response);
+
         var errors = _validator.Validate(response);
         if (errors.Count > 0)
         {
@@ -118,6 +120,18 @@ public sealed class FlowGeneratorService : IFlowGeneratorService
     private static string Normalize(string? value, string fallback)
     {
         return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
+    }
+
+    private static void NormalizeResponse(FlowDiagramResponse response)
+    {
+        foreach (var step in response.Steps)
+        {
+            if (step.CodeLine is < 0)
+                step.CodeLine = null;
+
+            if (step.CodeLine.HasValue && response.Code.Count > 0 && step.CodeLine.Value >= response.Code.Count)
+                step.CodeLine = null;
+        }
     }
 
     private static string ExtractJson(string raw)
