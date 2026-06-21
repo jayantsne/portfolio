@@ -39,10 +39,10 @@ namespace AILearnAPI.Domain.Entities
         public string ModelOpenrouter { get; set; } = "meta-llama/llama-3.1-8b-instruct:free";
 
         [BsonElement("modelOllamaStream")]
-        public string ModelOllamaStream { get; set; } = "llama3:latest";
+        public string ModelOllamaStream { get; set; } = "qwen2.5:3b-instruct-q4_0";
 
         [BsonElement("modelOllamaFallbacks")]
-        public List<string> ModelOllamaFallbacks { get; set; } = new() { "llama2", "llama3", "mistral", "codellama", "gemma" };
+        public List<string> ModelOllamaFallbacks { get; set; } = new() { "qwen2.5:3b-instruct-q4_0", "llama3.2:3b" };
 
         // ── Default generation parameters ────────────────────────────────
         [BsonElement("defaultMaxTokens")]

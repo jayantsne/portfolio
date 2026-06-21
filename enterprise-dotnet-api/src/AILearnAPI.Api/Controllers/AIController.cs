@@ -288,23 +288,38 @@ public class AIController : ControllerBase
         // ── 6. Stream AI tokens ────────────────────────────────────────────────
         var fullResponse = new StringBuilder();
 
-        await foreach (var token in _chatService.StreamAiAsync(
-            request.Question,
-            request.Mode,
-            request.ToneMode,
-            request.Model,
-            request.Temperature,
-            request.MaxTokens,
-            request.RawMode = false,
-            history,
-            userId,
-            userName,
-            cancellationToken))
+        try
         {
-            var escaped = System.Text.Json.JsonSerializer.Serialize(token);
-            await Response.WriteAsync($"data: {{\"token\":{escaped},\"done\":false}}\n\n", cancellationToken);
+            await foreach (var token in _chatService.StreamAiAsync(
+                request.Question,
+                request.Mode,
+                request.ToneMode,
+                request.Model,
+                request.Temperature,
+                request.MaxTokens,
+                request.RawMode = false,
+                history,
+                userId,
+                userName,
+                cancellationToken))
+            {
+                var escaped = JsonSerializer.Serialize(token);
+                await Response.WriteAsync($"data: {{\"token\":{escaped},\"done\":false}}\n\n", cancellationToken);
+                await Response.Body.FlushAsync(cancellationToken);
+                fullResponse.Append(token);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            return;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "AI stream failed after SSE response started");
+            var error = JsonSerializer.Serialize("AI stream failed. Please try again.");
+            await Response.WriteAsync($"data: {{\"token\":\"\",\"error\":{error},\"done\":true}}\n\n", cancellationToken);
             await Response.Body.FlushAsync(cancellationToken);
-            fullResponse.Append(token);
+            return;
         }
 
         await Response.WriteAsync("data: {\"token\":\"\",\"done\":true}\n\n", cancellationToken);
