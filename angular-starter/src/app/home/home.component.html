@@ -707,7 +707,7 @@
           <input class="am-input" type="text"
                  [(ngModel)]="currentQuestion"
                  (keyup.enter)="sendFollowUpQuestion(currentQuestion)"
-                 placeholder="Ask your AI mentor anything…"
+                 placeholder="Message Codexa..."
                  [disabled]="isLoadingAI || !!streamingText">
           <button class="am-send-btn"
                   (click)="sendFollowUpQuestion(currentQuestion)"
@@ -729,7 +729,7 @@
           </div>
         </div>
         <div class="am-input-disclaimer">
-          Codexa AI can make mistakes. Consider checking important information.
+          Codexa can make mistakes. Check important details before using them.
         </div>
       </div>
     </main>

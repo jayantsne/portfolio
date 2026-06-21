@@ -10563,4 +10563,435 @@ html[data-theme="light"] .am-msg-card {
   }
 }
 
+/* ==========================================================================
+   CODEXA FOCUS CHAT
+   Final Explore overrides: quieter sidebar, narrow reading lane, compact thread.
+   ========================================================================== */
+
+.am-shell {
+  --cx-ink: #111827;
+  --cx-muted: #64748b;
+  --cx-line: #dce5f1;
+  --cx-surface: #ffffff;
+  --cx-soft: #f6f9fc;
+  --cx-teal: #14b8a6;
+  --cx-indigo: #4f46e5;
+  --cx-amber: #f59e0b;
+  background:
+    linear-gradient(90deg, rgba(15,23,42,0.035) 1px, transparent 1px),
+    linear-gradient(180deg, #fbfdff 0%, #f4f8fb 100%);
+  background-size: 40px 40px, auto;
+}
+
+.am-shell.am-sidebar-visible {
+  --am-nav-w: 272px;
+  grid-template-columns: var(--am-nav-w) minmax(0, 1fr);
+}
+
+.am-nav {
+  background: rgba(255,255,255,0.88);
+  border-right: 1px solid var(--cx-line);
+  box-shadow: 8px 0 28px rgba(15,23,42,0.04);
+}
+
+.am-nav-header {
+  height: 52px;
+  background: rgba(255,255,255,0.74);
+  border-bottom: 1px solid #e8eef6;
+}
+
+.am-nav-body {
+  padding: 12px 10px 16px;
+}
+
+.am-new-chat-btn {
+  min-height: 40px;
+  border-radius: 8px;
+  border: 1px solid #dbe5f1;
+  background: #fff;
+  box-shadow: none;
+  font-size: 0.84rem;
+}
+
+.am-new-chat-btn:hover {
+  border-color: #c7d2e4;
+  background: #f8fafc;
+  box-shadow: none;
+}
+
+.am-conv-group-label {
+  margin: 18px 8px 7px;
+  color: #77869a;
+  font-size: 0.64rem;
+  letter-spacing: 0.08em;
+}
+
+.am-conv-item {
+  min-height: 42px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.am-conv-item:hover {
+  background: #f8fafc;
+  border-color: #e5ecf5;
+  box-shadow: none;
+}
+
+.am-conv-item-active {
+  background: #eef6ff;
+  border-color: #cfe0f6;
+  box-shadow: none;
+}
+
+.am-conv-item-active .am-conv-item-title {
+  color: #172033;
+}
+
+.am-chat {
+  position: relative;
+  border-right: none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.90), rgba(255,255,255,0.58) 38%, rgba(246,250,252,0.82)),
+    linear-gradient(135deg, rgba(20,184,166,0.08), rgba(79,70,229,0.055) 52%, rgba(245,158,11,0.045));
+}
+
+.am-chat::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: min(100%, 920px);
+  transform: translateX(-50%);
+  border-left: 1px solid rgba(203,213,225,0.34);
+  border-right: 1px solid rgba(203,213,225,0.34);
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.am-chat-body {
+  position: relative;
+  padding: 24px clamp(18px, 4vw, 56px) 28px;
+  background: transparent;
+}
+
+.am-chat-inner {
+  width: min(100%, 880px);
+  max-width: 880px;
+  padding: 0 12px 42px;
+}
+
+.am-messages,
+.am-chat-inner .am-messages {
+  gap: 18px;
+}
+
+.am-message {
+  width: 100%;
+}
+
+.am-message + .am-message,
+.am-message-ai + .am-message-user,
+.am-message-user + .am-message-ai {
+  margin-top: 0;
+  border-top: none;
+}
+
+.am-msg-row,
+.am-msg-row-user {
+  gap: 12px;
+  padding: 0;
+}
+
+.am-msg-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.am-msg-avatar-ai {
+  background: linear-gradient(135deg, #172033, #4338ca);
+  box-shadow: 0 8px 18px rgba(67,56,202,0.16);
+}
+
+.am-msg-avatar-user {
+  border-radius: 8px;
+  background: linear-gradient(135deg, #7c6ff0, #312e81);
+  box-shadow: 0 8px 18px rgba(49,46,129,0.16);
+}
+
+.am-msg-col {
+  max-width: calc(100% - 44px);
+}
+
+.am-msg-col-user {
+  max-width: min(520px, 72%);
+}
+
+.am-msg-card,
+.am-msg-card-streaming {
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  overflow: visible;
+}
+
+.am-message-ai .am-msg-card {
+  padding-left: 16px;
+}
+
+.am-message-ai .am-msg-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 12px;
+  width: 3px;
+  min-height: 34px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, var(--cx-teal), var(--cx-indigo), var(--cx-amber));
+}
+
+.am-msg-card .am-msg-text,
+.am-msg-card .md-content {
+  max-width: 74ch;
+  padding: 2px 0 8px;
+  color: #202a3a;
+  font-size: 0.98rem;
+  line-height: 1.76;
+  letter-spacing: 0;
+}
+
+.am-msg-card .md-content .md-p {
+  max-width: 74ch;
+  margin: 0.35rem 0 0.75rem;
+}
+
+.am-msg-card .md-content .md-h1,
+.am-msg-card .md-content .md-h2,
+.am-msg-card .md-content .md-h3 {
+  background: transparent;
+  border-left: none;
+  padding-left: 0;
+  color: var(--cx-ink);
+}
+
+.am-msg-card .md-content .md-code-block {
+  border-radius: 8px;
+  border: 1px solid #d7e1ee;
+  box-shadow: 0 14px 30px rgba(15,23,42,0.10);
+}
+
+.am-action-toolbar {
+  max-width: 74ch;
+  margin-top: 2px;
+  padding: 5px 0 0;
+  background: transparent;
+  border-top: none;
+  opacity: 0.62;
+  transition: opacity 0.16s ease;
+}
+
+.am-msg-row:hover .am-action-toolbar {
+  opacity: 1;
+}
+
+.am-tb-icon,
+.am-tb-save {
+  border-radius: 7px;
+}
+
+.am-toolbar-time,
+.am-msg-time-user {
+  color: #94a3b8;
+}
+
+.am-msg-user-bubble {
+  max-width: 100%;
+  border-radius: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #1f2937, #3730a3);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(49,46,129,0.16);
+  line-height: 1.52;
+}
+
+.am-typing-card {
+  border-radius: 8px;
+  border: 1px solid #dbe5f1;
+  background: rgba(255,255,255,0.76);
+  box-shadow: none;
+}
+
+.am-input-bar {
+  position: relative;
+  padding: 10px clamp(18px, 4vw, 56px) 16px;
+  background:
+    linear-gradient(to top, rgba(248,251,253,0.98) 68%, rgba(248,251,253,0));
+}
+
+.am-input-bar .am-input-row,
+.am-input-row,
+.am-input-disclaimer,
+.am-input-footer,
+.am-input-bar .am-input-hint {
+  max-width: 880px;
+}
+
+.am-input-row {
+  min-height: 58px;
+  border-radius: 8px;
+  border: 1px solid #cbd7e8;
+  background: rgba(255,255,255,0.94);
+  box-shadow:
+    0 16px 38px rgba(15,23,42,0.10),
+    0 0 0 4px rgba(79,70,229,0.045);
+}
+
+.am-input-row:focus-within {
+  border-color: #9fb1ce;
+  box-shadow:
+    0 18px 42px rgba(15,23,42,0.12),
+    0 0 0 4px rgba(20,184,166,0.09);
+}
+
+.am-input {
+  font-size: 0.94rem;
+}
+
+.am-send-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #111827, #4f46e5);
+  box-shadow: 0 10px 20px rgba(79,70,229,0.22);
+}
+
+.am-input-footer {
+  margin-top: 7px;
+}
+
+.am-input-disclaimer {
+  margin-top: 9px;
+  color: #8a96a8;
+}
+
+.am-landing-view {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.92), rgba(246,250,252,0.92)),
+    linear-gradient(135deg, rgba(20,184,166,0.08), rgba(79,70,229,0.06));
+}
+
+.am-lv-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #172033, #4f46e5);
+  box-shadow: 0 16px 38px rgba(49,46,129,0.18);
+  animation: none;
+}
+
+.am-lv-title {
+  font-size: clamp(1.65rem, 3vw, 2.25rem);
+  letter-spacing: 0;
+}
+
+.am-lv-sub {
+  max-width: 520px;
+}
+
+.am-lv-input-wrap {
+  max-width: 720px;
+  border-radius: 8px;
+  border: 1px solid #cbd7e8;
+  box-shadow: 0 16px 38px rgba(15,23,42,0.09);
+}
+
+.am-lv-send,
+.am-lv-suggest,
+.am-lv-usage {
+  border-radius: 8px;
+}
+
+.am-lv-suggest {
+  background: rgba(255,255,255,0.86);
+  border-color: #dbe5f1;
+  box-shadow: none;
+}
+
+.am-lv-suggest:hover {
+  border-color: #b7c7dd;
+  background: #fff;
+  box-shadow: 0 12px 24px rgba(15,23,42,0.08);
+}
+
+@media (min-width: 1500px) {
+  .am-chat-inner,
+  .am-input-bar .am-input-row,
+  .am-input-row,
+  .am-input-disclaimer,
+  .am-input-footer,
+  .am-input-bar .am-input-hint {
+    max-width: 920px;
+  }
+
+  .am-chat::before {
+    width: 960px;
+  }
+}
+
+@media (max-width: 900px) {
+  .am-shell.am-sidebar-visible {
+    grid-template-columns: 1fr;
+  }
+
+  .am-nav {
+    width: min(86vw, 304px);
+  }
+
+  .am-chat::before {
+    display: none;
+  }
+
+  .am-chat-body {
+    padding: 16px 12px 24px;
+  }
+
+  .am-chat-inner {
+    width: 100%;
+    padding: 0 0 34px;
+  }
+
+  .am-msg-col,
+  .am-msg-col-user {
+    max-width: calc(100% - 42px);
+  }
+
+  .am-message-ai .am-msg-card {
+    padding-left: 12px;
+  }
+
+  .am-msg-card .am-msg-text,
+  .am-msg-card .md-content,
+  .am-action-toolbar {
+    max-width: 100%;
+  }
+
+  .am-input-bar {
+    padding: 8px 12px 14px;
+  }
+
+  .am-lv-suggestions {
+    grid-template-columns: 1fr;
+  }
+}
+
 
