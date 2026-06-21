@@ -41,7 +41,7 @@
 
   display: block;
   width: 100%;
-  border-radius: 16px;
+  border-radius: 8px;
   border: 1.5px solid var(--fv-border);
   background: var(--fv-bg);
   overflow: hidden;
@@ -92,7 +92,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 14px 20px 12px;
+  padding: 12px 18px;
   border-bottom: 1.5px solid var(--fv-border);
   background: var(--fv-surface);
   flex-shrink: 0;
@@ -120,6 +120,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.fv-mode {
+  flex-shrink: 0;
+  border: 1px solid var(--fv-border);
+  border-radius: 999px;
+  background: var(--fv-bg);
+  color: var(--fv-muted);
+  padding: 2px 8px;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
 .fv-badge {
   flex-shrink: 0;
   font-size: 0.72rem;
@@ -141,9 +151,14 @@
 /* ── Body: side-by-side panels ──────────────────────────────────────────── */
 .fv-body {
   display: grid;
-  grid-template-columns: 44% 56%;
-  min-height: 420px;
+  grid-template-columns: minmax(280px, 0.24fr) minmax(760px, 1fr);
+  min-height: 600px;
   border-bottom: 1.5px solid var(--fv-border);
+}
+
+.fv-body--no-code {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 640px;
 }
 
 /* ── Code panel (left) ──────────────────────────────────────────────────── */
@@ -153,6 +168,7 @@
   border-right: 1.5px solid var(--fv-border);
   background: var(--fv-code-bg);
   overflow: hidden;
+  min-width: 0;
 }
 .fv-code-header {
   display: flex;
@@ -170,13 +186,13 @@
 .fv-code-pre {
   flex: 1;
   overflow-y: auto;
-  padding: 12px 0;
+  padding: 14px 0;
 }
 .fv-code-line {
   display: flex;
   align-items: stretch;
   gap: 0;
-  padding: 3px 14px 3px 0;
+  padding: 5px 16px 5px 0;
   border-left: 3px solid transparent;
   transition:
     background 0.35s ease,
@@ -209,7 +225,7 @@
 
 .fv-code-text {
   font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   line-height: 1.7;
   color: var(--fv-code-text);
   white-space: pre;
@@ -217,18 +233,90 @@
 
 /* ── SVG Diagram panel (right) ──────────────────────────────────────────── */
 .fv-diagram-panel {
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: auto;
   background: var(--fv-bg);
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 8px 4px;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 24px;
+  min-width: 0;
+}
+
+.fv-body--no-code .fv-diagram-panel {
+  min-height: 640px;
+  padding: 34px;
+  background:
+    radial-gradient(circle at 26% 36%, rgba(20, 184, 166, 0.09), transparent 24%),
+    radial-gradient(circle at 72% 58%, rgba(99, 102, 241, 0.08), transparent 28%),
+    var(--fv-bg);
 }
 .fv-svg {
-  width: 100%;
+  flex: 0 0 auto;
+  max-width: none;
   display: block;
   overflow: visible;
+}
+
+.fv-shell--horizontal .fv-diagram-panel {
+  justify-content: flex-start;
+}
+
+.fv-explain-panel {
+  border-left: 1.5px solid var(--fv-border);
+  background:
+    linear-gradient(180deg, rgba(99, 102, 241, 0.055), transparent 42%),
+    var(--fv-surface);
+  padding: 18px;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.fv-explain-kicker {
+  color: var(--fv-accent);
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.fv-explain-panel h4 {
+  margin: 5px 0 14px;
+  color: var(--fv-text);
+  font-size: 1.08rem;
+  line-height: 1.25;
+  letter-spacing: 0;
+}
+
+.fv-explain-panel section {
+  border-top: 1px solid var(--fv-border);
+  padding-top: 12px;
+  margin-top: 12px;
+}
+
+.fv-explain-panel strong {
+  display: block;
+  color: var(--fv-text);
+  font-size: 0.78rem;
+  font-weight: 900;
+  margin-bottom: 5px;
+}
+
+.fv-explain-panel p {
+  margin: 0;
+  color: var(--fv-muted);
+  font-size: 0.86rem;
+  line-height: 1.62;
+}
+
+.fv-explain-code {
+  margin: 14px 0 0;
+  border-radius: 8px;
+  background: var(--fv-code-bg);
+  color: var(--fv-code-text);
+  padding: 10px;
+  overflow-x: auto;
+  font-size: 0.76rem;
+  line-height: 1.5;
 }
 
 /* ── SVG: Arrowhead markers ─────────────────────────────────────────────── */
@@ -256,6 +344,13 @@
   opacity: 1;
   animation: fv-edge-pulse 1.4s ease infinite;
 }
+
+.fv-flow-packet {
+  fill: #14b8a6;
+  stroke: #ffffff;
+  stroke-width: 2;
+  filter: drop-shadow(0 0 8px rgba(20, 184, 166, 0.58));
+}
 @keyframes fv-edge-pulse {
   0%,  100% { opacity: 0.85; }
   50%        { opacity: 1; }
@@ -269,6 +364,19 @@
     stroke-width 0.3s  ease,
     filter       0.35s ease;
 }
+.fv-node {
+  cursor: pointer;
+  outline: none;
+}
+.fv-node:focus-visible rect {
+  stroke: var(--fv-accent);
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 10px var(--fv-accent-glow));
+}
+.fv-node:hover rect {
+  stroke: var(--fv-accent);
+  filter: drop-shadow(0 0 8px var(--fv-accent-glow));
+}
 .fv-node--idle rect {
   fill:         var(--fv-node-idle-fill);
   stroke:       var(--fv-node-idle-stroke);
@@ -278,13 +386,104 @@
   fill:         var(--fv-node-active-fill);
   stroke:       var(--fv-node-active-stroke);
   stroke-width: 2.2;
-  filter: drop-shadow(0 0 10px var(--fv-accent-glow));
-  animation: fv-node-glow 1.5s ease infinite;
+  filter: drop-shadow(0 0 8px var(--fv-accent-glow));
 }
 .fv-node--completed rect {
   fill:         var(--fv-node-done-fill);
   stroke:       var(--fv-node-done-stroke);
   stroke-width: 1.5;
+}
+
+.fv-node foreignObject {
+  pointer-events: none;
+}
+
+.fv-node-card {
+  height: 100%;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: var(--fv-text);
+}
+
+.fv-node-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 19px;
+}
+
+.fv-node-step,
+.fv-node-state {
+  display: inline-flex;
+  align-items: center;
+  min-height: 19px;
+  border-radius: 999px;
+  padding: 0 7px;
+  font-size: 0.62rem;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.fv-node-step {
+  background: var(--fv-accent-dim);
+  color: var(--fv-accent);
+}
+
+.fv-node-state {
+  background: var(--fv-success-dim);
+  color: var(--fv-success);
+}
+
+.fv-node-state-active {
+  background: var(--fv-accent);
+  color: #fff;
+}
+
+.fv-node-card strong {
+  display: block;
+  color: var(--fv-text);
+  font-size: 0.84rem;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+.fv-node--active .fv-node-card strong {
+  color: var(--fv-accent);
+}
+
+.fv-node--completed .fv-node-card strong {
+  color: var(--fv-success);
+}
+
+.fv-node-card p {
+  margin: 0;
+  color: var(--fv-muted);
+  font-size: 0.7rem;
+  line-height: 1.34;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.fv-node-card small {
+  margin-top: auto;
+  border-top: 1px solid var(--fv-border);
+  padding-top: 6px;
+  color: #475467;
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1.25;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 @keyframes fv-node-glow {
@@ -295,11 +494,19 @@
 /* Node label text */
 .fv-node-label {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  font-size: 12.5px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 750;
   fill: var(--fv-text);
   pointer-events: none;
   transition: fill 0.3s;
+}
+
+.fv-check-circle,
+.fv-check-text,
+.fv-step-num-circle,
+.fv-step-num-text,
+.fv-node-label {
+  display: none;
 }
 .fv-node--active  .fv-node-label { fill: var(--fv-accent); font-weight: 700; }
 .fv-node--completed .fv-node-label { fill: var(--fv-success); }
@@ -325,14 +532,62 @@
 /* Checkmark badge (completed nodes) */
 .fv-check-circle { fill: var(--fv-success); }
 .fv-check-text {
-  font-size: 9px;
+  font-size: 10px;
   font-weight: 700;
   fill: #ffffff;
   pointer-events: none;
 }
 
+/* Lottie-style motion accents. These are CSS/SVG animations, so the feature
+   works without shipping a Lottie JSON player or any frontend secrets. */
+.fv-shell--lottie .fv-edge--active path {
+  stroke-dasharray: 9 10;
+  animation: fv-edge-flow 1.1s linear infinite;
+}
+.fv-lottie-orbit {
+  pointer-events: none;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fv-lottie-breathe 1.7s ease-in-out infinite;
+}
+.fv-lottie-orbit-ring {
+  fill: none;
+  stroke: var(--fv-accent);
+  stroke-width: 1.4;
+  stroke-dasharray: 5 8;
+  opacity: 0.26;
+}
+.fv-lottie-dot {
+  fill: var(--fv-accent);
+  filter: drop-shadow(0 0 6px var(--fv-accent-glow));
+  animation: fv-lottie-dot-pulse 1.4s ease-in-out infinite;
+}
+.fv-lottie-dot--second {
+  fill: var(--fv-success);
+  animation-delay: 0.4s;
+}
+
+@keyframes fv-edge-flow {
+  to { stroke-dashoffset: -36; }
+}
+@keyframes fv-lottie-breathe {
+  0%, 100% { opacity: 0.62; transform: scale(0.985); }
+  50% { opacity: 1; transform: scale(1.015); }
+}
+@keyframes fv-lottie-dot-pulse {
+  0%, 100% { opacity: 0.45; transform: scale(0.82); }
+  50% { opacity: 1; transform: scale(1.12); }
+}
+
+.fv-shell--code-focused .fv-diagram-panel {
+  background:
+    linear-gradient(135deg, rgba(99, 102, 241, 0.06), transparent 38%),
+    var(--fv-bg);
+}
+
 /* ── Footer ─────────────────────────────────────────────────────────────── */
 .fv-footer {
+  display: none;
   flex-shrink: 0;
   background: var(--fv-surface);
 }
@@ -410,8 +665,8 @@
 
 /* Step description */
 .fv-desc {
+  display: none;
   padding: 14px 20px 16px;
-  display: flex;
   flex-direction: column;
   gap: 5px;
   min-height: 72px;
@@ -448,8 +703,14 @@
 @media (max-width: 680px) {
   .fv-body {
     grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
+    grid-template-rows: auto auto auto;
   }
+
+  .fv-body--no-code {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
   .fv-code-panel {
     border-right: none;
     border-bottom: 1.5px solid var(--fv-border);
@@ -458,6 +719,48 @@
   .fv-diagram-panel {
     min-height: 320px;
   }
+  .fv-body--no-code .fv-diagram-panel,
+  .fv-body--no-code .fv-explain-panel {
+    min-height: 320px;
+  }
+  .fv-explain-panel {
+    border-left: none;
+    border-top: 1.5px solid var(--fv-border);
+  }
   .fv-ctrl-btns { gap: 6px; }
   .fv-btn { padding: 7px 10px; font-size: 0.78rem; }
+}
+
+@media (max-width: 980px) and (min-width: 681px) {
+  .fv-body {
+    grid-template-columns: minmax(220px, 36%) minmax(0, 1fr);
+  }
+
+  .fv-body--no-code {
+    grid-template-columns: 1fr;
+  }
+
+  .fv-explain-panel {
+    grid-column: 1 / -1;
+    border-left: none;
+    border-top: 1.5px solid var(--fv-border);
+    display: grid;
+    grid-template-columns: 180px repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    align-items: start;
+  }
+
+  .fv-explain-panel h4 {
+    margin-bottom: 0;
+  }
+
+  .fv-explain-panel section {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+  }
+
+  .fv-explain-code {
+    grid-column: 1 / -1;
+  }
 }

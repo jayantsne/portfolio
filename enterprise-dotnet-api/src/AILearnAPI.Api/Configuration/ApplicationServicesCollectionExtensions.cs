@@ -50,6 +50,15 @@ public static class ApplicationServicesCollectionExtensions
         services.AddScoped<IOpenAIStreamingService, OpenAIStreamingService>();
         services.AddScoped<IDeploymentService, DeploymentService>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
+        services.AddScoped<IFlowGeneratorService, FlowGeneratorService>();
+        services.AddScoped<IFlowPromptBuilder, FlowPromptBuilder>();
+        services.AddScoped<IFlowResponseValidator, FlowResponseValidator>();
+        services.AddHttpClient<IFlowAiProvider, FlowOpenAiProvider>(c =>
+        {
+            c.Timeout = TimeSpan.FromMinutes(2);
+            c.DefaultRequestHeaders.Accept.Add(
+                new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+        });
 
         services.AddSingleton<PlaygroundExecutionService>();
         services.AddSingleton<IPromptBuilderService, PromptBuilderService>();

@@ -1,4 +1,8 @@
-<div class="fv-shell" *ngIf="diagram">
+<div class="fv-shell"
+     *ngIf="diagram"
+     [class.fv-shell--lottie]="animationStyle === 'Lottie'"
+     [class.fv-shell--code-focused]="animationStyle === 'Code-focused'"
+     [class.fv-shell--horizontal]="orientation === 'horizontal'">
 
   <!-- ── Header ──────────────────────────────────────────────────────────── -->
   <div class="fv-header" *ngIf="diagram.title">
@@ -11,12 +15,13 @@
         </svg>
       </span>
       <h3 class="fv-title">{{ diagram.title }}</h3>
+      <span class="fv-mode">{{ orientationLabel }}</span>
     </div>
     <span class="fv-badge" [class.fv-badge--done]="isAtEnd">{{ stepLabel }}</span>
   </div>
 
   <!-- ── Main body: code panel (left) + diagram panel (right) ───────────── -->
-  <div class="fv-body">
+  <div class="fv-body" [class.fv-body--no-code]="!hasCode">
 
     <!-- Left: Code panel -->
     <div class="fv-code-panel" *ngIf="diagram.code?.length">
@@ -40,10 +45,12 @@
     </div>
 
     <!-- Right: SVG Diagram -->
-    <div class="fv-diagram-panel">
+    <div class="fv-diagram-panel" #diagramPanel>
       <svg
         class="fv-svg"
         [attr.viewBox]="svgViewBox"
+        [style.width.px]="svgWidth"
+        [style.height.px]="svgHeight"
         xmlns="http://www.w3.org/2000/svg"
         role="img"
         aria-label="Flow diagram">
@@ -82,17 +89,44 @@
               stroke-width="2"
               stroke-linecap="round"
               [attr.marker-end]="edgeMarker(ce.id)"/>
+            <circle
+              *ngIf="animationStyle === 'Lottie' && edgeState(ce.id) === 'active'"
+              r="5"
+              class="fv-flow-packet">
+              <animateMotion
+                [attr.path]="ce.path"
+                dur="1.15s"
+                repeatCount="indefinite"
+                rotate="auto"/>
+            </circle>
           </g>
         </g>
 
         <!-- ── Nodes ─────────────────────────────────────────────────── -->
         <g class="fv-nodes">
           <g
-            *ngFor="let cn of computedNodes"
+            *ngFor="let cn of computedNodes; let nodeIndex = index"
             class="fv-node"
+            tabindex="0"
+            role="button"
+            [attr.aria-label]="'Explain step ' + (nodeIndex + 1) + ': ' + cn.step.label"
             [class.fv-node--active]="nodeState(cn.step.id) === 'active'"
             [class.fv-node--completed]="nodeState(cn.step.id) === 'completed'"
-            [class.fv-node--idle]="nodeState(cn.step.id) === 'idle'">
+            [class.fv-node--idle]="nodeState(cn.step.id) === 'idle'"
+            (click)="selectStep(nodeIndex)"
+            (keydown.enter)="selectStep(nodeIndex)"
+            (keydown.space)="$event.preventDefault(); selectStep(nodeIndex)">
+
+            <!-- Lottie-style active motion ring -->
+            <g *ngIf="animationStyle === 'Lottie' && nodeState(cn.step.id) === 'active'"
+               class="fv-lottie-orbit"
+               aria-hidden="true">
+              <circle
+                [attr.cx]="cn.cx"
+                [attr.cy]="cn.cy"
+                [attr.r]="(cn.w > cn.h ? cn.w : cn.h) / 2 + 13"
+                class="fv-lottie-orbit-ring"/>
+            </g>
 
             <!-- Node body rect -->
             <rect
@@ -101,6 +135,23 @@
               [attr.width]="cn.w"
               [attr.height]="cn.h"
               [attr.rx]="12"/>
+
+            <foreignObject
+              [attr.x]="cn.cx - cn.w / 2"
+              [attr.y]="cn.cy - cn.h / 2"
+              [attr.width]="cn.w"
+              [attr.height]="cn.h">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="fv-node-card">
+                <div class="fv-node-card-top">
+                  <span class="fv-node-step">Step {{ nodeIndex + 1 }}</span>
+                  <span class="fv-node-state" *ngIf="nodeState(cn.step.id) === 'completed'">Done</span>
+                  <span class="fv-node-state fv-node-state-active" *ngIf="nodeState(cn.step.id) === 'active'">Now</span>
+                </div>
+                <strong>{{ cn.step.label }}</strong>
+                <p>{{ stepSummary(cn.step.id) }}</p>
+                <small *ngIf="stepFlowCue(cn.step.id)">{{ stepFlowCue(cn.step.id) }}</small>
+              </div>
+            </foreignObject>
 
             <!-- Completion checkmark badge -->
             <g *ngIf="nodeState(cn.step.id) === 'completed'">
@@ -129,7 +180,7 @@
                 [attr.y]="cn.cy"
                 text-anchor="middle"
                 dominant-baseline="central"
-                class="fv-step-num-text">{{ diagram.steps.indexOf(cn.step) + 1 }}</text>
+                class="fv-step-num-text">{{ nodeIndex + 1 }}</text>
             </g>
 
             <!-- Label -->
@@ -144,6 +195,7 @@
         </g>
       </svg>
     </div>
+
   </div>
 
   <!-- ── Footer: controls + description ───────────────────────────────────── -->

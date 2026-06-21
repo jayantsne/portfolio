@@ -2,11 +2,15 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
+  EventEmitter,
+  ElementRef,
   Input,
   OnChanges,
   OnDestroy,
   OnInit,
+  Output,
   SimpleChanges,
+  ViewChild,
 } from '@angular/core';
 import { interval, Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -18,15 +22,16 @@ import {
   NodeState,
 } from './flow-visualizer.models';
 
-// ─── Layout constants ─────────────────────────────────────────────────────────
-const NODE_W   = 182;  // node width  (px, in SVG coordinate space)
-const NODE_H   = 52;   // node height
-const V_STEP   = 110;  // vertical center-to-center between layers
-const H_GAP    = 28;   // horizontal gap between sibling nodes in same layer
-const PAD_X    = 64;   // left/right canvas padding
-const PAD_Y    = 52;   // top/bottom canvas padding
+const NODE_W = 250;
+const NODE_H = 122;
+const V_STEP = 178;
+const H_STEP = 330;
+const GAP = 28;
+const PAD_X = 64;
+const PAD_Y = 52;
+const PLAY_MS = 1700;
 
-const PLAY_MS  = 1700; // ms between auto-advance steps
+type FlowOrientation = 'vertical' | 'horizontal';
 
 @Component({
   selector: 'app-flow-visualizer',
@@ -35,34 +40,40 @@ const PLAY_MS  = 1700; // ms between auto-advance steps
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
-  @Input() diagram!: FlowDiagram;
+  @ViewChild('diagramPanel') private diagramPanel?: ElementRef<HTMLDivElement>;
 
-  // ─── Rendered geometry ──────────────────────────────────────────────────────
+  @Input() diagram!: FlowDiagram;
+  @Input() animationStyle: 'Clean' | 'Lottie' | 'Code-focused' = 'Lottie';
+  @Input() orientation: FlowOrientation = 'vertical';
+  @Output() stepSelected = new EventEmitter<number>();
+
   computedNodes: ComputedNode[] = [];
   computedEdges: ComputedEdge[] = [];
   svgViewBox = '0 0 310 500';
-
-  // ─── Playback state ─────────────────────────────────────────────────────────
+  svgWidth = 310;
+  svgHeight = 500;
   currentStepIndex = -1;
-  isPlaying        = false;
+  isPlaying = false;
 
-  private completedStepIds  = new Set<string>();
-  private traversedEdgeIds  = new Set<string>();
+  private completedStepIds = new Set<string>();
+  private traversedEdgeIds = new Set<string>();
   private activeEdgeId: string | null = null;
-
+  private layoutSignature = '';
   private readonly destroy$ = new Subject<void>();
-  private readonly pause$   = new Subject<void>();
+  private readonly pause$ = new Subject<void>();
 
   constructor(private cdr: ChangeDetectorRef) {}
 
-  // ─── Lifecycle ──────────────────────────────────────────────────────────────
-
   ngOnInit(): void {
-    if (this.diagram) { this.buildLayout(); }
+    if (this.diagram) {
+      this.buildLayout();
+    }
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['diagram']?.currentValue) {
+    const nextSignature = this.createLayoutSignature();
+    if (nextSignature && nextSignature !== this.layoutSignature) {
+      this.layoutSignature = nextSignature;
       this.resetState();
       this.buildLayout();
     }
@@ -73,41 +84,74 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
     this.destroy$.complete();
   }
 
-  // ─── Public controls ────────────────────────────────────────────────────────
-
   play(): void {
-    if (this.isPlaying || this.isAtEnd) { return; }
-    this.isPlaying = true;
+    if (this.isPlaying || this.isAtEnd) {
+      return;
+    }
 
+    this.isPlaying = true;
     interval(PLAY_MS).pipe(
       takeUntil(this.pause$),
       takeUntil(this.destroy$),
     ).subscribe(() => {
       if (!this.isAtEnd) {
         this.advance();
-        this.cdr.markForCheck();
       } else {
         this.stopPlay();
       }
+      this.cdr.markForCheck();
     });
   }
 
   pause(): void {
-    if (!this.isPlaying) { return; }
+    if (!this.isPlaying) {
+      return;
+    }
     this.stopPlay();
   }
 
   next(): void {
-    if (this.isAtEnd) { return; }
+    if (this.isAtEnd) {
+      return;
+    }
     this.advance();
   }
 
   reset(): void {
     this.stopPlay();
     this.resetState();
+    this.stepSelected.emit(0);
+    this.scrollActiveStepIntoView(0);
   }
 
-  // ─── Template queries ────────────────────────────────────────────────────────
+  selectStep(index: number): void {
+    if (!this.diagram || index < 0 || index >= this.diagram.steps.length) {
+      return;
+    }
+
+    this.stopPlay();
+    this.currentStepIndex = index;
+    this.completedStepIds.clear();
+    this.traversedEdgeIds.clear();
+    this.activeEdgeId = null;
+
+    for (let i = 0; i < index; i++) {
+      const current = this.diagram.steps[i];
+      const next = this.diagram.steps[i + 1];
+      this.completedStepIds.add(current.id);
+      if (next) {
+        this.traversedEdgeIds.add(`${current.id}__${next.id}`);
+      }
+    }
+
+    if (index > 0) {
+      this.activeEdgeId = `${this.diagram.steps[index - 1].id}__${this.diagram.steps[index].id}`;
+    }
+
+    this.stepSelected.emit(index);
+    this.scrollActiveStepIntoView(index);
+    this.cdr.markForCheck();
+  }
 
   get currentStep() {
     return this.currentStepIndex >= 0
@@ -115,9 +159,67 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
       : null;
   }
 
+  get explainedStep() {
+    return this.currentStep || this.diagram?.steps?.[0] || null;
+  }
+
+  get explainedStepIndex(): number {
+    const step = this.explainedStep;
+    return step ? Math.max(0, this.diagram.steps.indexOf(step)) : 0;
+  }
+
+  get explainedCodeLine(): string {
+    const codeLine = this.explainedStep?.codeLine;
+    if (codeLine === undefined) {
+      return '';
+    }
+    return this.diagram?.code?.[codeLine] || '';
+  }
+
+  get orientationLabel(): string {
+    return this.orientation === 'horizontal' ? 'Horizontal flow' : 'Vertical flow';
+  }
+
+  get hasCode(): boolean {
+    return !!this.diagram?.code?.length;
+  }
+
+  stepSummary(stepId: string): string {
+    const step = this.diagram?.steps.find(item => item.id === stepId);
+    if (!step) {
+      return '';
+    }
+
+    const source = step.internalWork || step.description || step.whyItMatters || '';
+    return this.trimForNode(source, 92);
+  }
+
+  stepFlowCue(stepId: string): string {
+    const step = this.diagram?.steps.find(item => item.id === stepId);
+    if (!step) {
+      return '';
+    }
+
+    if (step.input && step.output) {
+      return `${this.trimForNode(step.input, 28)} -> ${this.trimForNode(step.output, 28)}`;
+    }
+
+    if (step.trigger) {
+      return `Starts when: ${this.trimForNode(step.trigger, 52)}`;
+    }
+
+    if (step.output) {
+      return `Produces: ${this.trimForNode(step.output, 52)}`;
+    }
+
+    return '';
+  }
+
   get progressPercent(): number {
     const total = this.diagram?.steps.length ?? 0;
-    if (!total) { return 0; }
+    if (!total) {
+      return 0;
+    }
     return (Math.max(0, this.currentStepIndex + 1) / total) * 100;
   }
 
@@ -126,30 +228,47 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   get stepLabel(): string {
-    if (!this.diagram) { return ''; }
-    if (this.currentStepIndex < 0)        { return 'Press Play or → Next to begin'; }
-    if (this.isAtEnd)                      { return `✓ Complete — ${this.diagram.steps.length} steps`; }
+    if (!this.diagram) {
+      return '';
+    }
+    if (this.currentStepIndex < 0) {
+      return 'Press Play or Next to begin';
+    }
+    if (this.isAtEnd) {
+      return `Complete - ${this.diagram.steps.length} steps`;
+    }
     return `Step ${this.currentStepIndex + 1} of ${this.diagram.steps.length}`;
   }
 
   nodeState(id: string): NodeState {
     const idx = this.diagram.steps.findIndex(s => s.id === id);
-    if (idx === this.currentStepIndex)    { return 'active'; }
-    if (this.completedStepIds.has(id))    { return 'completed'; }
+    if (idx === this.currentStepIndex) {
+      return 'active';
+    }
+    if (this.completedStepIds.has(id)) {
+      return 'completed';
+    }
     return 'idle';
   }
 
   edgeState(edgeId: string): EdgeState {
-    if (edgeId === this.activeEdgeId)         { return 'active'; }
-    if (this.traversedEdgeIds.has(edgeId))    { return 'traversed'; }
+    if (edgeId === this.activeEdgeId) {
+      return 'active';
+    }
+    if (this.traversedEdgeIds.has(edgeId)) {
+      return 'traversed';
+    }
     return 'idle';
   }
 
   edgeMarker(edgeId: string): string {
     switch (this.edgeState(edgeId)) {
-      case 'active':    return 'url(#fv-ar-active)';
-      case 'traversed': return 'url(#fv-ar-traversed)';
-      default:          return 'url(#fv-ar-idle)';
+      case 'active':
+        return 'url(#fv-ar-active)';
+      case 'traversed':
+        return 'url(#fv-ar-traversed)';
+      default:
+        return 'url(#fv-ar-idle)';
     }
   }
 
@@ -158,30 +277,66 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   isCompletedCodeLine(i: number): boolean {
-    if (!this.diagram?.code) { return false; }
+    if (!this.diagram?.code) {
+      return false;
+    }
+
     return [...this.completedStepIds].some(
       id => this.diagram.steps.find(s => s.id === id)?.codeLine === i,
     );
   }
 
-  // ─── Private helpers ─────────────────────────────────────────────────────────
-
   private advance(): void {
     if (this.currentStepIndex >= 0) {
       const fromId = this.diagram.steps[this.currentStepIndex].id;
-      const toId   = this.diagram.steps[this.currentStepIndex + 1].id;
-      const eid    = `${fromId}__${toId}`;
+      const toId = this.diagram.steps[this.currentStepIndex + 1].id;
+      const edgeId = `${fromId}__${toId}`;
       this.completedStepIds.add(fromId);
-      this.traversedEdgeIds.add(eid);
-      this.activeEdgeId = eid;       // glows until the next advance
+      this.traversedEdgeIds.add(edgeId);
+      this.activeEdgeId = edgeId;
     }
+
     this.currentStepIndex++;
+    this.stepSelected.emit(Math.max(0, this.currentStepIndex));
+    this.scrollActiveStepIntoView(this.currentStepIndex);
     this.cdr.markForCheck();
+  }
+
+  private scrollActiveStepIntoView(index: number): void {
+    if (this.orientation !== 'horizontal') {
+      return;
+    }
+
+    const panel = this.diagramPanel?.nativeElement;
+    const node = this.computedNodes[index];
+    if (!panel || !node) {
+      return;
+    }
+
+    window.setTimeout(() => {
+      const focusRatio = this.hasCode ? 0.5 : 0.72;
+      const maxLeft = Math.max(0, panel.scrollWidth - panel.clientWidth);
+      const targetLeft = Math.min(maxLeft, Math.max(0, node.cx - panel.clientWidth * focusRatio));
+      panel.scrollTo({
+        left: targetLeft,
+        behavior: 'smooth',
+      });
+    });
   }
 
   private stopPlay(): void {
     this.isPlaying = false;
     this.pause$.next();
+  }
+
+  private trimForNode(value: string, max: number): string {
+    const text = value.replace(/\s+/g, ' ').trim();
+
+    if (text.length <= max) {
+      return text;
+    }
+
+    return `${text.slice(0, Math.max(0, max - 1)).replace(/\s+$/g, '')}...`;
   }
 
   private resetState(): void {
@@ -192,25 +347,20 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  // ─── DAG layout engine (Sugiyama-lite) ───────────────────────────────────────
-  /**
-   * Assigns each node a "layer" (row) using longest-path BFS from root nodes.
-   * Handles linear chains, branches (diamonds), and merges correctly.
-   * Nodes in the same layer are spread horizontally and centred as a group.
-   */
   private buildLayout(): void {
     const { steps, edges } = this.diagram;
-    if (!steps.length) { return; }
+    if (!steps.length) {
+      return;
+    }
 
-    /* ── 1. Build adjacency + in-degree maps ─────────────────────── */
     const inDeg = new Map<string, number>(steps.map(s => [s.id, 0]));
-    const adj   = new Map<string, string[]>(steps.map(s => [s.id, []]));
+    const adj = new Map<string, string[]>(steps.map(s => [s.id, []]));
+
     edges.forEach(e => {
       adj.get(e.source)!.push(e.target);
       inDeg.set(e.target, (inDeg.get(e.target) ?? 0) + 1);
     });
 
-    /* ── 2. Longest-path BFS for layer assignment ────────────────── */
     const layer = new Map<string, number>(steps.map(s => [s.id, 0]));
     const queue = steps
       .filter(s => (inDeg.get(s.id) ?? 0) === 0)
@@ -218,44 +368,64 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
 
     while (queue.length) {
       const id = queue.shift()!;
-      for (const nxt of adj.get(id) ?? []) {
-        layer.set(nxt, Math.max(layer.get(nxt) ?? 0, (layer.get(id) ?? 0) + 1));
-        inDeg.set(nxt, (inDeg.get(nxt) ?? 0) - 1);
-        if ((inDeg.get(nxt) ?? 0) === 0) { queue.push(nxt); }
+      for (const next of adj.get(id) ?? []) {
+        layer.set(next, Math.max(layer.get(next) ?? 0, (layer.get(id) ?? 0) + 1));
+        inDeg.set(next, (inDeg.get(next) ?? 0) - 1);
+        if ((inDeg.get(next) ?? 0) === 0) {
+          queue.push(next);
+        }
       }
     }
 
-    /* ── 3. Group nodes by layer ─────────────────────────────────── */
     const byLayer = new Map<number, string[]>();
     layer.forEach((l, id) => {
-      if (!byLayer.has(l)) { byLayer.set(l, []); }
+      if (!byLayer.has(l)) {
+        byLayer.set(l, []);
+      }
       byLayer.get(l)!.push(id);
     });
 
-    /* ── 4. Compute SVG canvas width ─────────────────────────────── */
+    const maxLayer = Math.max(...layer.values(), 0);
     const maxCount = Math.max(...[...byLayer.values()].map(g => g.length), 1);
-    const contentW = maxCount * NODE_W + (maxCount - 1) * H_GAP;
-    const svgW     = contentW + 2 * PAD_X;
-
-    /* ── 5. Assign pixel positions (centres), centring each row ──── */
     const pos = new Map<string, { cx: number; cy: number }>();
-    byLayer.forEach((grp, l) => {
-      const rowW       = grp.length * NODE_W + (grp.length - 1) * H_GAP;
-      const rowStartX  = PAD_X + (contentW - rowW) / 2;
-      grp.forEach((id, i) => {
-        pos.set(id, {
-          cx: rowStartX + NODE_W / 2 + i * (NODE_W + H_GAP),
-          cy: PAD_Y + NODE_H / 2 + l * V_STEP,
+    let svgW: number;
+    let svgH: number;
+
+    if (this.orientation === 'horizontal') {
+      const contentH = maxCount * NODE_H + (maxCount - 1) * GAP;
+      svgW = PAD_X + NODE_W / 2 + maxLayer * H_STEP + NODE_W / 2 + PAD_X;
+      svgH = contentH + 2 * PAD_Y;
+
+      byLayer.forEach((group, l) => {
+        const colH = group.length * NODE_H + (group.length - 1) * GAP;
+        const colStartY = PAD_Y + (contentH - colH) / 2;
+        group.forEach((id, i) => {
+          pos.set(id, {
+            cx: PAD_X + NODE_W / 2 + l * H_STEP,
+            cy: colStartY + NODE_H / 2 + i * (NODE_H + GAP),
+          });
         });
       });
-    });
+    } else {
+      const contentW = maxCount * NODE_W + (maxCount - 1) * GAP;
+      svgW = contentW + 2 * PAD_X;
+      svgH = PAD_Y + NODE_H / 2 + maxLayer * V_STEP + NODE_H / 2 + PAD_Y;
 
-    /* ── 6. Compute canvas height ─────────────────────────────────── */
-    const maxLayer = Math.max(...layer.values(), 0);
-    const svgH     = PAD_Y + NODE_H / 2 + maxLayer * V_STEP + NODE_H / 2 + PAD_Y;
+      byLayer.forEach((group, l) => {
+        const rowW = group.length * NODE_W + (group.length - 1) * GAP;
+        const rowStartX = PAD_X + (contentW - rowW) / 2;
+        group.forEach((id, i) => {
+          pos.set(id, {
+            cx: rowStartX + NODE_W / 2 + i * (NODE_W + GAP),
+            cy: PAD_Y + NODE_H / 2 + l * V_STEP,
+          });
+        });
+      });
+    }
+
+    this.svgWidth = svgW;
+    this.svgHeight = svgH;
     this.svgViewBox = `0 0 ${svgW} ${svgH}`;
-
-    /* ── 7. Build ComputedNode array ─────────────────────────────── */
     this.computedNodes = steps.map(s => ({
       step: s,
       cx: pos.get(s.id)!.cx,
@@ -264,22 +434,40 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
       h: NODE_H,
     }));
 
-    /* ── 8. Build ComputedEdge array (cubic bezier paths) ────────── */
     this.computedEdges = edges.map(e => {
       const src = pos.get(e.source)!;
       const tgt = pos.get(e.target)!;
-      // Exit: bottom-centre of source; Entry: top-centre of target
-      const x1 = src.cx;
-      const y1 = src.cy + NODE_H / 2;
-      const x2 = tgt.cx;
-      const y2 = tgt.cy - NODE_H / 2;
-      const dy = Math.min(Math.abs(y2 - y1) * 0.45, 50);
-      const dx = Math.abs(x2 - x1) > 4 ? (x2 - x1) * 0.5 : 0;
+      const x1 = this.orientation === 'horizontal' ? src.cx + NODE_W / 2 : src.cx;
+      const y1 = this.orientation === 'horizontal' ? src.cy : src.cy + NODE_H / 2;
+      const x2 = this.orientation === 'horizontal' ? tgt.cx - NODE_W / 2 : tgt.cx;
+      const y2 = this.orientation === 'horizontal' ? tgt.cy : tgt.cy - NODE_H / 2;
+      const dx = this.orientation === 'horizontal'
+        ? Math.min(Math.abs(x2 - x1) * 0.45, 70)
+        : (Math.abs(x2 - x1) > 4 ? (x2 - x1) * 0.5 : 0);
+      const dy = this.orientation === 'horizontal'
+        ? (Math.abs(y2 - y1) > 4 ? (y2 - y1) * 0.5 : 0)
+        : Math.min(Math.abs(y2 - y1) * 0.45, 50);
+
       return {
         edge: e,
-        id:   `${e.source}__${e.target}`,
+        id: `${e.source}__${e.target}`,
         path: `M ${x1},${y1} C ${x1 + dx},${y1 + dy} ${x2 - dx},${y2 - dy} ${x2},${y2}`,
       };
     });
+  }
+
+  private createLayoutSignature(): string {
+    if (!this.diagram) {
+      return '';
+    }
+
+    return [
+      this.orientation,
+      this.diagram.title || '',
+      this.diagram.codeLanguage || '',
+      this.diagram.code?.length || 0,
+      this.diagram.steps.map(step => `${step.id}:${step.label}`).join('|'),
+      this.diagram.edges.map(edge => `${edge.source}>${edge.target}`).join('|'),
+    ].join('::');
   }
 }

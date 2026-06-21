@@ -41,9 +41,9 @@ export class DevToolsGuardService implements OnDestroy {
   init(): void {
     if (!environment.production) return; // dev stays fully open for debugging
 
-    this.blockContextMenu();
-    this.blockInspectShortcuts();
-    this.watchDevTools();
+    // Do not block the UI in production. Real protection for secrets belongs on
+    // the backend; a browser overlay can create false positives and break clicks,
+    // scrolling, and mobile browser behavior.
     this.warnInConsole();
   }
 

@@ -1,180 +1,339 @@
-<section class="fg-page">
-  <header class="fg-hero">
-    <div class="fg-hero-copy">
-      <div class="fg-kicker">
-        <span class="fg-kicker-dot"></span>
-        UI prototype
+<section class="fg-page" #flowPage>
+  <main class="fg-chat" [class.fg-chat-active]="hasActiveFlow || isGenerating" aria-label="Flow generator chat">
+    <header class="fg-intro" *ngIf="!hasActiveFlow && !isGenerating">
+      <div class="fg-mark" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 7h6"/>
+          <path d="M14 7h6"/>
+          <path d="M4 17h6"/>
+          <path d="M14 17h6"/>
+          <path d="M10 7c2 0 2 10 4 10"/>
+        </svg>
       </div>
-      <h1>Concept Flow Generator</h1>
-      <p>Turn interview concepts into animated, step-by-step visual flows.</p>
-    </div>
+      <h1>What concept should we turn into a flow?</h1>
+      <p>Ask for Angular, .NET, auth, design patterns, or interview concepts.</p>
+    </header>
 
-    <div class="fg-hero-actions">
-      <button class="fg-secondary-btn" type="button" (click)="toggleStoryboard()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="3" y="5" width="18" height="14" rx="2"/>
-          <path d="M10 9l5 3-5 3V9z"/>
-        </svg>
-        {{ storyboardPlaying ? 'Pause motion' : 'Play motion' }}
-      </button>
-      <button class="fg-primary-btn" type="button">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <path d="M12 20h9"/>
-          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
-        </svg>
-        Generate mock flow
-      </button>
-    </div>
-  </header>
-
-  <div class="fg-shell">
-    <aside class="fg-panel fg-builder" aria-label="Flow builder">
-      <div class="fg-panel-heading">
-        <span class="fg-panel-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-          </svg>
-        </span>
-        <div>
-          <h2>Prompt</h2>
-          <p>UI-only input for your future endpoint.</p>
+    <div class="fg-thread">
+      <article class="fg-message fg-message-user" *ngIf="concept.trim()">
+        <div class="fg-avatar">J</div>
+        <div class="fg-bubble fg-user-bubble">
+          {{ concept }}
         </div>
-      </div>
+      </article>
 
-      <label class="fg-label" for="conceptInput">Concept</label>
-      <div class="fg-input-wrap">
-        <input id="conceptInput"
-               [(ngModel)]="concept"
-               type="text"
-               class="fg-input"
-               placeholder="Angular lifecycle, SOLID, DI container..." />
-      </div>
+      <article class="fg-message fg-message-ai" *ngIf="!isGenerating && !hasActiveFlow">
+        <div class="fg-avatar fg-avatar-ai">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6L12 2z"/>
+          </svg>
+        </div>
 
-      <div class="fg-chip-row" aria-label="Example concepts">
-        <button type="button" (click)="useConcept('Angular lifecycle hooks')">Angular lifecycle</button>
-        <button type="button" (click)="useConcept('SOLID principles in .NET')">SOLID</button>
-        <button type="button" (click)="useConcept('ASP.NET Core middleware pipeline')">ASP.NET pipeline</button>
-      </div>
+        <section class="fg-empty-state" aria-label="Flow generator start">
+          <div class="fg-programmer-motion" aria-hidden="true">
+            <div class="fg-programmer-screen">
+              <span></span>
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <div class="fg-programmer-head"></div>
+            <div class="fg-programmer-body"></div>
+            <div class="fg-programmer-hands">
+              <i></i>
+              <i></i>
+            </div>
+            <div class="fg-programmer-keyboard">
+              <b></b><b></b><b></b><b></b><b></b>
+            </div>
+          </div>
 
-      <label class="fg-label">Audience</label>
-      <div class="fg-segment">
+          <div class="fg-empty-copy">
+            <span>AI flow generator</span>
+            <h2>Start with any interview concept</h2>
+            <p>Type a topic, then generate a readable animated flow with code, step focus, and interview explanation.</p>
+          </div>
+
+          <div class="fg-empty-chips">
+            <button type="button"
+                    *ngFor="let suggestion of conceptSuggestions | slice:0:4"
+                    (click)="applySuggestion(suggestion)">
+              {{ suggestion.title }}
+            </button>
+          </div>
+        </section>
+      </article>
+
+      <article class="fg-message fg-message-ai fg-output-message" *ngIf="!isGenerating && hasActiveFlow">
+        <div class="fg-avatar fg-avatar-ai">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6L12 2z"/>
+          </svg>
+        </div>
+
+        <div class="fg-ai-content">
+          <div class="fg-answer-head">
+            <div>
+              <span>{{ activeModeLabel }}</span>
+              <h2>{{ activeTitle }}</h2>
+              <p>{{ activeSummary }}</p>
+            </div>
+
+            <div class="fg-answer-actions">
+              <div class="fg-motion-switch" aria-label="Animation style">
+                <button type="button"
+                        *ngFor="let style of motionStyles"
+                        [class.fg-motion-active]="selectedMotionStyle === style"
+                        (click)="selectedMotionStyle = style">
+                  {{ style }}
+                </button>
+              </div>
+
+              <button type="button" class="fg-play" *ngIf="!isConceptMode" (click)="toggleStoryboard()">
+                {{ storyboardPlaying ? 'Pause' : 'Play' }}
+              </button>
+            </div>
+          </div>
+
+          <section class="fg-concept-board" *ngIf="isConceptMode; else flowVisualizer">
+            <div class="fg-concept-mental">
+              <span>Mental model</span>
+              <strong>{{ activeMentalModel }}</strong>
+            </div>
+
+            <div class="fg-concept-layout">
+              <aside class="fg-concept-code" *ngIf="activeDiagram.code?.length">
+                <div class="fg-concept-code-head">{{ activeDiagram.codeLanguage || 'Code' }}</div>
+                <pre><code><span *ngFor="let line of activeDiagram.code; let i = index"
+                                  [class.fg-code-active]="selectedFlowStep?.codeLine === i">{{ line }}</span></code></pre>
+              </aside>
+
+              <div class="fg-concept-cards">
+                <button type="button"
+                        class="fg-concept-card"
+                        *ngFor="let step of activeDiagram.steps; let i = index"
+                        [class.fg-concept-card-active]="selectedStepIndex === i"
+                        (click)="selectStep(i)">
+                  <span>{{ step.label }}</span>
+                  <strong>{{ step.description }}</strong>
+                  <small>{{ step.example || step.whyItMatters }}</small>
+                </button>
+              </div>
+
+              <aside class="fg-concept-detail">
+                <span>Selected concept</span>
+                <h3>{{ selectedFlowStep.label }}</h3>
+
+                <section>
+                  <strong>What it means</strong>
+                  <p>{{ selectedFlowStep.description }}</p>
+                </section>
+
+                <section>
+                  <strong>Why it matters</strong>
+                  <p>{{ selectedFlowStep.whyItMatters || selectedStepDetail.whyItMatters }}</p>
+                </section>
+
+                <section *ngIf="selectedFlowStep.example">
+                  <strong>Example</strong>
+                  <p>{{ selectedFlowStep.example }}</p>
+                </section>
+
+                <section *ngIf="selectedFlowStep.antiPattern">
+                  <strong>Common mistake</strong>
+                  <p>{{ selectedFlowStep.antiPattern }}</p>
+                </section>
+
+                <section>
+                  <strong>Interview answer</strong>
+                  <p>{{ selectedFlowStep.interviewAnswer || selectedStepDetail.interviewTip }}</p>
+                </section>
+              </aside>
+            </div>
+          </section>
+
+          <ng-template #flowVisualizer>
+            <app-flow-visualizer
+              [diagram]="activeDiagram"
+              [animationStyle]="selectedMotionStyle"
+              [orientation]="selectedOrientation"
+              (stepSelected)="handleVisualizerStepSelected($event)">
+            </app-flow-visualizer>
+          </ng-template>
+
+          <section class="fg-deep-panel" *ngIf="selectedFlowStep">
+            <div class="fg-deep-head">
+              <div>
+                <span>{{ isConceptMode ? 'Deep concept explanation' : 'Deep flow explanation' }}</span>
+                <h3>{{ selectedFlowStep.label }}</h3>
+              </div>
+
+              <button type="button"
+                      class="fg-ai-explain"
+                      [disabled]="!canExplainSelectedStep || isExplainingStep"
+                      (click)="explainSelectedStep()">
+                {{ isExplainingStep ? 'Thinking...' : 'AI explain this' }}
+              </button>
+            </div>
+
+            <div class="fg-deep-grid">
+              <article>
+                <strong>{{ isConceptMode ? 'Meaning' : 'What happens' }}</strong>
+                <p>{{ selectedFlowStep.description }}</p>
+              </article>
+
+              <article *ngIf="selectedFlowStep.trigger || !isConceptMode">
+                <strong>Trigger</strong>
+                <p>{{ selectedFlowStep.trigger || 'This step starts when the previous stage completes and passes control forward.' }}</p>
+              </article>
+
+              <article *ngIf="selectedFlowStep.input || !isConceptMode">
+                <strong>Input</strong>
+                <p>{{ selectedFlowStep.input || 'The current runtime state, request data, component state, or dependency context enters this step.' }}</p>
+              </article>
+
+              <article *ngIf="selectedFlowStep.internalWork || !isConceptMode">
+                <strong>Internal work</strong>
+                <p>{{ selectedFlowStep.internalWork || selectedFlowStep.whyItMatters || selectedStepDetail.whyItMatters }}</p>
+              </article>
+
+              <article *ngIf="selectedFlowStep.output || !isConceptMode">
+                <strong>Output</strong>
+                <p>{{ selectedFlowStep.output || 'The system leaves this step with updated state, a decision, or data for the next stage.' }}</p>
+              </article>
+
+              <article>
+                <strong>Why it matters</strong>
+                <p>{{ selectedFlowStep.whyItMatters || selectedStepDetail.whyItMatters }}</p>
+              </article>
+
+              <article *ngIf="selectedFlowStep.example">
+                <strong>Example</strong>
+                <p>{{ selectedFlowStep.example }}</p>
+              </article>
+
+              <article *ngIf="selectedFlowStep.antiPattern">
+                <strong>Common mistake</strong>
+                <p>{{ selectedFlowStep.antiPattern }}</p>
+              </article>
+            </div>
+
+            <div class="fg-ai-answer" *ngIf="aiStepExplanation">
+              <section>
+                <strong>Plain English</strong>
+                <p>{{ aiStepExplanation.plainEnglish }}</p>
+              </section>
+              <section>
+                <strong>How it works internally</strong>
+                <p>{{ aiStepExplanation.howItWorks }}</p>
+              </section>
+              <section>
+                <strong>Real example</strong>
+                <p>{{ aiStepExplanation.realExample }}</p>
+              </section>
+              <section>
+                <strong>Common mistake</strong>
+                <p>{{ aiStepExplanation.commonMistake }}</p>
+              </section>
+              <section>
+                <strong>Interview answer</strong>
+                <p>{{ aiStepExplanation.interviewAnswer }}</p>
+              </section>
+            </div>
+
+            <div class="fg-error fg-step-error" *ngIf="stepExplanationError">
+              {{ stepExplanationError }}
+            </div>
+          </section>
+
+          <section class="fg-revision" aria-label="Revision prompts">
+            <button type="button"
+                    class="fg-revision-item"
+                    *ngFor="let step of activeDiagram.steps; let i = index"
+                    [class.fg-revision-item-active]="selectedStepIndex === i"
+                    (click)="selectStep(i)">
+              <span>{{ i + 1 }}</span>
+              <strong>{{ step.label }}</strong>
+            </button>
+          </section>
+
+          <div class="fg-tips-row">
+            <button type="button"
+                    *ngFor="let tip of activeRevisionTips"
+                    class="fg-tip-chip"
+                    [title]="tip.detail">
+              {{ tip.title }}
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <article class="fg-message fg-message-ai" *ngIf="isGenerating">
+        <div class="fg-avatar fg-avatar-ai">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2l1.6 6.4L20 10l-6.4 1.6L12 18l-1.6-6.4L4 10l6.4-1.6L12 2z"/>
+          </svg>
+        </div>
+        <div class="fg-loading-card">
+          <div class="fg-loader-line"></div>
+          <strong>Designing your concept flow</strong>
+          <p>Creating steps, edges, code highlights, and interview revision points.</p>
+        </div>
+      </article>
+
+      <div class="fg-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+    </div>
+  </main>
+
+  <section class="fg-composer-wrap" [class.fg-composer-wrap-active]="hasActiveFlow" aria-label="Ask for a flow">
+    <div class="fg-suggestions" *ngIf="showSuggestions">
+      <button type="button"
+              *ngFor="let suggestion of filteredSuggestions"
+              (click)="applySuggestion(suggestion)">
+        {{ suggestion.title }}
+      </button>
+    </div>
+
+    <div class="fg-composer">
+      <textarea id="conceptInput"
+                [(ngModel)]="concept"
+                (focus)="showSuggestions = true"
+                (keydown)="handleComposerKeydown($event)"
+                rows="1"
+                placeholder="Ask for a visual flow, e.g. Explain OpenID Connect login..."
+                aria-label="Ask for a visual flow"></textarea>
+
+      <div class="fg-composer-actions">
+        <div class="fg-audience" aria-label="Audience">
         <button type="button"
                 *ngFor="let audience of audiences"
-                [class.fg-active]="selectedAudience === audience"
-                (click)="selectedAudience = audience">{{ audience }}</button>
-      </div>
+                [class.fg-audience-active]="selectedAudience === audience"
+                (click)="selectedAudience = audience">
+            {{ audience }}
+          </button>
+        </div>
 
-      <label class="fg-label">Flow type</label>
-      <div class="fg-option-grid">
         <button type="button"
-                *ngFor="let type of flowTypes"
-                [class.fg-active]="selectedFlowType === type"
-                (click)="selectedFlowType = type">{{ type }}</button>
-      </div>
-
-      <label class="fg-label">Animation style</label>
-      <div class="fg-segment">
-        <button type="button"
-                *ngFor="let style of motionStyles"
-                [class.fg-active]="selectedMotionStyle === style"
-                (click)="selectedMotionStyle = style">{{ style }}</button>
-      </div>
-
-      <div class="fg-examples">
-        <div class="fg-section-title">Mock flows</div>
-        <button type="button"
-                class="fg-example"
-                *ngFor="let example of examples"
-                [class.fg-example-active]="selectedExample.id === example.id"
-                (click)="selectExample(example)">
-          <span>{{ example.category }}</span>
-          <strong>{{ example.title }}</strong>
-          <small>{{ example.estimatedTime }} - {{ example.outputType }}</small>
-        </button>
-      </div>
-    </aside>
-
-    <main class="fg-stage" aria-label="Animated flow preview">
-      <div class="fg-stage-top">
-        <div>
-          <div class="fg-stage-eyebrow">{{ selectedMotionStyle }} motion</div>
-          <h2>{{ selectedExample.title }}</h2>
-          <p>{{ selectedExample.summary }}</p>
-        </div>
-
-        <div class="fg-stage-status">
-          <span></span>
-          Frontend mock
-        </div>
-      </div>
-
-      <div class="fg-motion-strip" [class.fg-motion-paused]="!storyboardPlaying">
-        <div class="fg-motion-step">
-          <span class="fg-motion-dot"></span>
-          Prompt parsed
-        </div>
-        <div class="fg-motion-line"></div>
-        <div class="fg-motion-step">
-          <span class="fg-motion-dot"></span>
-          Flow mapped
-        </div>
-        <div class="fg-motion-line"></div>
-        <div class="fg-motion-step">
-          <span class="fg-motion-dot"></span>
-          Lottie scene ready
-        </div>
-      </div>
-
-      <app-flow-visualizer [diagram]="selectedExample.diagram"></app-flow-visualizer>
-    </main>
-
-    <aside class="fg-panel fg-inspector" aria-label="Flow inspector">
-      <div class="fg-panel-heading">
-        <span class="fg-panel-icon fg-panel-icon-dark">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                class="fg-send"
+                [class.fg-send-loading]="isGenerating"
+                [disabled]="isGenerating"
+                (click)="generateFlow()"
+                aria-label="Generate flow">
+          <span>{{ isGenerating ? 'Generating' : 'Generate' }}</span>
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
-            <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/>
+            <path d="M22 2L11 13"/>
+            <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
           </svg>
-        </span>
-        <div>
-          <h2>Inspector</h2>
-          <p>Backend contract and interview notes.</p>
-        </div>
-      </div>
-
-      <div class="fg-insight-list">
-        <div class="fg-insight" *ngFor="let insight of selectedExample.insights">
-          <span>{{ insight.label }}</span>
-          <strong>{{ insight.value }}</strong>
-        </div>
-      </div>
-
-      <div class="fg-section-title">Step notes</div>
-      <div class="fg-step-list">
-        <button type="button"
-                class="fg-step-note"
-                *ngFor="let step of selectedExample.steps; let i = index"
-                [class.fg-step-note-active]="selectedStepIndex === i"
-                (click)="selectStep(i)">
-          <span>{{ i + 1 }}</span>
-          <div>
-            <strong>{{ step.title }}</strong>
-            <small>{{ step.detail }}</small>
-          </div>
         </button>
       </div>
-
-      <div class="fg-tip-box">
-        <span>Interview angle</span>
-        <p>{{ selectedStep.interviewTip }}</p>
-      </div>
-
-      <div class="fg-section-title">Future API payload</div>
-      <pre class="fg-json"><code>{{ previewPayload }}</code></pre>
-    </aside>
-  </div>
+    </div>
+    <p class="fg-composer-hint">Press Enter to generate. Shift+Enter adds a new line.</p>
+  </section>
 </section>

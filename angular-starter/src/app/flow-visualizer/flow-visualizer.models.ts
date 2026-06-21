@@ -3,6 +3,15 @@ export interface FlowStep {
   id: string;
   label: string;
   description: string;
+  whyItMatters?: string;
+  trigger?: string;
+  input?: string;
+  internalWork?: string;
+  output?: string;
+  example?: string;
+  antiPattern?: string;
+  interviewAnswer?: string;
+  interviewTip?: string;
   /** Zero-based index into FlowDiagram.code[] to highlight when this step is active. */
   codeLine?: number;
 }
