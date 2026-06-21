@@ -127,8 +127,9 @@ jobs:
 
             # Remove stale LearnWithAI routing and service names from older deployments.
             # The live app must route to this workflow's service on localhost:5000.
-            sudo systemctl stop ailearn-api 2>/dev/null || true
-            sudo systemctl disable ailearn-api 2>/dev/null || true
+            sudo systemctl stop ailearn-api learnquest-api 2>/dev/null || true
+            sudo systemctl disable ailearn-api learnquest-api 2>/dev/null || true
+            sudo systemctl mask learnquest-api 2>/dev/null || true
             for enabled in /etc/nginx/sites-enabled/* /etc/nginx/conf.d/*.conf; do
               [ -e "$enabled" ] || continue
               target="$(readlink -f "$enabled" 2>/dev/null || echo "$enabled")"
@@ -168,8 +169,8 @@ jobs:
             ConnectionStrings__Redis=${{ secrets.REDIS_CONNECTION_STRING || 'localhost:6379' }}
             MongoDB__DatabaseName=${{ secrets.MONGODB_DATABASE || 'jayant-portfolio' }}
             MongoDB__RequireTls=${{ vars.MONGODB_REQUIRE_TLS || 'true' }}
-            MongoDB__AllowInvalidCertificates=${{ vars.MONGODB_ALLOW_INVALID_CERTIFICATES || 'false' }}
-            MongoDB__AllowInvalidHostnames=${{ vars.MONGODB_ALLOW_INVALID_HOSTNAMES || 'false' }}
+            MongoDB__AllowInvalidCertificates=${{ vars.MONGODB_ALLOW_INVALID_CERTIFICATES || 'true' }}
+            MongoDB__AllowInvalidHostnames=${{ vars.MONGODB_ALLOW_INVALID_HOSTNAMES || 'true' }}
             ApiSettings__ApiKey=${{ secrets.API_KEY }}
             JwtSettings__SecretKey=${{ secrets.JWT_SECRET_KEY }}
             JwtSettings__Issuer=${{ vars.JWT_ISSUER || 'AILearnAPI' }}
