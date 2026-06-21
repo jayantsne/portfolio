@@ -68,6 +68,7 @@ import { ShareTargetComponent }       from './share-target/share-target.componen
 import { TiptapEditorComponent }      from './shared/tiptap-editor/tiptap-editor.component';
 import { FlowVisualizerComponent }    from './flow-visualizer/flow-visualizer.component';
 import { VisualLearnComponent }       from './visual-learn/visual-learn.component';
+import { FlowGeneratorComponent }     from './flow-generator/flow-generator.component';
 import { AuthCallbackComponent }      from './auth-callback/auth-callback.component';
 import { CustomAuthService }          from './shared/custom-auth.service';
 
@@ -130,6 +131,7 @@ import { CustomAuthService }          from './shared/custom-auth.service';
     AdminUsersComponent,          // Admin user management panel
     FlowVisualizerComponent,         // Reusable animated flow diagram
     VisualLearnComponent,            // Visual Learning Mode page
+    FlowGeneratorComponent,          // AI concept flow generator UI
     AuthCallbackComponent,           // OAuth callback resolver
     // FreeToolsComponent removed
     // AiToolComponent (removed)

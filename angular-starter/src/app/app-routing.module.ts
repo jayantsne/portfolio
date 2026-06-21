@@ -30,6 +30,7 @@ import { ShareTargetComponent }       from './share-target/share-target.componen
 import { AccountComponent }           from './account/account.component';
 import { LayoutComponent }            from './layout/layout.component';
 import { VisualLearnComponent }       from './visual-learn/visual-learn.component';
+import { FlowGeneratorComponent }     from './flow-generator/flow-generator.component';
 import { AuthCallbackComponent }      from './auth-callback/auth-callback.component';
 
 
@@ -73,6 +74,7 @@ const routes: Routes = [
       { path: 'practice/interview-qa',   redirectTo: 'questions',      pathMatch: 'full' },
       { path: 'practice/azure-ai102',    redirectTo: 'azure-ai-102',   pathMatch: 'full' },
       { path: 'home', redirectTo: '', pathMatch: 'full' },
+      { path: 'flow', redirectTo: 'flow-generator', pathMatch: 'full' },
 
       // ── Home / AI Chat ───────────────────────────────────────────
       { path: '',        redirectTo: 'explore', pathMatch: 'full' },
@@ -94,6 +96,7 @@ const routes: Routes = [
 
       // ── Visual Learning Mode ──────────────────────────────────────
       { path: 'visual-learn', component: VisualLearnComponent },
+      { path: 'flow-generator', component: FlowGeneratorComponent },
 
       // ── Practice ─────────────────────────────────────────────────
       { path: 'interview-prep', component: InterviewPrepComponent },

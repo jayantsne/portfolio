@@ -1,0 +1,180 @@
+<section class="fg-page">
+  <header class="fg-hero">
+    <div class="fg-hero-copy">
+      <div class="fg-kicker">
+        <span class="fg-kicker-dot"></span>
+        UI prototype
+      </div>
+      <h1>Concept Flow Generator</h1>
+      <p>Turn interview concepts into animated, step-by-step visual flows.</p>
+    </div>
+
+    <div class="fg-hero-actions">
+      <button class="fg-secondary-btn" type="button" (click)="toggleStoryboard()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="14" rx="2"/>
+          <path d="M10 9l5 3-5 3V9z"/>
+        </svg>
+        {{ storyboardPlaying ? 'Pause motion' : 'Play motion' }}
+      </button>
+      <button class="fg-primary-btn" type="button">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 20h9"/>
+          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+        </svg>
+        Generate mock flow
+      </button>
+    </div>
+  </header>
+
+  <div class="fg-shell">
+    <aside class="fg-panel fg-builder" aria-label="Flow builder">
+      <div class="fg-panel-heading">
+        <span class="fg-panel-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+          </svg>
+        </span>
+        <div>
+          <h2>Prompt</h2>
+          <p>UI-only input for your future endpoint.</p>
+        </div>
+      </div>
+
+      <label class="fg-label" for="conceptInput">Concept</label>
+      <div class="fg-input-wrap">
+        <input id="conceptInput"
+               [(ngModel)]="concept"
+               type="text"
+               class="fg-input"
+               placeholder="Angular lifecycle, SOLID, DI container..." />
+      </div>
+
+      <div class="fg-chip-row" aria-label="Example concepts">
+        <button type="button" (click)="useConcept('Angular lifecycle hooks')">Angular lifecycle</button>
+        <button type="button" (click)="useConcept('SOLID principles in .NET')">SOLID</button>
+        <button type="button" (click)="useConcept('ASP.NET Core middleware pipeline')">ASP.NET pipeline</button>
+      </div>
+
+      <label class="fg-label">Audience</label>
+      <div class="fg-segment">
+        <button type="button"
+                *ngFor="let audience of audiences"
+                [class.fg-active]="selectedAudience === audience"
+                (click)="selectedAudience = audience">{{ audience }}</button>
+      </div>
+
+      <label class="fg-label">Flow type</label>
+      <div class="fg-option-grid">
+        <button type="button"
+                *ngFor="let type of flowTypes"
+                [class.fg-active]="selectedFlowType === type"
+                (click)="selectedFlowType = type">{{ type }}</button>
+      </div>
+
+      <label class="fg-label">Animation style</label>
+      <div class="fg-segment">
+        <button type="button"
+                *ngFor="let style of motionStyles"
+                [class.fg-active]="selectedMotionStyle === style"
+                (click)="selectedMotionStyle = style">{{ style }}</button>
+      </div>
+
+      <div class="fg-examples">
+        <div class="fg-section-title">Mock flows</div>
+        <button type="button"
+                class="fg-example"
+                *ngFor="let example of examples"
+                [class.fg-example-active]="selectedExample.id === example.id"
+                (click)="selectExample(example)">
+          <span>{{ example.category }}</span>
+          <strong>{{ example.title }}</strong>
+          <small>{{ example.estimatedTime }} - {{ example.outputType }}</small>
+        </button>
+      </div>
+    </aside>
+
+    <main class="fg-stage" aria-label="Animated flow preview">
+      <div class="fg-stage-top">
+        <div>
+          <div class="fg-stage-eyebrow">{{ selectedMotionStyle }} motion</div>
+          <h2>{{ selectedExample.title }}</h2>
+          <p>{{ selectedExample.summary }}</p>
+        </div>
+
+        <div class="fg-stage-status">
+          <span></span>
+          Frontend mock
+        </div>
+      </div>
+
+      <div class="fg-motion-strip" [class.fg-motion-paused]="!storyboardPlaying">
+        <div class="fg-motion-step">
+          <span class="fg-motion-dot"></span>
+          Prompt parsed
+        </div>
+        <div class="fg-motion-line"></div>
+        <div class="fg-motion-step">
+          <span class="fg-motion-dot"></span>
+          Flow mapped
+        </div>
+        <div class="fg-motion-line"></div>
+        <div class="fg-motion-step">
+          <span class="fg-motion-dot"></span>
+          Lottie scene ready
+        </div>
+      </div>
+
+      <app-flow-visualizer [diagram]="selectedExample.diagram"></app-flow-visualizer>
+    </main>
+
+    <aside class="fg-panel fg-inspector" aria-label="Flow inspector">
+      <div class="fg-panel-heading">
+        <span class="fg-panel-icon fg-panel-icon-dark">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5z"/>
+          </svg>
+        </span>
+        <div>
+          <h2>Inspector</h2>
+          <p>Backend contract and interview notes.</p>
+        </div>
+      </div>
+
+      <div class="fg-insight-list">
+        <div class="fg-insight" *ngFor="let insight of selectedExample.insights">
+          <span>{{ insight.label }}</span>
+          <strong>{{ insight.value }}</strong>
+        </div>
+      </div>
+
+      <div class="fg-section-title">Step notes</div>
+      <div class="fg-step-list">
+        <button type="button"
+                class="fg-step-note"
+                *ngFor="let step of selectedExample.steps; let i = index"
+                [class.fg-step-note-active]="selectedStepIndex === i"
+                (click)="selectStep(i)">
+          <span>{{ i + 1 }}</span>
+          <div>
+            <strong>{{ step.title }}</strong>
+            <small>{{ step.detail }}</small>
+          </div>
+        </button>
+      </div>
+
+      <div class="fg-tip-box">
+        <span>Interview angle</span>
+        <p>{{ selectedStep.interviewTip }}</p>
+      </div>
+
+      <div class="fg-section-title">Future API payload</div>
+      <pre class="fg-json"><code>{{ previewPayload }}</code></pre>
+    </aside>
+  </div>
+</section>
