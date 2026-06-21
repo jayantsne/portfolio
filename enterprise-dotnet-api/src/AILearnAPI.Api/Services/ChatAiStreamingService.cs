@@ -67,8 +67,8 @@ public class ChatAiStreamingService : IChatAiStreamingService
     }
 
     /// <summary>
-    /// Guest users use local Ollama; authenticated users use OpenAI.
+    /// Route the main chat stream through the server-side OpenAI provider.
+    /// The API key stays in backend configuration and is never sent to Angular.
     /// </summary>
-    private static string SelectProvider(string? userId)
-        => string.IsNullOrEmpty(userId) ? "ollama" : "openai";
+    private static string SelectProvider(string? userId) => "openai";
 }
