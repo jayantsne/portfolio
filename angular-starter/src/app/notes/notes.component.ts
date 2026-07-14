@@ -205,6 +205,8 @@ export class NotesComponent implements OnInit, OnDestroy {
   }
 
   private readonly subs: Subscription[] = [];
+  private pendingRouteSearch = '';
+  private pendingRouteNoteId = '';
 
   // ── Share-to-Notes draft ────────────────────────────────────────────────
   private _pendingDraftOpen = false;
@@ -234,6 +236,12 @@ export class NotesComponent implements OnInit, OnDestroy {
 
     // Pick up Web Share Target draft (openDraft=1 query param)
     const openDraft = this.route.snapshot.queryParamMap.get('openDraft');
+    this.pendingRouteSearch = this.route.snapshot.queryParamMap.get('search') ?? '';
+    this.pendingRouteNoteId = this.route.snapshot.queryParamMap.get('noteId') ?? '';
+    if (this.pendingRouteSearch) {
+      this.searchQuery = this.pendingRouteSearch;
+      this._filterQuery = this.pendingRouteSearch;
+    }
     if (openDraft === '1' && this.draft.hasDraft()) {
       if (this.user) {
         const content = this.draft.buildContent();
@@ -283,6 +291,7 @@ export class NotesComponent implements OnInit, OnDestroy {
       this.notesService.notes$.subscribe(notes => {
         this.notes = notes;
         this.isLoading = false;
+        this.applyPendingRouteNote();
         if (this.activeNote) {
           const refreshed = notes.find(n => n.id === this.activeNote!.id);
           this.activeNote = refreshed ?? null;
@@ -290,6 +299,28 @@ export class NotesComponent implements OnInit, OnDestroy {
         }
       })
     );
+  }
+
+  private applyPendingRouteNote(): void {
+    if (this.pendingRouteNoteId) {
+      const note = this.notes.find(n => n.id === this.pendingRouteNoteId);
+      if (note) {
+        this.pendingRouteNoteId = '';
+        this.openNote(note);
+        return;
+      }
+    }
+
+    if (this.pendingRouteSearch && !this.activeNote) {
+      const q = this.pendingRouteSearch.toLowerCase();
+      const note = this.notes.find(n =>
+        n.topic.toLowerCase().includes(q) ||
+        q.includes(n.topic.toLowerCase())
+      );
+      if (note) {
+        this.openNote(note);
+      }
+    }
   }
 
   ngOnDestroy(): void {

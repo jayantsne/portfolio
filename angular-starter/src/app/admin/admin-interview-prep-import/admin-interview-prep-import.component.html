@@ -1,0 +1,58 @@
+<div class="import-page">
+  <section class="import-hero">
+    <div>
+      <p class="eyebrow">Admin import</p>
+      <h1>Upload Interview Questions</h1>
+      <p>Paste category-wise questions here. The planner page stays focused on study and progress.</p>
+    </div>
+    <button type="button" class="ghost-btn" (click)="backToPlanner()">Back to Planner</button>
+  </section>
+
+  <div class="notice success" *ngIf="message">{{ message }}</div>
+  <div class="notice error" *ngIf="importError">{{ importError }}</div>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>Question Import</h2>
+        <p>Line format: Category | Question | tag1, tag2</p>
+      </div>
+      <button type="button" class="ghost-btn" (click)="useSample()">Sample</button>
+    </div>
+
+    <div class="segmented">
+      <button type="button" [class.active]="importMode === 'lines'" (click)="importMode = 'lines'; parseImport()">Lines</button>
+      <button type="button" [class.active]="importMode === 'json'" (click)="importMode = 'json'; parseImport()">JSON</button>
+    </div>
+
+    <textarea
+      [(ngModel)]="importText"
+      (input)="parseImport()"
+      [placeholder]="importMode === 'lines' ? 'Category | Question | tag1, tag2' : sampleJson"></textarea>
+
+    <div class="import-footer">
+      <label class="check-row">
+        <input type="checkbox" [(ngModel)]="replaceExisting">
+        <span>Replace existing admin prep questions</span>
+      </label>
+
+      <div class="footer-actions">
+        <span>{{ importPreview.length }} questions ready</span>
+        <button type="button" class="primary-btn" (click)="importQuestions()" [disabled]="loading || importPreview.length === 0">
+          {{ loading ? 'Importing...' : 'Import Questions' }}
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel preview-panel" *ngIf="importPreview.length > 0">
+    <h2>Preview</h2>
+    <div class="preview-list">
+      <article *ngFor="let item of importPreview.slice(0, 20)">
+        <span>{{ item.category }}</span>
+        <strong>{{ item.question }}</strong>
+      </article>
+    </div>
+    <p class="preview-note" *ngIf="importPreview.length > 20">Showing first 20 of {{ importPreview.length }} questions.</p>
+  </section>
+</div>

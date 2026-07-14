@@ -1,6 +1,7 @@
 ﻿import { Component, HostBinding, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { SidebarStateService } from '../../services/sidebar-state.service';
+import { CustomAuthService } from '../../shared/custom-auth.service';
 
 /**
  * SidebarComponent - Permanent ChatGPT-style navigation sidebar
@@ -24,6 +25,7 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   @HostBinding('class.mobile-open') isMobileOpen = false;
   collapsed = false;
+  isAdmin = false;
 
   readonly history = [
     { id: 1, label: 'Angular signals deep dive',     group: 'today'     },
@@ -42,11 +44,15 @@ export class SidebarComponent implements OnInit, OnDestroy {
 
   private subs = new Subscription();
 
-  constructor(private sidebarState: SidebarStateService) {}
+  constructor(
+    private sidebarState: SidebarStateService,
+    private auth: CustomAuthService
+  ) {}
 
   ngOnInit(): void {
     this.subs.add(this.sidebarState.collapsed$.subscribe(v  => this.collapsed    = v));
     this.subs.add(this.sidebarState.mobileOpen$.subscribe(v => this.isMobileOpen = v));
+    this.subs.add(this.auth.currentUser$.subscribe(() => this.isAdmin = this.auth.isAdmin));
   }
 
   ngOnDestroy(): void { this.subs.unsubscribe(); }

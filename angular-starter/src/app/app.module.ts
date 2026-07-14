@@ -71,6 +71,8 @@ import { VisualLearnComponent }       from './visual-learn/visual-learn.componen
 import { FlowGeneratorComponent }     from './flow-generator/flow-generator.component';
 import { AuthCallbackComponent }      from './auth-callback/auth-callback.component';
 import { CustomAuthService }          from './shared/custom-auth.service';
+import { AdminInterviewPrepComponent } from './admin/admin-interview-prep/admin-interview-prep.component';
+import { AdminInterviewPrepImportComponent } from './admin/admin-interview-prep-import/admin-interview-prep-import.component';
 
 @NgModule({
   declarations: [
@@ -133,6 +135,8 @@ import { CustomAuthService }          from './shared/custom-auth.service';
     VisualLearnComponent,            // Visual Learning Mode page
     FlowGeneratorComponent,          // AI concept flow generator UI
     AuthCallbackComponent,           // OAuth callback resolver
+    AdminInterviewPrepComponent,      // Admin interview prep planner
+    AdminInterviewPrepImportComponent, // Admin interview question import
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],

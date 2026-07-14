@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Notes Clipper</title>
+  <link rel="stylesheet" href="sidepanel.css" />
+</head>
+<body>
+
+<!-- ── Header ─────────────────────────────────────────────────── -->
+<header class="sp-header">
+  <span class="sp-logo">📎 AI Notes Clipper</span>
+  <button id="btn-clear-all" class="btn-icon" title="Clear all snippets">🗑</button>
+</header>
+
+<!-- ── Auth panel (shown when logged out) ────────────────────── -->
+<section id="auth-panel" class="auth-panel hidden">
+  <p class="auth-hint">Log in to save notes to LearnWithAI</p>
+  <input id="auth-user"  type="text"     placeholder="Username" autocomplete="username" />
+  <input id="auth-pass"  type="password" placeholder="Password" autocomplete="current-password" />
+  <button id="btn-login" class="btn-primary btn-full">Log In</button>
+  <p id="auth-error" class="error-msg hidden"></p>
+</section>
+
+<!-- ── Logged-in banner ──────────────────────────────────────── -->
+<section id="auth-info" class="auth-info hidden">
+  <span id="auth-username-display" class="auth-user-label"></span>
+  <button id="btn-logout" class="btn-sm btn-ghost">Log out</button>
+</section>
+
+<!-- ── Settings bar (API base URL) ──────────────────────────── -->
+<details id="settings-panel" class="settings-panel">
+  <summary>⚙️ Settings</summary>
+  <label>API Base URL
+    <input id="setting-api-url" type="url" placeholder="https://learnwithai.tech" />
+  </label>
+  <label>Default Category
+    <input id="setting-category" type="text" placeholder="ChatGPT" />
+  </label>
+  <button id="btn-save-settings" class="btn-primary btn-sm">Save</button>
+  <p id="settings-saved" class="success-msg hidden">Saved ✓</p>
+</details>
+
+<!-- ── Snippet count + combine bar ──────────────────────────── -->
+<div class="action-bar">
+  <span id="snippet-count" class="count-badge">0 snippets</span>
+  <div class="action-bar-btns">
+    <button id="btn-combine"   class="btn-sm btn-secondary" title="Merge all snippets into one note">Combine All</button>
+    <button id="btn-ai-format" class="btn-sm btn-accent"    title="AI-format all snippets">🤖 AI Format</button>
+  </div>
+</div>
+<div id="ai-format-status" class="ai-status hidden"></div>
+
+<!-- ── Snippet list ───────────────────────────────────────────── -->
+<ul id="snippet-list" class="snippet-list"></ul>
+<p id="empty-state" class="empty-state">
+  Select text on a ChatGPT page and click <strong>📎 Add to Notes</strong>,<br/>
+  or use the right-click context menu on any page.
+</p>
+
+<!-- ── Combined note editor ──────────────────────────────────── -->
+<section id="note-editor" class="note-editor hidden">
+  <div class="editor-header">
+    <h3>📝 Combined Note</h3>
+    <button id="btn-close-editor" class="btn-icon" title="Close">✕</button>
+  </div>
+  <input  id="note-title"    type="text"  placeholder="Note title…" class="note-title-input" />
+  <input  id="note-category" type="text"  placeholder="Category (e.g. Frontend)" class="note-cat-input" />
+  <input  id="note-tags"     type="text"  placeholder="Tags (comma-separated)" class="note-tags-input" />
+
+  <!-- Format toolbar -->
+  <div class="format-toolbar">
+    <button data-fmt="bullets"  class="btn-fmt" title="Convert to bullets">• Bullets</button>
+    <button data-fmt="heading"  class="btn-fmt" title="Add H2 heading">## Heading</button>
+    <button data-fmt="bold"     class="btn-fmt" title="Bold selected">**Bold**</button>
+    <button data-fmt="code"     class="btn-fmt" title="Wrap in code block">``` Code</button>
+    <button data-fmt="clean"    class="btn-fmt" title="Strip extra blank lines">✂ Clean</button>
+  </div>
+
+  <textarea id="note-content" rows="14" placeholder="Combined note content…"></textarea>
+  <div class="editor-actions">
+    <button id="btn-save-note" class="btn-primary">💾 Save to App</button>
+    <p id="save-status" class="save-status hidden"></p>
+  </div>
+</section>
+
+<script src="sidepanel.js"></script>
+</body>
+</html>

@@ -32,6 +32,9 @@ import { LayoutComponent }            from './layout/layout.component';
 import { VisualLearnComponent }       from './visual-learn/visual-learn.component';
 import { FlowGeneratorComponent }     from './flow-generator/flow-generator.component';
 import { AuthCallbackComponent }      from './auth-callback/auth-callback.component';
+import { AdminGuard }                 from './shared/admin.guard';
+import { AdminInterviewPrepComponent } from './admin/admin-interview-prep/admin-interview-prep.component';
+import { AdminInterviewPrepImportComponent } from './admin/admin-interview-prep-import/admin-interview-prep-import.component';
 
 
 const routes: Routes = [
@@ -110,6 +113,8 @@ const routes: Routes = [
       { path: 'admin',           redirectTo: 'admin/users', pathMatch: 'full' },
       { path: 'admin/users',     component: AdminUsersComponent,       canActivate: [AuthGuard] },
       { path: 'admin/questions', component: InterviewQuestionsComponent, canActivate: [AuthGuard] },
+      { path: 'admin/interview-prep', component: AdminInterviewPrepComponent, canActivate: [AdminGuard] },
+      { path: 'admin/interview-prep/import', component: AdminInterviewPrepImportComponent, canActivate: [AdminGuard] },
       { path: 'admin-login',     component: AdminLoginComponent },
       { path: 'admin-dashboard', component: AdminDashboardComponent },
       { path: 'admin-deploy',    component: DeploymentComponent },

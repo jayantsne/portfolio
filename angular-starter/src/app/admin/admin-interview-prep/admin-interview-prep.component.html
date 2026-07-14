@@ -1,0 +1,236 @@
+<div class="prep-page">
+  <section class="prep-hero">
+    <div class="hero-copy">
+      <p class="eyebrow">Admin interview workspace</p>
+      <h1>Interview Questions</h1>
+      <p>Plan five questions a day, track coverage, and jump into linked notes when a topic is already prepared.</p>
+    </div>
+
+    <div class="hero-actions">
+      <button type="button" class="ghost-btn" (click)="goToImport()">Import Questions</button>
+      <button type="button" class="primary-btn" (click)="nextQuestion && openAiHelper(nextQuestion)" [disabled]="!nextQuestion">
+        Prepare Next
+      </button>
+    </div>
+  </section>
+
+  <div class="notice success" *ngIf="message">{{ message }}</div>
+  <div class="notice error" *ngIf="error">{{ error }}</div>
+
+  <section class="metric-grid">
+    <article class="metric-card">
+      <span>Total</span>
+      <strong>{{ total }}</strong>
+      <small>Questions imported</small>
+    </article>
+    <article class="metric-card">
+      <span>Covered</span>
+      <strong>{{ covered }}</strong>
+      <small>{{ progressPercent }}% complete</small>
+    </article>
+    <article class="metric-card">
+      <span>Pending</span>
+      <strong>{{ pending }}</strong>
+      <small>Remaining topics</small>
+    </article>
+    <article class="metric-card progress-card">
+      <span>Overall Progress</span>
+      <div class="progress-track">
+        <span [style.width.%]="progressPercent"></span>
+      </div>
+      <small>{{ covered }} done out of {{ total }}</small>
+    </article>
+  </section>
+
+  <section class="smart-grid">
+    <article class="panel today-card">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Today</p>
+          <h2>5-question plan</h2>
+        </div>
+        <button type="button" class="ghost-btn" (click)="loadDailyPlan()">Refresh</button>
+      </div>
+
+      <div class="daily-progress">
+        <div class="progress-track">
+          <span [style.width.%]="dailyTarget ? (dailyDone / dailyTarget) * 100 : 0"></span>
+        </div>
+        <span>{{ dailyDone }} / {{ dailyTarget }} cleared today</span>
+      </div>
+
+      <ol class="daily-list" *ngIf="dailyPlan.length > 0">
+        <li *ngFor="let item of dailyPlan; trackBy: trackById" [class.done]="item.isCovered">
+          <div class="daily-main">
+            <span class="daily-status" [class.daily-status--done]="item.isCovered">
+              {{ item.isCovered ? 'Done' : 'Pending' }}
+            </span>
+            <strong>{{ item.question }}</strong>
+            <small>{{ item.category }} · {{ item.difficulty || 'Medium' }}</small>
+          </div>
+
+          <div class="daily-actions">
+            <button type="button"
+                    class="prepared-btn"
+                    *ngIf="!item.isCovered"
+                    [disabled]="savingId === item.id"
+                    (click)="markPrepared(item)">
+              Mark Prepared
+            </button>
+            <button type="button"
+                    class="undo-btn"
+                    *ngIf="item.isCovered"
+                    [disabled]="savingId === item.id"
+                    (click)="markPending(item)">
+              Undo
+            </button>
+            <button type="button" [class.note-linked-btn]="hasNote(item)" (click)="goToNotes(item)">
+              {{ noteLabel(item) }}
+            </button>
+          </div>
+        </li>
+      </ol>
+
+      <div class="empty-state" *ngIf="dailyPlan.length === 0">No pending questions for this filter.</div>
+    </article>
+
+    <article class="panel category-card">
+      <div class="panel-head">
+        <div>
+          <p class="eyebrow">Coverage</p>
+          <h2>Category progress</h2>
+        </div>
+      </div>
+
+      <div class="category-list">
+        <button type="button" class="category-row" *ngFor="let stat of categoryStats" (click)="focusCategory(stat.category)">
+          <span class="category-name">{{ stat.category }}</span>
+          <span class="category-count">{{ stat.covered }}/{{ stat.total }}</span>
+          <span class="category-bar"><i [style.width.%]="stat.percent"></i></span>
+        </button>
+      </div>
+    </article>
+  </section>
+
+  <section class="panel question-panel">
+    <div class="toolbar">
+      <div class="filter-group">
+        <label>Category</label>
+        <select [(ngModel)]="selectedCategory" (change)="applyFilters()">
+          <option *ngFor="let category of categories" [value]="category">{{ category }}</option>
+        </select>
+      </div>
+
+      <div class="filter-group search-field">
+        <label>Search</label>
+        <input type="search" [(ngModel)]="search" (keyup.enter)="applyFilters()" placeholder="Search question, category, tag, pattern">
+      </div>
+
+      <label class="check-row inline-check">
+        <input type="checkbox" [(ngModel)]="includeCovered" (change)="applyFilters()">
+        <span>Show covered</span>
+      </label>
+
+      <button type="button" class="primary-btn" (click)="applyFilters()">Apply</button>
+    </div>
+
+    <div class="loading-row" *ngIf="loading">Loading...</div>
+
+    <div class="question-list" *ngIf="!loading">
+      <article class="question-row"
+               *ngFor="let question of questions; trackBy: trackById"
+               [class.covered]="question.isCovered"
+               [class.has-note]="hasNote(question)">
+        <div class="prepared-state" [class.prepared-state--done]="question.isCovered">
+          {{ question.isCovered ? 'Prepared' : 'Pending' }}
+        </div>
+
+        <div class="question-body">
+          <div class="question-meta">
+            <span class="category-pill">{{ question.category }}</span>
+            <span>{{ question.difficulty || 'Medium' }}</span>
+            <span *ngIf="question.plannedDate">Planned {{ question.plannedDate | date:'mediumDate' }}</span>
+            <span class="note-match" *ngIf="hasNote(question)">Linked note</span>
+          </div>
+
+          <h3>{{ question.question }}</h3>
+
+          <div class="tags" *ngIf="question.tags.length">
+            <span *ngFor="let tag of question.tags">#{{ tag }}</span>
+          </div>
+        </div>
+
+        <div class="row-actions">
+          <button type="button"
+                  class="prepared-btn"
+                  *ngIf="!question.isCovered"
+                  [disabled]="savingId === question.id"
+                  (click)="markPrepared(question)">
+            Mark Prepared
+          </button>
+          <button type="button"
+                  class="undo-btn"
+                  *ngIf="question.isCovered"
+                  [disabled]="savingId === question.id"
+                  (click)="markPending(question)">
+            Undo
+          </button>
+          <button type="button" (click)="planToday(question)" [disabled]="savingId === question.id || question.isCovered">Today</button>
+          <button type="button" [class.note-linked-btn]="hasNote(question)" (click)="goToNotes(question)">
+            {{ noteLabel(question) }}
+          </button>
+          <button type="button" (click)="openAiHelper(question)">AI</button>
+          <button type="button" (click)="openAccess(question)">Access</button>
+          <button type="button" class="danger-btn" (click)="deleteQuestion(question)" [disabled]="savingId === question.id">Delete</button>
+        </div>
+      </article>
+
+      <div class="empty-state" *ngIf="questions.length === 0">
+        No questions found. Import questions from the import page.
+      </div>
+    </div>
+  </section>
+
+  <aside class="drawer" *ngIf="selectedQuestion">
+    <div class="drawer-backdrop" (click)="selectedQuestion = null"></div>
+    <div class="drawer-panel">
+      <button type="button" class="close-btn" (click)="selectedQuestion = null">Close</button>
+      <p class="eyebrow">{{ selectedQuestion.category }}</p>
+      <h2>{{ selectedQuestion.question }}</h2>
+
+      <div class="loading-row" *ngIf="aiLoading">Preparing prompts...</div>
+
+      <ng-container *ngIf="aiHelper">
+        <div class="prompt-card">
+          <h3>Study Prompt</h3>
+          <p>{{ aiHelper.studyPrompt }}</p>
+          <button type="button" (click)="copy(aiHelper.studyPrompt)">Copy</button>
+        </div>
+        <div class="prompt-card">
+          <h3>Notes Prompt</h3>
+          <p>{{ aiHelper.notesPrompt }}</p>
+          <button type="button" (click)="copy(aiHelper.notesPrompt)">Copy</button>
+        </div>
+        <div class="prompt-card">
+          <h3>Practice Prompt</h3>
+          <p>{{ aiHelper.practicePrompt }}</p>
+          <button type="button" (click)="copy(aiHelper.practicePrompt)">Copy</button>
+        </div>
+      </ng-container>
+    </div>
+  </aside>
+
+  <aside class="drawer" *ngIf="accessQuestion">
+    <div class="drawer-backdrop" (click)="accessQuestion = null"></div>
+    <div class="drawer-panel compact">
+      <button type="button" class="close-btn" (click)="accessQuestion = null">Close</button>
+      <p class="eyebrow">Future access control</p>
+      <h2>User Access</h2>
+      <p class="subcopy">Keep empty for admin-only. Add comma-separated user ids when you want to share this question later.</p>
+      <textarea [(ngModel)]="accessText" placeholder="user-001, user-002"></textarea>
+      <button type="button" class="primary-btn" (click)="saveAccess()" [disabled]="savingId === accessQuestion.id">
+        Save Access
+      </button>
+    </div>
+  </aside>
+</div>
