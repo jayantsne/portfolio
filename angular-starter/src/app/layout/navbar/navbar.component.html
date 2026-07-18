@@ -40,7 +40,8 @@
          routerLinkActive="nav-link--active"
          class="nav-link">Notes</a>
 
-      <a routerLink="/interview-prep"
+      <a *ngIf="auth.isAdmin"
+         routerLink="/admin/interview-prep"
          routerLinkActive="nav-link--active"
          class="nav-link">Interview Prep</a>
 
@@ -194,7 +195,8 @@
     Flow
   </a>
 
-  <a routerLink="/interview-prep"
+  <a *ngIf="auth.isAdmin"
+     routerLink="/admin/interview-prep"
      routerLinkActive="nav-link--active"
      class="mobile-nav-link"
      (click)="closeMobileMenu()">

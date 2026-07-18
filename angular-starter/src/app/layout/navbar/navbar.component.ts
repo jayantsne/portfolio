@@ -46,7 +46,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   constructor(
     public themeSvc:    ThemeService,
-    private auth:       CustomAuthService,
+    public auth:        CustomAuthService,
     private authTrigger: AuthTriggerService,
     private router:     Router,
   ) {}

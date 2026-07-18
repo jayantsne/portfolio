@@ -25,6 +25,8 @@ export class AdminInterviewPrepComponent implements OnInit {
   search = '';
   includeCovered = true;
   dailyTarget = 5;
+  viewMode: 'focus' | 'library' = 'focus';
+  focusIndex = 0;
 
   total = 0;
   covered = 0;
@@ -107,6 +109,19 @@ export class AdminInterviewPrepComponent implements OnInit {
 
   async loadDailyPlan(): Promise<void> {
     this.dailyPlan = await this.prepService.getDailyPlan(this.dailyTarget, this.selectedCategory);
+    if (this.dailyPlan.length === 0) {
+      this.focusIndex = 0;
+      return;
+    }
+
+    if (this.focusIndex >= this.dailyPlan.length) {
+      this.focusIndex = this.dailyPlan.length - 1;
+    }
+
+    const firstPending = this.dailyPlan.findIndex(question => !question.isCovered);
+    if (this.focusIndex === 0 && firstPending > 0) {
+      this.focusIndex = firstPending;
+    }
   }
 
   private buildNoteMatches(): void {
@@ -390,6 +405,19 @@ export class AdminInterviewPrepComponent implements OnInit {
     return this.dailyPlan.filter(x => x.isCovered || this.preparedTodayIds.has(x.id)).length;
   }
 
+  get dailyPercent(): number {
+    return this.dailyTarget === 0 ? 0 : Math.min(100, Math.round((this.dailyDone / this.dailyTarget) * 100));
+  }
+
+  get focusQuestion(): AdminPrepQuestion | null {
+    return this.dailyPlan[this.focusIndex] || this.nextQuestion;
+  }
+
+  get currentCategoryStat(): { category: string; total: number; covered: number; percent: number } | null {
+    const category = this.focusQuestion?.category;
+    return category ? this.categoryStats.find(stat => stat.category === category) || null : null;
+  }
+
   get pending(): number {
     return Math.max(this.total - this.covered, 0);
   }
@@ -415,6 +443,37 @@ export class AdminInterviewPrepComponent implements OnInit {
 
   get nextQuestion(): AdminPrepQuestion | null {
     return this.dailyPlan.find(q => !q.isCovered) || this.questions.find(q => !q.isCovered) || null;
+  }
+
+  showFocus(): void {
+    this.viewMode = 'focus';
+  }
+
+  showLibrary(): void {
+    this.viewMode = 'library';
+  }
+
+  selectFocusQuestion(index: number): void {
+    if (index < 0 || index >= this.dailyPlan.length) return;
+    this.focusIndex = index;
+  }
+
+  previousQuestion(): void {
+    this.selectFocusQuestion(this.focusIndex - 1);
+  }
+
+  nextFocusQuestion(): void {
+    this.selectFocusQuestion(this.focusIndex + 1);
+  }
+
+  async focusQuestionById(question: AdminPrepQuestion): Promise<void> {
+    let index = this.dailyPlan.findIndex(item => item.id === question.id);
+    if (index < 0) {
+      await this.planToday(question);
+      index = this.dailyPlan.findIndex(item => item.id === question.id);
+    }
+    this.focusIndex = Math.max(index, 0);
+    this.showFocus();
   }
 
   async focusCategory(category: string): Promise<void> {

@@ -76,10 +76,10 @@
                (click)="closeNavbar()">Notes</a>
           </li>
 
-          <!-- AI Learn: Practice (desktop + mobile) -->
-          <li *ngIf="isAILearnPage && isSignedIn">
-            <a class="nav-link" routerLink="/interview-prep" routerLinkActive="active"
-               (click)="closeNavbar()">Practice</a>
+          <!-- Admin-only interview preparation workspace -->
+          <li *ngIf="isAILearnPage && isSignedIn && customAuth.isAdmin">
+            <a class="nav-link" routerLink="/admin/interview-prep" routerLinkActive="active"
+               (click)="closeNavbar()">Interview Prep</a>
           </li>
 
           <!-- Mobile-only extra links -->
