@@ -109,12 +109,26 @@ jobs:
           key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
           script_stop: true
           script: |
-            set -euo pipefail
+            set -eu
 
             SERVICE_NAME="${{ env.API_SERVICE_NAME }}"
             DEPLOY_PATH="${{ env.BACKEND_DEPLOY_PATH }}"
             RELEASE="/tmp/api-release-${{ github.sha }}"
             ENV_FILE="/etc/ailearnapi.env"
+
+            report_failure() {
+              exit_code=$1
+              trap - EXIT
+              if [ "$exit_code" -eq 0 ]; then
+                return
+              fi
+              echo "Deployment failed (exit $exit_code)" >&2
+              sudo systemctl --no-pager --full status "$SERVICE_NAME" || true
+              sudo journalctl -u "$SERVICE_NAME" -n 100 --no-pager || true
+              sudo nginx -t || true
+              exit "$exit_code"
+            }
+            trap 'report_failure "$?"' EXIT
 
             sudo mkdir -p "$DEPLOY_PATH" "$RELEASE"
             sudo tar -xzf /tmp/api-deploy.tar.gz -C "$RELEASE"
@@ -154,25 +168,25 @@ jobs:
               fi
 
               sudo tee "$ENV_FILE" >/dev/null <<EOF
-              ASPNETCORE_ENVIRONMENT=Production
-              ASPNETCORE_URLS=http://localhost:5000
-              DOTNET_PRINT_TELEMETRY_MESSAGE=false
-              ConnectionStrings__MongoDB=${{ secrets.MONGODB_CONNECTION_STRING }}
-              ConnectionStrings__Redis=${{ secrets.REDIS_CONNECTION_STRING || 'localhost:6379' }}
-              MongoDB__DatabaseName=${{ secrets.MONGODB_DATABASE || 'jayant-portfolio' }}
-              MongoDB__RequireTls=${{ vars.MONGODB_REQUIRE_TLS || 'true' }}
-              MongoDB__AllowInvalidCertificates=${{ vars.MONGODB_ALLOW_INVALID_CERTIFICATES || 'true' }}
-              MongoDB__AllowInvalidHostnames=${{ vars.MONGODB_ALLOW_INVALID_HOSTNAMES || 'true' }}
-              ApiSettings__ApiKey=${{ secrets.API_KEY }}
-              JwtSettings__SecretKey=${{ secrets.JWT_SECRET_KEY }}
-              JwtSettings__Issuer=${{ vars.JWT_ISSUER || 'AILearnAPI' }}
-              JwtSettings__Audience=${{ vars.JWT_AUDIENCE || 'AILearnAPI' }}
-              LlmProvider__EncryptionKey=$LLM_PROVIDER_ENCRYPTION_KEY_VALUE
-              $DEFAULT_ADMIN_PASSWORD_LINE
-              OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || '' }}
-              Razorpay__KeyId=${{ secrets.RAZORPAY_KEY_ID || '' }}
-              Razorpay__KeySecret=${{ secrets.RAZORPAY_KEY_SECRET || '' }}
-              EOF
+            ASPNETCORE_ENVIRONMENT=Production
+            ASPNETCORE_URLS=http://localhost:5000
+            DOTNET_PRINT_TELEMETRY_MESSAGE=false
+            ConnectionStrings__MongoDB=${{ secrets.MONGODB_CONNECTION_STRING }}
+            ConnectionStrings__Redis=${{ secrets.REDIS_CONNECTION_STRING || 'localhost:6379' }}
+            MongoDB__DatabaseName=${{ secrets.MONGODB_DATABASE || 'jayant-portfolio' }}
+            MongoDB__RequireTls=${{ vars.MONGODB_REQUIRE_TLS || 'true' }}
+            MongoDB__AllowInvalidCertificates=${{ vars.MONGODB_ALLOW_INVALID_CERTIFICATES || 'true' }}
+            MongoDB__AllowInvalidHostnames=${{ vars.MONGODB_ALLOW_INVALID_HOSTNAMES || 'true' }}
+            ApiSettings__ApiKey=${{ secrets.API_KEY }}
+            JwtSettings__SecretKey=${{ secrets.JWT_SECRET_KEY }}
+            JwtSettings__Issuer=${{ vars.JWT_ISSUER || 'AILearnAPI' }}
+            JwtSettings__Audience=${{ vars.JWT_AUDIENCE || 'AILearnAPI' }}
+            LlmProvider__EncryptionKey=$LLM_PROVIDER_ENCRYPTION_KEY_VALUE
+            $DEFAULT_ADMIN_PASSWORD_LINE
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY || '' }}
+            Razorpay__KeyId=${{ secrets.RAZORPAY_KEY_ID || '' }}
+            Razorpay__KeySecret=${{ secrets.RAZORPAY_KEY_SECRET || '' }}
+            EOF
             else
               echo "Preserving existing $ENV_FILE. Update server secrets directly on the VPS."
             fi
