@@ -19,7 +19,7 @@ type ImportMode = 'lines' | 'json';
 export class AdminInterviewPrepComponent implements OnInit {
   questions: AdminPrepQuestion[] = [];
   dailyPlan: AdminPrepQuestion[] = [];
-  categories: string[] = ['All', '.NET', 'Angular', 'React', 'Azure', 'Design Patterns', 'OOPS', 'SOLID', 'AI'];
+  categories: string[] = ['All', '.NET Core', '.NET', 'Angular', 'React', 'Azure', 'Design Patterns', 'OOPS', 'SOLID', 'AI'];
 
   selectedCategory = 'All';
   search = '';
@@ -27,6 +27,8 @@ export class AdminInterviewPrepComponent implements OnInit {
   dailyTarget = 5;
   viewMode: 'focus' | 'library' = 'focus';
   focusIndex = 0;
+  focusTab: 'understand' | 'answer' | 'example' | 'notes' = 'understand';
+  draftAnswer = '';
 
   total = 0;
   covered = 0;
@@ -145,10 +147,10 @@ export class AdminInterviewPrepComponent implements OnInit {
       const score = hits / Math.max(qTokens.length, 1);
 
       const exactTopic = note.topic?.trim().toLowerCase() === question.question.trim().toLowerCase();
-      const categoryBoost = note.category?.toLowerCase() === question.category.toLowerCase() ? 0.15 : 0;
+      const categoryBoost = note.category?.toLowerCase() === question.category.toLowerCase() ? 0.1 : 0;
       const finalScore = exactTopic ? 1 : score + categoryBoost;
 
-      if (finalScore >= 0.45 && (!best || finalScore > best.score)) {
+      if ((exactTopic || (hits >= 2 && finalScore >= 0.6)) && (!best || finalScore > best.score)) {
         best = { note, score: finalScore };
       }
     }
@@ -157,7 +159,10 @@ export class AdminInterviewPrepComponent implements OnInit {
   }
 
   private tokenize(value: string): string[] {
-    const stopWords = new Set(['what', 'how', 'why', 'the', 'and', 'with', 'you', 'your', 'does', 'are', 'is', 'in', 'of', 'to', 'a', 'an']);
+    const stopWords = new Set([
+      'what', 'how', 'why', 'the', 'and', 'with', 'you', 'your', 'does', 'are', 'is', 'in', 'of', 'to', 'a', 'an',
+      'explain', 'difference', 'between', 'core', 'framework', 'application', 'applications'
+    ]);
     return value
       .toLowerCase()
       .replace(/[^a-z0-9+#\s]/g, ' ')
@@ -345,6 +350,10 @@ export class AdminInterviewPrepComponent implements OnInit {
     });
   }
 
+  goToAllNotes(): void {
+    this.router.navigate(['/notes']);
+  }
+
   hasNote(question: AdminPrepQuestion): boolean {
     return !!this.noteMatches[question.id];
   }
@@ -456,6 +465,17 @@ export class AdminInterviewPrepComponent implements OnInit {
   selectFocusQuestion(index: number): void {
     if (index < 0 || index >= this.dailyPlan.length) return;
     this.focusIndex = index;
+    this.focusTab = 'understand';
+    this.draftAnswer = '';
+  }
+
+  notePreview(content: string): string {
+    const plain = (content || '')
+      .replace(/```[\s\S]*?```/g, ' Code example available in note. ')
+      .replace(/[#*_>`\[\]()~-]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return plain.length > 220 ? `${plain.slice(0, 217)}...` : plain;
   }
 
   previousQuestion(): void {

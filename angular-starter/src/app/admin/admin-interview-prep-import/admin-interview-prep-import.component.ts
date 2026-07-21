@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminInterviewPrepService, AdminPrepImportQuestion } from '../admin-interview-prep/admin-interview-prep.service';
+import { DOTNET_CORE_QUESTION_PACK } from './dotnet-core-question-pack';
 
 type ImportMode = 'lines' | 'json';
 
@@ -108,6 +109,14 @@ export class AdminInterviewPrepImportComponent {
   useSample(): void {
     this.importText = this.importMode === 'json' ? this.sampleJson : this.sampleLines;
     this.parseImport();
+  }
+
+  useDotNetCorePack(): void {
+    this.importMode = 'json';
+    this.replaceExisting = false;
+    this.importText = JSON.stringify(DOTNET_CORE_QUESTION_PACK, null, 2);
+    this.parseImport();
+    this.message = `${DOTNET_CORE_QUESTION_PACK.length} .NET Core questions are ready to import.`;
   }
 
   backToPlanner(): void {

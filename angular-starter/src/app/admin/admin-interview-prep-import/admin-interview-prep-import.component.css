@@ -78,6 +78,19 @@ button:disabled {
   background: #f8fafc;
 }
 
+.preset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.pack-btn {
+  border-color: #78b9aa;
+  color: #116a59;
+  background: #edf8f5;
+}
+
 .segmented {
   display: inline-flex;
   padding: 3px;
@@ -185,6 +198,10 @@ input[type="checkbox"] {
   .import-footer,
   .footer-actions {
     display: grid;
+  }
+
+  .preset-actions {
+    justify-content: flex-start;
   }
 
   .preview-list article {

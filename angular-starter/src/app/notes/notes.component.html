@@ -65,6 +65,31 @@
     <!-- Mobile sidebar backdrop — close on tap outside -->
     <div class="notes-sidebar-backdrop" *ngIf="!sidebarCollapsed" (click)="toggleSidebar()"></div>
 
+    <nav class="notes-icon-rail" aria-label="Notes workspace">
+      <button type="button" class="rail-action" [class.active]="!sidebarCollapsed"
+              (click)="openNotesDrawer()" title="Notes library" aria-label="Open notes library">
+        <i class="far fa-file-alt" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="rail-action" (click)="focusNotesSearch()" title="Search notes" aria-label="Search notes">
+        <i class="fas fa-search" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="rail-action" (click)="openTopicsFilter()" title="Topics and filters" aria-label="Open topics and filters">
+        <i class="fas fa-th-large" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="rail-action" [class.active]="showPinnedOnly"
+              (click)="togglePinnedNotes()" title="Pinned notes" aria-label="Show pinned notes">
+        <i class="fas fa-thumbtack" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="rail-action rail-action--new" (click)="openCreateNote()" title="New note" aria-label="Create new note">
+        <i class="fas fa-plus" aria-hidden="true"></i>
+      </button>
+      <button type="button" class="rail-action rail-action--collapse" (click)="toggleSidebar()"
+              [attr.aria-label]="sidebarCollapsed ? 'Expand notes drawer' : 'Collapse notes drawer'"
+              [title]="sidebarCollapsed ? 'Expand notes drawer' : 'Collapse notes drawer'">
+        <i [class]="sidebarCollapsed ? 'fas fa-angle-double-right' : 'fas fa-angle-double-left'" aria-hidden="true"></i>
+      </button>
+    </nav>
+
     <!-- FAB: New Note (mobile only) -->
     <!-- <button class="notes-fab" (click)="openCreateNote()" aria-label="New note" title="New note">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
@@ -76,7 +101,7 @@
     </button> -->
 
     <!-- ═══════════════════ LEFT PANEL (30%) ═══════════════════ -->
-    <section class="notes-left">
+    <section class="notes-left" [class.drawer-closed]="sidebarCollapsed">
 
       <!-- Hero header -->
       <div class="notes-hero">
@@ -84,7 +109,7 @@
           <span class="notes-hero-icon">📝</span>
           <h1 class="notes-hero-title">My Notes</h1>
           <!-- <a class="notes-revision-icon-btn" routerLink="/revision" title="Revision Mode">🔁</a> -->
-          <button class="notes-sidebar-toggle" (click)="toggleSidebar()" title="Collapse sidebar" aria-label="Collapse sidebar">‹</button>
+          <button class="notes-sidebar-toggle" (click)="toggleSidebar()" title="Close notes library" aria-label="Close notes library"><i class="fas fa-times" aria-hidden="true"></i></button>
         </div>
         <p class="notes-hero-stats" *ngIf="notes.length > 0">
           {{ notes.length }} note{{ notes.length === 1 ? '' : 's' }}
@@ -99,7 +124,7 @@
       <div class="notes-search-row">
         <div class="notes-search-wrap">
           <span class="notes-search-icon">🔍</span>
-          <input class="notes-search" type="text" [(ngModel)]="searchQuery"
+          <input id="notes-library-search" class="notes-search" type="text" [(ngModel)]="searchQuery"
             placeholder="Search notes, categories, tags…" autocomplete="off" />
           <button class="notes-search-clear" *ngIf="searchQuery" (click)="searchQuery = ''">✕</button>
         </div>
@@ -294,82 +319,42 @@
           <button class="nwv2-secondary-cta" (click)="goHome()">Open AI Chat</button>
         </div>
 
-        <!-- Stats bar -->
-        <div class="nwv2-stats" *ngIf="notes.length > 0">
-          <div class="nwv2-stat">
-            <span class="nwv2-stat-num">{{ notes.length }}</span>
-            <span class="nwv2-stat-label">Notes</span>
-          </div>
-          <div class="nwv2-stat">
-            <span class="nwv2-stat-num">{{ allCategories.length - 1 }}</span>
-            <span class="nwv2-stat-label">Topics</span>
-          </div>
-          <div class="nwv2-stat">
-            <span class="nwv2-stat-num">{{ allTags.length }}</span>
-            <span class="nwv2-stat-label">Tags</span>
-          </div>
-        </div>
+        <div class="nwv2-dashboard" *ngIf="notes.length > 0">
+          <div class="nwv2-dashboard-main">
+            <section class="nwv2-continue" *ngIf="filteredNotes.length > 0">
+              <div class="nwv2-section-heading"><i class="far fa-bookmark" aria-hidden="true"></i><h3>Continue reading</h3></div>
+              <button type="button" (click)="openNote(filteredNotes[0])" [attr.aria-label]="'Continue reading ' + filteredNotes[0].topic">
+                <span><strong>{{ filteredNotes[0].topic }}</strong><small>{{ filteredNotes[0].category || 'Other' }} · {{ noteReadingTime(filteredNotes[0]) }}</small></span>
+                <i class="fas fa-arrow-right" aria-hidden="true"></i>
+              </button>
+            </section>
 
-        <!-- Quick action cards -->
-        <div class="nwv2-actions">
-          <button class="nwv2-action-card" *ngIf="filteredNotes.length > 0"
-                  (click)="openNote(filteredNotes[0])">
-            <span class="nwv2-action-icon">🔖</span>
-            <div>
-              <p class="nwv2-action-title">Continue Reading</p>
-              <p class="nwv2-action-desc">{{ filteredNotes[0].topic | slice:0:32 }}…</p>
-            </div>
-          </button>
-          <button class="nwv2-action-card" *ngIf="pinnedNotes.length > 0"
-                  (click)="openNote(pinnedNotes[0])">
-            <span class="nwv2-action-icon">📌</span>
-            <div>
-              <p class="nwv2-action-title">Pinned</p>
-              <p class="nwv2-action-desc">{{ pinnedNotes.length }} pinned note{{ pinnedNotes.length === 1 ? '' : 's' }}</p>
-            </div>
-          </button>
-        </div>
-
-        <!-- Recent notes grid -->
-        <div class="nwv2-recent" *ngIf="filteredNotes.length > 0">
-          <h3 class="nwv2-section-title">Recent Notes</h3>
-          <div class="nwv2-recent-grid">
-            <button class="nwv2-recent-card" type="button" *ngFor="let note of filteredNotes.slice(0, 4)"
-                 (click)="openNote(note)"
-                 [attr.aria-label]="'Open recent note: ' + note.topic">
-              <div class="nwv2-recent-icon-wrap">
-                <span class="nwv2-recent-cat-dot" [attr.data-cat]="note.category"></span>
+            <section class="nwv2-recent" *ngIf="filteredNotes.length > 0">
+              <div class="nwv2-section-heading"><i class="far fa-clock" aria-hidden="true"></i><h3>Recent notes</h3></div>
+              <div class="nwv2-recent-grid">
+                <button class="nwv2-recent-card" type="button" *ngFor="let note of filteredNotes.slice(0, 6)"
+                     (click)="openNote(note)" [attr.aria-label]="'Open recent note: ' + note.topic">
+                  <span class="nwv2-recent-dot" aria-hidden="true"></span>
+                  <div class="nwv2-recent-info"><p class="nwv2-recent-topic">{{ note.topic }}</p><p class="nwv2-recent-meta">{{ note.category || 'Other' }} · {{ noteReadingTime(note) }}</p></div>
+                  <i class="fas fa-arrow-right nwv2-recent-arrow" aria-hidden="true"></i>
+                </button>
               </div>
-              <div class="nwv2-recent-info">
-                <p class="nwv2-recent-topic">{{ note.topic }}</p>
-                <p class="nwv2-recent-meta">{{ note.category || 'Other' }} · {{ noteReadingTime(note) }}</p>
-              </div>
-              <span class="nwv2-recent-arrow">→</span>
-            </button>
+            </section>
           </div>
-        </div>
 
-        <!-- AI learning modes promo -->
-        <div class="nwv2-modes-promo" *ngIf="notes.length > 0">
-          <h3 class="nwv2-section-title">AI Learning Modes</h3>
-          <div class="nwv2-modes-grid">
-            <div class="nwv2-mode-card">
-              <span class="nwv2-mode-card-icon">📖</span>
-              <span class="nwv2-mode-card-label">Read</span>
-              <span class="nwv2-mode-card-desc">Formatted viewer</span>
-            </div>
-            <div class="nwv2-mode-card nwv2-mode-card--ai">
-              <span class="nwv2-mode-card-icon">🧠</span>
-              <span class="nwv2-mode-card-label">AI Breakdown</span>
-              <span class="nwv2-mode-card-desc">Smart summary</span>
-            </div>
-            <div class="nwv2-mode-card nwv2-mode-card--steps">
-              <span class="nwv2-mode-card-icon">🎬</span>
-              <span class="nwv2-mode-card-label">Step-by-Step</span>
-              <span class="nwv2-mode-card-desc">Guided flow</span>
-            </div>
-          </div>
-          <p class="nwv2-modes-hint">← Select any note to unlock AI-powered learning modes</p>
+          <aside class="nwv2-dashboard-side" aria-label="Notes overview">
+            <section class="nwv2-topics">
+              <div class="nwv2-section-heading"><i class="fas fa-tags" aria-hidden="true"></i><h3>Topics at a glance</h3></div>
+              <button type="button" *ngFor="let item of categoryCounts" (click)="filterCategory = item.category; openTopicsFilter()">
+                <span>{{ item.category }}</span><strong>{{ item.count }}</strong><small>notes</small>
+              </button>
+            </section>
+            <section class="nwv2-ai-study">
+              <i class="fas fa-magic" aria-hidden="true"></i>
+              <div><h3>AI Study</h3><p>Turn any note into a focused explanation or guided learning flow.</p></div>
+              <button type="button" (click)="goHome()">Open AI Chat <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
+            </section>
+          </aside>
         </div>
 
         <!-- Arrow / CTA -->

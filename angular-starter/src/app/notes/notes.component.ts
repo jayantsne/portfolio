@@ -96,6 +96,7 @@ export class NotesComponent implements OnInit, OnDestroy {
   // ── Mobile Reader ────────────────────────────────────────────────────────
   mobileReaderOpen    = false;
   sidebarCollapsed    = false;
+  showPinnedOnly      = false;
   showMoreMenu        = false;
   showFabMenu         = false;
   showAiActions    = false;
@@ -414,11 +415,23 @@ export class NotesComponent implements OnInit, OnDestroy {
   }
 
   get hasActiveFilter(): boolean {
-    return this.filterCategory !== 'All' || this.filterTag !== '';
+    return this.filterCategory !== 'All' || this.filterTag !== '' || this.showPinnedOnly;
   }
 
   get pinnedNotes(): SavedNote[] {
     return this.notes.filter(n => n.isPinned === true);
+  }
+
+  get categoryCounts(): Array<{ category: string; count: number }> {
+    const counts = new Map<string, number>();
+    for (const note of this.notes) {
+      const category = note.category || 'Other';
+      counts.set(category, (counts.get(category) || 0) + 1);
+    }
+    return Array.from(counts.entries())
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 4);
   }
 
   get filteredNotes(): SavedNote[] {
@@ -432,7 +445,8 @@ export class NotesComponent implements OnInit, OnDestroy {
         n.topic.toLowerCase().includes(q) ||
         n.content.toLowerCase().includes(q) ||
         (n.tags ?? []).some(t => t.includes(q));
-      return matchesCat && matchesTag && matchesSearch;
+      const matchesPinned = !this.showPinnedOnly || n.isPinned === true;
+      return matchesCat && matchesTag && matchesSearch && matchesPinned;
     });
     // Pinned notes float to the top
     return [
@@ -492,6 +506,25 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   toggleSidebar(): void {
     this.sidebarCollapsed = !this.sidebarCollapsed;
+  }
+
+  openNotesDrawer(): void {
+    this.sidebarCollapsed = false;
+  }
+
+  focusNotesSearch(): void {
+    this.sidebarCollapsed = false;
+    setTimeout(() => document.getElementById('notes-library-search')?.focus(), 0);
+  }
+
+  openTopicsFilter(): void {
+    this.sidebarCollapsed = false;
+    this.filtersOpen = true;
+  }
+
+  togglePinnedNotes(): void {
+    this.showPinnedOnly = !this.showPinnedOnly;
+    this.sidebarCollapsed = false;
   }
 
   openMobileEditor(): void {

@@ -3,20 +3,22 @@
   <div class="notice error" *ngIf="error" role="alert">{{ error }}</div>
 
   <ng-container *ngIf="viewMode === 'focus'; else libraryView">
-    <header class="focus-header">
+    <header class="focus-header compact-focus-header">
       <button type="button" class="text-link back-link" (click)="showLibrary()">
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
         Question library
       </button>
       <div class="focus-heading">
-        <p class="eyebrow">Admin interview workspace</p>
-        <h1 id="prep-title">Prepare interview question</h1>
-        <p>Focus on one question at a time. Review notes, prepare, and move forward.</p>
+        <p class="eyebrow">Focus practice</p>
+        <h1 id="prep-title">Today's interview plan</h1>
       </div>
-      <button type="button" class="secondary-btn import-btn" (click)="goToImport()">
-        <i class="fas fa-file-import" aria-hidden="true"></i>
-        Import questions
-      </button>
+      <div class="compact-progress" aria-label="Overall interview preparation progress">
+        <span>{{ progressPercent }}%</span>
+        <div class="progress-track" role="progressbar" aria-label="Overall progress" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progressPercent">
+          <i [style.width.%]="progressPercent"></i>
+        </div>
+        <small>{{ covered }} of {{ total }} prepared</small>
+      </div>
     </header>
 
     <div class="focus-layout" *ngIf="focusQuestion as question; else emptyFocus">
@@ -59,6 +61,46 @@
           <h2>{{ question.question }}</h2>
           <p class="question-guidance">Think through the core concept, trade-offs, and a concise production example before marking this prepared.</p>
 
+          <div class="study-tabs" role="tablist" aria-label="Question preparation sections">
+            <button type="button" role="tab" [attr.aria-selected]="focusTab === 'understand'" [class.active]="focusTab === 'understand'" (click)="focusTab = 'understand'"><i class="far fa-lightbulb" aria-hidden="true"></i> Understand</button>
+            <button type="button" role="tab" [attr.aria-selected]="focusTab === 'answer'" [class.active]="focusTab === 'answer'" (click)="focusTab = 'answer'"><i class="far fa-edit" aria-hidden="true"></i> My answer</button>
+            <button type="button" role="tab" [attr.aria-selected]="focusTab === 'example'" [class.active]="focusTab === 'example'" (click)="focusTab = 'example'"><i class="fas fa-code" aria-hidden="true"></i> Code example</button>
+            <button type="button" role="tab" [attr.aria-selected]="focusTab === 'notes'" [class.active]="focusTab === 'notes'" (click)="focusTab = 'notes'"><i class="far fa-sticky-note" aria-hidden="true"></i> Notes</button>
+          </div>
+
+          <div class="study-content">
+            <section class="prep-framework" *ngIf="focusTab === 'understand'" aria-label="Preparation framework">
+              <h3>Preparation framework</h3>
+              <ol>
+                <li><i class="fas fa-bullseye" aria-hidden="true"></i><span><strong>Core idea</strong><small>Explain the concept clearly in your own words.</small></span></li>
+                <li><i class="fas fa-exchange-alt" aria-hidden="true"></i><span><strong>How it works</strong><small>Describe the flow, important parts, and behaviour.</small></span></li>
+                <li><i class="fas fa-shield-alt" aria-hidden="true"></i><span><strong>Trade-offs</strong><small>Share benefits, limitations, and when you would use it.</small></span></li>
+                <li><i class="fas fa-code" aria-hidden="true"></i><span><strong>Example in practice</strong><small>Give one concise production example.</small></span></li>
+              </ol>
+            </section>
+
+            <section class="answer-workspace" *ngIf="focusTab === 'answer'">
+              <label for="focus-answer">Build your interview answer</label>
+              <textarea id="focus-answer" [(ngModel)]="draftAnswer" rows="7" placeholder="Start with a definition, explain how it works, then give a practical example..."></textarea>
+            </section>
+
+            <section class="answer-workspace" *ngIf="focusTab === 'example'">
+              <h3>Production example</h3>
+              <p>Describe a real implementation, the problem it solves, and one important trade-off. Ask AI if you want a tailored code example.</p>
+              <button type="button" class="secondary-btn" (click)="openAiHelper(question)"><i class="fas fa-magic" aria-hidden="true"></i> Generate example</button>
+            </section>
+
+            <section class="note-preview" *ngIf="focusTab === 'notes'">
+              <ng-container *ngIf="noteMatches[question.id] as note; else noLinkedNote">
+                <p class="eyebrow">Linked note</p>
+                <h3>{{ note.topic }}</h3>
+                <p>{{ notePreview(note.content) }}</p>
+              </ng-container>
+              <ng-template #noLinkedNote><h3>No note linked yet</h3><p>Create or find a note for this question to keep your preparation connected.</p></ng-template>
+              <button type="button" class="secondary-btn" (click)="goToNotes(question)"><i class="far fa-sticky-note" aria-hidden="true"></i> {{ noteLabel(question) }}</button>
+            </section>
+          </div>
+
           <div class="question-actions">
             <button type="button" class="primary-btn focus-primary"
                     *ngIf="!question.isCovered"
@@ -98,32 +140,6 @@
         <button type="button" class="text-link browse-link" (click)="showLibrary()">Browse all questions <i class="fas fa-arrow-right" aria-hidden="true"></i></button>
       </section>
 
-      <aside class="progress-rail" aria-label="Preparation progress">
-        <section>
-          <p class="rail-label">Daily progress</p>
-          <strong><em>{{ dailyDone }}</em> of {{ dailyTarget }}</strong>
-          <span>{{ dailyPercent }}% complete</span>
-          <div class="progress-track" role="progressbar" aria-label="Daily progress" aria-valuemin="0" [attr.aria-valuemax]="dailyTarget" [attr.aria-valuenow]="dailyDone">
-            <i [style.width.%]="dailyPercent"></i>
-          </div>
-        </section>
-        <section *ngIf="currentCategoryStat as stat">
-          <p class="rail-label">Category progress</p>
-          <strong class="category-title">{{ stat.category }}</strong>
-          <span>{{ stat.covered }}/{{ stat.total }}</span>
-          <div class="progress-track" role="progressbar" [attr.aria-label]="stat.category + ' progress'" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="stat.percent">
-            <i [style.width.%]="stat.percent"></i>
-          </div>
-        </section>
-        <section>
-          <p class="rail-label">Overall progress</p>
-          <strong><em>{{ covered }}</em> of {{ total }}</strong>
-          <span>{{ progressPercent }}% complete</span>
-          <div class="progress-track" role="progressbar" aria-label="Overall progress" aria-valuemin="0" aria-valuemax="100" [attr.aria-valuenow]="progressPercent">
-            <i [style.width.%]="progressPercent"></i>
-          </div>
-        </section>
-      </aside>
     </div>
 
     <ng-template #emptyFocus>
@@ -140,43 +156,52 @@
     <section class="library-shell">
       <header class="library-header">
         <div>
-          <p class="eyebrow">Admin interview workspace</p>
+          <p class="eyebrow"><i class="fas fa-layer-group" aria-hidden="true"></i> Admin interview workspace</p>
           <h1 id="prep-title">Question library</h1>
-          <p>Search, organize, and choose what to prepare next.</p>
+          <p>Find the right topic, connect your notes, and choose what to prepare next.</p>
         </div>
         <div class="header-actions">
-          <button type="button" class="secondary-btn" (click)="goToImport()">Import questions</button>
-          <button type="button" class="primary-btn" (click)="showFocus()" [disabled]="dailyPlan.length === 0">Focus mode</button>
+          <button type="button" class="secondary-btn" (click)="goToAllNotes()"><i class="far fa-sticky-note" aria-hidden="true"></i> My notes</button>
+          <button type="button" class="secondary-btn" (click)="goToImport()"><i class="fas fa-file-import" aria-hidden="true"></i> Import</button>
+          <button type="button" class="primary-btn" (click)="showFocus()" [disabled]="dailyPlan.length === 0"><i class="fas fa-bullseye" aria-hidden="true"></i> Focus mode</button>
         </div>
       </header>
 
       <div class="library-summary">
-        <span><strong>{{ total }}</strong> Total</span>
-        <span><strong>{{ covered }}</strong> Covered</span>
-        <span><strong>{{ pending }}</strong> Pending</span>
-        <div class="summary-progress"><span>{{ progressPercent }}% complete</span><div class="progress-track"><i [style.width.%]="progressPercent"></i></div></div>
+        <span><i class="far fa-list-alt" aria-hidden="true"></i><strong>{{ total }}</strong><small>Total questions</small></span>
+        <span><i class="far fa-check-circle" aria-hidden="true"></i><strong>{{ covered }}</strong><small>Prepared</small></span>
+        <span><i class="far fa-clock" aria-hidden="true"></i><strong>{{ pending }}</strong><small>Still to cover</small></span>
+        <div class="summary-progress"><div><strong>{{ progressPercent }}%</strong><span>Overall readiness</span></div><div class="progress-track"><i [style.width.%]="progressPercent"></i></div></div>
       </div>
 
       <section class="library-panel">
         <div class="toolbar">
-          <label class="filter-group"><span>Category</span><select [(ngModel)]="selectedCategory" (change)="applyFilters()"><option *ngFor="let category of categories" [value]="category">{{ category }}</option></select></label>
-          <label class="filter-group search-field"><span>Search questions</span><input type="search" [(ngModel)]="search" (keyup.enter)="applyFilters()" placeholder="Search question, category, tag, pattern"></label>
+          <label class="filter-group"><span>Category</span><select aria-label="Filter by category" [(ngModel)]="selectedCategory" (change)="applyFilters()"><option *ngFor="let category of categories" [value]="category">{{ category }}</option></select></label>
+          <label class="filter-group search-field"><span>Search questions</span><div class="search-control"><i class="fas fa-search" aria-hidden="true"></i><input type="search" [(ngModel)]="search" (keyup.enter)="applyFilters()" placeholder="Question, topic, tag, or pattern"></div></label>
           <label class="check-row"><input type="checkbox" [(ngModel)]="includeCovered" (change)="applyFilters()"><span>Show covered</span></label>
           <button type="button" class="primary-btn" (click)="applyFilters()">Apply</button>
+        </div>
+
+        <div class="results-heading" *ngIf="!loading">
+          <div><strong>{{ selectedCategory === 'All' ? 'All questions' : selectedCategory }}</strong><span>{{ questions.length }} shown</span></div>
+          <button type="button" class="text-link" *ngIf="selectedCategory !== 'All' || search" (click)="selectedCategory = 'All'; search = ''; applyFilters()">Clear filters</button>
         </div>
 
         <div class="loading-row" *ngIf="loading">Loading questions…</div>
         <div class="question-list" *ngIf="!loading">
           <article class="question-row" *ngFor="let item of questions; trackBy: trackById" [class.covered]="item.isCovered">
-            <span class="status-pill" [class.status-covered]="item.isCovered">{{ item.isCovered ? 'Covered' : 'Pending' }}</span>
-            <div class="question-copy"><h2>{{ item.question }}</h2><p>{{ item.category }} · {{ item.difficulty || 'Medium' }}<span *ngIf="hasNote(item)"> · Linked note</span></p></div>
+            <span class="status-pill" [class.status-covered]="item.isCovered"><i [class]="item.isCovered ? 'fas fa-check' : 'far fa-clock'" aria-hidden="true"></i>{{ item.isCovered ? 'Prepared' : 'Pending' }}</span>
+            <div class="question-copy">
+              <div class="question-meta"><span>{{ item.category }}</span><span>{{ item.difficulty || 'Medium' }}</span><span class="note-state" [class.note-state--linked]="hasNote(item)"><i class="far fa-sticky-note" aria-hidden="true"></i>{{ hasNote(item) ? 'Note linked' : 'Notes ready' }}</span></div>
+              <h2>{{ item.question }}</h2>
+            </div>
             <div class="row-actions">
-              <button type="button" class="secondary-btn" (click)="focusQuestionById(item)">Prepare</button>
-              <button type="button" class="secondary-btn" (click)="goToNotes(item)">{{ noteLabel(item) }}</button>
+              <button type="button" class="secondary-btn prepare-btn" (click)="focusQuestionById(item)"><i class="fas fa-bullseye" aria-hidden="true"></i> Prepare</button>
+              <button type="button" class="secondary-btn notes-btn" [class.notes-btn--linked]="hasNote(item)" (click)="goToNotes(item)"><i class="far fa-sticky-note" aria-hidden="true"></i>{{ hasNote(item) ? 'Open note' : 'Find notes' }}</button>
               <button type="button" class="danger-btn" (click)="deleteQuestion(item)" [disabled]="savingId === item.id" aria-label="Delete question"><i class="far fa-trash-alt" aria-hidden="true"></i></button>
             </div>
           </article>
-          <div class="empty-state" *ngIf="questions.length === 0">No questions found for this filter.</div>
+          <div class="empty-state library-empty" *ngIf="questions.length === 0"><i class="far fa-folder-open" aria-hidden="true"></i><h2>No questions found</h2><p>Try another category or clear the search to see your full library.</p><button type="button" class="secondary-btn" (click)="selectedCategory = 'All'; search = ''; applyFilters()">Clear filters</button></div>
         </div>
       </section>
     </section>
