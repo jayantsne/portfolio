@@ -11113,11 +11113,141 @@ html[data-theme="light"] .am-msg-card {
 }
 
 @media (min-width: 901px) {
-  .am-shell.am-sidebar-visible { grid-template-columns: 286px minmax(0, 1fr); }
-  .am-shell:not(.am-sidebar-visible) { grid-template-columns: minmax(0, 1fr); }
-  .am-nav { grid-column: 1; }
-  .am-chat { grid-column: 1; }
-  .am-sidebar-visible .am-chat { grid-column: 2; }
+  .am-shell,
+  .am-shell.am-sidebar-visible,
+  .am-shell:not(.am-sidebar-visible) {
+    grid-template-columns: minmax(0, 1fr);
+    background: #f6f8fc;
+  }
+
+  .am-nav {
+    position: absolute;
+    z-index: 30;
+    top: 14px;
+    bottom: 14px;
+    left: 14px;
+    width: 350px;
+    height: auto;
+    grid-column: 1;
+    overflow: hidden;
+    border: 1px solid #dbe3ed;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 18px 48px rgba(20, 32, 57, 0.14);
+  }
+
+  .am-nav-header {
+    flex: 0 0 58px;
+    background: #ffffff;
+  }
+
+  .am-nav-body {
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+  }
+
+  .am-chat,
+  .am-sidebar-visible .am-chat {
+    grid-column: 1;
+  }
+}
+
+/* Focused Explore landing — one calm, centered task instead of a dashboard. */
+.am-landing-view {
+  justify-content: center;
+  align-items: center;
+  padding: 48px 24px clamp(110px, 15vh, 170px);
+  background:
+    radial-gradient(circle at 50% 38%, rgba(20, 184, 166, 0.075), transparent 28%),
+    radial-gradient(circle at 54% 44%, rgba(79, 70, 229, 0.055), transparent 38%),
+    linear-gradient(180deg, #ffffff 0%, #f6f9fc 100%);
+}
+
+.am-lv-heading,
+.am-lv-input-wrap {
+  width: min(100%, 760px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.am-lv-heading {
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.am-lv-eyebrow {
+  color: #0b8179;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+}
+
+.am-lv-title {
+  max-width: 720px;
+  font-size: clamp(2.15rem, 3.5vw, 3rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+}
+
+.am-lv-sub {
+  max-width: 620px;
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.am-lv-input-wrap {
+  margin-top: 32px;
+  border: 1px solid #cbd8e7;
+  border-radius: 14px;
+  box-shadow:
+    0 24px 64px rgba(15, 23, 42, 0.11),
+    0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.am-lv-input {
+  min-height: 156px;
+  padding: 22px 24px;
+  font-size: 1rem;
+}
+
+.am-lv-composer-tools {
+  min-height: 54px;
+  padding: 8px 10px 8px 14px;
+  background: rgba(248, 250, 252, 0.72);
+}
+
+.am-lv-send {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+}
+
+@media (max-width: 900px) {
+  .am-landing-view {
+    justify-content: flex-start;
+    padding: clamp(52px, 9vh, 90px) 18px 40px;
+  }
+
+  .am-lv-title {
+    font-size: clamp(1.9rem, 8vw, 2.45rem);
+  }
+
+  .am-lv-input-wrap {
+    margin-top: 26px;
+  }
+}
+
+@media (max-width: 520px) {
+  .am-landing-view {
+    padding: 42px 14px 28px;
+  }
+
+  .am-lv-input {
+    min-height: 138px;
+    padding: 18px;
+  }
 }
 
 

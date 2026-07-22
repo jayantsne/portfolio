@@ -5,6 +5,7 @@ import { SidebarContentService } from './sidebar-content.service';
 import { Router } from '@angular/router';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { ThemeService } from '../shared/theme.service';
+import { AuthTriggerService } from '../shared/auth-trigger.service';
 
 /**
  * LayoutComponent — App Shell
@@ -38,7 +39,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
     this.isScrolled = (this.mainRef?.nativeElement?.scrollTop ?? 0) > 10;
   };
 
-  constructor(private panelContent: SidebarContentService, private router: Router, public auth: CustomAuthService, public theme: ThemeService) {
+  constructor(private panelContent: SidebarContentService, private router: Router, public auth: CustomAuthService, public theme: ThemeService, private authTrigger: AuthTriggerService) {
     this.hasPanel$   = panelContent.hasContent$;
     this.panelTitle$ = panelContent.title$;
     this.panelTpl$   = panelContent.template$;
@@ -52,6 +53,12 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
     this.mainRef?.nativeElement?.removeEventListener('scroll', this._onScroll);
   }
 
-  openAccount(): void { this.router.navigate(['/account']); }
+  openAccount(): void {
+    if (this.auth.isLoggedIn) {
+      this.router.navigate(['/account']);
+      return;
+    }
+    this.authTrigger.requestLogin();
+  }
   logout(): void { this.auth.logout(); this.router.navigate(['/explore']); }
 }

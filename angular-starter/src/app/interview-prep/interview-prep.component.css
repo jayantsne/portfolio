@@ -2445,3 +2445,115 @@
 .ip-stack-grid {
   grid-template-columns: minmax(0, 1fr);
 }
+
+/* Final desktop composition: match Notes/Explore with an inset contextual
+   drawer over a full-width focused workspace. */
+@media (min-width: 769px) {
+  .ip-shell,
+  .ip-shell.ip-split {
+    grid-template-columns: minmax(0, 1fr);
+    background:
+      radial-gradient(circle at 57% 38%, rgba(13, 139, 131, .06), transparent 28%),
+      linear-gradient(180deg, #fbfdff 0%, #f5f8fc 100%);
+  }
+
+  .ip-sidebar {
+    position: absolute;
+    z-index: 30;
+    top: 14px;
+    bottom: 14px;
+    left: 14px;
+    width: 380px;
+    height: auto;
+    margin: 0;
+    border: 1px solid #dbe3ed;
+    border-radius: 14px;
+    background: #ffffff;
+    box-shadow: 0 18px 48px rgba(20, 32, 57, .13);
+  }
+
+  .ip-welcome,
+  .ip-chat {
+    grid-column: 1;
+    min-width: 0;
+  }
+
+  .ip-welcome {
+    padding: 56px 28px 96px;
+    background: transparent;
+  }
+
+  .ip-welcome-inner {
+    width: min(100%, 720px);
+    max-width: 720px;
+    gap: 24px;
+  }
+
+  .ip-welcome-hero { gap: 10px; }
+
+  .ip-welcome-icon-wrap,
+  .ip-welcome-icon {
+    width: 66px;
+    height: 66px;
+  }
+
+  .ip-welcome-icon {
+    border-radius: 18px;
+    color: #ffffff;
+    background: linear-gradient(145deg, #172033, #344258);
+    box-shadow: 0 18px 42px rgba(23, 32, 51, .2);
+  }
+
+  .ip-welcome-icon::before {
+    content: 'R';
+    font-size: 1.35rem;
+    font-weight: 900;
+  }
+
+  .ip-welcome-icon-ring {
+    inset: -7px;
+    border-color: rgba(13, 139, 131, .2);
+    border-radius: 25px;
+  }
+
+  .ip-welcome-h {
+    max-width: 680px;
+    font-size: clamp(1.9rem, 2.6vw, 2.55rem);
+    line-height: 1.12;
+    letter-spacing: -.04em;
+  }
+
+  .ip-welcome-p {
+    max-width: 590px;
+    font-size: .98rem;
+    line-height: 1.65;
+  }
+
+  .ip-welcome-actions .ip-wa-primary {
+    min-width: 260px;
+    min-height: 46px;
+    justify-content: center;
+    border-radius: 10px;
+    background: #172033;
+    box-shadow: 0 14px 30px rgba(23, 32, 51, .18);
+  }
+
+  .ip-feat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .ip-feat {
+    min-height: 96px;
+    justify-content: center;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, .92);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, .045);
+  }
+
+  .ip-continue-row {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}

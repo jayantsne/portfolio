@@ -8154,6 +8154,86 @@
   }
 }
 
+/* Keep the create workspace inside LayoutComponent's main content column.
+   A viewport-fixed panel starts behind the shared app rail and leaves a
+   phantom header gap, clipping the Back button and metadata controls. */
+:host {
+  display: block;
+  height: 100%;
+  min-height: 0;
+}
+
+.notes-page {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+}
+
+.create-note-fullpage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* Mobile Notes overview: use one drawer trigger and keep the welcome content
+   centered instead of squeezing it between duplicate sidebar controls. */
+@media (max-width: 640px) {
+  .notes-expand-floating {
+    display: none !important;
+  }
+
+  .notes-welcome-v2 {
+    position: relative;
+    width: 100%;
+    padding: 30px 16px 48px;
+  }
+
+  .nwv2-greeting {
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 0 44px;
+    text-align: center;
+  }
+
+  .nwv2-drawer-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 38px;
+    height: 38px;
+    margin: 0;
+    border: 1px solid #d6e0eb;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+  }
+
+  .nwv2-greeting-title {
+    font-size: 1.55rem;
+    line-height: 1.15;
+  }
+
+  .nwv2-greeting-sub {
+    max-width: 260px;
+    margin-inline: auto;
+    line-height: 1.5;
+  }
+
+  .nwv2-empty-actions {
+    grid-template-columns: 1fr;
+    width: 100%;
+    margin: 22px 0 32px;
+  }
+
+  .nwv2-dashboard {
+    width: 100%;
+  }
+}
+
 /* ========================================================================
    NOTEBOOK READER FINAL PASS
    Sidebar and reading lane tuned for less dead space and stronger hierarchy.
@@ -8718,7 +8798,12 @@
 .notes-shell,
 .notes-shell.has-ai,
 .notes-shell--collapsed,
-.notes-shell.has-ai.notes-shell--collapsed { grid-template-columns: minmax(0, 1fr); }
+.notes-shell.has-ai.notes-shell--collapsed {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
 .notes-icon-rail { display: none !important; }
 .notes-left { left: 14px; width: 340px; }
 .notes-right { grid-column: 1; }
@@ -8728,7 +8813,135 @@
 
 @media (max-width: 640px) {
   .notes-left { inset: 8px; width: auto; }
-  .notes-welcome-v2 { padding: 28px 16px 48px; }
+  .notes-expand-floating { display: none !important; }
+
+  .notes-welcome-v2 {
+    position: relative;
+    width: 100%;
+    padding: 30px 16px 48px;
+  }
+
+  .nwv2-greeting {
+    position: relative;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 0 44px;
+    text-align: center;
+  }
+
+  .nwv2-drawer-btn {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 38px;
+    height: 38px;
+    margin: 0;
+    border: 1px solid #d6e0eb;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 8px 20px rgba(15,23,42,.08);
+  }
+
+  .nwv2-greeting-title { font-size: 1.55rem; line-height: 1.15; }
+  .nwv2-greeting-sub { max-width: 260px; margin-inline: auto; line-height: 1.5; }
+  .nwv2-empty-actions { grid-template-columns: 1fr; width: 100%; margin: 22px 0 32px; }
+  .nwv2-dashboard { width: 100%; }
+
+  .notes-shell:has(.mobile-reader) .notes-left,
+  .notes-shell:has(.mobile-reader) .notes-sidebar-backdrop {
+    visibility: hidden !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
+  .mobile-reader {
+    top: 0;
+    bottom: 58px;
+    left: 0;
+    width: 100%;
+    max-width: none;
+    background: #ffffff;
+  }
+
+  .mr-scroll {
+    width: 100%;
+    padding: 0 18px;
+    box-sizing: border-box;
+    background: #ffffff;
+  }
+
+  .mr-page-header {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    margin: 0 -18px;
+    padding: 18px 18px 14px;
+    border-bottom: 1px solid #e7edf4;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.035);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .mr-note-title {
+    font-size: clamp(1.35rem, 6.2vw, 1.7rem);
+    line-height: 1.18;
+    letter-spacing: -0.035em;
+  }
+
+  .mr-body {
+    min-width: 0;
+    max-width: 680px;
+    margin: 0 auto;
+    padding: 22px 0 8px;
+    font-size: 1rem;
+    line-height: 1.82;
+  }
+
+  .mr-body p {
+    line-height: 1.82;
+    margin-bottom: 1.15em;
+  }
+
+  .mr-body h1,
+  .mr-body h2,
+  .mr-body h3 {
+    scroll-margin-top: 110px;
+  }
+
+  .mr-body h2 {
+    margin-top: 1.65em;
+    padding-bottom: 8px;
+    border-bottom-color: #e6ecf3;
+  }
+
+  .mr-body pre {
+    max-width: 100%;
+    margin: 1.35em 0 1.75em;
+    padding: 16px 18px;
+    overflow-x: auto;
+    box-sizing: border-box;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16);
+    scrollbar-width: thin;
+  }
+
+  .mr-body pre code {
+    white-space: pre;
+  }
+
+  .mr-scroll-spacer { display: none; }
+
+  .mr-scroll::after {
+    content: '';
+    display: block;
+    height: 10px;
+  }
+
+  .mr-fab-wrap,
+  .mr-fab-backdrop { display: none !important; }
 }
 
 /* ========================================================================
@@ -9052,7 +9265,12 @@
 .notes-shell,
 .notes-shell.has-ai,
 .notes-shell--collapsed,
-.notes-shell.has-ai.notes-shell--collapsed { grid-template-columns: minmax(0, 1fr); }
+.notes-shell.has-ai.notes-shell--collapsed {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
 .notes-icon-rail { display: none !important; }
 .notes-left { left: 14px; width: 340px; }
 .notes-right { grid-column: 1; }

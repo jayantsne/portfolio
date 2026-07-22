@@ -38,6 +38,8 @@
   min-height: 0;  /* prevent flex blowout */
 }
 
+.mobile-shell-header { display: none; }
+
 .app-rail { width: 64px; flex: 0 0 64px; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 8px 10px; box-sizing: border-box; background: #fbfdff; border-right: 1px solid #e2e8f0; z-index: 50; }
 .app-rail-brand, .app-rail-link, .app-rail-action, .app-rail-account { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; box-sizing: border-box; border: 0; border-radius: 10px; text-decoration: none; font-family: inherit; cursor: pointer; }
 .app-rail-brand { background: #172033; color: #fff; font-weight: 900; }
@@ -94,6 +96,7 @@
   min-width: 0;
   min-height: 0;
   height: 100%;      /* allows child components to use height: 100% */
+  --header-h: 0px;   /* legacy desktop header was removed */
   overflow: hidden;  /* chat component owns its own scroll — no outer scroll */
   background: transparent;
 }
@@ -110,5 +113,120 @@
   .panel { display: none; }
   .app-rail { width: 54px; flex-basis: 54px; padding-inline: 7px; }
   .app-rail-brand, .app-rail-link, .app-rail-action, .app-rail-account { width: 38px; height: 38px; flex-basis: 38px; }
+}
+
+/* Phone navigation: preserve the full screen width for content and move the
+   primary destinations into a thumb-friendly bottom bar. */
+@media (max-width: 640px) {
+  .content-wrapper { flex-direction: column; }
+
+  .mobile-shell-header {
+    order: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 58px;
+    flex: 0 0 58px;
+    padding: 7px 12px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #e1e8f0;
+    background: rgba(255,255,255,.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+  }
+
+  .mobile-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    color: #172033;
+    text-decoration: none;
+  }
+
+  .mobile-brand-mark {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    color: #fff;
+    background: #172033;
+    font-size: 1rem;
+    font-weight: 900;
+  }
+
+  .mobile-brand-copy { display: flex; flex-direction: column; line-height: 1.08; }
+  .mobile-brand-copy strong { font-size: .95rem; letter-spacing: -.02em; }
+  .mobile-brand-copy small { margin-top: 3px; color: #718096; font-size: .62rem; }
+
+  .mobile-account {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 38px;
+    padding: 4px 10px 4px 5px;
+    border: 1px solid #dbe3ed;
+    border-radius: 999px;
+    color: #344258;
+    background: #f8fafc;
+    font: inherit;
+    font-size: .72rem;
+    font-weight: 800;
+  }
+
+  .mobile-account-avatar {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: #0e7663;
+    background: #e7f6f2;
+    font-size: .7rem;
+  }
+
+  .main {
+    order: 1;
+    width: 100%;
+    --header-h: 116px; /* 58px mobile header + 58px bottom navigation */
+  }
+
+  .app-rail {
+    order: 2;
+    z-index: 1600;
+    width: 100%;
+    min-height: 58px;
+    flex: 0 0 58px;
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 2px;
+    padding: 6px 8px;
+    border-top: 1px solid #dbe3ed;
+    border-right: 0;
+    box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
+  }
+
+  .app-rail-brand,
+  .app-rail-spacer,
+  .app-rail-action,
+  .app-rail-account,
+  .app-rail-logout {
+    display: none;
+  }
+
+  .app-rail-link,
+  .app-rail-account {
+    width: 42px;
+    height: 42px;
+    flex: 0 0 42px;
+  }
+
+  .app-rail-link--active::before {
+    top: -6px;
+    left: 10px;
+    width: 22px;
+    height: 3px;
+    border-radius: 0 0 4px 4px;
+  }
 }
 
