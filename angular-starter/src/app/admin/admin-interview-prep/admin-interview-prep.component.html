@@ -32,6 +32,18 @@
           <span class="queue-percent">{{ progressPercent }}%</span>
         </div>
         <div class="queue-progress" aria-hidden="true"><i [style.width.%]="progressPercent"></i></div>
+        <section class="practice-picker" aria-label="Choose practice questions">
+          <label for="practiceCategory">Practice category</label>
+          <div class="practice-picker-row">
+            <select id="practiceCategory" [value]="selectedCategory" (change)="changePracticeCategory($event)">
+              <option *ngFor="let category of categories" [value]="category">{{ category === 'All' ? 'All categories' : category }}</option>
+            </select>
+            <button type="button" class="shuffle-plan" (click)="randomizePlan()" [disabled]="questions.length === 0" title="Create a random plan">
+              <i class="fas fa-random" aria-hidden="true"></i><span>Shuffle</span>
+            </button>
+          </div>
+          <small>{{ selectedCategory === 'All' ? 'Mix questions from your full library.' : 'Focus today’s plan on ' + selectedCategory + '.' }}</small>
+        </section>
         <div class="section-label-row">
           <h2 id="daily-plan-title">Today's {{ dailyTarget }}-question plan</h2>
           <span>{{ dailyDone }}/{{ dailyTarget }}</span>

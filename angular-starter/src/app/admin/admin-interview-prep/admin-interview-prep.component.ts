@@ -516,6 +516,34 @@ export class AdminInterviewPrepComponent implements OnInit {
     await this.applyFilters();
   }
 
+  async changePracticeCategory(event: Event): Promise<void> {
+    const category = (event.target as HTMLSelectElement).value;
+    this.selectedCategory = category;
+    this.focusIndex = 0;
+    this.focusTab = 'understand';
+    this.draftAnswer = '';
+    await this.load();
+  }
+
+  randomizePlan(): void {
+    const candidates = this.questions.filter(question => !question.isCovered);
+    const pool = candidates.length >= this.dailyTarget ? candidates : this.questions;
+    const shuffled = [...pool];
+
+    for (let index = shuffled.length - 1; index > 0; index--) {
+      const randomIndex = Math.floor(Math.random() * (index + 1));
+      [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+    }
+
+    this.dailyPlan = shuffled.slice(0, this.dailyTarget);
+    this.focusIndex = 0;
+    this.focusTab = 'understand';
+    this.draftAnswer = '';
+    this.message = this.selectedCategory === 'All'
+      ? 'Created a random mixed-category plan.'
+      : `Created a random ${this.selectedCategory} plan.`;
+  }
+
   goToImport(): void {
     this.router.navigate(['/admin/interview-prep/import']);
   }
