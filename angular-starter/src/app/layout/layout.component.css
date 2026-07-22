@@ -15,6 +15,7 @@
 :host {
   display: block;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -23,6 +24,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   background: transparent;
   padding-top: 0;
@@ -118,7 +120,17 @@
 /* Phone navigation: preserve the full screen width for content and move the
    primary destinations into a thumb-friendly bottom bar. */
 @media (max-width: 640px) {
-  .content-wrapper { flex-direction: column; }
+  :host,
+  .layout {
+    height: 100dvh;
+    min-height: 100svh;
+  }
+
+  .content-wrapper {
+    flex-direction: column;
+    height: 100dvh;
+    min-height: 0;
+  }
 
   .mobile-shell-header {
     order: 0;
@@ -188,19 +200,31 @@
   .main {
     order: 1;
     width: 100%;
-    --header-h: 116px; /* 58px mobile header + 58px bottom navigation */
+    height: calc(100dvh - 58px);
+    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    --header-h: calc(116px + env(safe-area-inset-bottom, 0px));
   }
 
   .app-rail {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
     order: 2;
-    z-index: 1600;
-    width: 100%;
-    min-height: 58px;
-    flex: 0 0 58px;
+    z-index: 2000;
+    width: auto;
+    height: calc(58px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(58px + env(safe-area-inset-bottom, 0px));
+    flex: none;
     flex-direction: row;
     justify-content: space-around;
     gap: 2px;
-    padding: 6px 8px;
+    padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    background: rgba(251, 253, 255, .97);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-top: 1px solid #dbe3ed;
     border-right: 0;
     box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.06);
