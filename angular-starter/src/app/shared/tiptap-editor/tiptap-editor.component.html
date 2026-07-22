@@ -32,6 +32,32 @@
             (mousedown)="$event.preventDefault(); editor.chain().focus().toggleBlockquote().run()" title="Blockquote">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M10 7H6a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2.586l-1.293 1.293A1 1 0 0 0 8 16h2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1zm10 0h-4a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h2.586l-1.293 1.293A1 1 0 0 0 18 16h2a1 1 0 0 0 1-1V8a1 1 0 0 0-1-1z"/></svg>
     </button>
+    <div class="tt-sep"></div>
+    <div class="tt-table-control">
+      <button class="tt-btn tt-btn--label" [class.tt-btn--active]="showTablePicker"
+              (mousedown)="$event.preventDefault(); showTablePicker = !showTablePicker" title="Insert editable table">▦ <span>Table</span></button>
+      <div class="tt-table-picker" *ngIf="showTablePicker" (mousedown)="$event.stopPropagation()">
+        <div class="tt-picker-title">Table size</div>
+        <label>
+          <span>Rows</span>
+          <input type="number" min="1" max="20" [value]="tableRows" (input)="updateTableRows($event)">
+        </label>
+        <span class="tt-picker-times">×</span>
+        <label>
+          <span>Columns</span>
+          <input type="number" min="1" max="12" [value]="tableColumns" (input)="updateTableColumns($event)">
+        </label>
+        <button type="button" class="tt-picker-insert" (click)="insertTable()">Insert {{tableRows}} × {{tableColumns}}</button>
+      </div>
+    </div>
+    <button class="tt-btn tt-btn--label" (mousedown)="$event.preventDefault(); insertFlow()" title="Insert flow diagram">⇢ <span>Flow</span></button>
+    <button class="tt-btn tt-btn--label" (mousedown)="$event.preventDefault(); insertDiagram()" title="Insert concept diagram">◇ <span>Diagram</span></button>
+    <ng-container *ngIf="editor.isActive('table')">
+      <div class="tt-sep"></div>
+      <button class="tt-btn" (mousedown)="$event.preventDefault(); editor.chain().focus().addRowAfter().run()" title="Add row">+R</button>
+      <button class="tt-btn" (mousedown)="$event.preventDefault(); editor.chain().focus().addColumnAfter().run()" title="Add column">+C</button>
+      <button class="tt-btn tt-btn--danger" (mousedown)="$event.preventDefault(); editor.chain().focus().deleteTable().run()" title="Delete table">×</button>
+    </ng-container>
   </div>
 
   <div #editorEl class="tiptap-mount"></div>

@@ -57,6 +57,7 @@ export class FlowGeneratorComponent {
   selectedExampleId = '';
   selectedStepIndex = 0;
   storyboardPlaying = false;
+  autoPlayGenerated = true;
   showSuggestions = true;
   isGenerating = false;
   isExplainingStep = false;
@@ -64,6 +65,7 @@ export class FlowGeneratorComponent {
   stepExplanationError = '';
   aiStepExplanation?: ExplainFlowStepResponse;
   generatedFlow?: FlowDiagramResponse;
+  recentConcepts: Array<{ title: string; audience: Audience; flowType: FlowType }> = this.loadRecentConcepts();
 
   constructor(private flowService: FlowGeneratorService) {}
 
@@ -582,13 +584,63 @@ export class FlowGeneratorComponent {
         this.storyboardPlaying = false;
         this.aiStepExplanation = undefined;
         this.stepExplanationError = '';
+        this.rememberConcept(concept);
         this.scrollFlowToTop();
+        if (this.autoPlayGenerated) {
+          window.setTimeout(() => this.startGeneratedAnimation(), 250);
+        }
       },
       error: err => {
         this.errorMessage = err?.error?.error
           || 'Could not generate this flow. Check the backend and try again.';
       }
     });
+  }
+
+  openRecent(item: { title: string; audience: Audience; flowType: FlowType }): void {
+    this.concept = item.title;
+    this.selectedAudience = item.audience;
+    this.selectedFlowType = item.flowType;
+    this.generateFlow();
+  }
+
+  newFlow(): void {
+    this.concept = '';
+    this.generatedFlow = undefined;
+    this.selectedExampleId = '';
+    this.selectedStepIndex = 0;
+    this.storyboardPlaying = false;
+    this.errorMessage = '';
+    this.showSuggestions = true;
+    this.scrollFlowToTop();
+  }
+
+  clearRecent(): void {
+    this.recentConcepts = [];
+    localStorage.removeItem('codexa-recent-concept-flows');
+  }
+
+  private startGeneratedAnimation(): void {
+    if (!this.visualizer || this.isConceptMode) return;
+    this.visualizer.reset();
+    this.visualizer.next();
+    this.visualizer.play();
+    this.storyboardPlaying = true;
+  }
+
+  private rememberConcept(title: string): void {
+    const item = { title, audience: this.selectedAudience, flowType: this.selectedFlowType };
+    this.recentConcepts = [item, ...this.recentConcepts.filter(entry => entry.title.toLowerCase() !== title.toLowerCase())].slice(0, 12);
+    localStorage.setItem('codexa-recent-concept-flows', JSON.stringify(this.recentConcepts));
+  }
+
+  private loadRecentConcepts(): Array<{ title: string; audience: Audience; flowType: FlowType }> {
+    try {
+      const parsed = JSON.parse(localStorage.getItem('codexa-recent-concept-flows') || '[]');
+      return Array.isArray(parsed) ? parsed.slice(0, 12) : [];
+    } catch {
+      return [];
+    }
   }
 
   handleComposerKeydown(event: KeyboardEvent): void {

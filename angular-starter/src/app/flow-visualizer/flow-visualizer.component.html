@@ -196,6 +196,27 @@
       </svg>
     </div>
 
+    <aside class="fv-key-panel">
+      <h4>Key points</h4>
+      <ul>
+        <li *ngFor="let step of diagram.steps | slice:0:5; let i = index"
+            [class.fv-key-active]="i === currentStepIndex">
+          <span>{{ i + 1 }}</span>
+          <p><strong>{{ step.label }}</strong>{{ step.whyItMatters || step.description }}</p>
+        </li>
+      </ul>
+    </aside>
+
+  </div>
+
+  <div class="fv-iterations">
+    <button type="button" *ngFor="let step of diagram.steps; let i = index"
+            [class.fv-iteration-active]="i === currentStepIndex"
+            [class.fv-iteration-done]="i < currentStepIndex"
+            (click)="selectStep(i)">
+      <span>{{ i + 1 }}</span>
+      <strong>{{ step.label }}</strong>
+    </button>
   </div>
 
   <!-- ── Footer: controls + description ───────────────────────────────────── -->

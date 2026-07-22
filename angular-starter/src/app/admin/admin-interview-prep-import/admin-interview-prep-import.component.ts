@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { AdminInterviewPrepService, AdminPrepImportQuestion } from '../admin-interview-prep/admin-interview-prep.service';
 import { DOTNET_CORE_QUESTION_PACK } from './dotnet-core-question-pack';
+import { SQL_QUESTION_PACK } from './sql-question-pack';
 
 type ImportMode = 'lines' | 'json';
 
@@ -117,6 +118,14 @@ export class AdminInterviewPrepImportComponent {
     this.importText = JSON.stringify(DOTNET_CORE_QUESTION_PACK, null, 2);
     this.parseImport();
     this.message = `${DOTNET_CORE_QUESTION_PACK.length} .NET Core questions are ready to import.`;
+  }
+
+  useSqlPack(): void {
+    this.importMode = 'json';
+    this.replaceExisting = false;
+    this.importText = JSON.stringify(SQL_QUESTION_PACK, null, 2);
+    this.parseImport();
+    this.message = `${SQL_QUESTION_PACK.length} SQL questions are ready to import.`;
   }
 
   backToPlanner(): void {

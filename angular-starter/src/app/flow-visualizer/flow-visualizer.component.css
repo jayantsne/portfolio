@@ -44,7 +44,7 @@
   border-radius: 8px;
   border: 1.5px solid var(--fv-border);
   background: var(--fv-bg);
-  overflow: hidden;
+  overflow: visible;
   box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 
@@ -85,6 +85,7 @@
 .fv-shell {
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -151,14 +152,14 @@
 /* ── Body: side-by-side panels ──────────────────────────────────────────── */
 .fv-body {
   display: grid;
-  grid-template-columns: minmax(280px, 0.24fr) minmax(760px, 1fr);
-  min-height: 600px;
+  grid-template-columns: minmax(250px, .7fr) minmax(520px, 1.55fr) minmax(220px, .65fr);
+  min-height: clamp(540px, 57vh, 680px);
   border-bottom: 1.5px solid var(--fv-border);
 }
 
 .fv-body--no-code {
-  grid-template-columns: minmax(0, 1fr);
-  min-height: 640px;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, .34fr);
+  min-height: clamp(540px, 57vh, 680px);
 }
 
 /* ── Code panel (left) ──────────────────────────────────────────────────── */
@@ -233,14 +234,35 @@
 
 /* ── SVG Diagram panel (right) ──────────────────────────────────────────── */
 .fv-diagram-panel {
-  overflow: auto;
+  overflow: hidden;
   background: var(--fv-bg);
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  padding: 24px;
+  padding: 20px;
   min-width: 0;
 }
+
+.fv-key-panel { border-left:1px solid var(--fv-border); background:#fffdfa; min-width:0; }
+.fv-key-panel h4 { margin:0; padding:13px 15px; border-bottom:1px solid #f0dfc7; color:#5f4218; font-size:.8rem; text-transform:uppercase; letter-spacing:.05em; }
+.fv-key-panel ul { display:grid; gap:0; margin:0; padding:4px 12px 12px; list-style:none; }
+.fv-key-panel li { display:grid; grid-template-columns:22px 1fr; gap:8px; padding:11px 3px; border-bottom:1px solid #f2e8d9; color:#6b7280; transition:background .3s,color .3s; }
+.fv-key-panel li:last-child { border-bottom:0; }
+.fv-key-panel li>span { display:grid; place-items:center; width:19px; height:19px; margin-top:1px; border-radius:50%; color:#8a611e; background:#fff1cf; font-size:.6rem; font-weight:900; }
+.fv-key-panel p { margin:0; font-size:.68rem; line-height:1.42; }
+.fv-key-panel p strong { display:block; margin-bottom:3px; color:#172033; font-size:.72rem; }
+.fv-key-panel li.fv-key-active { margin-inline:-4px; padding-inline:7px; border-radius:8px; color:#4338ca; background:#f1efff; }
+.fv-key-panel li.fv-key-active>span { color:#fff; background:#6366f1; animation:fv-smart-pulse 1.4s ease-in-out infinite; }
+
+.fv-iterations { display:flex; gap:8px; overflow-x:auto; padding:10px; border-bottom:1px solid var(--fv-border); background:#fff; }
+.fv-iterations button { flex:1 0 150px; display:grid; grid-template-columns:25px minmax(0,1fr); gap:8px; align-items:center; min-height:48px; border:1px solid #dce3ed; border-radius:8px; padding:7px 9px; text-align:left; color:#607089; background:#fafcff; font:inherit; cursor:pointer; transition:.25s ease; }
+.fv-iterations button>span { display:grid; place-items:center; width:23px; height:23px; border-radius:50%; color:#4f46e5; background:#eeecff; font-size:.62rem; font-weight:900; }
+.fv-iterations strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.68rem; }
+.fv-iterations .fv-iteration-active { border-color:#7c6cf2; color:#312e81; background:#f4f2ff; box-shadow:0 6px 16px rgba(79,70,229,.12); transform:translateY(-1px); }
+.fv-iterations .fv-iteration-active>span { color:#fff; background:#6366f1; animation:fv-smart-pulse 1.4s ease-in-out infinite; }
+.fv-iterations .fv-iteration-done { border-color:#a9ddce; color:#0e7663; background:#effaf7; }
+.fv-iterations .fv-iteration-done>span { color:#fff; background:#10a283; }
+@keyframes fv-smart-pulse { 50% { box-shadow:0 0 0 7px rgba(99,102,241,.12); transform:scale(1.06); } }
 
 .fv-body--no-code .fv-diagram-panel {
   min-height: 640px;
@@ -251,8 +273,11 @@
     var(--fv-bg);
 }
 .fv-svg {
-  flex: 0 0 auto;
-  max-width: none;
+  flex: 0 1 auto;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100%;
+  max-height: 100%;
   display: block;
   overflow: visible;
 }
@@ -705,6 +730,7 @@
     grid-template-columns: 1fr;
     grid-template-rows: auto auto auto;
   }
+  .fv-key-panel { border-left:0; border-top:1px solid var(--fv-border); }
 
   .fv-body--no-code {
     grid-template-columns: 1fr;
@@ -763,4 +789,53 @@
   .fv-explain-code {
     grid-column: 1 / -1;
   }
+}
+
+/* Large workspace: use the open column beside the board for a focused live
+   code panel. The diagram itself receives the full central canvas. */
+@media (min-width: 1200px) {
+  .fv-body {
+    position: relative;
+    grid-template-columns: minmax(560px, 1fr) minmax(220px, 260px);
+  }
+
+  .fv-body--no-code {
+    grid-template-columns: minmax(560px, 1fr) minmax(220px, 260px);
+  }
+
+  .fv-code-panel {
+    position: absolute;
+    z-index: 6;
+    top: 0;
+    left: -310px;
+    width: 286px;
+    height: 100%;
+    border: 1px solid #313449;
+    border-radius: 13px;
+    box-shadow: 0 18px 42px rgba(15,23,42,.20);
+  }
+
+  .fv-code-header {
+    min-height: 42px;
+    padding-inline: 16px;
+    color: #aeb8d5;
+    background: linear-gradient(90deg,#25273a,#1b1d2d);
+  }
+
+  .fv-code-header::after {
+    margin-left: auto;
+    border-radius: 999px;
+    padding: 3px 7px;
+    color: #5eead4;
+    background: rgba(45,212,191,.1);
+    content: 'LIVE';
+    font-size: .55rem;
+    font-weight: 900;
+    letter-spacing: .08em;
+  }
+
+  .fv-code-pre { padding-block: 10px; }
+  .fv-code-line { padding-block: 7px; }
+  .fv-diagram-panel { grid-column: 1; border-radius: 0; }
+  .fv-key-panel { grid-column: 2; }
 }

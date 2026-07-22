@@ -23,6 +23,15 @@
 
     <div class="focus-layout" *ngIf="focusQuestion as question; else emptyFocus">
       <aside class="daily-queue" aria-labelledby="daily-plan-title">
+        <div class="daily-queue-head">
+          <span class="daily-queue-icon"><i class="far fa-comments" aria-hidden="true"></i></span>
+          <div>
+            <strong>Interview Questions</strong>
+            <small>{{ total }} questions · {{ covered }} prepared</small>
+          </div>
+          <span class="queue-percent">{{ progressPercent }}%</span>
+        </div>
+        <div class="queue-progress" aria-hidden="true"><i [style.width.%]="progressPercent"></i></div>
         <div class="section-label-row">
           <h2 id="daily-plan-title">Today's {{ dailyTarget }}-question plan</h2>
           <span>{{ dailyDone }}/{{ dailyTarget }}</span>

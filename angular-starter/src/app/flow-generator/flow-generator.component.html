@@ -1,18 +1,25 @@
 <section class="fg-page" #flowPage>
+  <aside class="fg-library" aria-label="Concept flow history">
+    <header class="fg-library-head">
+      <span class="fg-library-icon"><i class="fas fa-project-diagram" aria-hidden="true"></i></span>
+      <div><strong>Concept Flows</strong><small>AI-generated visual learning</small></div>
+    </header>
+    <button type="button" class="fg-new-flow" (click)="newFlow()"><span>＋</span> New animated flow</button>
+    <div class="fg-library-label"><span>Recent flows</span><button type="button" *ngIf="recentConcepts.length" (click)="clearRecent()">Clear</button></div>
+    <div class="fg-recent-list" *ngIf="recentConcepts.length; else noRecentFlows">
+      <button type="button" *ngFor="let item of recentConcepts" (click)="openRecent(item)">
+        <span class="fg-recent-mark">{{ item.title.charAt(0) }}</span>
+        <span><strong>{{ item.title }}</strong><small>{{ item.flowType }} · {{ item.audience }}</small></span>
+        <i class="fas fa-chevron-right" aria-hidden="true"></i>
+      </button>
+    </div>
+    <ng-template #noRecentFlows><p class="fg-library-empty">Your generated concepts will appear here for quick replay.</p></ng-template>
+  </aside>
   <main class="fg-chat" [class.fg-chat-active]="hasActiveFlow || isGenerating" aria-label="Flow generator chat">
     <header class="fg-intro" *ngIf="!hasActiveFlow && !isGenerating">
-      <div class="fg-mark" aria-hidden="true">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 7h6"/>
-          <path d="M14 7h6"/>
-          <path d="M4 17h6"/>
-          <path d="M14 17h6"/>
-          <path d="M10 7c2 0 2 10 4 10"/>
-        </svg>
-      </div>
-      <h1>What concept should we turn into a flow?</h1>
-      <p>Ask for Angular, .NET, auth, design patterns, or interview concepts.</p>
+      <span class="fg-intro-eyebrow">Visualize with AI</span>
+      <h1>What concept do you want to animate?</h1>
+      <p>Generate a step-by-step flow diagram for any technical concept.</p>
     </header>
 
     <div class="fg-thread">
@@ -23,7 +30,7 @@
         </div>
       </article>
 
-      <article class="fg-message fg-message-ai" *ngIf="!isGenerating && !hasActiveFlow">
+      <article class="fg-message fg-message-ai fg-welcome-message" *ngIf="!isGenerating && !hasActiveFlow">
         <div class="fg-avatar fg-avatar-ai">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -318,6 +325,12 @@
             {{ audience }}
           </button>
         </div>
+
+        <button type="button" class="fg-auto-play" [class.fg-auto-play-active]="autoPlayGenerated"
+                (click)="autoPlayGenerated = !autoPlayGenerated"
+                [attr.aria-pressed]="autoPlayGenerated">
+          <span class="fg-auto-dot"></span> Auto-play {{ autoPlayGenerated ? 'on' : 'off' }}
+        </button>
 
         <button type="button"
                 class="fg-send"

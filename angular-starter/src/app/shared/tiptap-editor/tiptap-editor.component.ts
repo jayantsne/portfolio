@@ -14,6 +14,25 @@ import {
 import { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
+import Table from '@tiptap/extension-table';
+import TableRow from '@tiptap/extension-table-row';
+import TableHeader from '@tiptap/extension-table-header';
+import TableCell from '@tiptap/extension-table-cell';
+
+const LayoutTable = Table.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      layout: {
+        default: null,
+        parseHTML: element => element.getAttribute('data-layout'),
+        renderHTML: attributes => attributes.layout
+          ? { 'data-layout': attributes.layout }
+          : {},
+      },
+    };
+  },
+});
 
 /**
  * Thin Angular wrapper around Tiptap (ProseMirror-based rich-text editor).
@@ -59,6 +78,10 @@ export class TiptapEditorComponent implements AfterViewInit, OnDestroy {
   /** Direct access to the underlying Tiptap editor (use with care). */
   editor: Editor | null = null;
 
+  showTablePicker = false;
+  tableRows = 3;
+  tableColumns = 3;
+
   /** Set to true before a programmatic setContent() to suppress the next contentChange emission. */
   private _suppressNextEmit = false;
 
@@ -73,6 +96,10 @@ export class TiptapEditorComponent implements AfterViewInit, OnDestroy {
         extensions: [
           StarterKit,
           Placeholder.configure({ placeholder: this.placeholder }),
+          LayoutTable.configure({ resizable: true }),
+          TableRow,
+          TableHeader,
+          TableCell,
         ],
         content: this.prepareContent(this.initialContent),
         onUpdate: ({ editor }) => {
@@ -136,6 +163,50 @@ export class TiptapEditorComponent implements AfterViewInit, OnDestroy {
   /** Focus the editor. */
   focus(): void {
     this.editor?.commands.focus();
+  }
+
+  insertTable(): void {
+    const rows = Math.min(20, Math.max(1, this.tableRows));
+    const cols = Math.min(12, Math.max(1, this.tableColumns));
+    this.editor?.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
+    this.showTablePicker = false;
+  }
+
+  updateTableRows(event: Event): void {
+    this.tableRows = this.normaliseSize(event, 20);
+  }
+
+  updateTableColumns(event: Event): void {
+    this.tableColumns = this.normaliseSize(event, 12);
+  }
+
+  insertFlow(): void {
+    if (!this.editor) return;
+    const labels = ['Start', 'Process', 'Decision', 'Result'];
+    const cells: any[] = [];
+    labels.forEach((label, index) => {
+      cells.push(this.tableCell(label));
+      if (index < labels.length - 1) cells.push(this.tableCell('→'));
+    });
+    this.editor.chain().focus().insertContent([
+      { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Flow' }] },
+      { type: 'table', attrs: { layout: 'flow' }, content: [{ type: 'tableRow', content: cells }] },
+      { type: 'paragraph' },
+    ]).run();
+  }
+
+  insertDiagram(): void {
+    if (!this.editor) return;
+    this.editor.chain().focus().insertContent([
+      { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Diagram' }] },
+      {
+        type: 'table', attrs: { layout: 'diagram' }, content: [
+          { type: 'tableRow', content: [this.tableCell('Main concept', 'tableHeader', 3)] },
+          { type: 'tableRow', content: [this.tableCell('Branch A'), this.tableCell('Branch B'), this.tableCell('Branch C')] },
+        ],
+      },
+      { type: 'paragraph' },
+    ]).run();
   }
 
   ngOnDestroy(): void {
@@ -246,5 +317,18 @@ export class TiptapEditorComponent implements AfterViewInit, OnDestroy {
       .replace(/\*([^*]+)\*/g, '<em>$1</em>')
       .replace(/_([^_]+)_/g, '<em>$1</em>')
       .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  }
+
+  private tableCell(text: string, type = 'tableCell', colspan = 1): any {
+    return {
+      type,
+      attrs: { colspan, rowspan: 1, colwidth: null },
+      content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+    };
+  }
+
+  private normaliseSize(event: Event, max: number): number {
+    const value = Number((event.target as HTMLInputElement).value);
+    return Math.min(max, Math.max(1, Number.isFinite(value) ? Math.floor(value) : 1));
   }
 }

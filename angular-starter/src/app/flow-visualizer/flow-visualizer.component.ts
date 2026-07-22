@@ -353,6 +353,8 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
       return;
     }
 
+    let nodeW = NODE_W;
+    let nodeH = NODE_H;
     const inDeg = new Map<string, number>(steps.map(s => [s.id, 0]));
     const adj = new Map<string, string[]>(steps.map(s => [s.id, []]));
 
@@ -391,7 +393,29 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
     let svgW: number;
     let svgH: number;
 
-    if (this.orientation === 'horizontal') {
+    if (this.orientation === 'horizontal' && steps.length > 4) {
+      // A responsive snake layout keeps long, linear AI-generated flows in a
+      // single viewport instead of forcing a horizontal scroll.
+      nodeW = 190;
+      nodeH = 108;
+      const columns = steps.length > 8 ? 4 : 3;
+      const rows = Math.ceil(steps.length / columns);
+      const colStep = 226;
+      const rowStep = 154;
+      svgW = PAD_X * 2 + nodeW + (columns - 1) * colStep;
+      svgH = PAD_Y * 2 + nodeH + (rows - 1) * rowStep;
+
+      steps.forEach((step, index) => {
+        const row = Math.floor(index / columns);
+        const indexInRow = index % columns;
+        const itemsInRow = Math.min(columns, steps.length - row * columns);
+        const visualColumn = row % 2 === 0 ? indexInRow : itemsInRow - 1 - indexInRow;
+        pos.set(step.id, {
+          cx: PAD_X + nodeW / 2 + visualColumn * colStep,
+          cy: PAD_Y + nodeH / 2 + row * rowStep,
+        });
+      });
+    } else if (this.orientation === 'horizontal') {
       const contentH = maxCount * NODE_H + (maxCount - 1) * GAP;
       svgW = PAD_X + NODE_W / 2 + maxLayer * H_STEP + NODE_W / 2 + PAD_X;
       svgH = contentH + 2 * PAD_Y;
@@ -430,23 +454,22 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
       step: s,
       cx: pos.get(s.id)!.cx,
       cy: pos.get(s.id)!.cy,
-      w: NODE_W,
-      h: NODE_H,
+      w: nodeW,
+      h: nodeH,
     }));
 
     this.computedEdges = edges.map(e => {
       const src = pos.get(e.source)!;
       const tgt = pos.get(e.target)!;
-      const x1 = this.orientation === 'horizontal' ? src.cx + NODE_W / 2 : src.cx;
-      const y1 = this.orientation === 'horizontal' ? src.cy : src.cy + NODE_H / 2;
-      const x2 = this.orientation === 'horizontal' ? tgt.cx - NODE_W / 2 : tgt.cx;
-      const y2 = this.orientation === 'horizontal' ? tgt.cy : tgt.cy - NODE_H / 2;
-      const dx = this.orientation === 'horizontal'
-        ? Math.min(Math.abs(x2 - x1) * 0.45, 70)
-        : (Math.abs(x2 - x1) > 4 ? (x2 - x1) * 0.5 : 0);
-      const dy = this.orientation === 'horizontal'
-        ? (Math.abs(y2 - y1) > 4 ? (y2 - y1) * 0.5 : 0)
-        : Math.min(Math.abs(y2 - y1) * 0.45, 50);
+      const horizontalEdge = Math.abs(tgt.cx - src.cx) >= Math.abs(tgt.cy - src.cy);
+      const directionX = tgt.cx >= src.cx ? 1 : -1;
+      const directionY = tgt.cy >= src.cy ? 1 : -1;
+      const x1 = horizontalEdge ? src.cx + directionX * nodeW / 2 : src.cx;
+      const y1 = horizontalEdge ? src.cy : src.cy + directionY * nodeH / 2;
+      const x2 = horizontalEdge ? tgt.cx - directionX * nodeW / 2 : tgt.cx;
+      const y2 = horizontalEdge ? tgt.cy : tgt.cy - directionY * nodeH / 2;
+      const dx = horizontalEdge ? (x2 - x1) * .45 : 0;
+      const dy = horizontalEdge ? 0 : (y2 - y1) * .45;
 
       return {
         edge: e,

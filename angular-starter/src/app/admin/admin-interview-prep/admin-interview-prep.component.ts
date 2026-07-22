@@ -8,6 +8,7 @@ import {
   AdminPrepResponse
 } from './admin-interview-prep.service';
 import { NotesService, SavedNote } from '../../shared/notes.service';
+import { SQL_QUESTION_PACK } from '../admin-interview-prep-import/sql-question-pack';
 
 type ImportMode = 'lines' | 'json';
 
@@ -19,7 +20,7 @@ type ImportMode = 'lines' | 'json';
 export class AdminInterviewPrepComponent implements OnInit {
   questions: AdminPrepQuestion[] = [];
   dailyPlan: AdminPrepQuestion[] = [];
-  categories: string[] = ['All', '.NET Core', '.NET', 'Angular', 'React', 'Azure', 'Design Patterns', 'OOPS', 'SOLID', 'AI'];
+  categories: string[] = ['All', '.NET Core', '.NET', 'SQL', 'Angular', 'React', 'Azure', 'Design Patterns', 'OOPS', 'SOLID', 'AI'];
 
   selectedCategory = 'All';
   search = '';
@@ -49,6 +50,7 @@ export class AdminInterviewPrepComponent implements OnInit {
   notes: SavedNote[] = [];
   noteMatches: Record<string, SavedNote> = {};
   preparedTodayIds = new Set<string>();
+  private sqlSeedAttempted = false;
 
   accessQuestion: AdminPrepQuestion | null = null;
   accessText = '';
@@ -57,6 +59,7 @@ export class AdminInterviewPrepComponent implements OnInit {
     '.NET | What is middleware in ASP.NET Core? | middleware, pipeline',
     '.NET | What is the difference between IActionResult and ActionResult<T>? | web-api',
     'Design Patterns | What is Repository Pattern? | architecture, ef-core',
+    'SQL | How do ROW_NUMBER, RANK, and DENSE_RANK differ? | window-functions, ranking',
     'Azure | How do you secure Azure App Service configuration? | cloud, security',
     'AI | What is RAG and when do you use it? | gen-ai'
   ].join('\n');
@@ -89,11 +92,23 @@ export class AdminInterviewPrepComponent implements OnInit {
     this.error = '';
 
     try {
-      const response: AdminPrepResponse = await this.prepService.getAll(
+      let response: AdminPrepResponse = await this.prepService.getAll(
         this.selectedCategory,
         this.search,
         this.includeCovered
       );
+
+      // Existing installations predate the SQL pack. Seed it once when the
+      // owner's library has no SQL category; subsequent loads remain read-only.
+      if (!this.sqlSeedAttempted && !response.categories.some(category => category.toLowerCase() === 'sql')) {
+        this.sqlSeedAttempted = true;
+        await this.prepService.importQuestions(SQL_QUESTION_PACK, false);
+        response = await this.prepService.getAll(
+          this.selectedCategory,
+          this.search,
+          this.includeCovered
+        );
+      }
       this.questions = response.questions;
       this.total = response.total;
       this.covered = response.covered;
