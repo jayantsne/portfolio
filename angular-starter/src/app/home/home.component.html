@@ -161,9 +161,33 @@
        [class.am-tools-collapsed]="toolsCollapsed || !hasActiveChat"
        [class.am-sidebar-visible]="sidebarOpen && customAuth.isLoggedIn">
 
+    <nav class="am-focus-rail" *ngIf="false" aria-label="Explore tools">
+      <button class="am-rail-brand" (click)="openExplore()" title="Codexa home" aria-label="Codexa home">✦</button>
+      <button class="am-rail-btn am-rail-btn-active" (click)="openExplore()" title="Explore" aria-label="Explore">
+        <span class="am-rail-glyph">⌕</span><span class="am-rail-label">Explore</span>
+      </button>
+      <button class="am-rail-btn" (click)="openFlow()" title="Flow" aria-label="Flow">
+        <span class="am-rail-glyph">⌘</span><span class="am-rail-label">Flow</span>
+      </button>
+      <button class="am-rail-btn" (click)="openNotes()" title="Use notes" aria-label="Open notes">
+        <span class="am-rail-glyph">▤</span><span class="am-rail-label">Notes</span>
+      </button>
+      <button class="am-rail-btn" (click)="openInterviewPrep()" title="Interview Prep" aria-label="Interview Prep">
+        <span class="am-rail-glyph">◎</span><span class="am-rail-label">Prep</span>
+      </button>
+      <span class="am-rail-divider"></span>
+      <button class="am-rail-btn" (click)="sidebarOpen = !sidebarOpen" title="Conversation history" aria-label="Toggle conversation history">
+        <span class="am-rail-glyph">☷</span><span class="am-rail-label">History</span>
+      </button>
+      <div class="am-rail-spacer"></div>
+      <button class="am-rail-btn" (click)="themeSvc.toggle()" title="Toggle theme" aria-label="Toggle theme"><span class="am-rail-glyph">◐</span></button>
+      <button class="am-rail-account" (click)="openAccount()" title="Account" aria-label="Account">A</button>
+    </nav>
+
     <!-- ── Chat History Sidebar ── -->
     <aside class="am-nav" *ngIf="sidebarOpen && customAuth.isLoggedIn">
       <div class="am-nav-header">
+        <strong class="am-history-title">History</strong>
         <!-- Left: sidebar collapse button -->
         <button class="am-nav-icon-btn" (click)="sidebarOpen = false" title="Close sidebar" aria-label="Close sidebar">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -240,34 +264,75 @@
       <!-- ══ LANDING VIEW — AI Mentor hero center ══ -->
       <div class="am-landing-view" *ngIf="!hasActiveChat">
 
-        <!-- Avatar -->
-        <div class="am-lv-avatar am-lv-s1">✨</div>
-
-        <!-- Heading -->
         <div class="am-lv-heading am-lv-s1">
-          <h2 class="am-lv-title">Codexa AI</h2>
-          <p class="am-lv-sub">Learn programming faster with AI-powered explanations,
-            real-world examples, and interview insights.</p>
+          <span class="am-lv-eyebrow">Explore with AI</span>
+          <h2 class="am-lv-title">What do you want to learn?</h2>
+          <p class="am-lv-sub">Ask anything about .NET, Angular, or software development.</p>
         </div>
 
         <!-- Centered input -->
         <div class="am-lv-input-wrap am-lv-s2">
-          <input class="am-lv-input" type="text"
+          <textarea class="am-lv-input" rows="3"
                  [(ngModel)]="currentQuestion"
                  (keyup.enter)="sendFollowUpQuestion(currentQuestion)"
-                 [placeholder]="currentPlaceholder"
-                 autofocus>
-          <button class="am-lv-send"
-                  (click)="sendFollowUpQuestion(currentQuestion)"
-                  [disabled]="!currentQuestion.trim()">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
-            </svg>
-          </button>
+                 placeholder="Ask a question or describe what you want to learn..."
+                 autofocus></textarea>
+          <div class="am-lv-composer-tools">
+            <div class="am-lv-tool-group">
+              <button class="am-lv-tool" title="Attach context" aria-label="Attach context">+</button>
+              <button class="am-lv-tool" (click)="openNotes()">Notes</button>
+            </div>
+            <div class="am-lv-tool-group">
+              <select class="am-lv-mode" [(ngModel)]="answerMode" aria-label="Answer style">
+                <option value="best">Best answer</option>
+                <option value="concise">Concise</option>
+                <option value="detailed">Detailed</option>
+              </select>
+              <button class="am-lv-send" (click)="sendFollowUpQuestion(currentQuestion)" [disabled]="!currentQuestion.trim()" aria-label="Send question">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="am-lv-dashboard" *ngIf="false" aria-label="Learning dashboard">
+          <section class="am-lv-section">
+            <div class="am-lv-section-head"><h3>Continue learning</h3><button (click)="openNotes()">View all</button></div>
+            <div class="am-lv-card-grid">
+              <button class="am-learning-card" (click)="sendFollowUpQuestion('Explain JWT authentication in ASP.NET Core Web APIs')">
+                <span class="am-card-icon am-card-icon-dotnet">.NET</span><span class="am-card-copy"><strong>JWT Authentication in ASP.NET Core Web APIs</strong><span class="am-progress"><i style="width:60%"></i></span><small>60% complete&nbsp; · &nbsp;Last viewed 2h ago</small></span><span class="am-card-arrow">→</span>
+              </button>
+              <button class="am-learning-card" (click)="sendFollowUpQuestion('Explain Angular standalone components in depth')">
+                <span class="am-card-icon am-card-icon-angular">A</span><span class="am-card-copy"><strong>Angular Standalone Components Deep Dive</strong><span class="am-progress"><i style="width:40%"></i></span><small>40% complete&nbsp; · &nbsp;Last viewed yesterday</small></span><span class="am-card-arrow">→</span>
+              </button>
+              <button class="am-learning-card" (click)="sendFollowUpQuestion('Explain Entity Framework Core performance tips')">
+                <span class="am-card-icon am-card-icon-data">DB</span><span class="am-card-copy"><strong>Entity Framework Core Performance Tips</strong><span class="am-progress"><i style="width:30%"></i></span><small>30% complete&nbsp; · &nbsp;Last viewed 2 days ago</small></span><span class="am-card-arrow">→</span>
+              </button>
+            </div>
+          </section>
+
+          <section class="am-lv-section">
+            <div class="am-lv-section-head"><h3>Suggested for you</h3><button (click)="openRoadmap()">View all</button></div>
+            <div class="am-lv-card-grid">
+              <button class="am-suggest-card" (click)="sendFollowUpQuestion('Teach me Angular Signals with practical examples')"><span class="am-suggest-icon">◌</span><strong>Angular Signals Guide</strong><span class="am-card-arrow">→</span><p>Understand signals, computed, and effects with practical examples.</p><small>Angular</small></button>
+              <button class="am-suggest-card" (click)="sendFollowUpQuestion('Teach me how to build Minimal APIs in .NET 8')"><span class="am-suggest-icon">.NET</span><strong>Minimal APIs in .NET 8</strong><span class="am-card-arrow">→</span><p>Build fast, lightweight APIs with minimal boilerplate.</p><small>.NET</small></button>
+              <button class="am-suggest-card" (click)="sendFollowUpQuestion('Explain OAuth2 and OpenID Connect for securing APIs')"><span class="am-suggest-icon">◇</span><strong>Secure Your APIs</strong><span class="am-card-arrow">→</span><p>Learn OAuth2, OpenID Connect, and best practices for securing APIs.</p><small>Security</small></button>
+            </div>
+          </section>
+
+          <section class="am-lv-section am-recent-section">
+            <div class="am-lv-section-head"><h3>Recent conversations</h3><button (click)="sidebarOpen = true">View all</button></div>
+            <div class="am-recent-list">
+              <button (click)="sendFollowUpQuestion('How should refresh tokens be implemented in ASP.NET Core?')"><span>▢</span>Implement refresh tokens in ASP.NET Core <small>10:24 AM</small><b>›</b></button>
+              <button (click)="sendFollowUpQuestion('How do I handle 409 conflicts with concurrency tokens in EF Core?')"><span>▢</span>How to handle 409 conflicts with concurrency tokens in EF Core <small>Yesterday</small><b>›</b></button>
+              <button (click)="sendFollowUpQuestion('How do I use an Angular HttpInterceptor for global error handling?')"><span>▢</span>Angular HttpInterceptor for global error handling <small>Yesterday</small><b>›</b></button>
+              <button (click)="sendFollowUpQuestion('What is the best way to structure features in a large Angular app?')"><span>▢</span>Best way to structure features in a large Angular app <small>2 days ago</small><b>›</b></button>
+            </div>
+          </section>
         </div>
 
         <!-- Quick actions -->
-        <div class="am-lv-quick-wrap am-lv-s3">
+        <div class="am-lv-quick-wrap am-lv-s3" *ngIf="false">
           <span class="am-lv-quick-label">Try asking about</span>
           <div class="am-lv-suggestions">
             <button class="am-lv-suggest" (click)="sendFollowUpQuestion('Explain Promises in JavaScript with a real-world example')">
@@ -290,7 +355,7 @@
         </div>
 
         <!-- Free usage indicator -->
-        <div class="am-lv-usage am-lv-s4" *ngIf="!hasSubscriptionAccess && !customAuth.isAdmin">
+        <div class="am-lv-usage am-lv-s4" *ngIf="false">
           <span class="am-lv-usage-icon">⚡</span>
           <span>{{ remainingSearches }} free search{{ remainingSearches !== 1 ? 'es' : '' }} remaining</span>
           <span class="am-lv-usage-sep">·</span>

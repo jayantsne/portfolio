@@ -2,6 +2,9 @@ import { Component, OnDestroy, AfterViewInit, ViewChild, ElementRef } from '@ang
 import { Observable } from 'rxjs';
 import { TemplateRef } from '@angular/core';
 import { SidebarContentService } from './sidebar-content.service';
+import { Router } from '@angular/router';
+import { CustomAuthService } from '../shared/custom-auth.service';
+import { ThemeService } from '../shared/theme.service';
 
 /**
  * LayoutComponent — App Shell
@@ -35,7 +38,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
     this.isScrolled = (this.mainRef?.nativeElement?.scrollTop ?? 0) > 10;
   };
 
-  constructor(private panelContent: SidebarContentService) {
+  constructor(private panelContent: SidebarContentService, private router: Router, public auth: CustomAuthService, public theme: ThemeService) {
     this.hasPanel$   = panelContent.hasContent$;
     this.panelTitle$ = panelContent.title$;
     this.panelTpl$   = panelContent.template$;
@@ -48,4 +51,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     this.mainRef?.nativeElement?.removeEventListener('scroll', this._onScroll);
   }
+
+  openAccount(): void { this.router.navigate(['/account']); }
+  logout(): void { this.auth.logout(); this.router.navigate(['/explore']); }
 }

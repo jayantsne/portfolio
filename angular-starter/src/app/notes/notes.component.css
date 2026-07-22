@@ -8714,6 +8714,23 @@
   }
 }
 
+/* The shared app rail now owns global navigation; Notes keeps one contextual drawer. */
+.notes-shell,
+.notes-shell.has-ai,
+.notes-shell--collapsed,
+.notes-shell.has-ai.notes-shell--collapsed { grid-template-columns: minmax(0, 1fr); }
+.notes-icon-rail { display: none !important; }
+.notes-left { left: 14px; width: 340px; }
+.notes-right { grid-column: 1; }
+.notes-expand-floating { display: inline-grid !important; place-items: center; left: 16px; top: 16px; width: 42px; height: 42px; border: 1px solid #d6e0eb; border-radius: 10px; background: #fff; color: #172033; box-shadow: 0 8px 20px rgba(15,23,42,.09); }
+.notes-welcome-v2 { width: min(100%, 1040px); max-width: 1040px; padding-top: clamp(42px, 6vh, 68px); }
+.nwv2-dashboard { gap: 22px; }.nwv2-dashboard-main { gap: 22px; }
+
+@media (max-width: 640px) {
+  .notes-left { inset: 8px; width: auto; }
+  .notes-welcome-v2 { padding: 28px 16px 48px; }
+}
+
 /* ========================================================================
    NOTES LIBRARY RAIL + DRAWER
    Compact navigation keeps the workspace open while the note list remains
@@ -9029,5 +9046,21 @@
   .notes-welcome-v2 { padding: 26px 16px 52px; }
   .nwv2-empty-actions { margin-left: 0; }
   .nwv2-dashboard,.nwv2-dashboard-side,.nwv2-recent-grid { grid-template-columns: 1fr; }
+}
+
+/* Final shared-shell alignment: one global rail and one Notes drawer. */
+.notes-shell,
+.notes-shell.has-ai,
+.notes-shell--collapsed,
+.notes-shell.has-ai.notes-shell--collapsed { grid-template-columns: minmax(0, 1fr); }
+.notes-icon-rail { display: none !important; }
+.notes-left { left: 14px; width: 340px; }
+.notes-right { grid-column: 1; }
+.notes-expand-floating { display: inline-grid !important; place-items: center; left: 16px; top: 16px; width: 42px; height: 42px; border: 1px solid #d6e0eb; border-radius: 10px; background: #fff; color: #172033; box-shadow: 0 8px 20px rgba(15,23,42,.09); }
+.notes-welcome-v2 { width: min(100%, 1040px); max-width: 1040px; padding-top: clamp(42px, 6vh, 68px); }
+
+@media (max-width: 640px) {
+  .notes-left { inset: 8px; width: auto; }
+  .notes-welcome-v2 { padding: 28px 16px 48px; }
 }
 

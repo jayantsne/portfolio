@@ -25,7 +25,7 @@
   height: 100vh;
   overflow: hidden;
   background: transparent;
-  padding-top: 52px;
+  padding-top: 0;
   box-sizing: border-box;
 }
 
@@ -37,6 +37,20 @@
   overflow: hidden;
   min-height: 0;  /* prevent flex blowout */
 }
+
+.app-rail { width: 64px; flex: 0 0 64px; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 8px 10px; box-sizing: border-box; background: #fbfdff; border-right: 1px solid #e2e8f0; z-index: 50; }
+.app-rail-brand, .app-rail-link, .app-rail-action, .app-rail-account { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; box-sizing: border-box; border: 0; border-radius: 10px; text-decoration: none; font-family: inherit; cursor: pointer; }
+.app-rail-brand { background: #172033; color: #fff; font-weight: 900; }
+.app-rail-link { position: relative; background: transparent; color: #607087; }
+.app-rail-link span { font-size: .76rem; font-weight: 900; }
+.app-rail-link small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.app-rail-link:hover, .app-rail-link--active { background: #eaf7f6; color: #087f77; }
+.app-rail-link--active::before { content: ''; position: absolute; left: -8px; width: 3px; height: 22px; border-radius: 0 4px 4px 0; background: #0d9488; }
+.app-rail-spacer { flex: 1; }
+.app-rail-action { background: transparent; color: #65748a; font-size: .62rem; font-weight: 800; }
+.app-rail-action:hover { background: #f0f4f8; color: #172033; }
+.app-rail-account { border-radius: 50%; background: #e8edf3; color: #172033; font-size: .72rem; font-weight: 900; }
+.app-rail-logout { color: #b42318; }
 
 /* ── Contextual panel ───────────────────────────────────── */
 .panel {
@@ -94,5 +108,7 @@
 /* Mobile: panel hides completely */
 @media (max-width: 768px) {
   .panel { display: none; }
+  .app-rail { width: 54px; flex-basis: 54px; padding-inline: 7px; }
+  .app-rail-brand, .app-rail-link, .app-rail-action, .app-rail-account { width: 38px; height: 38px; flex-basis: 38px; }
 }
 

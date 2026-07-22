@@ -1673,3 +1673,5 @@ html[data-theme="dark"] .md-content code {
     word-break: break-all;
   }
 }
+
+/* Explore owns its navigation rail, so the global header is removed on this route. */

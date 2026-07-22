@@ -6,7 +6,7 @@
       <svg *ngIf="!showMobileSidebar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
       <svg *ngIf="showMobileSidebar" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
     </button>
-    <span class="ip-mobile-title">Interview Prep</span>
+    <span class="ip-mobile-title">Interview Roadmap</span>
     <button class="ip-notes-toggle-btn ip-mobile-notes-btn" (click)="toggleNotesDrawer()"
       [class.ip-notes-toggle-active]="showNotesDrawer" title="Saved notes">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
@@ -23,11 +23,11 @@
     <!-- Brand header -->
     <div class="ip-sidebar-header">
       <div class="ip-sidebar-brand">
-        <div class="ip-brand-avatar">🎯</div>
+        <div class="ip-brand-avatar">R</div>
         <div class="ip-brand-info">
-          <span class="ip-brand-title">Interview Prep</span>
+          <span class="ip-brand-title">Interview Roadmap</span>
           <span class="ip-brand-mode">
-            <span class="ip-mode-dot"></span>AI Mentor
+            <span class="ip-mode-dot"></span>Personal learning plan
           </span>
         </div>
       </div>
@@ -38,21 +38,9 @@
       </button>
     </div>
 
-    <!-- Tab switcher: Questions | Roadmap -->
-    <div class="ip-tab-bar">
-      <button class="ip-tab" [class.ip-tab-active]="sidebarTab === 'questions'"
-        (click)="selectTab('questions')">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 4.78 2.83c-.67.37-1.07.85-1.07 1.67v.5"></path><circle cx="12" cy="17.5" r=".5" fill="currentColor"></circle></svg>
-        Questions
-      </button>
-      <button class="ip-tab" [class.ip-tab-active]="sidebarTab === 'roadmap'"
-        (click)="selectTab('roadmap')"
-        [title]="isLoggedIn ? 'AI Prep Roadmap' : 'Sign in to access Roadmap'">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-        Roadmap
-        <span class="ip-tab-badge" *ngIf="isLoggedIn">NEW</span>
-        <svg *ngIf="!isLoggedIn" class="ip-tab-lock" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-      </button>
+    <div class="ip-section-label">
+      <span>Roadmap</span>
+      <span class="ip-section-status" *ngIf="isLoggedIn">Your progress is saved</span>
     </div>
 
     <!-- Guest CTA — only shown when not logged in -->
@@ -80,7 +68,7 @@
     </div>
 
     <!-- ═══ QUESTIONS TAB ═══════════════════════════════════ -->
-    <ng-container *ngIf="sidebarTab === 'questions'">
+    <ng-container *ngIf="false">
 
     <!-- Search -->
     <div class="ip-search-box">
@@ -158,7 +146,6 @@
         <h3 class="ip-roadmap-lock-title">Roadmap requires sign-in</h3>
         <p class="ip-roadmap-lock-desc">Get a personalised AI-generated prep plan with progress tracking for any tech stack.</p>
         <button class="ip-roadmap-lock-btn" (click)="promptLogin()">Sign in to unlock →</button>
-        <button class="ip-link-btn ip-roadmap-lock-back" (click)="selectTab('questions')">← Back to questions</button>
       </div>
 
       <!-- Stack selection (before roadmap generated) -->
@@ -459,43 +446,32 @@
           <div class="ip-welcome-icon"></div>
           <div class="ip-welcome-icon-ring"></div>
         </div>
-        <h2 class="ip-welcome-h">Start learning today</h2>
-        <p class="ip-welcome-p">Pick a question from the sidebar to get a structured, interview-ready explanation — or generate an AI Roadmap for your next job.</p>
+        <span class="ip-welcome-eyebrow">INTERVIEW ROADMAP</span>
+        <h2 class="ip-welcome-h">Build a focused path to your next role</h2>
+        <p class="ip-welcome-p">Choose your technology stack, generate a personalised preparation plan, and track every topic as you master it.</p>
       </div>
 
       <!-- Quick actions -->
       <div class="ip-welcome-actions">
-        <button class="ip-wa-primary" (click)="selectTab('questions')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 1 1 4.78 2.83c-.67.37-1.07.85-1.07 1.67v.5"></path><circle cx="12" cy="17.5" r=".5" fill="currentColor"></circle></svg>
-          Pick a question
-        </button>
-        <button class="ip-wa-secondary" (click)="selectTab('roadmap')">
+        <button class="ip-wa-primary" (click)="selectTab('roadmap')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
-          Open Roadmap
+          {{ isLoggedIn ? 'Choose a technology stack' : 'Sign in to build your roadmap' }}
         </button>
       </div>
 
       <!-- Feature cards -->
       <div class="ip-feat-grid">
         <div class="ip-feat">
-          <span class="ip-feat-ico">&#128172;</span>
-          <strong>Chat answers</strong>
-          <span>Step-by-step explanations</span>
+          <strong>Personalised plan</strong>
+          <span>A structured path for your chosen stack</span>
         </div>
         <div class="ip-feat">
-          <span class="ip-feat-ico">&#128187;</span>
-          <strong>Code examples</strong>
-          <span>Relevant snippets</span>
+          <strong>Visible progress</strong>
+          <span>Complete topics and resume where you stopped</span>
         </div>
         <div class="ip-feat">
-          <span class="ip-feat-ico">&#128204;</span>
-          <strong>AI Roadmap</strong>
-          <span>Full prep plan per stack</span>
-        </div>
-        <div class="ip-feat">
-          <span class="ip-feat-ico">&#127919;</span>
-          <strong>Pro tips</strong>
-          <span>Senior-level nuance</span>
+          <strong>Connected notes</strong>
+          <span>Save your roadmap directly to Notes</span>
         </div>
       </div>
 

@@ -262,3 +262,39 @@ form { display: flex; flex-direction: column; gap: 1rem; }
   flex: 1;
   background: rgba(148,163,184,0.25);
 }
+
+/* Connected Codexa authentication theme */
+.auth-overlay.active { background: rgba(15, 23, 42, .42); backdrop-filter: blur(2px); }
+.auth-panel { width: min(440px, 100vw); padding: 32px 34px 40px; gap: 20px; background: #fbfdff; border-left: 1px solid #dbe4ef; box-shadow: -24px 0 60px rgba(15,23,42,.14); color: #172033; }
+.close-btn { top: 18px; right: 18px; color: #64748b; }
+.close-btn:hover { color: #172033; background: #eef2f7; }
+.auth-brand { margin-top: 10px; gap: 12px; }
+.auth-logo { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 11px; background: #172033; color: #fff; font-size: .9rem; font-weight: 900; }
+.auth-brand-copy { display: flex; flex-direction: column; gap: 2px; }
+.auth-brand-name { color: #172033; background: none; -webkit-text-fill-color: currentColor; font-size: 1.15rem; letter-spacing: -.02em; }
+.auth-brand-copy small { color: #7a879a; font-size: .75rem; }
+.auth-tabs { padding: 4px; border: 1px solid #dce5ef; border-radius: 10px; background: #f0f4f8; }
+.auth-tabs button { min-height: 38px; border-radius: 7px; color: #64748b; font-weight: 700; }
+.auth-tabs button.active { background: #fff; color: #0b7f77; box-shadow: 0 2px 8px rgba(15,23,42,.08); }
+.google-btn { min-height: 46px; border-color: #d5dfeb; border-radius: 9px; background: #fff; color: #273449; box-shadow: 0 2px 6px rgba(15,23,42,.04); }
+.google-btn:hover:not(:disabled) { border-color: #8fc8c2; transform: none; background: #fbfefd; }
+.auth-divider { color: #94a3b8; }.auth-divider::before,.auth-divider::after { background: #e2e8f0; }
+.form-group label { color: #536176; font-weight: 700; }
+.form-group input { min-height: 44px; box-sizing: border-box; border-color: #cfdbe8; border-radius: 9px; background: #fff; color: #172033; }
+.form-group input:focus { border-color: #168b82; box-shadow: 0 0 0 3px rgba(20,148,136,.12); }
+.pwd-toggle { color: #64748b; }
+.submit-btn { min-height: 46px; border-radius: 9px; background: #0d8b83; box-shadow: 0 8px 18px rgba(13,139,131,.16); }
+.submit-btn:hover:not(:disabled) { background: #08766f; opacity: 1; transform: none; }
+.switch-link { color: #7a879a; }.switch-link a { color: #0b7f77; font-weight: 800; }
+.error-banner { color: #b42318; background: #fff1f0; border-color: #f2c7c3; }
+.success-banner { color: #08745f; background: #edf9f5; border-color: #bde3d8; }
+
+:host-context([data-theme="dark"]) .auth-panel { background: #111827; border-color: #263449; color: #f8fafc; }
+:host-context([data-theme="dark"]) .auth-brand-name { color: #f8fafc; }
+:host-context([data-theme="dark"]) .auth-tabs { background: #182234; border-color: #304057; }
+:host-context([data-theme="dark"]) .auth-tabs button.active { background: #243247; color: #5eead4; }
+:host-context([data-theme="dark"]) .form-group label { color: #cbd5e1; }
+:host-context([data-theme="dark"]) .form-group input { background: #182234; border-color: #34445b; color: #f8fafc; }
+:host-context([data-theme="dark"]) .google-btn { background: #f8fafc; }
+
+@media (max-width: 480px) { .auth-panel { width: 100vw; padding: 26px 20px 34px; } }

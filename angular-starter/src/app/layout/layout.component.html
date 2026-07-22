@@ -15,10 +15,22 @@
 <div class="layout" [class.layout--scrolled]="isScrolled">
 
   <!-- ── Sticky top navbar ─────────────────────────────── -->
-  <app-navbar></app-navbar>
 
   <!-- ── Content area ──────────────────────────────────── -->
   <div class="content-wrapper">
+
+    <nav class="app-rail" aria-label="Primary navigation">
+      <a class="app-rail-brand" routerLink="/explore" title="Codexa" aria-label="Codexa home">C</a>
+      <a class="app-rail-link" routerLink="/explore" routerLinkActive="app-rail-link--active" title="Explore"><span>E</span><small>Explore</small></a>
+      <a class="app-rail-link" routerLink="/flow-generator" routerLinkActive="app-rail-link--active" title="Flow"><span>F</span><small>Flow</small></a>
+      <a class="app-rail-link" routerLink="/notes" routerLinkActive="app-rail-link--active" title="Notes"><span>N</span><small>Notes</small></a>
+      <a class="app-rail-link" routerLink="/interview-prep" routerLinkActive="app-rail-link--active" title="Interview roadmap"><span>R</span><small>Roadmap</small></a>
+      <a class="app-rail-link" *ngIf="auth.isAdmin" routerLink="/admin/interview-prep" routerLinkActive="app-rail-link--active" title="Interview question library"><span>Q</span><small>Questions</small></a>
+      <div class="app-rail-spacer"></div>
+      <button class="app-rail-action" (click)="theme.toggle()" title="Toggle theme" aria-label="Toggle theme">T</button>
+      <button class="app-rail-account" (click)="openAccount()" title="Account" aria-label="Account">A</button>
+      <button class="app-rail-action app-rail-logout" *ngIf="auth.isLoggedIn" (click)="logout()" title="Log out" aria-label="Log out">OUT</button>
+    </nav>
 
     <!-- Panel: contextual content registered by the active page -->
     <aside class="panel"

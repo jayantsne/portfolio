@@ -62,6 +62,7 @@ interface AIExplanation {
   styleUrls: ['./home.component.css']
 })
 export class HomeComponent implements OnInit, AfterViewChecked, OnDestroy {
+  answerMode: 'best' | 'concise' | 'detailed' = 'best';
   // AI Features
   isAIMode: boolean = false;
   isLoadingAI: boolean = false;
@@ -985,6 +986,12 @@ One sentence: the single most important thing to remember about ${topic} in a te
 
   showPaywall(): void  { this.showPaywallModal = true; }
   closePaywall(): void { this.showPaywallModal = false; }
+  openNotes(): void { this.router.navigate(['/notes']); }
+  openRoadmap(): void { this.router.navigate(['/roadmap']); }
+  openExplore(): void { this.router.navigate(['/explore']); }
+  openFlow(): void { this.router.navigate(['/flow-generator']); }
+  openInterviewPrep(): void { this.router.navigate(['/interview-prep']); }
+  openAccount(): void { this.router.navigate(['/account']); }
 
   // ── hasActiveChat ────────────────────────────────────────────────────────
   /** True when there is an active conversation or lesson — derived, no manual flag needed. */

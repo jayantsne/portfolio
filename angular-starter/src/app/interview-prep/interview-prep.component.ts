@@ -83,7 +83,7 @@ export const TECH_STACKS: TechStack[] = [
 })
 export class InterviewPrepComponent implements OnInit, OnDestroy {
   /* ─── View mode ─────────────────────────────────────────── */
-  sidebarTab: 'questions' | 'roadmap' = 'questions';
+  sidebarTab: 'questions' | 'roadmap' = 'roadmap';
   /** Tab the guest was trying to open — auto-activated after login. */
   pendingTab:  'roadmap' | null       = null;
 
