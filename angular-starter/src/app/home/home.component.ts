@@ -988,6 +988,28 @@ One sentence: the single most important thing to remember about ${topic} in a te
   closePaywall(): void { this.showPaywallModal = false; }
   openNotes(): void { this.router.navigate(['/notes']); }
   openRoadmap(): void { this.router.navigate(['/roadmap']); }
+  addToRoadmap(message?: AIMessage): void {
+    const topic = (
+      this.currentTopicName ||
+      [...this.aiMessages].reverse().find(item => item.role === 'user')?.content ||
+      'New learning topic'
+    ).trim().slice(0, 160);
+
+    const context = message?.content
+      ?.replace(/```[\s\S]*?```/g, ' ')
+      .replace(/[#*_>`~]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .slice(0, 900) || '';
+
+    sessionStorage.setItem('codexa_roadmap_handoff', JSON.stringify({
+      topic, context, source: 'explore', createdAt: Date.now(),
+    }));
+
+    this.router.navigate(['/roadmap'], {
+      queryParams: { topic, source: 'explore' },
+    });
+  }
   openExplore(): void { this.router.navigate(['/explore']); }
   openFlow(): void { this.router.navigate(['/flow-generator']); }
   openInterviewPrep(): void { this.router.navigate(['/interview-prep']); }

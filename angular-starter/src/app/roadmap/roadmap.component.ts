@@ -5,7 +5,7 @@ import {
 import {
   trigger, state, style, animate, transition, keyframes,
 } from '@angular/animations';
-import { DomSanitizer } from '@angular/platform-browser';import { Router } from '@angular/router';import { Subscription } from 'rxjs';
+import { DomSanitizer } from '@angular/platform-browser';import { ActivatedRoute, Router } from '@angular/router';import { Subscription } from 'rxjs';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { NotesService } from '../shared/notes.service';
 import { RoadmapService } from './roadmap.service';
@@ -115,6 +115,9 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   isGenerating     = false;
   generateError    = false;
   generatedNodes:  RoadmapNode[] = [];
+  importedTopic    = '';
+  importedContext  = '';
+  private importedTopicHandled = false;
 
   // ── Roadmap view ────────────────────────────────────────────────────────
   activeRoadmap:   Roadmap | null       = null;
@@ -428,13 +431,19 @@ export class RoadmapComponent implements OnInit, OnDestroy {
     private sanitizer: DomSanitizer,
     private cdr:       ChangeDetectorRef,
     private router:    Router,
+    private route:     ActivatedRoute,
   ) {}
 
   ngOnInit(): void {
+    this.readExploreHandoff();
     this.subs.add(
       this.auth.currentUser$.subscribe(user => {
         if (user) {
-          this.loadHome();
+          if (this.importedTopic && !this.importedTopicHandled) {
+            this.openImportedTopic(this.importedTopic);
+          } else {
+            this.loadHome();
+          }
         } else {
           // User logged out while on this protected page — navigate away
           this.savedRoadmaps = [];
@@ -462,11 +471,40 @@ export class RoadmapComponent implements OnInit, OnDestroy {
   }
 
   openCreateWizard(): void {
+    this.importedTopic   = '';
+    this.importedContext = '';
     this.wizard         = { language: null, level: null, goal: null, commitment: null };
     this.wizardStep     = 1;
     this.generateError  = false;
     this.generatedNodes = [];
     this.view           = 'create';
+  }
+
+  private readExploreHandoff(): void {
+    const queryTopic = this.route.snapshot.queryParamMap.get('topic')?.trim() ?? '';
+    let stored: any = null;
+    try {
+      const raw = sessionStorage.getItem('codexa_roadmap_handoff');
+      stored = raw ? JSON.parse(raw) : null;
+    } catch {}
+
+    const isFresh = stored?.createdAt && Date.now() - Number(stored.createdAt) < 30 * 60 * 1000;
+    this.importedTopic = (queryTopic || (isFresh ? stored?.topic : '') || '').slice(0, 160);
+    this.importedContext = (isFresh ? stored?.context : '') || '';
+  }
+
+  private openImportedTopic(topic: string): void {
+    this.importedTopicHandled = true;
+    this.wizard = { language: topic, level: null, goal: null, commitment: null };
+    this.wizardStep = 2;
+    this.generateError = false;
+    this.generatedNodes = [];
+    this.view = 'create';
+    sessionStorage.removeItem('codexa_roadmap_handoff');
+  }
+
+  chooseDifferentTopic(): void {
+    this.openCreateWizard();
   }
 
   openRoadmap(roadmap: Roadmap): void {
@@ -493,7 +531,11 @@ export class RoadmapComponent implements OnInit, OnDestroy {
 
   // ─── Wizard ─────────────────────────────────────────────────────────────
 
-  selectLanguage(lang: AICourseFocus): void { this.wizard.language   = lang;  }
+  selectLanguage(lang: AICourseFocus): void {
+    this.importedTopic = '';
+    this.importedContext = '';
+    this.wizard.language = lang;
+  }
   selectLevel(lvl: SkillLevel):           void { this.wizard.level      = lvl;   }
   selectGoal(g: LearningGoal):            void { this.wizard.goal       = g;     }
   selectCommitment(c: Commitment):        void { this.wizard.commitment = c;     }
@@ -538,14 +580,14 @@ export class RoadmapComponent implements OnInit, OnDestroy {
         this.generationStage = 3;
         this.isGenerating  = false;
         this.generateError = true;
-        this.generatedNodes = this.rmSvc.parseNodes('');   // fallback nodes
+        this.generatedNodes = this.rmSvc.parseNodes('', this.wizard.language ?? 'this topic');
         this.cdr.markForCheck();
       },
       complete: () => {
         clearInterval(this._stageTimer);
         this.generationStage = 3;
         this.isGenerating   = false;
-        this.generatedNodes = this.rmSvc.parseNodes(rawText);
+        this.generatedNodes = this.rmSvc.parseNodes(rawText, this.wizard.language ?? 'this topic');
         this.cdr.markForCheck();
       },
     });

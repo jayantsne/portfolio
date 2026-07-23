@@ -54,6 +54,7 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
   svgHeight = 500;
   currentStepIndex = -1;
   isPlaying = false;
+  expandedStepIndex: number | null = null;
 
   private completedStepIds = new Set<string>();
   private traversedEdgeIds = new Set<string>();
@@ -119,6 +120,7 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
 
   reset(): void {
     this.stopPlay();
+    this.closeStepDetails();
     this.resetState();
     this.stepSelected.emit(0);
     this.scrollActiveStepIntoView(0);
@@ -151,6 +153,72 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
     this.stepSelected.emit(index);
     this.scrollActiveStepIntoView(index);
     this.cdr.markForCheck();
+  }
+
+  openStepDetails(index: number): void {
+    this.selectStep(index);
+    this.expandedStepIndex = index;
+    this.cdr.markForCheck();
+  }
+
+  closeStepDetails(): void {
+    this.expandedStepIndex = null;
+    this.cdr.markForCheck();
+  }
+
+  moveExpandedStep(offset: number): void {
+    if (this.expandedStepIndex === null || !this.diagram?.steps?.length) {
+      return;
+    }
+
+    const nextIndex = Math.min(
+      this.diagram.steps.length - 1,
+      Math.max(0, this.expandedStepIndex + offset),
+    );
+
+    this.openStepDetails(nextIndex);
+  }
+
+  get expandedStep() {
+    return this.expandedStepIndex === null
+      ? null
+      : this.diagram?.steps?.[this.expandedStepIndex] || null;
+  }
+
+  get expandedCodeLine(): string {
+    const codeLine = this.expandedStep?.codeLine;
+    return codeLine === undefined ? '' : this.diagram?.code?.[codeLine] || '';
+  }
+
+  get canMoveExpandedBack(): boolean {
+    return this.expandedStepIndex !== null && this.expandedStepIndex > 0;
+  }
+
+  get canMoveExpandedForward(): boolean {
+    return this.expandedStepIndex !== null
+      && this.expandedStepIndex < (this.diagram?.steps?.length || 0) - 1;
+  }
+
+  expandedTrigger(): string {
+    return this.expandedStep?.trigger
+      || 'This step starts after the previous stage has completed and passed control forward.';
+  }
+
+  expandedInput(): string {
+    return this.expandedStep?.input
+      || 'The state, request, event, or data produced by the previous step enters here.';
+  }
+
+  expandedInternalWork(): string {
+    const step = this.expandedStep;
+    return step?.internalWork
+      || step?.description
+      || 'The system validates the input, applies this step’s responsibility, and prepares the next state.';
+  }
+
+  expandedOutput(): string {
+    return this.expandedStep?.output
+      || 'A decision, updated state, or result is produced for the next stage in the flow.';
   }
 
   get currentStep() {
@@ -341,6 +409,7 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
 
   private resetState(): void {
     this.currentStepIndex = -1;
+    this.expandedStepIndex = null;
     this.completedStepIds.clear();
     this.traversedEdgeIds.clear();
     this.activeEdgeId = null;

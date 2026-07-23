@@ -4,15 +4,8 @@ export type NodeStatus     = 'completed' | 'active' | 'locked';
 export type SkillLevel     = 'beginner' | 'intermediate' | 'advanced';
 export type LearningGoal   = 'research' | 'industry' | 'projects' | 'interview';
 export type Commitment     = 'casual' | 'regular' | 'intensive';
-export type AICourseFocus  =
-  | 'Machine Learning'
-  | 'Deep Learning'
-  | 'NLP'
-  | 'Computer Vision'
-  | 'Generative AI'
-  | 'AI Engineering'
-  | 'Data Science'
-  | 'Reinforcement Learning';
+/** Suggested domains and arbitrary concepts imported from Explore. */
+export type AICourseFocus = string;
 /** @deprecated use AICourseFocus — kept for backwards compat with stored data */
 export type ProgrammingLang = AICourseFocus;
 

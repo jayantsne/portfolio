@@ -113,9 +113,9 @@
             [class.fv-node--active]="nodeState(cn.step.id) === 'active'"
             [class.fv-node--completed]="nodeState(cn.step.id) === 'completed'"
             [class.fv-node--idle]="nodeState(cn.step.id) === 'idle'"
-            (click)="selectStep(nodeIndex)"
-            (keydown.enter)="selectStep(nodeIndex)"
-            (keydown.space)="$event.preventDefault(); selectStep(nodeIndex)">
+            (click)="openStepDetails(nodeIndex)"
+            (keydown.enter)="openStepDetails(nodeIndex)"
+            (keydown.space)="$event.preventDefault(); openStepDetails(nodeIndex)">
 
             <!-- Lottie-style active motion ring -->
             <g *ngIf="animationStyle === 'Lottie' && nodeState(cn.step.id) === 'active'"
@@ -197,15 +197,122 @@
     </div>
 
     <aside class="fv-key-panel">
-      <h4>Key points</h4>
+      <div class="fv-key-heading">
+        <div>
+          <span>Flow guide</span>
+          <h4>All steps</h4>
+        </div>
+        <small>Click to explore</small>
+      </div>
       <ul>
-        <li *ngFor="let step of diagram.steps | slice:0:5; let i = index"
+        <li *ngFor="let step of diagram.steps; let i = index"
             [class.fv-key-active]="i === currentStepIndex">
-          <span>{{ i + 1 }}</span>
-          <p><strong>{{ step.label }}</strong>{{ step.whyItMatters || step.description }}</p>
+          <button type="button" (click)="openStepDetails(i)">
+            <span>{{ i + 1 }}</span>
+            <p><strong>{{ step.label }}</strong>{{ step.description }}</p>
+          </button>
         </li>
       </ul>
     </aside>
+
+    <div class="fv-focus-layer"
+         *ngIf="expandedStep"
+         role="dialog"
+         aria-modal="true"
+         [attr.aria-label]="'Inside step ' + ((expandedStepIndex || 0) + 1) + ': ' + expandedStep.label"
+         (click)="closeStepDetails()">
+      <section class="fv-focus-card" (click)="$event.stopPropagation()">
+        <header class="fv-focus-header">
+          <div class="fv-focus-title">
+            <span>Step {{ (expandedStepIndex || 0) + 1 }} of {{ diagram.steps.length }}</span>
+            <h3>{{ expandedStep.label }}</h3>
+            <p>{{ expandedStep.description }}</p>
+          </div>
+          <button type="button" class="fv-focus-close" (click)="closeStepDetails()" aria-label="Close step details">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" aria-hidden="true">
+              <path d="M6 6l12 12M18 6L6 18"/>
+            </svg>
+          </button>
+        </header>
+
+        <div class="fv-focus-process" aria-label="Internal step flow">
+          <article>
+            <span>Input</span>
+            <strong>What enters</strong>
+            <p>{{ expandedInput() }}</p>
+          </article>
+          <div class="fv-focus-connector" aria-hidden="true">
+            <span></span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </div>
+          <article class="fv-focus-process-main">
+            <span>Inside this step</span>
+            <strong>What the system does</strong>
+            <p>{{ expandedInternalWork() }}</p>
+          </article>
+          <div class="fv-focus-connector" aria-hidden="true">
+            <span></span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14M13 6l6 6-6 6"/>
+            </svg>
+          </div>
+          <article>
+            <span>Output</span>
+            <strong>What leaves</strong>
+            <p>{{ expandedOutput() }}</p>
+          </article>
+        </div>
+
+        <div class="fv-focus-grid">
+          <article>
+            <span>Trigger</span>
+            <strong>When does it start?</strong>
+            <p>{{ expandedTrigger() }}</p>
+          </article>
+          <article>
+            <span>Why it matters</span>
+            <strong>Why should I remember it?</strong>
+            <p>{{ expandedStep.whyItMatters || expandedStep.description }}</p>
+          </article>
+          <article *ngIf="expandedStep.example">
+            <span>Example</span>
+            <strong>What does it look like?</strong>
+            <p>{{ expandedStep.example }}</p>
+          </article>
+          <article *ngIf="expandedStep.antiPattern">
+            <span>Watch out</span>
+            <strong>Common mistake</strong>
+            <p>{{ expandedStep.antiPattern }}</p>
+          </article>
+        </div>
+
+        <div class="fv-focus-code" *ngIf="expandedCodeLine">
+          <div>
+            <span>{{ diagram.codeLanguage || 'Code' }}</span>
+            <small>Related code</small>
+          </div>
+          <code>{{ expandedCodeLine }}</code>
+        </div>
+
+        <footer class="fv-focus-footer">
+          <p>Use the arrows to inspect the flow one step at a time.</p>
+          <div>
+            <button type="button" (click)="moveExpandedStep(-1)" [disabled]="!canMoveExpandedBack">
+              Previous
+            </button>
+            <button type="button" class="fv-focus-next" (click)="moveExpandedStep(1)"
+                    [disabled]="!canMoveExpandedForward">
+              {{ canMoveExpandedForward ? 'Next step' : 'Flow complete' }}
+            </button>
+          </div>
+        </footer>
+      </section>
+    </div>
 
   </div>
 
@@ -213,7 +320,7 @@
     <button type="button" *ngFor="let step of diagram.steps; let i = index"
             [class.fv-iteration-active]="i === currentStepIndex"
             [class.fv-iteration-done]="i < currentStepIndex"
-            (click)="selectStep(i)">
+            (click)="openStepDetails(i)">
       <span>{{ i + 1 }}</span>
       <strong>{{ step.label }}</strong>
     </button>

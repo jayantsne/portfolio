@@ -216,6 +216,18 @@
       </h2>
     </div>
 
+    <section *ngIf="importedTopic" class="rm-imported-topic" @fadeIn>
+      <div class="rm-imported-topic-icon" aria-hidden="true">↗</div>
+      <div class="rm-imported-topic-copy">
+        <span class="rm-imported-topic-eyebrow">Imported from Explore</span>
+        <strong>{{ importedTopic }}</strong>
+        <p *ngIf="importedContext">{{ importedContext }}</p>
+      </div>
+      <button type="button" class="rm-imported-topic-change" (click)="chooseDifferentTopic()">
+        Change topic
+      </button>
+    </section>
+
     <!-- Step 1: Language -->
     <div *ngIf="wizardStep === 1" class="rm-wizard-step" @fadeUp>
       <div class="rm-domain-grid">

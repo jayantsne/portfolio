@@ -10563,6 +10563,18 @@ html[data-theme="light"] .am-msg-card {
   }
 }
 
+.am-tb-roadmap {
+  border-color: rgba(13, 148, 136, 0.28);
+  color: #0f766e;
+  background: #f0fdfa;
+}
+
+.am-tb-roadmap:hover:not(:disabled) {
+  border-color: #5eead4;
+  color: #115e59;
+  background: #ccfbf1;
+}
+
 /* Focused Explore landing */
 .am-shell { --am-rail-w: 56px; }
 .am-shell.am-sidebar-visible { grid-template-columns: var(--am-rail-w) 286px minmax(0, 1fr); }

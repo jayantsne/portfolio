@@ -120,7 +120,7 @@ export class RoadmapService {
 
     const prompt = `You are an AI curriculum designer.
 Generate a structured learning roadmap for:
-- AI Domain: ${language}
+- Learning Topic: ${language}
 - Skill Level: ${level}
 - Goal: ${goal}
 - Commitment: ${commitment} (~${weeklyHours} hrs/week, ~${totalWeeks} weeks)
@@ -137,7 +137,7 @@ Rules:
 - Topics must be ordered from fundamentals to advanced
 - icon MUST be a single emoji character only (not text, not multiple emojis)
 - estMinutes between 15 and 60
-- First topic: absolute starting point for a ${level} learner of ${language}
+- First topic: the best starting point for a ${level} learner of ${language}
 - Last topic: a practical project or real-world application
 - All topics must be specifically about ${language}
 - Match the goal: ${goal} — focus topics accordingly`;
@@ -173,7 +173,7 @@ Be concise, visual with examples, and avoid unnecessary jargon.`;
 
     return {
       id:             'rm_' + Date.now().toString(36),
-      title:          `${wizard.language} ${goalLabels[wizard.goal!]} Path`,
+      title:          `${wizard.language} · ${goalLabels[wizard.goal!]}`,
       language:       wizard.language!,
       level:          wizard.level!,
       goal:           wizard.goal!,
@@ -188,13 +188,13 @@ Be concise, visual with examples, and avoid unnecessary jargon.`;
   }
 
   /** Parse the raw AI JSON string into typed RoadmapNode[] */
-  parseNodes(raw: string): RoadmapNode[] {
+  parseNodes(raw: string, subject = 'this topic'): RoadmapNode[] {
     // strip potential markdown code fences
     const clean = raw.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     // find JSON array
     const start = clean.indexOf('[');
     const end   = clean.lastIndexOf(']');
-    if (start === -1 || end === -1) return this.fallbackNodes();
+    if (start === -1 || end === -1) return this.fallbackNodes(subject);
 
     try {
       const arr = JSON.parse(clean.substring(start, end + 1));
@@ -209,11 +209,36 @@ Be concise, visual with examples, and avoid unnecessary jargon.`;
         icon:        n.icon ?? '📌',
       }));
     } catch {
-      return this.fallbackNodes();
+      return this.fallbackNodes(subject);
     }
   }
 
-  private fallbackNodes(): RoadmapNode[] {
+  private fallbackNodes(subject: string): RoadmapNode[] {
+    if (subject !== 'this topic') {
+      const genericTopics = [
+        { topic: `${subject} fundamentals`, icon: '📘', desc: 'Build the essential vocabulary and mental model' },
+        { topic: 'Core building blocks', icon: '🧩', desc: `Understand the main parts of ${subject}` },
+        { topic: 'How it works', icon: '⚙️', desc: 'Follow the process from input to outcome' },
+        { topic: 'Guided example', icon: '🔎', desc: 'Walk through a clear practical example' },
+        { topic: 'Hands-on practice', icon: '🛠️', desc: 'Apply the concept in a focused exercise' },
+        { topic: 'Common patterns', icon: '🧭', desc: 'Recognize the approaches used most often' },
+        { topic: 'Mistakes and trade-offs', icon: '⚠️', desc: 'Avoid pitfalls and explain key decisions' },
+        { topic: 'Advanced concepts', icon: '🚀', desc: `Go beyond the basics of ${subject}` },
+        { topic: 'Real-world application', icon: '🌐', desc: 'Connect the concept to production scenarios' },
+        { topic: `${subject} capstone`, icon: '🏆', desc: 'Combine the learning in one final challenge' },
+      ];
+      return genericTopics.map((topic, index) => ({
+        id: `node_${index}_fallback`,
+        order: index + 1,
+        topic: topic.topic,
+        description: topic.desc,
+        estMinutes: 20,
+        status: (index === 0 ? 'active' : 'locked') as NodeStatus,
+        completedAt: null,
+        icon: topic.icon,
+      }));
+    }
+
     const topics = [
       { topic: 'AI Fundamentals',        icon: '🤖', desc: 'Core concepts and the AI landscape' },
       { topic: 'Math Foundations',       icon: '📐', desc: 'Linear algebra, calculus, statistics' },

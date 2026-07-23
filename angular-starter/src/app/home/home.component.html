@@ -543,6 +543,12 @@
                                   title="Poor response">
                             <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M10.5 8.5V3H13a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-2.5zm0 0L9 13s-.5.5-1 .5-1-.5-1-1V10H2.5s-.5 0-.5-.5L3.5 5s.1-.5.5-.5h6.5"/></svg>
                           </button>
+                          <button class="am-tb-save am-tb-roadmap"
+                                  (click)="addToRoadmap(msg)"
+                                  title="Turn this topic into a learning roadmap">
+                            <span aria-hidden="true">↗</span>
+                            <span>Roadmap</span>
+                          </button>
                         </div>
                         <!-- Right: time / copy / regen / save -->
                         <div class="am-toolbar-right">

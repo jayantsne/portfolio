@@ -199,9 +199,11 @@
 
   .main {
     order: 1;
+    flex: 1 1 auto;
     width: 100%;
-    height: calc(100dvh - 58px);
-    padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    height: auto;
+    min-height: 0;
+    padding-bottom: 0;
     box-sizing: border-box;
     --header-h: calc(116px + env(safe-area-inset-bottom, 0px));
   }

@@ -2347,7 +2347,9 @@
     top: 52px;  /* start below global navbar (navbar height = 52px) */
     left: 0;
     right: 0;
-    bottom: 0;
+    /* End above the shared fixed mobile navigation. Previously the reader
+       extended behind it and needed a visible spacer to keep content clear. */
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
     z-index: 1400;               /* below site-header so navbar stays on top */
     background: #f4f6fb;
     overflow: hidden;
@@ -2426,7 +2428,7 @@
     scroll-behavior: smooth;
     background: #f4f6fb;
   }
-  .mr-scroll-spacer { height: 32px; }  /* clears AI drawer */
+  .mr-scroll-spacer { display: none; }
 
   /* ── Flat inline page header — no card, no gradient ────────── */
   .mr-page-header {
@@ -2536,7 +2538,7 @@
     line-height: 1.95;
     color: #111827;
     background: transparent;
-    padding: 22px 20px 28px;
+    padding: 22px 20px 14px;
     border: none;
     box-shadow: none;
   }
@@ -8896,7 +8898,7 @@
 
   .mobile-reader {
     top: 0;
-    bottom: 58px;
+    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
     left: 0;
     width: 100%;
     max-width: none;
