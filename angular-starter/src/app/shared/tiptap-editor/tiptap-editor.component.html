@@ -56,6 +56,9 @@
       <div class="tt-sep"></div>
       <button class="tt-btn" (mousedown)="$event.preventDefault(); editor.chain().focus().addRowAfter().run()" title="Add row">+R</button>
       <button class="tt-btn" (mousedown)="$event.preventDefault(); editor.chain().focus().addColumnAfter().run()" title="Add column">+C</button>
+      <button class="tt-btn" (mousedown)="$event.preventDefault(); editor.chain().focus().deleteRow().run()" title="Delete row">−R</button>
+      <button class="tt-btn" (mousedown)="$event.preventDefault(); editor.chain().focus().deleteColumn().run()" title="Delete column">−C</button>
+      <button class="tt-btn" (mousedown)="$event.preventDefault(); editor.chain().focus().mergeOrSplit().run()" title="Merge or split selected cells">Merge</button>
       <button class="tt-btn tt-btn--danger" (mousedown)="$event.preventDefault(); editor.chain().focus().deleteTable().run()" title="Delete table">×</button>
     </ng-container>
   </div>

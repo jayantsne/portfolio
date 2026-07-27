@@ -168,7 +168,17 @@ export class TiptapEditorComponent implements AfterViewInit, OnDestroy {
   insertTable(): void {
     const rows = Math.min(20, Math.max(1, this.tableRows));
     const cols = Math.min(12, Math.max(1, this.tableColumns));
-    this.editor?.chain().focus().insertTable({ rows, cols, withHeaderRow: true }).run();
+    if (!this.editor) return;
+    const tableRows = Array.from({ length: rows }, (_, rowIndex) => ({
+      type: 'tableRow',
+      content: Array.from({ length: cols }, () =>
+        this.tableCell('', rowIndex === 0 ? 'tableHeader' : 'tableCell')
+      ),
+    }));
+    this.insertTopLevelBlock([
+      { type: 'table', content: tableRows },
+      { type: 'paragraph' },
+    ]);
     this.showTablePicker = false;
   }
 
@@ -188,16 +198,16 @@ export class TiptapEditorComponent implements AfterViewInit, OnDestroy {
       cells.push(this.tableCell(label));
       if (index < labels.length - 1) cells.push(this.tableCell('→'));
     });
-    this.editor.chain().focus().insertContent([
+    this.insertTopLevelBlock([
       { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Flow' }] },
       { type: 'table', attrs: { layout: 'flow' }, content: [{ type: 'tableRow', content: cells }] },
       { type: 'paragraph' },
-    ]).run();
+    ]);
   }
 
   insertDiagram(): void {
     if (!this.editor) return;
-    this.editor.chain().focus().insertContent([
+    this.insertTopLevelBlock([
       { type: 'heading', attrs: { level: 3 }, content: [{ type: 'text', text: 'Diagram' }] },
       {
         type: 'table', attrs: { layout: 'diagram' }, content: [
@@ -206,7 +216,7 @@ export class TiptapEditorComponent implements AfterViewInit, OnDestroy {
         ],
       },
       { type: 'paragraph' },
-    ]).run();
+    ]);
   }
 
   ngOnDestroy(): void {
@@ -264,6 +274,26 @@ export class TiptapEditorComponent implements AfterViewInit, OnDestroy {
       const codeMatch = block.match(/^\x00CODEBLOCK(\d+)\x00$/);
       if (codeMatch) return codeBlocks[+codeMatch[1]];
 
+      // GitHub-style Markdown table. Converting it here keeps existing Markdown
+      // notes editable as real Tiptap table cells instead of flattening them.
+      const tableLines = block.split('\n').map(line => line.trim()).filter(Boolean);
+      if (
+        tableLines.length >= 2 &&
+        /^\|.*\|$/.test(tableLines[0]) &&
+        /^\|(?:\s*:?-+:?\s*\|)+$/.test(tableLines[1])
+      ) {
+        const cells = (line: string) =>
+          line.replace(/^\|/, '').replace(/\|$/, '').split('|').map(cell => cell.trim());
+        const header = cells(tableLines[0])
+          .map(cell => `<th><p>${this.inline(cell)}</p></th>`)
+          .join('');
+        const body = tableLines.slice(2)
+          .filter(line => /^\|.*\|$/.test(line))
+          .map(line => `<tr>${cells(line).map(cell => `<td><p>${this.inline(cell)}</p></td>`).join('')}</tr>`)
+          .join('');
+        return `<table><thead><tr>${header}</tr></thead><tbody>${body}</tbody></table>`;
+      }
+
       // Headings
       const hMatch = block.match(/^(#{1,3})\s+(.+)/);
       if (hMatch) {
@@ -320,11 +350,26 @@ export class TiptapEditorComponent implements AfterViewInit, OnDestroy {
   }
 
   private tableCell(text: string, type = 'tableCell', colspan = 1): any {
+    const paragraph: any = { type: 'paragraph' };
+    if (text) paragraph.content = [{ type: 'text', text }];
     return {
       type,
       attrs: { colspan, rowspan: 1, colwidth: null },
-      content: [{ type: 'paragraph', content: [{ type: 'text', text }] }],
+      content: [paragraph],
     };
+  }
+
+  private insertTopLevelBlock(content: any[]): void {
+    if (!this.editor) return;
+    const nodes = content.map(item => this.editor!.schema.nodeFromJSON(item));
+    let insertionPoint = this.editor.state.doc.content.size;
+    let transaction = this.editor.state.tr;
+    nodes.forEach(node => {
+      transaction = transaction.insert(insertionPoint, node);
+      insertionPoint += node.nodeSize;
+    });
+    this.editor.view.dispatch(transaction.scrollIntoView());
+    this.editor.commands.focus('end');
   }
 
   private normaliseSize(event: Event, max: number): number {

@@ -685,7 +685,9 @@
     </main><!-- /notes-right -->
 
     <!-- ══════════════════ MOBILE READER OVERLAY ══════════════════ -->
-    <div class="mobile-reader" *ngIf="mobileReaderOpen && activeNote && !editMode">
+    <div class="mobile-reader"
+         *ngIf="mobileReaderOpen && activeNote && !editMode"
+         (scroll)="updateReadingProgress($event)">
 
       <!-- Scrollable content area -->
       <div class="mr-scroll">
@@ -693,10 +695,32 @@
         <!-- Flat inline page header — no card, no gradient -->
         <div class="mr-page-header">
           <div class="mr-title-row">
-            <button class="mr-back-btn" (click)="closeMobileReader()" title="Back to notes">
+            <button class="mr-back-btn" (click)="closeMobileReader()" title="Back to notes" aria-label="Back to notes">
               <span class="mr-back-arrow">‹</span>
             </button>
             <h1 class="mr-note-title">{{ activeNote.topic }}</h1>
+            <div class="mr-more-wrap">
+              <button class="mr-more-btn"
+                      (click)="showMoreMenu = !showMoreMenu"
+                      [attr.aria-expanded]="showMoreMenu"
+                      aria-label="Note options">
+                <i class="fas fa-ellipsis-v" aria-hidden="true"></i>
+              </button>
+              <div class="mr-more-menu" *ngIf="showMoreMenu">
+                <button (click)="openMobileEditor(); showMoreMenu = false">
+                  <i class="fas fa-pen" aria-hidden="true"></i> Edit note
+                </button>
+                <button (click)="showAiActions = true; showMoreMenu = false">
+                  <i class="fas fa-magic" aria-hidden="true"></i> AI tools
+                </button>
+                <button (click)="shareNote(); showMoreMenu = false">
+                  <i class="fas fa-share-alt" aria-hidden="true"></i> Share
+                </button>
+                <button (click)="exportAsMd(); showMoreMenu = false">
+                  <i class="fas fa-download" aria-hidden="true"></i> Export Markdown
+                </button>
+              </div>
+            </div>
           </div>
           <div class="mr-meta">
             <div class="mr-inline-meta">
@@ -710,6 +734,9 @@
               <span class="mr-tag" *ngFor="let t of (activeNote.tags ?? [])">#{{ t }}</span>
             </div>
           </div>
+        </div>
+        <div class="mr-reading-progress" aria-label="Reading progress">
+          <span [style.width.%]="readingProgress"></span>
         </div>
 
         <!-- Markdown body -->
@@ -841,12 +868,6 @@
         <button class="me-tb-btn me-tb-undo" *ngIf="mePreFormatContent !== null"
                 (click)="undoMeFormat()">↩ Undo</button>
         <div class="me-tb-sep"></div>
-        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'heading')" title="Heading">H1</button>
-        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'bold')" title="Bold"><strong>B</strong></button>
-        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'bullet')" title="Bullet list">•≡</button>
-        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'checklist')" title="Checklist">☑</button>
-        <button class="me-tb-icon" (click)="insertMdSyntax(meTextarea, 'code')" title="Code block">&lt;/&gt;</button>
-        <div class="me-tb-sep"></div>
         <button class="me-tb-toggle" (click)="autoFormatEnabled = !autoFormatEnabled"
                 [class.me-tb-toggle-on]="autoFormatEnabled"
                 title="Auto-format pasted text with AI">
@@ -860,10 +881,14 @@
 
       <!-- Textarea fills remaining height -->
       <div class="me-body">
-        <textarea class="me-textarea" #meTextarea
-                  [(ngModel)]="editContent"                  (paste)="onMobileEditorPaste($event)"                  [class.me-streaming]="meFormatLoading"
-                  placeholder="Type or paste your note here…&#10;&#10;✨ Tip: Tap ‘Format with AI’ to clean up messy text instantly.">
-        </textarea>
+        <app-tiptap-editor
+          #meTiptap
+          [initialContent]="editContent"
+          [placeholder]="'Type or paste your note here…'"
+          [editorClass]="'mobile-note-tiptap'"
+          (contentChange)="editContent = $event"
+          class="me-tiptap-host">
+        </app-tiptap-editor>
       </div>
 
     </div><!-- /mobile-editor -->

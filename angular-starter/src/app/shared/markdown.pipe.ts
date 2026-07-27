@@ -105,19 +105,38 @@ export class MarkdownPipe implements PipeTransform {
       const bq = line.match(/^>\s*(.*)/);
       if (bq) { closeLists(); out.push(`<blockquote class="md-blockquote">${this.inline(bq[1])}</blockquote>`); continue; }
 
+      // Compatibility for older notes whose table line-breaks were flattened
+      // before saving: |A|B| |---|---| |1|2| |3|4|
+      const packedTable = this.renderPackedTable(line);
+      if (packedTable) {
+        closeLists();
+        out.push(packedTable);
+        continue;
+      }
+
       // Table
       if (line.match(/^\|.+\|$/) && (lines[i + 1] || '').match(/^\|[\s\-:]+\|/)) {
         closeLists();
-        const hdrs = line.split('|').filter(c => c.trim()).map(c => `<th>${this.inline(c.trim())}</th>`).join('');
+        const tableCells = (row: string) => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|');
+        const hdrs = tableCells(line).map(c => `<th>${this.inline(c.trim())}</th>`).join('');
         out.push(`<table class="md-table"><thead><tr>${hdrs}</tr></thead><tbody>`);
         i += 2;
         while (i < lines.length && lines[i].match(/^\|.+\|$/)) {
-          const cells = lines[i].split('|').filter(c => c.trim()).map(c => `<td>${this.inline(c.trim())}</td>`).join('');
+          const cells = tableCells(lines[i]).map(c => `<td>${this.inline(c.trim())}</td>`).join('');
           out.push(`<tr>${cells}</tr>`);
           i++;
         }
         out.push('</tbody></table>');
         i--;
+        continue;
+      }
+
+      // Compatibility for flattened arrow diagrams such as:
+      // ↓ WHERE ↓ GROUP BY ↓ HAVING ↓ SELECT ↓ ORDER BY
+      const packedFlow = this.renderPackedFlow(line);
+      if (packedFlow) {
+        closeLists();
+        out.push(packedFlow);
         continue;
       }
 
@@ -187,6 +206,19 @@ export class MarkdownPipe implements PipeTransform {
       return `<code class="md-inline md-hook">${hook}()</code>`;
     });
 
+    // The former mobile textarea saved some Markdown tables inside a single
+    // HTML paragraph. Reconstruct those before returning Tiptap HTML.
+    decorated = decorated.replace(/<p[^>]*>(\|[^<]*\|\s*)<\/p>/gi, (match, content) => {
+      return this.renderPackedTable(content) || match;
+    });
+
+    // Tiptap HTML saved by older mobile editors may contain a complete arrow
+    // sequence in one paragraph. Upgrade it to the same visual flow used for
+    // Markdown input while preserving ordinary prose paragraphs.
+    decorated = decorated.replace(/<p([^>]*)>([^<]*(?:↓[^<]*){2,})<\/p>/gi, (_match, attrs, content) => {
+      return this.renderPackedFlow(content) || `<p${attrs}>${content}</p>`;
+    });
+
     protectedParts.forEach((part, i) => {
       decorated = decorated.replace(`\x00HTMLPROTECT${i}\x00`, part);
     });
@@ -201,6 +233,56 @@ export class MarkdownPipe implements PipeTransform {
     text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g,
       '<a class="md-link" href="$2" target="_blank" rel="noopener">$1</a>');
     return text;
+  }
+
+  private renderPackedTable(line: string): string | null {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('|') || !/\|\s*:?-{3,}:?\s*\|/.test(trimmed)) return null;
+
+    const rawTokens = trimmed
+      .replace(/^\|/, '')
+      .replace(/\|$/, '')
+      .split('|')
+      .map(token => token.trim());
+    const separatorStart = rawTokens.findIndex(token => /^:?-{3,}:?$/.test(token));
+    if (separatorStart < 1) return null;
+
+    const headers = rawTokens.slice(0, separatorStart).filter(Boolean);
+    const columnCount = headers.length;
+    if (columnCount < 2) return null;
+
+    let cursor = separatorStart;
+    let separatorsSeen = 0;
+    while (cursor < rawTokens.length && separatorsSeen < columnCount) {
+      if (/^:?-{3,}:?$/.test(rawTokens[cursor])) separatorsSeen++;
+      cursor++;
+    }
+    if (separatorsSeen !== columnCount) return null;
+
+    const data = rawTokens.slice(cursor).filter(Boolean);
+    const rows: string[][] = [];
+    for (let index = 0; index < data.length; index += columnCount) {
+      const row = data.slice(index, index + columnCount);
+      if (row.length === columnCount) rows.push(row);
+    }
+
+    const head = headers.map(cell => `<th>${this.inline(cell)}</th>`).join('');
+    const body = rows
+      .map(row => `<tr>${row.map(cell => `<td>${this.inline(cell)}</td>`).join('')}</tr>`)
+      .join('');
+    return `<div class="md-table-scroll"><table class="md-table"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  }
+
+  private renderPackedFlow(line: string): string | null {
+    const plain = line.replace(/&darr;/gi, '↓').replace(/&#8595;/g, '↓').trim();
+    if ((plain.match(/↓/g) || []).length < 2) return null;
+    const steps = plain.split('↓').map(step => step.trim()).filter(Boolean);
+    if (steps.length < 2) return null;
+    return `<div class="md-inline-flow" role="list" aria-label="Process flow">${
+      steps.map((step, index) =>
+        `<div class="md-flow-step" role="listitem"><span class="md-flow-number">${index + 1}</span><span>${this.inline(step)}</span></div>`
+      ).join('<span class="md-flow-arrow" aria-hidden="true">↓</span>')
+    }</div>`;
   }
 }
 

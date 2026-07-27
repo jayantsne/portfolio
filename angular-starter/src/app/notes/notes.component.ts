@@ -95,6 +95,7 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   // ── Mobile Reader ────────────────────────────────────────────────────────
   mobileReaderOpen    = false;
+  readingProgress     = 0;
   sidebarCollapsed    = false;
   showPinnedOnly      = false;
   showMoreMenu        = false;
@@ -136,6 +137,8 @@ export class NotesComponent implements OnInit, OnDestroy {
   @ViewChild('cnTiptap') cnTiptap?: TiptapEditorComponent;
   /** Rich-text editor for the desktop Edit Note panel */
   @ViewChild('editTiptap') editTiptap?: TiptapEditorComponent;
+  /** Rich-text editor for the mobile Edit Note overlay */
+  @ViewChild('meTiptap') meTiptap?: TiptapEditorComponent;
   /** Main desktop reader surface, focused when a note opens from the sidebar. */
   @ViewChild('readerPanel') readerPanel?: ElementRef<HTMLElement>;
   /** Title field in the create-note workspace. */
@@ -481,6 +484,7 @@ export class NotesComponent implements OnInit, OnDestroy {
     this.stepIndex        = 0;
     this.stopAutoPlay();
     this.mobileReaderOpen = true;
+    this.readingProgress  = 0;
     this.showMoreMenu     = false;
     this.showAiActions    = false;
     this.aiActionResult   = '';
@@ -502,6 +506,15 @@ export class NotesComponent implements OnInit, OnDestroy {
     this.showFabMenu      = false;
     this.activeNote       = null;
     this.editMode         = false;
+    this.readingProgress  = 0;
+  }
+
+  updateReadingProgress(event: Event): void {
+    const reader = event.currentTarget as HTMLElement;
+    const scrollableDistance = reader.scrollHeight - reader.clientHeight;
+    this.readingProgress = scrollableDistance > 0
+      ? Math.min(100, Math.max(0, (reader.scrollTop / scrollableDistance) * 100))
+      : 100;
   }
 
   toggleSidebar(): void {
@@ -554,7 +567,7 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   undoMeFormat(): void {
     if (this.mePreFormatContent !== null) {
-      this.editTiptap?.setContent(this.mePreFormatContent);
+      this.meTiptap?.setContent(this.mePreFormatContent);
       this.editContent        = this.mePreFormatContent;
       this.mePreFormatContent = null;
     }
@@ -662,9 +675,10 @@ export class NotesComponent implements OnInit, OnDestroy {
    * NoteFormatterService — works for both Tiptap (HTML) and plain-text textarea.
    */
   formatMobileWithAI(): void {
-    const isTiptap    = !!this.editTiptap;
-    const currentHtml = isTiptap ? this.editTiptap!.getHTML() : this.editContent;
-    const isEmpty     = isTiptap ? this.editTiptap!.isEmpty() : !this.editContent.trim();
+    const editor      = this.meTiptap ?? this.editTiptap;
+    const isTiptap    = !!editor;
+    const currentHtml = isTiptap ? editor!.getHTML() : this.editContent;
+    const isEmpty     = isTiptap ? editor!.isEmpty() : !this.editContent.trim();
 
     if (isEmpty) return;
 
@@ -674,7 +688,7 @@ export class NotesComponent implements OnInit, OnDestroy {
     const formatted = this.noteFormatter.format(currentHtml);
     this.mePreFormatContent = currentHtml; // keep undo buffer
     if (isTiptap) {
-      this.editTiptap!.setContent(formatted);
+      editor!.setContent(formatted);
     }
     this.editContent = formatted;
   }
@@ -1016,7 +1030,11 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
     // Mobile editor (textarea) → always use editContent (plain markdown — NEVER Tiptap HTML).
     // Desktop editor (Tiptap)  → use Tiptap's HTML output.
     // This prevents raw HTML tags appearing in the mobile textarea after a round-trip.
-    const editorContent = (this.mobileEditorOpen ? this.editContent : (this.editTiptap ? this.editTiptap.getHTML() : this.editContent)) ?? this.editContent;
+    const editorContent = (
+      this.mobileEditorOpen
+        ? (this.meTiptap?.getHTML() ?? this.editContent)
+        : (this.editTiptap?.getHTML() ?? this.editContent)
+    ) ?? this.editContent;
     const finalContent  = this.appendText.trim()
       ? `${editorContent}\n\n---\n\n**Added note:**\n\n${this.appendText.trim()}`
       : editorContent;
