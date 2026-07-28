@@ -9466,7 +9466,14 @@
   }
 
   .mobile-reader {
-    top: 58px;
+    /* The shared mobile header already consumes 58px in the flex layout.
+       This overlay is fixed inside .main, so adding another 58px produced
+       the empty band visible above the note title. */
+    top: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    max-width: none;
     bottom: calc(58px + env(safe-area-inset-bottom, 0px));
     z-index: 1400;
     color: #111a35;
@@ -9475,7 +9482,7 @@
 
   .mr-scroll {
     width: 100%;
-    padding: 0 20px;
+    padding: 0 16px;
     box-sizing: border-box;
     background: #ffffff;
   }
@@ -9484,8 +9491,8 @@
     position: sticky;
     top: 0;
     z-index: 12;
-    margin: 0 -20px;
-    padding: 17px 20px 14px;
+    margin: 0 -16px;
+    padding: 6px 12px 7px;
     border-bottom: 1px solid #dfe5ee;
     background: rgba(255, 255, 255, 0.97);
     box-shadow: 0 8px 22px rgba(17, 26, 53, 0.04);
@@ -9494,19 +9501,19 @@
   }
 
   .mr-title-row {
-    align-items: flex-start;
-    gap: 8px;
-    margin-bottom: 12px;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 3px;
   }
 
   .mr-back-btn,
   .mr-more-btn {
     display: inline-grid;
     place-items: center;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    margin: -8px 0 0;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    margin: 0;
     padding: 0;
     border: 0;
     border-radius: 12px;
@@ -9522,14 +9529,14 @@
 
   .mr-back-arrow {
     color: currentColor;
-    font-size: 1.75rem;
+    font-size: 1.5rem;
   }
 
   .mr-note-title {
     min-width: 0;
     color: #111a35;
-    font-size: clamp(1.55rem, 7vw, 2rem);
-    line-height: 1.12;
+    font-size: clamp(1.25rem, 5.8vw, 1.55rem);
+    line-height: 1.15;
     letter-spacing: -0.045em;
   }
 
@@ -9572,12 +9579,20 @@
   }
 
   .mr-meta {
-    gap: 8px;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 3px 6px;
   }
 
   .mr-inline-meta {
-    gap: 7px;
+    gap: 5px;
     line-height: 1.4;
+  }
+
+  .mr-tags {
+    margin-top: 0;
+    gap: 4px;
   }
 
   .mr-date,
@@ -9588,11 +9603,11 @@
 
   .mr-cat-badge,
   .mr-tag {
-    min-height: 24px;
+    min-height: 20px;
     display: inline-flex;
     align-items: center;
     border-radius: 999px;
-    padding: 3px 9px;
+    padding: 2px 8px;
     color: #5149e9;
     background: #f0efff;
     border-color: #dedbff;
@@ -9606,7 +9621,7 @@
     top: 0;
     z-index: 13;
     height: 3px;
-    margin: 0 -20px;
+    margin: 0 -16px;
     background: #edf1f6;
   }
 
@@ -9622,10 +9637,10 @@
     min-width: 0;
     max-width: 680px;
     margin: 0 auto;
-    padding: 24px 0 30px;
+    padding: 14px 0 22px;
     color: #27324a;
-    font-size: 1rem;
-    line-height: 1.75;
+    font-size: 1.0625rem;
+    line-height: 1.7;
   }
 
   .mr-body h1,
@@ -9638,7 +9653,7 @@
   }
 
   .mr-body h2 {
-    margin: 1.7em 0 0.85em;
+    margin: 1.35em 0 0.7em;
     padding: 0 0 10px 17px;
     border-bottom: 1px solid #dfe5ee;
     font-size: 1.25rem;
@@ -9657,9 +9672,9 @@
   }
 
   .mr-body p {
-    margin-bottom: 1.15em;
+    margin-bottom: 1em;
     color: #27324a;
-    line-height: 1.75;
+    line-height: 1.7;
   }
 
   .mr-body pre {
@@ -9703,7 +9718,7 @@
 
   .mr-body ul,
   .mr-body ol {
-    margin: 0 0 1.25em;
+    margin: 0 0 1em;
     padding: 0;
     overflow: hidden;
     border: 1px solid #dfe5ee;
@@ -9733,7 +9748,7 @@
   .mr-scroll::after {
     content: '';
     display: block;
-    height: 18px;
+    height: 8px;
   }
 }
 
