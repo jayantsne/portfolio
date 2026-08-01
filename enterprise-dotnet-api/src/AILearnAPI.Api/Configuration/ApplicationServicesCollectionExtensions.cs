@@ -5,6 +5,9 @@ using AILearnAPI.Application.Interfaces;
 using AILearnAPI.Application.Services;
 using AILearnAPI.Domain.Interfaces;
 using AILearnAPI.Infrastructure.Services;
+using AILearnAPI.Api.Features.InterviewBattle;
+using AILearnAPI.Api.Features.NotesRecall;
+using AILearnAPI.Api.Features.DailyReminders;
 
 namespace AILearnAPI.Api.Configuration;
 
@@ -53,6 +56,13 @@ public static class ApplicationServicesCollectionExtensions
         services.AddScoped<IFlowGeneratorService, FlowGeneratorService>();
         services.AddScoped<IFlowPromptBuilder, FlowPromptBuilder>();
         services.AddScoped<IFlowResponseValidator, FlowResponseValidator>();
+        services.AddScoped<IInterviewBattleRepository, InterviewBattleRepository>();
+        services.AddScoped<IInterviewBattleService, InterviewBattleService>();
+        services.AddScoped<NotesRecallRepository>();
+        services.AddScoped<NotesRecallService>();
+        services.AddScoped<DailyReminderRepository>();
+        services.AddScoped<DailyReminderService>();
+        services.AddHostedService<DailyReminderWorker>();
         services.AddHttpClient<IFlowAiProvider, FlowOpenAiProvider>(c =>
         {
             c.Timeout = TimeSpan.FromMinutes(2);

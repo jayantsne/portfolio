@@ -1,0 +1,2 @@
+import { Injectable } from '@angular/core'; import { BehaviorSubject,interval,Subscription } from 'rxjs';
+@Injectable({providedIn:'root'}) export class InterviewTimerService { readonly remaining$=new BehaviorSubject(0);private sub?:Subscription;start(seconds:number){this.stop();this.remaining$.next(seconds);this.sub=interval(1000).subscribe(()=>{const n=this.remaining$.value-1;this.remaining$.next(Math.max(0,n));if(n<=0)this.stop();});}stop(){this.sub?.unsubscribe();} }

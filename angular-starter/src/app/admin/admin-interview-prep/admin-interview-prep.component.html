@@ -123,6 +123,10 @@
           </div>
 
           <div class="question-actions">
+            <button type="button" class="primary-btn battle-practice-btn" (click)="practiceInBattle(question)">
+              <i class="fas fa-microphone-alt" aria-hidden="true"></i>
+              Practice in Battle
+            </button>
             <button type="button" class="primary-btn focus-primary"
                     *ngIf="!question.isCovered"
                     [disabled]="savingId === question.id"

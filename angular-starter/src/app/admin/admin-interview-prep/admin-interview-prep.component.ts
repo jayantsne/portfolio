@@ -151,6 +151,11 @@ export class AdminInterviewPrepComponent implements OnInit {
   }
 
   private findMatchingNote(question: AdminPrepQuestion): SavedNote | null {
+    const contextMatch = this.notes.find(note =>
+      note.contextType === 'admin-interview-prep' && note.contextId === question.id
+    );
+    if (contextMatch) return contextMatch;
+
     const qTokens = this.tokenize(question.question);
     if (qTokens.length === 0) return null;
 
@@ -361,6 +366,20 @@ export class AdminInterviewPrepComponent implements OnInit {
         contextType: 'admin-interview-prep',
         contextId: question.id,
         search: question.question
+      }
+    });
+  }
+
+  practiceInBattle(question: AdminPrepQuestion): void {
+    const note = this.noteMatches[question.id];
+    this.router.navigate(['/interview-battle'], {
+      queryParams: {
+        questionId: question.id,
+        question: question.question,
+        category: question.category,
+        difficulty: question.difficulty || 'Medium',
+        answerHint: question.answerHint || '',
+        noteId: note?.id || ''
       }
     });
   }

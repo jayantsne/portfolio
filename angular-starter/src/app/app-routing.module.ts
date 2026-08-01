@@ -85,6 +85,7 @@ const routes: Routes = [
 
       // ── Learn content (requires subscription) ───────────────────
       { path: 'notes',        component: NotesComponent,           canActivate: [LoginGuard, SubscriptionGuard] },
+      { path: 'notes-recall/:noteId', loadChildren: () => import('./notes-recall/notes-recall.module').then(m => m.NotesRecallModule), canActivate: [LoginGuard, SubscriptionGuard] },
       { path: 'revision',     component: RevisionDashboardComponent, canActivate: [LoginGuard, SubscriptionGuard] },
       { path: 'revision/session/:noteId', component: RevisionSessionComponent, canActivate: [LoginGuard, SubscriptionGuard] },
       { path: 'learn-quest',  component: LearnQuestComponent,      canActivate: [SubscriptionGuard] },
@@ -103,6 +104,7 @@ const routes: Routes = [
 
       // ── Practice ─────────────────────────────────────────────────
       { path: 'interview-prep', component: InterviewPrepComponent },
+      { path: 'interview-battle', loadChildren: () => import('./interview-battle/interview-battle.module').then(m => m.InterviewBattleModule), canActivate: [LoginGuard, SubscriptionGuard] },
       { path: 'questions',      component: QuestionsListComponent, canActivate: [SubscriptionGuard] },
 
       // ── Account / subscription ───────────────────────────────────

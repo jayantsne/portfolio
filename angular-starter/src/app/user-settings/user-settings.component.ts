@@ -5,6 +5,7 @@ import {
   AddCustomProviderDto, UpdateCustomProviderDto
 } from '../shared/user-config.service';
 import { LlmProviderService } from '../shared/llm-provider.service';
+import { DailyReminderService } from '../shared/daily-reminder.service';
 
 @Component({
   selector: 'app-user-settings',
@@ -22,6 +23,11 @@ export class UserSettingsComponent implements OnInit {
   isSaving    = false;
   saveSuccess = false;
   errorMsg    = '';
+  reminderEnabled = false;
+  reminderTime = '08:00';
+  reminderBusy = false;
+  reminderMessage = '';
+  reminderError = '';
 
   /** Available providers this user is allowed to select (from LLM provider API). */
   availableProviders: string[] = [];
@@ -53,7 +59,8 @@ export class UserSettingsComponent implements OnInit {
   constructor(
     public  authSvc:   CustomAuthService,
     private configSvc: UserConfigService,
-    public  llmSvc:    LlmProviderService
+    public  llmSvc:    LlmProviderService,
+    private reminderSvc: DailyReminderService
   ) {}
 
   ngOnInit(): void {}
@@ -68,6 +75,39 @@ export class UserSettingsComponent implements OnInit {
     this.editingId   = null;
     document.body.style.overflow = 'hidden';
     this.loadConfig();
+    this.loadReminder();
+  }
+
+  loadReminder(): void {
+    if (!this.authSvc.isLoggedIn) return;
+    this.reminderSvc.settings().subscribe({
+      next: value => { this.reminderEnabled = value.enabled; this.reminderTime = value.localTime || '08:00'; },
+      error: () => { this.reminderError = 'Reminder settings could not be loaded.'; }
+    });
+  }
+
+  toggleReminder(): void {
+    this.reminderBusy = true; this.reminderError = ''; this.reminderMessage = '';
+    const request = this.reminderEnabled ? this.reminderSvc.update(false, this.reminderTime) : this.reminderSvc.enable(this.reminderTime);
+    request.subscribe({
+      next: () => { this.reminderEnabled = !this.reminderEnabled; this.reminderBusy = false; this.reminderMessage = this.reminderEnabled ? 'Daily recall is active on this device.' : 'Daily recall is paused.'; },
+      error: err => { this.reminderBusy = false; this.reminderError = err?.error?.message || err?.message || 'Could not update the reminder.'; }
+    });
+  }
+
+  saveReminderTime(): void {
+    if (!this.reminderEnabled) return;
+    this.reminderBusy = true; this.reminderSvc.update(true, this.reminderTime).subscribe({
+      next: () => { this.reminderBusy = false; this.reminderMessage = `Reminder set for ${this.reminderTime}.`; },
+      error: () => { this.reminderBusy = false; this.reminderError = 'Could not save the reminder time.'; }
+    });
+  }
+
+  testReminder(): void {
+    this.reminderBusy = true; this.reminderError = ''; this.reminderSvc.test().subscribe({
+      next: () => { this.reminderBusy = false; this.reminderMessage = 'Test sent. Check this device notification tray.'; },
+      error: err => { this.reminderBusy = false; this.reminderError = err?.error?.message || 'The test notification could not be sent.'; }
+    });
   }
 
   close(): void {

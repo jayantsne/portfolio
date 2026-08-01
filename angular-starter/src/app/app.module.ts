@@ -73,6 +73,8 @@ import { AuthCallbackComponent }      from './auth-callback/auth-callback.compon
 import { CustomAuthService }          from './shared/custom-auth.service';
 import { AdminInterviewPrepComponent } from './admin/admin-interview-prep/admin-interview-prep.component';
 import { AdminInterviewPrepImportComponent } from './admin/admin-interview-prep-import/admin-interview-prep-import.component';
+import { GlobalLoaderComponent } from './shared/global-loader/global-loader.component';
+import { GlobalLoaderInterceptor } from './shared/global-loader/global-loader.interceptor';
 
 @NgModule({
   declarations: [
@@ -137,6 +139,7 @@ import { AdminInterviewPrepImportComponent } from './admin/admin-interview-prep-
     AuthCallbackComponent,           // OAuth callback resolver
     AdminInterviewPrepComponent,      // Admin interview prep planner
     AdminInterviewPrepImportComponent, // Admin interview question import
+    GlobalLoaderComponent,
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],
@@ -171,6 +174,11 @@ import { AdminInterviewPrepImportComponent } from './admin/admin-interview-prep-
       provide:  HTTP_INTERCEPTORS,
       useClass: AuthInterceptor,
       multi:    true,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: GlobalLoaderInterceptor,
+      multi: true,
     }
   ],
   bootstrap: [AppComponent]

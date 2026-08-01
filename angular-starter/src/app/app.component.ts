@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, NgZone, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router, NavigationEnd } from '@angular/router';
+import { ActivatedRoute, Router, NavigationEnd, NavigationStart, NavigationCancel, NavigationError } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { AnalyticsService } from './shared/analytics.service';
 import { PwaInstallService } from './pwa-install.service';
@@ -8,6 +8,7 @@ import { DevToolsGuardService } from './shared/devtools-guard.service';
 import { ThemeService } from './shared/theme.service';
 import { AuthTriggerService } from './shared/auth-trigger.service';
 import { AuthModalComponent } from './auth-modal/auth-modal.component';
+import { GlobalLoaderService } from './shared/global-loader/global-loader.service';
 
 @Component({
   selector: 'app-root',
@@ -40,8 +41,13 @@ export class AppComponent implements OnInit, AfterViewInit {
     private devToolsGuard: DevToolsGuardService,
     private authTrigger: AuthTriggerService,
     private ngZone: NgZone,
+    private globalLoader: GlobalLoaderService,
     readonly themeSvc: ThemeService  // Inject early so theme is guaranteed applied at app start
   ) {
+    this.router.events.subscribe(event => {
+      if (event instanceof NavigationStart) this.globalLoader.begin();
+      if (event instanceof NavigationEnd || event instanceof NavigationCancel || event instanceof NavigationError) this.globalLoader.end();
+    });
     this.router.events
       .pipe(filter(e => e instanceof NavigationEnd))
       .subscribe((e: any) => {
@@ -78,13 +84,12 @@ export class AppComponent implements OnInit, AfterViewInit {
     // Block right-click + inspect shortcuts in production
     this.devToolsGuard.init();
     
-    // DISABLED: Service worker registration to prevent reload loops in development
-    // Only enable in production builds
-    // this.pwaInstallService.registerServiceWorker();
+    this.pwaInstallService.registerServiceWorker();
     
     // Check if app can be installed
     this.pwaInstallService.installable$.subscribe(installable => {
-      this.showInstallPrompt = installable;
+      const dismissed = Number(localStorage.getItem('pwa-install-dismissed') || 0);
+      this.showInstallPrompt = installable && Date.now() - dismissed > 7 * 24 * 60 * 60 * 1000;
     });
     
     // Check if app is already installed

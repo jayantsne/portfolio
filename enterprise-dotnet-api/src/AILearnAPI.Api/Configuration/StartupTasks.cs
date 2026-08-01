@@ -3,6 +3,7 @@ using AILearnAPI.Domain.Constants;
 using AILearnAPI.Domain.Entities;
 using AILearnAPI.Shared.Helpers;
 using MongoDB.Driver;
+using AILearnAPI.Api.Features.InterviewBattle;
 using Serilog;
 
 namespace AILearnAPI.Api.Configuration;
@@ -54,6 +55,13 @@ public static class StartupTasks
         {
             Log.Warning(ex, "Default user initialization skipped - MongoDB may not be ready.");
         }
+    }
+
+    public static async Task InitializeInterviewBattleIndexesAsync(IServiceProvider services)
+    {
+        using var scope = services.CreateScope();
+        try { await scope.ServiceProvider.GetRequiredService<IInterviewBattleRepository>().InitializeAsync(); }
+        catch (Exception ex) { Log.Warning(ex, "Interview Battle index initialization skipped - MongoDB may not be ready."); }
     }
 
     private static string GetAdminResetEmail(string[] args)

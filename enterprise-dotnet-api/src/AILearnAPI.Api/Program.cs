@@ -33,6 +33,7 @@ if (StartupTasks.HasAdminPasswordResetRequest(args))
 }
 
 await StartupTasks.InitializeDefaultUserAsync(app.Services);
+await StartupTasks.InitializeInterviewBattleIndexesAsync(app.Services);
 
 app.UseApiPipeline();
 

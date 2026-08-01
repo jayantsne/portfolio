@@ -25,11 +25,26 @@
       <span class="spinner"></span> Loading config…
     </div>
 
+    <section class="config-section reminder-section" *ngIf="!isLoading">
+      <div class="reminder-heading">
+        <div class="reminder-icon" aria-hidden="true">R</div>
+        <div><label class="section-label">Daily note recall</label><p class="section-desc">Receive one random saved note each morning and recall it before viewing the answer.</p></div>
+        <button class="toggle-btn" [class.on]="reminderEnabled" [disabled]="reminderBusy" (click)="toggleReminder()" [attr.aria-label]="reminderEnabled ? 'Pause daily reminder' : 'Enable daily reminder'"><span class="toggle-knob"></span></button>
+      </div>
+      <div class="reminder-controls" *ngIf="reminderEnabled">
+        <label>Morning time<input type="time" [(ngModel)]="reminderTime" (change)="saveReminderTime()"></label>
+        <button class="reminder-test" [disabled]="reminderBusy" (click)="testReminder()">Send test notification</button>
+      </div>
+      <p class="reminder-status success" *ngIf="reminderMessage">{{ reminderMessage }}</p>
+      <p class="reminder-status error" *ngIf="reminderError">{{ reminderError }}</p>
+      <p class="reminder-hint">For reliable mobile alerts, install LearnWithAI and allow notifications when prompted.</p>
+    </section>
+
     <!-- non-admin placeholder -->
     <div class="non-admin-placeholder" *ngIf="!isLoading && !authSvc.isAdmin">
       <div class="placeholder-icon">🔒</div>
-      <p class="placeholder-title">Settings are admin-only</p>
-      <p class="placeholder-desc">Configuration options are only available to admin users.</p>
+      <p class="placeholder-title">Personal settings</p>
+      <p class="placeholder-desc">Your daily recall preference is available above. AI provider configuration is managed by an administrator.</p>
     </div>
 
     <!-- config form -->

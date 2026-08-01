@@ -72,6 +72,8 @@ button:focus-visible,input:focus-visible,select:focus-visible { outline:3px soli
 .note-preview .eyebrow { color:var(--accent-dark); }
 .note-preview h3 { margin-top:10px; font-size:18px; }
 .question-actions { display:grid; grid-template-columns:1.2fr 1fr 1fr; gap:12px; margin-top:12px; border-top:1px solid var(--line); padding-top:22px; }
+.battle-practice-btn { grid-column:1/-1; min-height:56px!important; background:#101827; border-color:#101827; box-shadow:0 10px 24px rgba(16,24,39,.12); }
+.battle-practice-btn:hover:not(:disabled) { background:#263249; border-color:#263249; }
 .question-actions button { min-height:52px; font-size:14px; }
 .focus-primary:focus-visible { outline:3px dashed var(--accent); outline-offset:4px; box-shadow:none; }
 .action-hint { display:flex; gap:9px; align-items:center; margin:16px 0 0; color:#71809a; font-size:12px; }

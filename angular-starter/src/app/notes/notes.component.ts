@@ -1391,5 +1391,9 @@ Note content: ${this.activeNote.content.slice(0, 600)}`;
       this.isSavingNew = false;
     }
   }
+
+  startRecall(note: SavedNote): void {
+    if (note.id) this.router.navigate(['/notes-recall', note.id]);
+  }
 }
 

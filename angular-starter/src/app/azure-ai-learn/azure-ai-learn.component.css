@@ -2345,7 +2345,7 @@
   overflow-y: auto;
 }
 
-.ai-explanation-content /deep/ h2,
+.ai-explanation-content ::ng-deep h2,
 .ai-explanation-content ::ng-deep h2 {
   color: #667eea;
   font-size: 20px;
@@ -2357,7 +2357,7 @@
   gap: 8px;
 }
 
-.ai-explanation-content /deep/ h3,
+.ai-explanation-content ::ng-deep h3,
 .ai-explanation-content ::ng-deep h3 {
   color: #555;
   font-size: 17px;
@@ -2366,25 +2366,25 @@
   margin-bottom: 10px;
 }
 
-.ai-explanation-content /deep/ p,
+.ai-explanation-content ::ng-deep p,
 .ai-explanation-content ::ng-deep p {
   margin: 12px 0;
 }
 
-.ai-explanation-content /deep/ ul,
-.ai-explanation-content /deep/ ol,
+.ai-explanation-content ::ng-deep ul,
+.ai-explanation-content ::ng-deep ol,
 .ai-explanation-content ::ng-deep ul,
 .ai-explanation-content ::ng-deep ol {
   margin: 12px 0;
   padding-left: 24px;
 }
 
-.ai-explanation-content /deep/ li,
+.ai-explanation-content ::ng-deep li,
 .ai-explanation-content ::ng-deep li {
   margin: 8px 0;
 }
 
-.ai-explanation-content /deep/ code,
+.ai-explanation-content ::ng-deep code,
 .ai-explanation-content ::ng-deep code {
   background: #f5f5f5;
   padding: 2px 6px;
@@ -2394,7 +2394,7 @@
   color: #e74c3c;
 }
 
-.ai-explanation-content /deep/ pre,
+.ai-explanation-content ::ng-deep pre,
 .ai-explanation-content ::ng-deep pre {
   background: #2d2d2d;
   color: #f8f8f2;
@@ -2404,7 +2404,7 @@
   margin: 16px 0;
 }
 
-.ai-explanation-content /deep/ strong,
+.ai-explanation-content ::ng-deep strong,
 .ai-explanation-content ::ng-deep strong {
   color: #667eea;
   font-weight: 600;
