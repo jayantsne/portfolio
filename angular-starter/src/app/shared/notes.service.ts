@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { CustomAuthService } from './custom-auth.service';
+import { environment } from '../../environments/environment';
 
 export interface SavedNote {
   id?:          string;   // MongoDB _id
@@ -19,7 +20,7 @@ export interface SavedNote {
 @Injectable({ providedIn: 'root' })
 export class NotesService {
 
-  private readonly url = `/api/notes`;
+  private readonly url = `${environment.apiUrl}/notes`;
 
   private _notes = new BehaviorSubject<SavedNote[]>([]);
   notes$: Observable<SavedNote[]> = this._notes.asObservable();
@@ -157,14 +158,16 @@ export class NotesService {
     );
   }
 
-  async loadNotes(): Promise<void> {
+  async loadNotes(): Promise<boolean> {
     try {
       const notes = await this.http
         .get<SavedNote[]>(this.url, { headers: this.authSvc.getAuthHeaders() })
         .toPromise();
       this._notes.next((notes ?? []).map(n => this.normalize(n)));
+      return true;
     } catch (err) {
       console.error('[NotesService] loadNotes error:', err);
+      return false;
     }
   }
 

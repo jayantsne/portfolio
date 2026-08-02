@@ -144,7 +144,11 @@ export class CustomAuthService {
       role: r.role ?? 'USER'
     };
 
-    this.ngZone.run(() => this._user.next(user));
+    // Cache the native JWT before publishing the authenticated user. Services
+    // such as Notes subscribe to currentUser$ and request data immediately;
+    // publishing first caused their initial Android request to leave without a
+    // Bearer token and display a false empty state.
     if (r.token) void this.tokenStorage.set(r.token);
+    this.ngZone.run(() => this._user.next(user));
   }
 }

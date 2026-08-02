@@ -48,6 +48,12 @@
     <p>Loading notes&hellip;</p>
   </div>
 
+  <div class="notes-loading notes-load-error" *ngIf="user && !isLoading && notesLoadError" role="alert">
+    <i class="fas fa-cloud-exclamation" aria-hidden="true"></i>
+    <p>{{ notesLoadError }}</p>
+    <button type="button" class="notes-empty-cta" (click)="retryLoadNotes()">Try again</button>
+  </div>
+
   <!-- Sidebar open button — top-left icon, visible when sidebar is collapsed -->
   <button class="notes-expand-floating"
           *ngIf="user && !isLoading && !createMode && sidebarCollapsed"
@@ -60,7 +66,7 @@
   </button>
 
   <!-- MAIN CONTENT — 2-column split layout -->
-  <div class="notes-shell" *ngIf="user && !isLoading && !createMode" [class.notes-shell--collapsed]="sidebarCollapsed">
+  <div class="notes-shell" *ngIf="user && !isLoading && !notesLoadError && !createMode" [class.notes-shell--collapsed]="sidebarCollapsed">
 
     <!-- Mobile sidebar backdrop — close on tap outside -->
     <div class="notes-sidebar-backdrop" *ngIf="!sidebarCollapsed" (click)="toggleSidebar()"></div>

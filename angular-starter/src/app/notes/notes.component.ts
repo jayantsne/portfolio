@@ -48,6 +48,7 @@ export class NotesComponent implements OnInit, OnDestroy {
   notes: SavedNote[] = [];
   activeNote: SavedNote | null = null;
   isLoading   = false;
+  notesLoadError = '';
   deletingId: string | null = null;
 
   // ── Filters ──────────────────────────────────────────────────────────────
@@ -291,10 +292,10 @@ export class NotesComponent implements OnInit, OnDestroy {
 
   private startLoadingNotes(): void {
     this.isLoading = true;
+    this.notesLoadError = '';
     this.subs.push(
       this.notesService.notes$.subscribe(notes => {
         this.notes = notes;
-        this.isLoading = false;
         this.applyPendingRouteNote();
         if (this.activeNote) {
           const refreshed = notes.find(n => n.id === this.activeNote!.id);
@@ -303,7 +304,13 @@ export class NotesComponent implements OnInit, OnDestroy {
         }
       })
     );
+    void this.notesService.loadNotes().then(ok => {
+      this.isLoading = false;
+      if (!ok) this.notesLoadError = 'Your notes could not be loaded. Check your connection and try again.';
+    });
   }
+
+  retryLoadNotes(): void { this.startLoadingNotes(); }
 
   private applyPendingRouteNote(): void {
     if (this.pendingRouteNoteId) {

@@ -9759,3 +9759,24 @@
   }
 }
 
+/* Native mobile owns the viewport chrome. Present Notes as a focused workspace,
+   not a floating desktop modal competing with the app header and tab bar. */
+:host-context(.capacitor-android) .notes-page { min-height: 100%; }
+
+@media (max-width: 640px) {
+  :host-context(.capacitor-android) .notes-shell { height: 100%; }
+  :host-context(.capacitor-android) .notes-left {
+    inset: 56px 0 60px;
+    width: 100%;
+    max-width: none;
+    border: 0;
+    border-radius: 0;
+    background: #fff;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  :host-context(.capacitor-android) .notes-sidebar-backdrop { display: none !important; }
+  :host-context(.capacitor-android) .notes-left-scroll { padding-bottom: 24px; }
+}
+

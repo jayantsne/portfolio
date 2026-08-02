@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <BuildAndroidApk Condition="'$(BuildAndroidApk)' == ''">true</BuildAndroidApk>
+    <AndroidApkConfiguration Condition="'$(AndroidApkConfiguration)' == ''">Debug</AndroidApkConfiguration>
+    <AndroidBuildScript>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\build-android.ps1'))</AndroidBuildScript>
+  </PropertyGroup>
+
+  <!-- Run once, from the API project, after a successful solution build. -->
+  <Target Name="BuildLearnWithAIAndroidApk"
+          AfterTargets="Build"
+          Condition="'$(MSBuildProjectName)' == 'AILearnAPI.Api' and '$(BuildAndroidApk)' == 'true'">
+    <Message Importance="high" Text="Building LearnWithAI Android APK ($(AndroidApkConfiguration))..." />
+    <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(AndroidBuildScript)&quot; -Configuration $(AndroidApkConfiguration)" />
+  </Target>
+</Project>

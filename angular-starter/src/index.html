@@ -19,6 +19,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Learn with AI</title>
 
+  <!-- A lightweight native-only bridge between Android's system splash and
+       Angular's first rendered frame. Angular replaces the app-root contents. -->
+  <script>
+    if (location.protocol === 'https:' && location.hostname === 'localhost') {
+      document.documentElement.classList.add('native-booting');
+    }
+  </script>
+  <style>
+    .native-boot-screen { display: none; }
+    html.native-booting .native-boot-screen {
+      position: fixed; inset: 0; z-index: 99999; display: grid; place-items: center;
+      background: #f5f7fb;
+    }
+    .native-boot-logo {
+      display: block; width: 88px; height: 88px; border-radius: 24px;
+      box-shadow: 0 20px 45px rgba(19,32,51,.18);
+      animation: nativeBootPulse 1.15s cubic-bezier(.2,.8,.2,1) infinite alternate;
+    }
+    @keyframes nativeBootPulse { from { transform: scale(.94); opacity: .86; } to { transform: scale(1); opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) { .native-boot-logo { animation: none; } }
+  </style>
+
   <!-- Mobile app/browser metadata -->
   <meta name="description" content="Software Developer Portfolio - Jayant Bhardwaj. Explore projects, skills, and interview preparation resources.">
   <meta name="theme-color" content="#132033">
@@ -81,7 +103,7 @@
   </script>
 </head>
 <body>
-  <app-root></app-root>
+  <app-root><div class="native-boot-screen" aria-label="LearnWithAI is starting"><img class="native-boot-logo" src="/assets/icons/icon-192x192.svg" alt="LearnWithAI"></div></app-root>
 
   <!-- Scripts (absolute paths - work on every route) -->
   <script src="/assets/scripts/imagesloaded.pkgd.min.js"></script>

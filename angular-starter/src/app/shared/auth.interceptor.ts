@@ -25,6 +25,13 @@ export class AuthInterceptor implements HttpInterceptor {
   constructor(private auth: CustomAuthService, private router: Router) {}
 
   intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
+    // Relative API URLs point at Capacitor's https://localhost WebView origin.
+    // Route them to the configured production API when running natively.
+    const nativeApiUrl = Capacitor.isNativePlatform() && req.url.startsWith('/api')
+      ? `${environment.apiUrl}${req.url.substring(4)}`
+      : req.url;
+    req = req.clone({ url: nativeApiUrl });
+
     // Skip auth header for public endpoints (register / login)
     const isAuthEndpoint = req.url.includes('/auth/register') ||
                            req.url.includes('/auth/login') ||
