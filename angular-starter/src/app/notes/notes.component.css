@@ -2455,7 +2455,8 @@
     right: 0;
     /* End above the shared fixed mobile navigation. Previously the reader
        extended behind it and needed a visible spacer to keep content clear. */
-    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    /* .main already reserves the shared bottom navigation height. */
+    bottom: 0;
     z-index: 1400;               /* below site-header so navbar stays on top */
     background: #f4f6fb;
     overflow: hidden;
@@ -9474,7 +9475,9 @@
     left: 0;
     width: 100%;
     max-width: none;
-    bottom: calc(58px + env(safe-area-inset-bottom, 0px));
+    /* The shared .main already reserves the bottom navigation. Reserving it
+       here as well produced the large empty band shown above the tab bar. */
+    bottom: 0;
     z-index: 1400;
     color: #111a35;
     background: #ffffff;
@@ -9492,7 +9495,7 @@
     top: 0;
     z-index: 12;
     margin: 0 -16px;
-    padding: 6px 12px 7px;
+    padding: 4px 10px 5px;
     border-bottom: 1px solid #dfe5ee;
     background: rgba(255, 255, 255, 0.97);
     box-shadow: 0 8px 22px rgba(17, 26, 53, 0.04);
@@ -9503,7 +9506,7 @@
   .mr-title-row {
     align-items: center;
     gap: 6px;
-    margin-bottom: 3px;
+    margin-bottom: 1px;
   }
 
   .mr-back-btn,
@@ -9535,10 +9538,14 @@
   .mr-note-title {
     min-width: 0;
     color: #111a35;
-    font-size: clamp(1.25rem, 5.8vw, 1.55rem);
-    line-height: 1.15;
+    font-size: clamp(1.05rem, 5vw, 1.3rem);
+    line-height: 1.1;
     letter-spacing: -0.045em;
   }
+
+  .mr-meta { margin-left: 36px; }
+  .mr-inline-meta { gap: 4px; font-size: .67rem; }
+  .mr-tags { display: none; }
 
   .mr-more-wrap {
     position: relative;
