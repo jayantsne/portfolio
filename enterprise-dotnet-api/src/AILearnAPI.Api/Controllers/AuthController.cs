@@ -8,6 +8,7 @@ using AILearnAPI.Api.Services;
 using AILearnAPI.Application.Interfaces;
 using AILearnAPI.Domain.Constants;
 using AILearnAPI.Shared.DTOs.Auth;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace AILearnAPI.Api.Controllers
 {
@@ -21,6 +22,7 @@ namespace AILearnAPI.Api.Controllers
         private readonly IConfiguration _configuration;
         private readonly IWebHostEnvironment _environment;
         private readonly ILogger<AuthController> _logger;
+        private readonly IMemoryCache _cache;
 
         public AuthController(
             IAuthService authService,
@@ -28,7 +30,8 @@ namespace AILearnAPI.Api.Controllers
             IGoogleOAuthService googleOAuthService,
             IConfiguration configuration,
             IWebHostEnvironment environment,
-            ILogger<AuthController> logger)
+            ILogger<AuthController> logger,
+            IMemoryCache cache)
         {
             _authService = authService;
             _masterConfig = masterConfig;
@@ -36,6 +39,7 @@ namespace AILearnAPI.Api.Controllers
             _configuration = configuration;
             _environment = environment;
             _logger = logger;
+            _cache = cache;
         }
 
         // GET /api/auth/{userId} - Check authentication status
@@ -72,7 +76,7 @@ namespace AILearnAPI.Api.Controllers
 
                 var result = await _authService.RegisterAsync(dto);
                 SetAuthCookie(result.token);
-                result.token = string.Empty;
+                if (!IsNativeClient()) result.token = string.Empty;
                 return StatusCode(201, result);   // 201 Created
             }
             catch (InvalidOperationException ex)
@@ -95,7 +99,7 @@ namespace AILearnAPI.Api.Controllers
             {
                 var result = await _authService.LoginAsync(dto);
                 SetAuthCookie(result.token);
-                result.token = string.Empty;
+                if (!IsNativeClient()) result.token = string.Empty;
                 return Ok(result);
             }
             catch (ArgumentException ex)
@@ -116,11 +120,12 @@ namespace AILearnAPI.Api.Controllers
         // GET /api/auth/google/start - Start backend-owned Google OAuth code flow.
         [HttpGet("google/start")]
         [AllowAnonymous]
-        public IActionResult StartGoogleLogin([FromQuery] string? returnUrl)
+        public IActionResult StartGoogleLogin([FromQuery] string? returnUrl, [FromQuery] bool native = false)
         {
             var state = CreateState();
             SetOAuthCookie("ailearn_google_oauth_state", state);
             SetOAuthCookie("ailearn_google_return_url", NormalizeReturnUrl(returnUrl));
+            SetOAuthCookie("ailearn_google_native", native ? "1" : "0");
 
             var redirectUri = GetGoogleRedirectUri();
             var authUrl = _googleOAuthService.BuildAuthorizationUrl(redirectUri, state);
@@ -138,11 +143,12 @@ namespace AILearnAPI.Api.Controllers
         {
             var frontendBaseUrl = GetFrontendBaseUrl();
             var returnUrl = NormalizeReturnUrl(Request.Cookies["ailearn_google_return_url"]);
+            var isNative = Request.Cookies["ailearn_google_native"] == "1";
 
             ClearOAuthCookies();
 
             if (!string.IsNullOrWhiteSpace(error))
-                return Redirect(BuildFrontendAuthRedirect(frontendBaseUrl, returnUrl, false, "Google sign-in was cancelled."));
+                return Redirect(BuildGoogleErrorRedirect(isNative, frontendBaseUrl, returnUrl, "Google sign-in was cancelled."));
 
             var hasExpectedStateCookie = Request.Cookies.TryGetValue("ailearn_google_oauth_state", out var expectedState);
             if (string.IsNullOrWhiteSpace(state) ||
@@ -150,7 +156,7 @@ namespace AILearnAPI.Api.Controllers
                 string.IsNullOrWhiteSpace(expectedState) ||
                 !FixedTimeEquals(state, expectedState))
             {
-                return Redirect(BuildFrontendAuthRedirect(frontendBaseUrl, returnUrl, false, "Google sign-in state is invalid."));
+                return Redirect(BuildGoogleErrorRedirect(isNative, frontendBaseUrl, returnUrl, "Google sign-in state is invalid."));
             }
 
             try
@@ -167,24 +173,46 @@ namespace AILearnAPI.Api.Controllers
                     identity.Email,
                     identity.DisplayName);
 
+                if (isNative)
+                {
+                    var exchangeCode = CreateState();
+                    _cache.Set($"native-google:{exchangeCode}", result, TimeSpan.FromMinutes(2));
+                    return Redirect($"tech.learnwithai.app://auth-callback?code={Uri.EscapeDataString(exchangeCode)}&returnUrl={Uri.EscapeDataString(returnUrl)}");
+                }
+
                 SetAuthCookie(result.token);
                 return Redirect(BuildFrontendAuthRedirect(frontendBaseUrl, returnUrl, true, null));
             }
             catch (ArgumentException ex)
             {
                 _logger.LogWarning(ex, "Google login request was invalid.");
-                return Redirect(BuildFrontendAuthRedirect(frontendBaseUrl, returnUrl, false, ex.Message));
+                return Redirect(BuildGoogleErrorRedirect(isNative, frontendBaseUrl, returnUrl, ex.Message));
             }
             catch (UnauthorizedAccessException ex)
             {
                 _logger.LogWarning(ex, "Google login token validation failed.");
-                return Redirect(BuildFrontendAuthRedirect(frontendBaseUrl, returnUrl, false, ex.Message));
+                return Redirect(BuildGoogleErrorRedirect(isNative, frontendBaseUrl, returnUrl, ex.Message));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error logging in with Google");
-                return Redirect(BuildFrontendAuthRedirect(frontendBaseUrl, returnUrl, false, "Error logging in with Google."));
+                return Redirect(BuildGoogleErrorRedirect(isNative, frontendBaseUrl, returnUrl, "Error logging in with Google."));
             }
+        }
+
+        [HttpPost("native/exchange")]
+        [AllowAnonymous]
+        public ActionResult<LoginResponseDto> ExchangeNativeGoogleCode([FromBody] NativeExchangeDto dto)
+        {
+            if (!IsNativeClient() || string.IsNullOrWhiteSpace(dto.code))
+                return BadRequest(new { message = "Invalid native sign-in request." });
+
+            var key = $"native-google:{dto.code}";
+            if (!_cache.TryGetValue(key, out LoginResponseDto? result) || result == null)
+                return Unauthorized(new { message = "The sign-in link expired. Please try again." });
+
+            _cache.Remove(key); // one-time exchange prevents replay
+            return Ok(result);
         }
 
         // GET /api/auth/me - Resolve the current HttpOnly cookie session for the SPA.
@@ -306,6 +334,8 @@ namespace AILearnAPI.Api.Controllers
         });
     }
 
+    private bool IsNativeClient() => string.Equals(Request.Headers["X-Client-Platform"], "android", StringComparison.OrdinalIgnoreCase);
+
     private void ClearAuthCookie()
     {
         Response.Cookies.Delete("ailearn_auth", new CookieOptions { Path = "/" });
@@ -328,6 +358,7 @@ namespace AILearnAPI.Api.Controllers
         var options = new CookieOptions { Path = "/api/auth/google" };
         Response.Cookies.Delete("ailearn_google_oauth_state", options);
         Response.Cookies.Delete("ailearn_google_return_url", options);
+        Response.Cookies.Delete("ailearn_google_native", options);
     }
 
     private string GetGoogleRedirectUri()
@@ -352,6 +383,11 @@ namespace AILearnAPI.Api.Controllers
 
         return $"{frontendBaseUrl}/#/auth/google/callback?{query}";
     }
+
+    private static string BuildGoogleErrorRedirect(bool isNative, string frontendBaseUrl, string returnUrl, string error) =>
+        isNative
+            ? $"tech.learnwithai.app://auth-callback?error={Uri.EscapeDataString(error)}&returnUrl={Uri.EscapeDataString(returnUrl)}"
+            : BuildFrontendAuthRedirect(frontendBaseUrl, returnUrl, false, error);
 
     private static string NormalizeReturnUrl(string? returnUrl)
     {
@@ -390,5 +426,10 @@ namespace AILearnAPI.Api.Controllers
     {
         public string targetUserId { get; set; } = string.Empty;
         public string role         { get; set; } = string.Empty;
+    }
+
+    public class NativeExchangeDto
+    {
+        public string code { get; set; } = string.Empty;
     }
 }

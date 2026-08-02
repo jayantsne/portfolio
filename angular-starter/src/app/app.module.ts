@@ -64,7 +64,6 @@ import { SemanticKernelLearnComponent } from './semantic-kernel/semantic-kernel.
 import { StructuredNoteComponent } from './shared/structured-note/structured-note.component';
 import { RevisionDashboardComponent } from './revision/revision-dashboard.component';
 import { RevisionSessionComponent }  from './revision/revision-session.component';
-import { ShareTargetComponent }       from './share-target/share-target.component';
 import { TiptapEditorComponent }      from './shared/tiptap-editor/tiptap-editor.component';
 import { FlowVisualizerComponent }    from './flow-visualizer/flow-visualizer.component';
 import { VisualLearnComponent }       from './visual-learn/visual-learn.component';
@@ -75,6 +74,8 @@ import { AdminInterviewPrepComponent } from './admin/admin-interview-prep/admin-
 import { AdminInterviewPrepImportComponent } from './admin/admin-interview-prep-import/admin-interview-prep-import.component';
 import { GlobalLoaderComponent } from './shared/global-loader/global-loader.component';
 import { GlobalLoaderInterceptor } from './shared/global-loader/global-loader.interceptor';
+import { AdminAndroidDownloadButtonComponent } from './shared/admin-android-download-button/admin-android-download-button.component';
+import { AndroidReleasesComponent } from './admin/android-releases/android-releases.component';
 
 @NgModule({
   declarations: [
@@ -127,7 +128,6 @@ import { GlobalLoaderInterceptor } from './shared/global-loader/global-loader.in
     RevisionDashboardComponent,        // Revision Mode dashboard
     RevisionSessionComponent,          // Revision active-recall session
     SaveNotesModalComponent,    // Save conversation to Notes modal
-    ShareTargetComponent,       // PWA Web Share Target handler
     TiptapEditorComponent,      // Tiptap rich-text editor wrapper
     SubscribeComponent,           // Subscription / payment page
     SubscriptionWallComponent,    // Paywall modal overlay
@@ -140,6 +140,8 @@ import { GlobalLoaderInterceptor } from './shared/global-loader/global-loader.in
     AdminInterviewPrepComponent,      // Admin interview prep planner
     AdminInterviewPrepImportComponent, // Admin interview question import
     GlobalLoaderComponent,
+    AdminAndroidDownloadButtonComponent,
+    AndroidReleasesComponent,
     // FreeToolsComponent removed
     // AiToolComponent (removed)
   ],

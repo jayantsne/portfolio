@@ -1,5 +1,5 @@
 import {
-  Component, EventEmitter, NgZone, Output, OnInit, OnDestroy
+  Component, EventEmitter, NgZone, Output, OnInit, OnDestroy, HostListener
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { CustomAuthService } from '../shared/custom-auth.service';
@@ -48,6 +48,9 @@ export class AuthModalComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {}
+
+  @HostListener('window:capacitorBack')
+  onNativeBack(): void { if (this.isOpen) this.close(); }
 
   // ─── Open / close ─────────────────────────────────────────────────────────
 

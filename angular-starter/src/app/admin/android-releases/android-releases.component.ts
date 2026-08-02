@@ -1,0 +1,15 @@
+import { Component,OnInit } from '@angular/core';
+import { FormBuilder,Validators } from '@angular/forms';
+import { HttpEventType } from '@angular/common/http';
+import { AndroidRelease,AndroidReleaseService } from '../../shared/android-release.service';
+@Component({selector:'app-android-releases',templateUrl:'./android-releases.component.html',styleUrls:['./android-releases.component.css']})
+export class AndroidReleasesComponent implements OnInit{
+  releases:AndroidRelease[]=[];file?:File;loading=false;progress=0;error='';
+  form=this.fb.group({versionName:['',[Validators.required,Validators.pattern(/^\d+\.\d+\.\d+([-.][0-9A-Za-z.-]+)?$/)]],versionCode:[1,[Validators.required,Validators.min(1)]],releaseNotes:['',[Validators.maxLength(5000)]],publishImmediately:[true],minimumSupportedVersionCode:[1,[Validators.min(1)]]});
+  constructor(private fb:FormBuilder,private api:AndroidReleaseService){}
+  ngOnInit():void{this.load();}load():void{this.api.getReleases().subscribe({next:x=>this.releases=x,error:()=>this.error='Unable to load Android releases.'});}
+  choose(event:Event):void{const value=(event.target as HTMLInputElement).files?.[0];this.error='';if(!value)return;if(!value.name.toLowerCase().endsWith('.apk')){this.error='Choose an APK file.';return;}if(value.size>200*1024*1024){this.error='APK must be 200 MB or smaller.';return;}this.file=value;}
+  upload():void{if(this.form.invalid||!this.file){this.form.markAllAsTouched();this.error='Complete the version fields and choose an APK.';return;}const data=new FormData();Object.entries(this.form.getRawValue()).forEach(([key,value])=>data.append(key,String(value??'')));data.append('file',this.file);this.loading=true;this.api.uploadRelease(data).subscribe({next:event=>{if(event.type===HttpEventType.UploadProgress&&event.total)this.progress=Math.round(100*event.loaded/event.total);if(event.type===HttpEventType.Response){this.loading=false;this.progress=0;this.form.reset({versionCode:1,publishImmediately:true,minimumSupportedVersionCode:1});this.file=undefined;this.load();}},error:e=>{this.loading=false;this.error=e.error?.message||'Upload failed.';}});}
+  publish(x:AndroidRelease):void{this.api.publishRelease(x.id).subscribe(()=>this.load());}unpublish(x:AndroidRelease):void{this.api.unpublishRelease(x.id).subscribe(()=>this.load());}remove(x:AndroidRelease):void{if(confirm(`Delete draft ${x.versionName}?`))this.api.deleteRelease(x.id).subscribe({next:()=>this.load(),error:e=>this.error=e.error?.message||'Delete failed.'});}download(x:AndroidRelease):void{this.api.download(x.id).subscribe(blob=>this.api.saveBlob(x,blob));}
+  status(x:AndroidRelease):string{return x.isActive&&x.isPublished?'Active':x.isPublished?'Published':'Draft';}size(x:AndroidRelease):string{return`${(x.fileSize/1024/1024).toFixed(1)} MB`;}
+}

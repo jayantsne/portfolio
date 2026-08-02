@@ -55,6 +55,7 @@ public static class PresentationServiceCollectionExtensions
                 var allowedOrigins = new[]
                 {
                     "http://localhost:4200",
+                    "https://localhost",
                     "https://learnwithai.tech",
                     "https://www.learnwithai.tech"
                 };

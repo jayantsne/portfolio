@@ -28,8 +28,6 @@
             "assets": [
               "src/favicon.ico", 
               "src/assets",
-              "src/manifest.json",
-              "src/service-worker.js",
               "src/unregister-sw.html"
             ],
             "styles": [

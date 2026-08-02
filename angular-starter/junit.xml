@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="jest tests" tests="3" failures="0" errors="0" time="4.196">
+  <testsuite name="PlatformService" errors="0" failures="0" skipped="0" timestamp="2026-08-02T03:30:06" time="2.765" tests="3">
+    <testcase classname="PlatformService treats a narrow viewport as mobile UI only" name="PlatformService treats a narrow viewport as mobile UI only" time="0.002">
+    </testcase>
+    <testcase classname="PlatformService does not classify a wide viewport as mobile" name="PlatformService does not classify a wide viewport as mobile" time="0">
+    </testcase>
+    <testcase classname="PlatformService detects standalone PWA display mode" name="PlatformService detects standalone PWA display mode" time="0">
+    </testcase>
+  </testsuite>
+</testsuites>

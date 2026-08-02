@@ -20,25 +20,25 @@
   <div class="content-wrapper">
 
     <header class="mobile-shell-header">
-      <a class="mobile-brand" routerLink="/explore" aria-label="Codexa home">
-        <span class="mobile-brand-mark">C</span>
-        <span class="mobile-brand-copy"><strong>Codexa</strong><small>Learn with clarity</small></span>
+      <a class="mobile-brand" routerLink="/explore" aria-label="LearnWithAI home">
+        <span class="mobile-brand-mark">L<span class="brand-spark">+</span></span>
+        <span class="mobile-brand-copy"><strong>LearnWithAI</strong><small>Learn with clarity</small></span>
       </a>
       <button class="mobile-account" (click)="openAccount()"
-              [attr.aria-label]="auth.isLoggedIn ? 'Open account' : 'Sign in to Codexa'">
+              [attr.aria-label]="auth.isLoggedIn ? 'Open account' : 'Sign in to LearnWithAI'">
         <span class="mobile-account-avatar">{{ auth.isLoggedIn ? (auth.currentUser?.username?.[0]?.toUpperCase() || 'A') : 'A' }}</span>
         <span>{{ auth.isLoggedIn ? 'Account' : 'Sign in' }}</span>
       </button>
     </header>
 
     <nav class="app-rail" aria-label="Primary navigation">
-      <a class="app-rail-brand" routerLink="/explore" title="Codexa" aria-label="Codexa home">C</a>
-      <a class="app-rail-link" routerLink="/explore" routerLinkActive="app-rail-link--active" title="Explore"><span>E</span><small>Explore</small></a>
-      <a class="app-rail-link" routerLink="/flow-generator" routerLinkActive="app-rail-link--active" title="Flow"><span>F</span><small>Flow</small></a>
-      <a class="app-rail-link" routerLink="/notes" routerLinkActive="app-rail-link--active" title="Notes"><span>N</span><small>Notes</small></a>
-      <a class="app-rail-link" routerLink="/interview-prep" routerLinkActive="app-rail-link--active" title="Interview roadmap"><span>R</span><small>Roadmap</small></a>
-      <a class="app-rail-link" routerLink="/interview-battle" routerLinkActive="app-rail-link--active" title="Interview Battle"><span>B</span><small>Battle</small></a>
-      <a class="app-rail-link" *ngIf="auth.isAdmin" routerLink="/admin/interview-prep" routerLinkActive="app-rail-link--active" title="Interview question library"><span>Q</span><small>Questions</small></a>
+      <a class="app-rail-brand" routerLink="/explore" title="LearnWithAI" aria-label="LearnWithAI home">L</a>
+      <a class="app-rail-link" routerLink="/explore" routerLinkActive="app-rail-link--active" title="Explore"><i class="fas fa-compass"></i><small>Explore</small></a>
+      <a class="app-rail-link" routerLink="/flow-generator" routerLinkActive="app-rail-link--active" title="Flow"><i class="fas fa-project-diagram"></i><small>Flow</small></a>
+      <a class="app-rail-link" routerLink="/notes" routerLinkActive="app-rail-link--active" title="Notes"><i class="far fa-sticky-note"></i><small>Notes</small></a>
+      <a class="app-rail-link" routerLink="/interview-prep" routerLinkActive="app-rail-link--active" title="Interview roadmap"><i class="fas fa-route"></i><small>Prep</small></a>
+      <a class="app-rail-link" routerLink="/interview-battle" routerLinkActive="app-rail-link--active" title="Interview Battle"><i class="fas fa-microphone-alt"></i><small>Battle</small></a>
+      <a class="app-rail-link" *ngIf="auth.isAdmin" routerLink="/admin/interview-prep" routerLinkActive="app-rail-link--active" title="Interview question library"><i class="fas fa-list-alt"></i><small>Admin</small></a>
       <div class="app-rail-spacer"></div>
       <button class="app-rail-action" (click)="theme.toggle()" title="Toggle theme" aria-label="Toggle theme">T</button>
       <button class="app-rail-account" (click)="openAccount()"

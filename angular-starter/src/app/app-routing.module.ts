@@ -26,7 +26,6 @@ import { QuizComponent }          from './quiz/quiz.component';
 import { SemanticKernelLearnComponent } from './semantic-kernel/semantic-kernel.component';
 import { RevisionDashboardComponent } from './revision/revision-dashboard.component';
 import { RevisionSessionComponent }  from './revision/revision-session.component';
-import { ShareTargetComponent }       from './share-target/share-target.component';
 import { AccountComponent }           from './account/account.component';
 import { LayoutComponent }            from './layout/layout.component';
 import { VisualLearnComponent }       from './visual-learn/visual-learn.component';
@@ -35,6 +34,7 @@ import { AuthCallbackComponent }      from './auth-callback/auth-callback.compon
 import { AdminGuard }                 from './shared/admin.guard';
 import { AdminInterviewPrepComponent } from './admin/admin-interview-prep/admin-interview-prep.component';
 import { AdminInterviewPrepImportComponent } from './admin/admin-interview-prep-import/admin-interview-prep-import.component';
+import { AndroidReleasesComponent } from './admin/android-releases/android-releases.component';
 
 
 const routes: Routes = [
@@ -42,7 +42,6 @@ const routes: Routes = [
   // ── Standalone routes (NO layout shell) ────────────────────────
   // These run without the sidebar/navbar — used for test/debug pages
   { path: 'test', component: TestPageComponent },
-  { path: 'share', component: ShareTargetComponent },
   { path: 'auth/google/callback', component: AuthCallbackComponent },
 
   /**
@@ -117,6 +116,7 @@ const routes: Routes = [
       { path: 'admin/questions', component: InterviewQuestionsComponent, canActivate: [AuthGuard] },
       { path: 'admin/interview-prep', component: AdminInterviewPrepComponent, canActivate: [AdminGuard] },
       { path: 'admin/interview-prep/import', component: AdminInterviewPrepImportComponent, canActivate: [AdminGuard] },
+      { path: 'admin/android-releases', component: AndroidReleasesComponent, canActivate: [AdminGuard] },
       { path: 'admin-login',     component: AdminLoginComponent },
       { path: 'admin-dashboard', component: AdminDashboardComponent },
       { path: 'admin-deploy',    component: DeploymentComponent },
@@ -130,7 +130,12 @@ const routes: Routes = [
 
 @NgModule({
   imports: [
-    RouterModule.forRoot(routes, { useHash: true })
+    RouterModule.forRoot(routes, {
+      useHash: true,
+      scrollPositionRestoration: 'enabled',
+      anchorScrolling: 'enabled',
+      onSameUrlNavigation: 'reload'
+    })
   ],
   declarations: [],
   exports: [RouterModule]

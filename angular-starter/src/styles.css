@@ -2075,3 +2075,18 @@ html[data-theme="dark"] .battle-page .back-link { background: var(--bg-soft); co
 	.battle-page .start-panel { align-items:stretch; flex-direction:column; padding:18px 20px; }
 	.battle-page .start-panel .primary { width:100%; }
 }
+/* Native shell sizing and Android safe areas. */
+html, body, app-root { width: 100%; min-height: 100%; margin: 0; }
+html, body { overflow-x: hidden; }
+html.capacitor-native, html.capacitor-native body, html.capacitor-native app-root { min-height: 100dvh; }
+html.capacitor-native body {
+  padding-top: env(safe-area-inset-top);
+  padding-right: env(safe-area-inset-right);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  box-sizing: border-box;
+  overscroll-behavior-y: none;
+}
+html.capacitor-native button, html.capacitor-native a, html.capacitor-native input, html.capacitor-native select {
+  touch-action: manipulation;
+}

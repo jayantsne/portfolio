@@ -10,7 +10,6 @@ export interface AppConfig {
   };
   features: {
     analytics: boolean;
-    pwaInstall: boolean;
   };
   api: {
     baseUrl: string;
@@ -32,7 +31,6 @@ export const APP_CONFIG: AppConfig = {
   // Feature Flags
   features: {
     analytics: true, // Google Analytics tracking
-    pwaInstall: true // PWA installation prompts
   },
 
   // API Configuration

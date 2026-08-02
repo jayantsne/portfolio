@@ -43,12 +43,12 @@
 .mobile-shell-header { display: none; }
 
 .app-rail { width: 64px; flex: 0 0 64px; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 12px 8px 10px; box-sizing: border-box; background: #fbfdff; border-right: 1px solid #e2e8f0; z-index: 50; }
-.app-rail-brand, .app-rail-link, .app-rail-action, .app-rail-account { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; box-sizing: border-box; border: 0; border-radius: 10px; text-decoration: none; font-family: inherit; cursor: pointer; }
+.app-rail-brand, .app-rail-link, .app-rail-action, .app-rail-account { width: 40px; height: 40px; flex: 0 0 40px; display: grid; place-items: center; box-sizing: border-box; border: 0; border-radius: 10px; text-decoration: none; font-family: inherit; cursor: pointer; transition: color .18s ease, background .18s ease, transform .18s ease; }
 .app-rail-brand { background: #172033; color: #fff; font-weight: 900; }
 .app-rail-link { position: relative; background: transparent; color: #607087; }
-.app-rail-link span { font-size: .76rem; font-weight: 900; }
+.app-rail-link i { font-size: .9rem; }
 .app-rail-link small { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-.app-rail-link:hover, .app-rail-link--active { background: #eaf7f6; color: #087f77; }
+.app-rail-link:hover, .app-rail-link--active { background: #eaf7f6; color: #087f77; transform: translateY(-1px); }
 .app-rail-link--active::before { content: ''; position: absolute; left: -8px; width: 3px; height: 22px; border-radius: 0 4px 4px 0; background: #0d9488; }
 .app-rail-spacer { flex: 1; }
 .app-rail-action { background: transparent; color: #65748a; font-size: .62rem; font-weight: 800; }
@@ -156,16 +156,19 @@
   }
 
   .mobile-brand-mark {
+    position: relative;
     display: grid;
     place-items: center;
     width: 38px;
     height: 38px;
     border-radius: 10px;
     color: #fff;
-    background: #172033;
+    background: linear-gradient(145deg, #172033, #087f77);
     font-size: 1rem;
     font-weight: 900;
   }
+
+  .brand-spark { position: absolute; top: 4px; right: 6px; color: #77e4cd; font-size: .55rem; }
 
   .mobile-brand-copy { display: flex; flex-direction: column; line-height: 1.08; }
   .mobile-brand-copy strong { font-size: .95rem; letter-spacing: -.02em; }
@@ -203,7 +206,11 @@
     width: 100%;
     height: auto;
     min-height: 0;
-    padding-bottom: 0;
+    padding-bottom: calc(66px + env(safe-area-inset-bottom, 0px));
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-y: contain;
     box-sizing: border-box;
     --header-h: calc(116px + env(safe-area-inset-bottom, 0px));
   }
@@ -216,8 +223,8 @@
     order: 2;
     z-index: 2000;
     width: auto;
-    height: calc(58px + env(safe-area-inset-bottom, 0px));
-    min-height: calc(58px + env(safe-area-inset-bottom, 0px));
+    height: calc(64px + env(safe-area-inset-bottom, 0px));
+    min-height: calc(64px + env(safe-area-inset-bottom, 0px));
     flex: none;
     flex-direction: row;
     justify-content: space-around;
@@ -240,12 +247,20 @@
     display: none;
   }
 
-  .app-rail-link,
-  .app-rail-account {
-    width: 42px;
-    height: 42px;
-    flex: 0 0 42px;
+  .app-rail-link {
+    width: min(15.5vw, 58px);
+    height: 50px;
+    flex: 0 1 58px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+    border-radius: 12px;
   }
+
+  .app-rail-link i { font-size: .96rem; }
+  .app-rail-link small { position: static; width: auto; height: auto; clip: auto; overflow: visible; font-size: .58rem; font-weight: 750; }
+  .app-rail-link--active { transform: translateY(-3px); }
 
   .app-rail-link--active::before {
     top: -6px;
@@ -255,4 +270,11 @@
     border-radius: 0 0 4px 4px;
   }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .main router-outlet + * { animation: pageEnter .28s cubic-bezier(.2,.75,.25,1) both; }
+  .mobile-brand-mark { animation: brandEnter .45s cubic-bezier(.2,.8,.2,1) both; }
+}
+@keyframes pageEnter { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes brandEnter { from { opacity: 0; transform: scale(.82) rotate(-5deg); } to { opacity: 1; transform: none; } }
 

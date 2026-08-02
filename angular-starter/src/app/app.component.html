@@ -1,25 +1,7 @@
 <!-- Splash screen - Controlled by app.config.ts -->
 <app-splash-screen *ngIf="showSplash" [minDurationMs]="splashDuration" (done)="onSplashDone()"></app-splash-screen>
 <app-global-loader></app-global-loader>
-<div class="pwa-install-banner" *ngIf="showInstallPrompt && !isAppInstalled">
-  <div class="pwa-banner-icon" aria-hidden="true">L</div>
-  <div class="pwa-banner-text"><strong>Install LearnWithAI</strong><span>Quick access and daily note recall on your phone.</span></div>
-  <button class="pwa-install-btn" (click)="installPWA()">Install</button>
-  <button class="pwa-dismiss-btn" (click)="dismissInstallPrompt()" aria-label="Not now">Not now</button>
-</div>
-
-<!-- PWA Install Banner -->
-<!-- <div class="pwa-install-banner" *ngIf="showInstallPrompt && !isAppInstalled">
-  <div class="pwa-banner-content">
-    <div class="pwa-banner-icon">📱</div>
-    <div class="pwa-banner-text">
-      <strong>Install App</strong>
-      <p>Add to home screen for quick access</p>
-    </div>
-    <button class="pwa-install-btn" (click)="installPWA()">Install</button>
-    <button class="pwa-dismiss-btn" (click)="dismissInstallPrompt()">×</button>
-  </div>
-</div> -->
+<app-admin-android-download-button></app-admin-android-download-button>
 
 <!-- Global header removed: NavbarComponent inside LayoutComponent replaces it.
      NavbarComponent is scoped to the right panel (not full-width). -->

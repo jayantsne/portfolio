@@ -333,10 +333,12 @@ form { display: flex; flex-direction: column; gap: 1rem; }
 
   .auth-panel {
     width: 100%;
-    max-height: calc(100vh - 18px);
-    padding: 26px 20px 30px;
+    max-height: calc(100dvh - env(safe-area-inset-top));
+    padding: 22px max(20px, env(safe-area-inset-right)) max(24px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
     border-width: 1px 0 0;
     border-radius: 22px 22px 0 0;
     transform: translateY(32px);
   }
+
+  .form-group input { font-size: 16px; }
 }

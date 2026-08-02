@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LearnWithAI</string>
+    <string name="title_activity_main">LearnWithAI</string>
+    <string name="package_name">tech.learnwithai.app</string>
+    <string name="custom_url_scheme">tech.learnwithai.app</string>
+</resources>

@@ -8,6 +8,7 @@ import { catchError } from 'rxjs/operators';
 import { Router } from '@angular/router';
 import { CustomAuthService } from './custom-auth.service';
 import { environment } from '../../environments/environment';
+import { Capacitor } from '@capacitor/core';
 
 /**
  * AuthInterceptor
@@ -43,6 +44,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
     const token = this.auth.getToken();
     const headers: Record<string, string> = {};
+    if (Capacitor.isNativePlatform()) headers['X-Client-Platform'] = Capacitor.getPlatform();
     if (token && !isAuthEndpoint) {
       headers['Authorization'] = `Bearer ${token}`;
     }

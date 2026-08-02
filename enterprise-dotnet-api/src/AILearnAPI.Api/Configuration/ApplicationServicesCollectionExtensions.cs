@@ -8,6 +8,7 @@ using AILearnAPI.Infrastructure.Services;
 using AILearnAPI.Api.Features.InterviewBattle;
 using AILearnAPI.Api.Features.NotesRecall;
 using AILearnAPI.Api.Features.DailyReminders;
+using AILearnAPI.Api.Features.AndroidReleases;
 
 namespace AILearnAPI.Api.Configuration;
 
@@ -63,6 +64,8 @@ public static class ApplicationServicesCollectionExtensions
         services.AddScoped<DailyReminderRepository>();
         services.AddScoped<DailyReminderService>();
         services.AddHostedService<DailyReminderWorker>();
+        services.Configure<AndroidReleaseStorageOptions>(configuration.GetSection("AndroidReleaseStorage"));
+        services.AddScoped<AndroidReleaseRepository>();
         services.AddHttpClient<IFlowAiProvider, FlowOpenAiProvider>(c =>
         {
             c.Timeout = TimeSpan.FromMinutes(2);
