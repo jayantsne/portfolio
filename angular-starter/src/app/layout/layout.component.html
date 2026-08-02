@@ -50,6 +50,13 @@
           </button>
         </div>
       </div>
+      <button *ngIf="auth.isLoggedIn"
+              class="mobile-header-logout"
+              (click)="logout()"
+              aria-label="Sign out of LearnWithAI">
+        <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+        <span>Sign out</span>
+      </button>
     </header>
 
     <nav class="app-rail" aria-label="Primary navigation">

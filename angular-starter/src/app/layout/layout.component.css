@@ -262,6 +262,37 @@
   .mobile-account-menu-logout { color: #b42318; }
   .mobile-account-menu-logout:active { background: #fff0ef; }
 
+  .mobile-header-logout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    min-height: 38px;
+    padding: 0 10px;
+    border: 1px solid #fecaca;
+    border-radius: 999px;
+    color: #b42318;
+    background: #fff7f7;
+    font: inherit;
+    font-size: .68rem;
+    font-weight: 850;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .mobile-header-logout:active {
+    border-color: #fca5a5;
+    background: #fee2e2;
+    transform: scale(.97);
+  }
+
+  @media (max-width: 390px) {
+    .mobile-account > span:not(.mobile-account-avatar),
+    .mobile-account-chevron { display: none; }
+    .mobile-account { padding-right: 5px; }
+    .mobile-header-logout span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    .mobile-header-logout { width: 38px; padding: 0; }
+  }
+
   .main {
     order: 1;
     flex: 1 1 auto;

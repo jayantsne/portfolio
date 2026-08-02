@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { SubscriptionService, SubscriptionStatus } from '../shared/subscription.service';
 import { environment } from '../../environments/environment';
+import { Router } from '@angular/router';
 
 interface UsageStatus {
   remainingSearches: number;
@@ -29,7 +30,8 @@ export class AccountComponent implements OnInit, OnDestroy {
   constructor(
     public  auth:    CustomAuthService,
     public  subSvc:  SubscriptionService,
-    private http:    HttpClient
+    private http:    HttpClient,
+    private router:  Router
   ) {}
 
   ngOnInit(): void {
@@ -82,5 +84,10 @@ export class AccountComponent implements OnInit, OnDestroy {
   get usagePercent(): number {
     if (!this.usage || this.subSvc.hasAccess) return 0;
     return Math.min(100, Math.round((this.usage.totalUsed / this.usage.freeLimit) * 100));
+  }
+
+  logout(): void {
+    this.auth.logout();
+    this.router.navigate(['/explore']);
   }
 }
