@@ -34,6 +34,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
   readonly panelTpl$:    Observable<TemplateRef<any> | null>;
 
   isScrolled = false;
+  mobileAccountMenuOpen = false;
   @ViewChild('mainRef', { static: false }) mainRef!: ElementRef<HTMLElement>;
   private readonly _onScroll = () => {
     this.isScrolled = (this.mainRef?.nativeElement?.scrollTop ?? 0) > 10;
@@ -60,5 +61,23 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
     }
     this.authTrigger.requestLogin();
   }
-  logout(): void { this.auth.logout(); this.router.navigate(['/explore']); }
+
+  toggleMobileAccountMenu(): void {
+    if (!this.auth.isLoggedIn) {
+      this.authTrigger.requestLogin();
+      return;
+    }
+    this.mobileAccountMenuOpen = !this.mobileAccountMenuOpen;
+  }
+
+  openMobileAccountPage(): void {
+    this.mobileAccountMenuOpen = false;
+    this.router.navigate(['/account']);
+  }
+
+  logout(): void {
+    this.mobileAccountMenuOpen = false;
+    this.auth.logout();
+    this.router.navigate(['/explore']);
+  }
 }

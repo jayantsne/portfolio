@@ -24,11 +24,32 @@
         <span class="mobile-brand-mark">L<span class="brand-spark">+</span></span>
         <span class="mobile-brand-copy"><strong>LearnWithAI</strong><small>Learn with clarity</small></span>
       </a>
-      <button class="mobile-account" (click)="openAccount()"
-              [attr.aria-label]="auth.isLoggedIn ? 'Open account' : 'Sign in to LearnWithAI'">
-        <span class="mobile-account-avatar">{{ auth.isLoggedIn ? (auth.currentUser?.username?.[0]?.toUpperCase() || 'A') : 'A' }}</span>
-        <span>{{ auth.isLoggedIn ? 'Account' : 'Sign in' }}</span>
-      </button>
+      <div class="mobile-account-wrap">
+        <button class="mobile-account" (click)="toggleMobileAccountMenu()"
+                [class.mobile-account--open]="mobileAccountMenuOpen"
+                [attr.aria-expanded]="auth.isLoggedIn ? mobileAccountMenuOpen : null"
+                [attr.aria-haspopup]="auth.isLoggedIn ? 'menu' : null"
+                [attr.aria-label]="auth.isLoggedIn ? 'Open account menu' : 'Sign in to LearnWithAI'">
+          <span class="mobile-account-avatar">{{ auth.isLoggedIn ? (auth.currentUser?.username?.[0]?.toUpperCase() || 'A') : 'A' }}</span>
+          <span>{{ auth.isLoggedIn ? 'Account' : 'Sign in' }}</span>
+          <i *ngIf="auth.isLoggedIn" class="fas fa-chevron-down mobile-account-chevron" aria-hidden="true"></i>
+        </button>
+
+        <div class="mobile-account-menu" *ngIf="auth.isLoggedIn && mobileAccountMenuOpen" role="menu">
+          <div class="mobile-account-summary">
+            <strong>{{ auth.currentUser?.username || 'Your account' }}</strong>
+            <small>{{ auth.currentUser?.email }}</small>
+          </div>
+          <button class="mobile-account-menu-item" (click)="openMobileAccountPage()" role="menuitem">
+            <i class="far fa-user" aria-hidden="true"></i>
+            <span>Account settings</span>
+          </button>
+          <button class="mobile-account-menu-item mobile-account-menu-logout" (click)="logout()" role="menuitem">
+            <i class="fas fa-sign-out-alt" aria-hidden="true"></i>
+            <span>Sign out</span>
+          </button>
+        </div>
+      </div>
     </header>
 
     <nav class="app-rail" aria-label="Primary navigation">

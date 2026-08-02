@@ -187,7 +187,13 @@
     font: inherit;
     font-size: .72rem;
     font-weight: 800;
+    cursor: pointer;
   }
+
+  .mobile-account-wrap { position: relative; }
+  .mobile-account--open { border-color: #8dd8ca; background: #effaf7; }
+  .mobile-account-chevron { font-size: .55rem; transition: transform .18s ease; }
+  .mobile-account--open .mobile-account-chevron { transform: rotate(180deg); }
 
   .mobile-account-avatar {
     display: grid;
@@ -199,6 +205,62 @@
     background: #e7f6f2;
     font-size: .7rem;
   }
+
+  .mobile-account-menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 2600;
+    width: min(78vw, 260px);
+    overflow: hidden;
+    padding: 6px;
+    border: 1px solid #dce5ee;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .98);
+    box-shadow: 0 18px 48px rgba(15, 23, 42, .18);
+    transform-origin: top right;
+    animation: mobileAccountMenuIn .18s ease-out both;
+  }
+
+  .mobile-account-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 10px 11px 11px;
+    border-bottom: 1px solid #edf1f5;
+    color: #172033;
+  }
+  .mobile-account-summary strong { font-size: .8rem; }
+  .mobile-account-summary small {
+    overflow: hidden;
+    color: #718096;
+    font-size: .68rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-account-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 3px;
+    padding: 0 11px;
+    border: 0;
+    border-radius: 9px;
+    color: #344258;
+    background: transparent;
+    font: inherit;
+    font-size: .78rem;
+    font-weight: 750;
+    text-align: left;
+    cursor: pointer;
+  }
+  .mobile-account-menu-item i { width: 16px; text-align: center; }
+  .mobile-account-menu-item:active { background: #f0f5f8; }
+  .mobile-account-menu-logout { color: #b42318; }
+  .mobile-account-menu-logout:active { background: #fff0ef; }
 
   .main {
     order: 1;
@@ -269,6 +331,11 @@
     height: 3px;
     border-radius: 0 0 4px 4px;
   }
+}
+
+@keyframes mobileAccountMenuIn {
+  from { opacity: 0; transform: translateY(-5px) scale(.97); }
+  to { opacity: 1; transform: none; }
 }
 
 @media (prefers-reduced-motion: no-preference) {
