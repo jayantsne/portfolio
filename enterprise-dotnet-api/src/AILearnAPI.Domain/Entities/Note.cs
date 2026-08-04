@@ -43,5 +43,11 @@ namespace AILearnAPI.Domain.Entities
         /// <summary>The specific item this note belongs to (questionId, nodeId, sessionId, etc.).</summary>
         [BsonElement("contextId")]
         public string ContextId { get; set; } = string.Empty;
+
+        [BsonElement("sharedByUserId")]
+        public string SharedByUserId { get; set; } = string.Empty;
+
+        [BsonElement("sharedByName")]
+        public string SharedByName { get; set; } = string.Empty;
     }
 }

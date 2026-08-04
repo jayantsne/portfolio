@@ -46,8 +46,10 @@
         <label>Password</label>
         <div class="pwd-wrap">
           <input formControlName="password" [type]="showPwd ? 'text' : 'password'"
+                 autocomplete="current-password" autocapitalize="none" [attr.spellcheck]="false"
                  placeholder="••••••••"
                  [class.invalid]="f('login','password')?.touched && f('login','password')?.invalid" />
+          <button type="button" class="pwd-paste" (click)="pastePassword('login')" aria-label="Paste password">Paste</button>
           <button type="button" class="pwd-toggle" (click)="showPwd = !showPwd">
             {{ showPwd ? '🙈' : '👁️' }}
           </button>
@@ -92,8 +94,10 @@
         <label>Password</label>
         <div class="pwd-wrap">
           <input formControlName="password" [type]="showPwd ? 'text' : 'password'"
+                 autocomplete="new-password" autocapitalize="none" [attr.spellcheck]="false"
                  placeholder="Min 6 characters"
                  [class.invalid]="f('signup','password')?.touched && f('signup','password')?.invalid" />
+          <button type="button" class="pwd-paste" (click)="pastePassword('signup')" aria-label="Paste password">Paste</button>
           <button type="button" class="pwd-toggle" (click)="showPwd = !showPwd">
             {{ showPwd ? '🙈' : '👁️' }}
           </button>

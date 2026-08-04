@@ -138,6 +138,19 @@ export class AuthModalComponent implements OnInit, OnDestroy {
     this.authSvc.startGoogleLogin();
   }
 
+  async pastePassword(form: 'login' | 'signup' = 'login'): Promise<void> {
+    try {
+      const value = await navigator.clipboard.readText();
+      if (!value) { this.errorMsg = 'Clipboard is empty.'; return; }
+      this.errorMsg = '';
+      const target = form === 'login' ? this.loginForm : this.signupForm;
+      target.get('password')?.setValue(value);
+      target.get('password')?.markAsTouched();
+    } catch {
+      this.errorMsg = 'Long-press the password field and choose Paste.';
+    }
+  }
+
   private passwordsMatch(group: AbstractControl) {
     const p  = group.get('password')?.value;
     const cp = group.get('confirmPassword')?.value;

@@ -15,6 +15,8 @@ export interface SavedNote {
   savedAtMs?:   number;   // epoch ms for display/sorting
   contextType?: string;   // "prep" | "roadmap" | "mentor" | ""
   contextId?:   string;   // topicId / questionId / nodeId
+  sharedByUserId?: string;
+  sharedByName?: string;
 }
 
 @Injectable({ providedIn: 'root' })

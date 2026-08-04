@@ -12,6 +12,7 @@ import { AI_BACKEND } from '../config/ai.config';
 import { AILearnService } from '../services/ai-learn.service';
 import { TiptapEditorComponent } from '../shared/tiptap-editor/tiptap-editor.component';
 import { NoteFormatterService } from '../shared/note-formatter.service';
+import { AdminUserDetail, UserManagementService } from '../shared/user-management.service';
 
 interface NoteBreakdown {
   title:    string;
@@ -50,6 +51,13 @@ export class NotesComponent implements OnInit, OnDestroy {
   isLoading   = false;
   notesLoadError = '';
   deletingId: string | null = null;
+  shareModalNote: SavedNote | null = null;
+  shareUsers: AdminUserDetail[] = [];
+  shareUserId = '';
+  shareSearch = '';
+  shareLoading = false;
+  shareSubmitting = false;
+  shareError = '';
 
   // ── Filters ──────────────────────────────────────────────────────────────
   filterCategory     = 'All';
@@ -228,7 +236,57 @@ export class NotesComponent implements OnInit, OnDestroy {
     private http:           HttpClient,
     private zone:           NgZone,
     private noteFormatter:  NoteFormatterService,
+    private userManagement: UserManagementService,
   ) {}
+
+  openShareModal(note: SavedNote): void {
+    if (!this.authSvc.isAdmin || !note.id) return;
+    this.shareModalNote = note;
+    this.shareUserId = '';
+    this.shareSearch = '';
+    this.shareError = '';
+    this.shareLoading = true;
+    this.userManagement.getUsersDetailed(0, 500).subscribe({
+      next: result => {
+        this.shareUsers = result.users.filter(user => user.userId !== this.user?.userId);
+        this.shareLoading = false;
+      },
+      error: () => {
+        this.shareError = 'Could not load users. Please try again.';
+        this.shareLoading = false;
+      }
+    });
+  }
+
+  get filteredShareUsers(): AdminUserDetail[] {
+    const query = this.shareSearch.trim().toLowerCase();
+    if (!query) return this.shareUsers;
+    return this.shareUsers.filter(user =>
+      user.username.toLowerCase().includes(query) || user.email.toLowerCase().includes(query));
+  }
+
+  closeShareModal(): void {
+    if (this.shareSubmitting) return;
+    this.shareModalNote = null;
+  }
+
+  submitNoteShare(): void {
+    const noteId = this.shareModalNote?.id;
+    if (!noteId || !this.shareUserId || this.shareSubmitting) return;
+    this.shareSubmitting = true;
+    this.shareError = '';
+    this.userManagement.shareNote(noteId, this.shareUserId).subscribe({
+      next: result => {
+        this.shareSubmitting = false;
+        this.shareModalNote = null;
+        this.showToast(result.message || 'Note shared successfully.');
+      },
+      error: error => {
+        this.shareSubmitting = false;
+        this.shareError = error?.error?.message || 'Could not share this note.';
+      }
+    });
+  }
 
   ngOnInit(): void {
     // On mobile, collapse the sidebar by default so the content area shows first

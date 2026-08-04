@@ -770,6 +770,19 @@
   z-index: 2;
 }
 
+#password.futuristic-input {
+  padding-right: 7.5rem;
+  -webkit-user-select: text !important;
+  user-select: text !important;
+  -webkit-touch-callout: default !important;
+  touch-action: auto;
+}
+.paste-password-btn {
+  position: absolute; right: 4rem; z-index: 3; min-height: 32px; padding: 0 .55rem;
+  border: 0; border-radius: 8px; background: rgba(79, 172, 254, .15);
+  color: #75c3ff; font-size: .72rem; font-weight: 800; cursor: pointer;
+}
+
 .toggle-password-btn svg {
   width: 20px;
   height: 20px;

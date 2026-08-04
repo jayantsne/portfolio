@@ -198,4 +198,12 @@ export class UserManagementService {
       { headers: this.headers }
     );
   }
+
+  shareNote(noteId: string, targetUserId: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(
+      `${this.adminBase}/notes/${encodeURIComponent(noteId)}/share`,
+      { targetUserId },
+      { headers: this.headers }
+    );
+  }
 }

@@ -60,6 +60,17 @@ export class LoginComponent implements OnInit, AfterViewInit, OnDestroy {
     private apiService: ApiService
   ) {}
 
+  async pastePassword(): Promise<void> {
+    try {
+      const value = await navigator.clipboard.readText();
+      if (!value) { this.errorMessage = 'Clipboard is empty.'; return; }
+      this.password = value;
+      this.errorMessage = '';
+    } catch {
+      this.errorMessage = 'Long-press the password field and choose Paste.';
+    }
+  }
+
   ngOnInit(): void {
     console.log('🚀 Login component initialized');
 

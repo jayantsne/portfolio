@@ -51,12 +51,20 @@ export class CustomAuthService {
 
   async initSession(): Promise<void> {
     await this.tokenStorage.init();
+    const storedToken = this.tokenStorage.get();
     if (Capacitor.isNativePlatform()) {
       await App.addListener('appUrlOpen', event => void this.handleNativeAuthUrl(event.url));
       const launch = await App.getLaunchUrl();
       if (launch?.url) await this.handleNativeAuthUrl(launch.url);
     }
-    await this.refreshSession().toPromise().then(() => undefined).catch(() => undefined);
+    try {
+      await this.refreshSession().toPromise();
+    } catch {
+      // A valid native token restores the user through /auth/me. If the token
+      // has genuinely expired, remove it once so subsequent launches show a
+      // clean login instead of repeatedly retrying a stale credential.
+      if (Capacitor.isNativePlatform() && storedToken) await this.tokenStorage.clear();
+    }
   }
 
   getAuthHeaders(): HttpHeaders {

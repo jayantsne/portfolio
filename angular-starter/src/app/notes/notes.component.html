@@ -394,6 +394,7 @@
                           (click)="togglePin(activeNote); showMoreMenu = false">
                     {{ isPinned(activeNote) ? '📌 Unpin' : '📌 Pin note' }}
                   </button>
+                  <button *ngIf="user?.role === 'ADMIN'" (click)="openShareModal(activeNote); showMoreMenu = false">👤 Share with user</button>
                   <div class="menu-divider"></div>
                   <button (click)="exportAsTxt(); showMoreMenu = false">📄 Export TXT</button>
                   <button (click)="exportAsMd(); showMoreMenu = false">📝 Export Markdown</button>
@@ -417,6 +418,7 @@
               <span class="reader-tag-inline" *ngFor="let t of (activeNote.tags ?? []) | slice:0:2">#{{ t }}</span>
             </ng-container>
             <span class="reader-pinned-badge" *ngIf="isPinned(activeNote)">📌</span>
+            <span class="reader-shared-badge" *ngIf="activeNote.sharedByName">Shared by {{ activeNote.sharedByName }}</span>
           </div>
 
         </div>
@@ -723,6 +725,9 @@
                 <button (click)="shareNote(); showMoreMenu = false">
                   <i class="fas fa-share-alt" aria-hidden="true"></i> Share
                 </button>
+                <button *ngIf="user?.role === 'ADMIN'" (click)="openShareModal(activeNote); showMoreMenu = false">
+                  <i class="fas fa-user-plus" aria-hidden="true"></i> Share in app
+                </button>
                 <button (click)="exportAsMd(); showMoreMenu = false">
                   <i class="fas fa-download" aria-hidden="true"></i> Export Markdown
                 </button>
@@ -736,6 +741,7 @@
               <span class="mr-rs-item">{{ noteReadingTime(activeNote) }}</span>
               <span class="mr-meta-sep" *ngIf="activeNote.category">·</span>
               <span class="mr-cat-badge" *ngIf="activeNote.category">{{ activeNote.category }}</span>
+              <span class="mr-cat-badge" *ngIf="activeNote.sharedByName">Shared by {{ activeNote.sharedByName }}</span>
             </div>
             <div class="mr-tags" *ngIf="(activeNote.tags ?? []).length > 0">
               <span class="mr-tag" *ngFor="let t of (activeNote.tags ?? [])">#{{ t }}</span>
@@ -1053,6 +1059,54 @@
       </div>
 
     </div>
+  </div>
+
+  <div class="note-share-backdrop" *ngIf="shareModalNote" (click)="closeShareModal()" aria-modal="true" role="dialog" aria-labelledby="note-share-title">
+    <section class="note-share-modal" (click)="$event.stopPropagation()">
+      <header class="note-share-head">
+        <div>
+          <span class="note-share-kicker">Admin sharing</span>
+          <h3 id="note-share-title">Share with a learner</h3>
+        </div>
+        <button type="button" (click)="closeShareModal()" [disabled]="shareSubmitting" aria-label="Close">×</button>
+      </header>
+
+      <div class="note-share-preview">
+        <span>Note</span>
+        <strong>{{ shareModalNote.topic }}</strong>
+        <small>The recipient gets an independent copy. Your original stays unchanged.</small>
+      </div>
+
+      <label class="note-share-label" for="note-share-search">Find a user</label>
+      <input id="note-share-search" class="note-share-search" type="search" [(ngModel)]="shareSearch"
+             placeholder="Search name or email" autocomplete="off" />
+
+      <div class="note-share-loading" *ngIf="shareLoading">
+        <span class="note-share-spinner"></span> Loading users…
+      </div>
+      <div class="note-share-users" *ngIf="!shareLoading">
+        <button type="button" *ngFor="let recipient of filteredShareUsers"
+                [class.selected]="shareUserId === recipient.userId"
+                (click)="shareUserId = recipient.userId">
+          <span class="note-share-avatar">{{ (recipient.username || recipient.email).charAt(0) | uppercase }}</span>
+          <span class="note-share-user-copy">
+            <strong>{{ recipient.username }}</strong>
+            <small>{{ recipient.email }}</small>
+          </span>
+          <span class="note-share-check">{{ shareUserId === recipient.userId ? '✓' : '' }}</span>
+        </button>
+        <p class="note-share-empty" *ngIf="filteredShareUsers.length === 0">No matching users.</p>
+      </div>
+
+      <p class="note-share-error" *ngIf="shareError">{{ shareError }}</p>
+      <footer class="note-share-actions">
+        <button type="button" class="note-share-cancel" (click)="closeShareModal()" [disabled]="shareSubmitting">Cancel</button>
+        <button type="button" class="note-share-submit" (click)="submitNoteShare()"
+                [disabled]="!shareUserId || shareLoading || shareSubmitting">
+          {{ shareSubmitting ? 'Sharing…' : 'Share note' }}
+        </button>
+      </footer>
+    </section>
   </div>
 
   <!-- ─────────────────────── CREATE NOTE PANEL ─────────────────────── -->

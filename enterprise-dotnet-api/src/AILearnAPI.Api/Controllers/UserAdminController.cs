@@ -7,6 +7,7 @@ using AILearnAPI.Domain.Constants;
 using AILearnAPI.Shared.DTOs.Admin;
 using AILearnAPI.Shared.DTOs.Subscription;
 using System.Security.Claims;
+using System.IdentityModel.Tokens.Jwt;
 
 namespace AILearnAPI.Api.Controllers
 {
@@ -21,16 +22,58 @@ namespace AILearnAPI.Api.Controllers
     {
         private readonly IAuthRepository         _authRepo;
         private readonly ISubscriptionRepository _subRepo;
+        private readonly INoteRepository          _noteRepo;
         private readonly ILogger<UserAdminController> _logger;
 
         public UserAdminController(
             IAuthRepository          authRepo,
             ISubscriptionRepository  subRepo,
+            INoteRepository          noteRepo,
             ILogger<UserAdminController> logger)
         {
             _authRepo = authRepo;
             _subRepo  = subRepo;
+            _noteRepo = noteRepo;
             _logger   = logger;
+        }
+
+        // POST /api/user-admin/notes/{noteId}/share
+        /// <summary>Copies one of the current admin's notes into another user's notebook.</summary>
+        [HttpPost("notes/{noteId}/share")]
+        public async Task<IActionResult> ShareNote(string noteId, [FromBody] AdminShareNoteRequest req)
+        {
+            var callerUserId = User.FindFirstValue(JwtRegisteredClaimNames.Sub)
+                ?? User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrWhiteSpace(callerUserId)) return Unauthorized();
+            if (string.IsNullOrWhiteSpace(req.TargetUserId)) return BadRequest(new { message = "Choose a user." });
+            if (string.Equals(callerUserId, req.TargetUserId, StringComparison.Ordinal))
+                return BadRequest(new { message = "This note is already in your notebook." });
+
+            var source = await _noteRepo.GetByIdAndUserIdAsync(noteId, callerUserId);
+            if (source == null) return NotFound(new { message = "Note not found." });
+
+            var target = await _authRepo.GetByUserIdAsync(req.TargetUserId);
+            if (target == null) return NotFound(new { message = "Recipient not found." });
+
+            var sender = await _authRepo.GetByUserIdAsync(callerUserId);
+            var copy = new Note
+            {
+                UserId = target.UserId,
+                Topic = source.Topic,
+                Category = source.Category,
+                Content = source.Content,
+                Tags = source.Tags.Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+                SavedAt = DateTime.UtcNow,
+                IsPinned = false,
+                ContextType = "shared",
+                ContextId = source.Id,
+                SharedByUserId = callerUserId,
+                SharedByName = sender?.Username ?? sender?.Email ?? "LearnWithAI admin"
+            };
+            await _noteRepo.CreateAsync(copy);
+
+            _logger.LogInformation("Admin {AdminId} shared note {NoteId} with user {TargetId}", callerUserId, noteId, target.UserId);
+            return Ok(new { message = $"Shared with {target.Username}." });
         }
 
         // ── GET /api/user-admin/users ────────────────────────────────────────
@@ -347,6 +390,11 @@ namespace AILearnAPI.Api.Controllers
             BlockedAt            = sub?.BlockedAt,
             BlockedReason        = sub?.BlockedReason,
         };
+    }
+
+    public sealed class AdminShareNoteRequest
+    {
+        public string TargetUserId { get; set; } = string.Empty;
     }
 
     /// <summary>Request body for PUT /api/user-admin/users/{userId}/role</summary>

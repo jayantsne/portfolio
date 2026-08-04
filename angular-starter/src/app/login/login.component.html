@@ -385,10 +385,13 @@
               name="password"
               placeholder=" "
               autocomplete="current-password"
+              autocapitalize="none"
+              [attr.spellcheck]="false"
               [disabled]="isLoading"
               required
               class="futuristic-input"
             />
+            <button type="button" class="paste-password-btn" (click)="pastePassword()" [disabled]="isLoading">Paste</button>
             <label for="password" class="floating-label-text">Password</label>
             <button
               type="button"

@@ -36,7 +36,6 @@ export class AuthInterceptor implements HttpInterceptor {
     const isAuthEndpoint = req.url.includes('/auth/register') ||
                            req.url.includes('/auth/login') ||
                            req.url.includes('/auth/google') ||
-                           req.url.includes('/auth/me') ||
                            req.url.includes('/auth/logout');
 
     // These endpoints may return 401 for reasons unrelated to the user's core

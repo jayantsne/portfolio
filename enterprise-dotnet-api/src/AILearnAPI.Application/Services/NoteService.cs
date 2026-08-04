@@ -87,6 +87,8 @@ namespace AILearnAPI.Application.Services
             isPinned    = n.IsPinned,
             contextType = n.ContextType,
             contextId   = n.ContextId,
+            sharedByUserId = n.SharedByUserId,
+            sharedByName   = n.SharedByName,
         };
     }
 }

@@ -13,6 +13,8 @@ namespace AILearnAPI.Shared.DTOs.Notes
         public bool          isPinned    { get; set; }
         public string        contextType { get; set; } = string.Empty;
         public string        contextId   { get; set; } = string.Empty;
+        public string        sharedByUserId { get; set; } = string.Empty;
+        public string        sharedByName   { get; set; } = string.Empty;
     }
 
     /// <summary>Body expected when creating a new note.</summary>
