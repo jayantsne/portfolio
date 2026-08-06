@@ -1012,7 +1012,7 @@ One sentence: the single most important thing to remember about ${topic} in a te
   }
   openExplore(): void { this.router.navigate(['/explore']); }
   openFlow(): void { this.router.navigate(['/flow-generator']); }
-  openInterviewPrep(): void { this.router.navigate(['/interview-prep']); }
+  openInterviewPrep(): void { this.router.navigate(['/admin/interview-prep']); }
   openAccount(): void { this.router.navigate(['/account']); }
 
   // ── hasActiveChat ────────────────────────────────────────────────────────

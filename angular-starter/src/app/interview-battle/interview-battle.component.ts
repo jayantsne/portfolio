@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Observable } from 'rxjs';
 import { finalize } from 'rxjs/operators';
@@ -37,7 +37,7 @@ interface PrepLaunchContext {
 
       <app-battle-library *ngIf="library" [mode]="library" (close)="library=undefined"></app-battle-library>
       <ng-container *ngIf="!library">
-        <app-battle-setup *ngIf="stage==='setup' && !prepContext" (start)="start($event)"></app-battle-setup>
+        <app-battle-setup *ngIf="stage==='setup' && !prepContext" [starting]="busy" (start)="start($event)"></app-battle-setup>
         <section class="battle-launching" *ngIf="stage==='setup' && prepContext && busy">
           <span class="state-spinner"></span><strong>Preparing your focused interview</strong><p>Bringing the selected question and linked study context into Battle.</p>
         </section>
@@ -52,7 +52,8 @@ interface PrepLaunchContext {
         </div>
       </ng-container>
     </main>`,
-  styleUrls: ['./interview-battle.component.css']
+  styleUrls: ['./interview-battle.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
 export class InterviewBattleComponent implements OnInit {
   stage: 'setup'|'session'|'evaluation'|'summary' = 'setup';
@@ -73,7 +74,7 @@ export class InterviewBattleComponent implements OnInit {
     this.start({role:'Senior .NET Developer',experienceLevel:'6–9 years',technologies:[this.mapTechnology(this.prepContext.category)],interviewType:'Technical',difficulty,interviewerStyle:'Normal',durationMinutes:10,assistanceLevel:'Guided',plannedQuestion:this.prepContext.question,plannedQuestionCategory:this.prepContext.category,plannedAnswerHint:this.prepContext.answerHint,sourceQuestionId:this.prepContext.questionId,sourceNoteId:this.prepContext.noteId});
   }
 
-  start(x:BattleSetup){this.run(()=>this.api.createSession(x),s=>{this.session=s;this.nextQuestion();},()=>this.start(x));}
+  start(x:BattleSetup){if(this.busy)return;this.run(()=>this.api.createSession(x),s=>{this.session=s;this.nextQuestion();},()=>this.start(x));}
   nextQuestion(){if(!this.session)return;this.retryAnswerId=undefined;this.retryDraft='';this.comparison=undefined;this.run(()=>this.api.nextQuestion(this.session!.id),q=>{this.question=q;this.stage='session';this.answer=undefined;},()=>this.nextQuestion());}
   evaluate(x:{transcript:string;duration:number;thinking:number}){this.pending=x;if(this.retryAnswerId){this.run(()=>this.api.retry(this.session!.id,this.retryAnswerId!,x.transcript,x.duration,x.thinking),c=>{this.comparison=c;this.answer=c.secondAttempt;this.retryAnswerId=undefined;this.stage='evaluation';},()=>this.evaluate(this.pending!));return;}this.run(()=>this.api.submit(this.session!.id,this.question!.id,x.transcript,x.duration,x.thinking),a=>{this.answer=a;this.stage='evaluation';},()=>this.evaluate(this.pending!));}
   practiceAgain(){if(!this.answer)return;this.retryAnswerId=this.answer.id;this.retryDraft=this.answer.evaluation.answerImprovement.startWith||this.answer.evaluation.answerImprovement.shortAnswer;this.stage='session';}

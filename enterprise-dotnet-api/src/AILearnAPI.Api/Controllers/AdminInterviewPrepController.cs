@@ -1,6 +1,5 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using AILearnAPI.Domain.Constants;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
@@ -11,7 +10,7 @@ namespace AILearnAPI.Api.Controllers;
 
 [ApiController]
 [Route("api/admin-interview-prep")]
-[Authorize(Roles = UserRoles.Admin)]
+[Authorize]
 public class AdminInterviewPrepController : ControllerBase
 {
     private readonly IMongoCollection<AdminInterviewPrepQuestion> _questions;
@@ -153,8 +152,27 @@ public class AdminInterviewPrepController : ControllerBase
             })
             .ToList();
 
+        // Non-replacing imports are synchronization-safe: preserve existing
+        // user progress and insert only questions not already in this user's
+        // personal library. Comparison ignores case and surrounding spacing.
+        if (!request.ReplaceExisting && docs.Count > 0)
+        {
+            var existingQuestions = await _questions
+                .Find(x => x.OwnerUserId == ownerId)
+                .Project(x => x.Question)
+                .ToListAsync();
+
+            var known = existingQuestions
+                .Select(NormalizeQuestionKey)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            docs = docs
+                .Where(x => known.Add(NormalizeQuestionKey(x.Question)))
+                .ToList();
+        }
+
         if (docs.Count == 0)
-            return BadRequest(new { message = "No valid questions found in import payload." });
+            return Ok(new AdminInterviewPrepImportResult { Imported = 0 });
 
         await _questions.InsertManyAsync(docs);
         _logger.LogInformation("Admin interview prep import: {Count} questions for {UserId}", docs.Count, ownerId);
@@ -266,6 +284,11 @@ public class AdminInterviewPrepController : ControllerBase
 
     private static string NormalizeCategory(string? category) =>
         string.IsNullOrWhiteSpace(category) ? "General" : category.Trim();
+
+    private static string NormalizeQuestionKey(string? question) =>
+        string.Join(' ', (question ?? string.Empty)
+            .Trim()
+            .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
 
     private static AdminInterviewPrepQuestionDto ToDto(AdminInterviewPrepQuestion q) => new()
     {

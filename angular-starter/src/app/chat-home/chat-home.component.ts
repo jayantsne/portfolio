@@ -19,7 +19,7 @@ export class ChatHomeComponent {
 
   /** Quick-action suggestion chips */
   readonly suggestions: { icon: string; label: string; sublabel: string; route: string }[] = [
-    { icon: '💬', label: 'Interview Prep',   sublabel: 'Practice with AI',       route: '/interview-prep' },
+    { icon: '💬', label: 'Interview Prep',   sublabel: 'Practice with AI',       route: '/admin/interview-prep' },
     { icon: '📝', label: 'My Notes',         sublabel: 'Saved learning notes',   route: '/notes'          },
     { icon: '⌨️', label: 'Code Playground',  sublabel: 'Run & test code',         route: '/playground'     },
     { icon: '🗺️', label: 'Learning Roadmap', sublabel: 'Personalised plan',      route: '/roadmap'        },

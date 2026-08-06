@@ -2,12 +2,14 @@ import { Component,OnInit } from '@angular/core';
 import { FormBuilder,Validators } from '@angular/forms';
 import { HttpErrorResponse,HttpEventType } from '@angular/common/http';
 import { AndroidRelease,AndroidReleaseService } from '../../shared/android-release.service';
+import { PlatformService } from '../../shared/platform.service';
+import { Router } from '@angular/router';
 @Component({selector:'app-android-releases',templateUrl:'./android-releases.component.html',styleUrls:['./android-releases.component.css']})
 export class AndroidReleasesComponent implements OnInit{
   releases:AndroidRelease[]=[];file?:File;loading=false;progress=0;error='';
   form=this.fb.group({versionName:['',[Validators.required,Validators.pattern(/^\d+\.\d+\.\d+([-.][0-9A-Za-z.-]+)?$/)]],versionCode:[1,[Validators.required,Validators.min(1)]],releaseNotes:['',[Validators.maxLength(5000)]],publishImmediately:[true],minimumSupportedVersionCode:[1,[Validators.min(1)]]});
-  constructor(private fb:FormBuilder,private api:AndroidReleaseService){}
-  ngOnInit():void{this.load();}
+  constructor(private fb:FormBuilder,private api:AndroidReleaseService,private platform:PlatformService,private router:Router){}
+  ngOnInit():void{if(this.platform.isNative()){this.router.navigate(['/explore'],{replaceUrl:true});return;}this.load();}
   get nextVersionCode():number{return Math.max(0,...this.releases.map(x=>x.versionCode))+1;}
   load():void{this.api.getReleases().subscribe({next:x=>{this.releases=x;const current=this.form.controls.versionCode.value??0;if(current<1||this.releases.some(r=>r.versionCode===current))this.form.controls.versionCode.setValue(this.nextVersionCode);},error:()=>this.error='Unable to load Android releases.'});}
   choose(event:Event):void{const value=(event.target as HTMLInputElement).files?.[0];this.error='';if(!value)return;if(!value.name.toLowerCase().endsWith('.apk')){this.error='Choose an APK file.';return;}if(value.size>200*1024*1024){this.error='APK must be 200 MB or smaller.';return;}this.file=value;}

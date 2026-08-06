@@ -17,7 +17,6 @@ import { NotesComponent }        from './notes/notes.component';
 import { DeploymentComponent }   from './deployment/deployment.component';
 import { AnalyticsDashboardComponent } from './analytics-dashboard/analytics-dashboard.component';
 import { RoadmapComponent }      from './roadmap/roadmap.component';
-import { InterviewPrepComponent } from './interview-prep/interview-prep.component';
 import { LoginGuard }            from './shared/login.guard';
 import { SubscribeComponent }    from './subscribe/subscribe.component';
 import { SubscriptionGuard }     from './shared/subscription.guard';
@@ -71,8 +70,8 @@ const routes: Routes = [
       { path: 'learn/ai-tutor',     redirectTo: '',          pathMatch: 'full' },
       { path: 'learn/roadmap',      redirectTo: 'roadmap',   pathMatch: 'full' },
       { path: 'learn/notes',        redirectTo: 'notes',     pathMatch: 'full' },
-      { path: 'practice',               redirectTo: 'interview-prep', pathMatch: 'full' },
-      { path: 'practice/interview-prep', redirectTo: 'interview-prep', pathMatch: 'full' },
+      { path: 'practice',               redirectTo: 'admin/interview-prep', pathMatch: 'full' },
+      { path: 'practice/interview-prep', redirectTo: 'admin/interview-prep', pathMatch: 'full' },
       { path: 'practice/interview-qa',   redirectTo: 'questions',      pathMatch: 'full' },
       { path: 'practice/azure-ai102',    redirectTo: 'azure-ai-102',   pathMatch: 'full' },
       { path: 'home', redirectTo: '', pathMatch: 'full' },
@@ -102,7 +101,9 @@ const routes: Routes = [
       { path: 'flow-generator', component: FlowGeneratorComponent },
 
       // ── Practice ─────────────────────────────────────────────────
-      { path: 'interview-prep', component: InterviewPrepComponent },
+      // The legacy roadmap screen is hidden. Keep its URL working by sending
+      // web and mobile users to the personal Question Library instead.
+      { path: 'interview-prep', redirectTo: 'admin/interview-prep', pathMatch: 'full' },
       { path: 'interview-battle', loadChildren: () => import('./interview-battle/interview-battle.module').then(m => m.InterviewBattleModule), canActivate: [LoginGuard, SubscriptionGuard] },
       { path: 'questions',      component: QuestionsListComponent, canActivate: [SubscriptionGuard] },
 
@@ -114,8 +115,10 @@ const routes: Routes = [
       { path: 'admin',           redirectTo: 'admin/users', pathMatch: 'full' },
       { path: 'admin/users',     component: AdminUsersComponent,       canActivate: [AuthGuard] },
       { path: 'admin/questions', component: InterviewQuestionsComponent, canActivate: [AuthGuard] },
-      { path: 'admin/interview-prep', component: AdminInterviewPrepComponent, canActivate: [AdminGuard] },
-      { path: 'admin/interview-prep/import', component: AdminInterviewPrepImportComponent, canActivate: [AdminGuard] },
+      // The question library stores questions and progress per user, so every
+      // signed-in user can safely use it. Other admin routes remain protected.
+      { path: 'admin/interview-prep', component: AdminInterviewPrepComponent, canActivate: [LoginGuard] },
+      { path: 'admin/interview-prep/import', component: AdminInterviewPrepImportComponent, canActivate: [LoginGuard] },
       { path: 'admin/android-releases', component: AndroidReleasesComponent, canActivate: [AdminGuard] },
       { path: 'admin-login',     component: AdminLoginComponent },
       { path: 'admin-dashboard', component: AdminDashboardComponent },

@@ -44,8 +44,7 @@
          routerLinkActive="nav-link--active"
          class="nav-link">Interview Battle</a>
 
-      <a *ngIf="auth.isAdmin"
-         routerLink="/admin/interview-prep"
+      <a routerLink="/admin/interview-prep"
          routerLinkActive="nav-link--active"
          class="nav-link">Interview Prep</a>
 
@@ -212,8 +211,7 @@
     Interview Battle
   </a>
 
-  <a *ngIf="auth.isAdmin"
-     routerLink="/admin/interview-prep"
+  <a routerLink="/admin/interview-prep"
      routerLinkActive="nav-link--active"
      class="mobile-nav-link"
      (click)="closeMobileMenu()">

@@ -6,6 +6,7 @@ import { Router } from '@angular/router';
 import { CustomAuthService } from '../shared/custom-auth.service';
 import { ThemeService } from '../shared/theme.service';
 import { AuthTriggerService } from '../shared/auth-trigger.service';
+import { PlatformService } from '../shared/platform.service';
 
 /**
  * LayoutComponent — App Shell
@@ -40,7 +41,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
     this.isScrolled = (this.mainRef?.nativeElement?.scrollTop ?? 0) > 10;
   };
 
-  constructor(private panelContent: SidebarContentService, private router: Router, public auth: CustomAuthService, public theme: ThemeService, private authTrigger: AuthTriggerService) {
+  constructor(private panelContent: SidebarContentService, private router: Router, public auth: CustomAuthService, public theme: ThemeService, private authTrigger: AuthTriggerService, public platform: PlatformService) {
     this.hasPanel$   = panelContent.hasContent$;
     this.panelTitle$ = panelContent.title$;
     this.panelTpl$   = panelContent.template$;
@@ -73,6 +74,16 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
   openMobileAccountPage(): void {
     this.mobileAccountMenuOpen = false;
     this.router.navigate(['/account']);
+  }
+
+  openAdminInterviewPrep(): void {
+    this.mobileAccountMenuOpen = false;
+    this.router.navigate(['/admin/interview-prep']);
+  }
+
+  openAndroidReleases(): void {
+    this.mobileAccountMenuOpen = false;
+    this.router.navigate(['/admin/android-releases']);
   }
 
   logout(): void {

@@ -3,6 +3,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { CustomAuthService } from '../shared/custom-auth.service';
+import { Subscription } from 'rxjs';
 
 type Mode = 'login' | 'signup';
 
@@ -23,6 +24,7 @@ export class AuthModalComponent implements OnInit, OnDestroy {
   successMsg = '';
   showPwd    = false;
   showConfPwd = false;
+  private subscriptions = new Subscription();
 
   loginForm!:  FormGroup;
   signupForm!: FormGroup;
@@ -45,9 +47,21 @@ export class AuthModalComponent implements OnInit, OnDestroy {
       password:        ['', [Validators.required, Validators.minLength(6)]],
       confirmPassword: ['', Validators.required]
     }, { validators: this.passwordsMatch });
+
+    this.subscriptions.add(this.authSvc.googleLoginState$.subscribe(state => this.ngZone.run(() => {
+      if (state === 'opening' || state === 'exchanging') this.isLoading = true;
+      if (state === 'idle' || state === 'error') this.isLoading = false;
+      if (state === 'success') {
+        this.isLoading = false;
+        if (this.isOpen) { this.close(); this.loggedIn.emit(); }
+      }
+    })));
+    this.subscriptions.add(this.authSvc.googleLoginError$.subscribe(message => this.ngZone.run(() => {
+      if (message) this.errorMsg = message;
+    })));
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void { this.subscriptions.unsubscribe(); }
 
   @HostListener('window:capacitorBack')
   onNativeBack(): void { if (this.isOpen) this.close(); }
@@ -55,6 +69,7 @@ export class AuthModalComponent implements OnInit, OnDestroy {
   // ─── Open / close ─────────────────────────────────────────────────────────
 
   open(mode: Mode = 'login'): void {
+    this.authSvc.resetGoogleLoginState();
     this.mode       = mode;
     this.isOpen     = true;
     this.errorMsg   = '';
@@ -135,7 +150,7 @@ export class AuthModalComponent implements OnInit, OnDestroy {
   async loginWithGoogle(): Promise<void> {
     this.isLoading = true;
     this.errorMsg  = '';
-    this.authSvc.startGoogleLogin();
+    await this.authSvc.startGoogleLogin();
   }
 
   async pastePassword(form: 'login' | 'signup' = 'login'): Promise<void> {

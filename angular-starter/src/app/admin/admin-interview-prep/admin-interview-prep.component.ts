@@ -9,6 +9,7 @@ import {
 } from './admin-interview-prep.service';
 import { NotesService, SavedNote } from '../../shared/notes.service';
 import { SQL_QUESTION_PACK } from '../admin-interview-prep-import/sql-question-pack';
+import { DOTNET_CORE_QUESTION_PACK } from '../admin-interview-prep-import/dotnet-core-question-pack';
 
 type ImportMode = 'lines' | 'json';
 
@@ -51,6 +52,7 @@ export class AdminInterviewPrepComponent implements OnInit {
   noteMatches: Record<string, SavedNote> = {};
   preparedTodayIds = new Set<string>();
   private sqlSeedAttempted = false;
+  private dotnetSeedAttempted = false;
 
   accessQuestion: AdminPrepQuestion | null = null;
   accessText = '';
@@ -98,6 +100,18 @@ export class AdminInterviewPrepComponent implements OnInit {
         this.includeCovered
       );
 
+      // Synchronize the maintained .NET Core pack for every user's personal
+      // library. The API ignores questions that already exist for that user.
+      if (!this.dotnetSeedAttempted) {
+        this.dotnetSeedAttempted = true;
+        await this.prepService.importQuestions(DOTNET_CORE_QUESTION_PACK, false);
+        response = await this.prepService.getAll(
+          this.selectedCategory,
+          this.search,
+          this.includeCovered
+        );
+      }
+
       // Existing installations predate the SQL pack. Seed it once when the
       // owner's library has no SQL category; subsequent loads remain read-only.
       if (!this.sqlSeedAttempted && !response.categories.some(category => category.toLowerCase() === 'sql')) {
@@ -118,7 +132,7 @@ export class AdminInterviewPrepComponent implements OnInit {
       await this.loadDailyPlan();
     } catch (err) {
       console.error(err);
-      this.error = 'Unable to load admin interview prep data.';
+      this.error = 'Unable to load your interview prep data.';
     } finally {
       this.loading = false;
     }

@@ -123,8 +123,15 @@ namespace AILearnAPI.Api.Controllers
         public IActionResult StartGoogleLogin([FromQuery] string? returnUrl, [FromQuery] bool native = false)
         {
             var state = CreateState();
+            var normalizedReturnUrl = NormalizeReturnUrl(returnUrl);
+            // A native OAuth flow runs in Chrome Custom Tabs. Depending on the
+            // device's cookie policy, the callback may not receive the cookies
+            // written at the start of the flow. Keep the state metadata on the
+            // server as the authoritative source and retain cookies as a web
+            // compatibility fallback.
+            _cache.Set($"google-oauth:{state}", new GoogleOAuthFlow(native, normalizedReturnUrl), TimeSpan.FromMinutes(10));
             SetOAuthCookie("ailearn_google_oauth_state", state);
-            SetOAuthCookie("ailearn_google_return_url", NormalizeReturnUrl(returnUrl));
+            SetOAuthCookie("ailearn_google_return_url", normalizedReturnUrl);
             SetOAuthCookie("ailearn_google_native", native ? "1" : "0");
 
             var redirectUri = GetGoogleRedirectUri();
@@ -145,16 +152,28 @@ namespace AILearnAPI.Api.Controllers
             var returnUrl = NormalizeReturnUrl(Request.Cookies["ailearn_google_return_url"]);
             var isNative = Request.Cookies["ailearn_google_native"] == "1";
 
+            GoogleOAuthFlow? flow = null;
+            if (!string.IsNullOrWhiteSpace(state) &&
+                _cache.TryGetValue($"google-oauth:{state}", out GoogleOAuthFlow? cachedFlow) &&
+                cachedFlow != null)
+            {
+                flow = cachedFlow;
+                _cache.Remove($"google-oauth:{state}");
+                returnUrl = cachedFlow.ReturnUrl;
+                isNative = cachedFlow.Native;
+            }
+
             ClearOAuthCookies();
 
             if (!string.IsNullOrWhiteSpace(error))
                 return Redirect(BuildGoogleErrorRedirect(isNative, frontendBaseUrl, returnUrl, "Google sign-in was cancelled."));
 
             var hasExpectedStateCookie = Request.Cookies.TryGetValue("ailearn_google_oauth_state", out var expectedState);
-            if (string.IsNullOrWhiteSpace(state) ||
-                !hasExpectedStateCookie ||
-                string.IsNullOrWhiteSpace(expectedState) ||
-                !FixedTimeEquals(state, expectedState))
+            var cookieStateIsValid = hasExpectedStateCookie &&
+                                     !string.IsNullOrWhiteSpace(expectedState) &&
+                                     !string.IsNullOrWhiteSpace(state) &&
+                                     FixedTimeEquals(state, expectedState);
+            if (flow == null && !cookieStateIsValid)
             {
                 return Redirect(BuildGoogleErrorRedirect(isNative, frontendBaseUrl, returnUrl, "Google sign-in state is invalid."));
             }
@@ -176,7 +195,7 @@ namespace AILearnAPI.Api.Controllers
                 if (isNative)
                 {
                     var exchangeCode = CreateState();
-                    _cache.Set($"native-google:{exchangeCode}", result, TimeSpan.FromMinutes(2));
+                    _cache.Set($"native-google:{exchangeCode}", result, TimeSpan.FromMinutes(10));
                     return Redirect($"tech.learnwithai.app://auth-callback?code={Uri.EscapeDataString(exchangeCode)}&returnUrl={Uri.EscapeDataString(returnUrl)}");
                 }
 
@@ -415,6 +434,8 @@ namespace AILearnAPI.Api.Controllers
         return leftBytes.Length == rightBytes.Length &&
                CryptographicOperations.FixedTimeEquals(leftBytes, rightBytes);
     }
+
+    private sealed record GoogleOAuthFlow(bool Native, string ReturnUrl);
     }
 
     public class LogoutDto

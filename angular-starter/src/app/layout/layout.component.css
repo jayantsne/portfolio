@@ -322,7 +322,7 @@
     min-height: calc(64px + env(safe-area-inset-bottom, 0px));
     flex: none;
     flex-direction: row;
-    justify-content: space-around;
+    justify-content: stretch;
     gap: 2px;
     padding: 6px 8px calc(6px + env(safe-area-inset-bottom, 0px));
     box-sizing: border-box;
@@ -343,9 +343,9 @@
   }
 
   .app-rail-link {
-    width: min(15.5vw, 58px);
+    width: auto;
     height: 50px;
-    flex: 0 1 58px;
+    flex: 1 1 0;
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -355,7 +355,7 @@
 
   .app-rail-link i { font-size: .96rem; }
   .app-rail-link small { position: static; width: auto; height: auto; clip: auto; overflow: visible; font-size: .58rem; font-weight: 750; }
-  .app-rail-link--active { transform: translateY(-3px); }
+  .app-rail-link--active { transform: none; }
 
   .app-rail-link--active::before {
     top: -6px;
@@ -400,8 +400,8 @@
   }
 
   :host-context(.capacitor-android) .app-rail-link {
-    width: calc((100vw - 12px) / 6);
-    max-width: 60px;
+    width: auto;
+    max-width: none;
     height: 52px;
     flex: 1 1 0;
     gap: 3px;
@@ -422,3 +422,6 @@
   }
 }
 
+/* APK release administration belongs to the web console, never the native app. */
+:host-context(.capacitor-native) a[href*="admin/android-releases"],
+:host-context(.capacitor-native) button[data-route="admin/android-releases"] { display: none !important; }

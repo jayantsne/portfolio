@@ -76,8 +76,8 @@
                (click)="closeNavbar()">Notes</a>
           </li>
 
-          <!-- Admin-only interview preparation workspace -->
-          <li *ngIf="isAILearnPage && isSignedIn && customAuth.isAdmin">
+          <!-- Personal interview question library -->
+          <li *ngIf="isAILearnPage && isSignedIn">
             <a class="nav-link" routerLink="/admin/interview-prep" routerLinkActive="active"
                (click)="closeNavbar()">Interview Prep</a>
           </li>
@@ -126,13 +126,17 @@
               <span class="di-icon">🤖</span>
               <span class="di-label">Learn</span>
             </a>
-            <a class="dropdown-item" routerLink="/interview-prep" (click)="closeNavbar()" role="menuitem">
+            <a class="dropdown-item" routerLink="/admin/interview-prep" (click)="closeNavbar()" role="menuitem">
               <span class="di-icon">🎯</span>
               <span class="di-label">Practice</span>
             </a>
             <a class="dropdown-item" routerLink="/notes" (click)="closeNavbar()" role="menuitem">
               <span class="di-icon">📓</span>
               <span class="di-label">Notes</span>
+            </a>
+            <a class="dropdown-item" routerLink="/admin/interview-prep" (click)="closeNavbar()" role="menuitem">
+              <span class="di-icon">🎯</span>
+              <span class="di-label">Interview Question Library</span>
             </a>
             <ng-container *ngIf="customAuth.isAdmin">
               <div class="dropdown-divider"></div>

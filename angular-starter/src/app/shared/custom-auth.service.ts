@@ -28,13 +28,20 @@ export interface AuthResponse   {
   token?: string;
 }
 
+export type GoogleLoginState = 'idle' | 'opening' | 'exchanging' | 'success' | 'error';
+
 @Injectable({ providedIn: 'root' })
 export class CustomAuthService {
   private readonly apiBase = environment.apiUrl;
 
   private _user = new BehaviorSubject<AuthUser | null>(null);
+  private _googleLoginState = new BehaviorSubject<GoogleLoginState>('idle');
+  private _googleLoginError = new BehaviorSubject<string>('');
   currentUser$: Observable<AuthUser | null> = this._user.asObservable();
   isLoggedIn$: Observable<boolean> = this._user.pipe(map(u => !!u));
+  googleLoginState$: Observable<GoogleLoginState> = this._googleLoginState.asObservable();
+  googleLoginError$: Observable<string> = this._googleLoginError.asObservable();
+  private nativeLoginStartedAt = 0;
 
   constructor(
     private http: HttpClient,
@@ -54,6 +61,15 @@ export class CustomAuthService {
     const storedToken = this.tokenStorage.get();
     if (Capacitor.isNativePlatform()) {
       await App.addListener('appUrlOpen', event => void this.handleNativeAuthUrl(event.url));
+      await App.addListener('appStateChange', ({ isActive }) => {
+        if (!isActive || this._googleLoginState.value !== 'opening') return;
+        const attemptStartedAt = this.nativeLoginStartedAt;
+        setTimeout(() => {
+          if (this.nativeLoginStartedAt === attemptStartedAt && this._googleLoginState.value === 'opening') {
+            this.failGoogleLogin('Google sign-in was cancelled or did not return to the app. Please try again.');
+          }
+        }, 1200);
+      });
       const launch = await App.getLaunchUrl();
       if (launch?.url) await this.handleNativeAuthUrl(launch.url);
     }
@@ -83,13 +99,21 @@ export class CustomAuthService {
       .pipe(tap(r => this.persist(r)));
   }
 
-  startGoogleLogin(returnUrl = this.router.url): void {
+  async startGoogleLogin(returnUrl = this.router.url): Promise<void> {
+    if (this._googleLoginState.value === 'opening' || this._googleLoginState.value === 'exchanging') return;
     const safeReturnUrl = returnUrl.startsWith('/') && !returnUrl.startsWith('//') ? returnUrl : '/explore';
+    this._googleLoginError.next('');
+    this._googleLoginState.next('opening');
     if (Capacitor.isNativePlatform()) {
-      void Browser.open({
-        url: `${this.apiBase}/auth/google/start?native=true&returnUrl=${encodeURIComponent(safeReturnUrl)}`,
-        presentationStyle: 'popover'
-      });
+      this.nativeLoginStartedAt = Date.now();
+      try {
+        await Browser.open({
+          url: `${this.apiBase}/auth/google/start?native=true&returnUrl=${encodeURIComponent(safeReturnUrl)}`,
+          presentationStyle: 'fullscreen'
+        });
+      } catch {
+        this.failGoogleLogin('Google sign-in could not be opened. Check your connection and try again.');
+      }
       return;
     }
     window.location.href = `${this.apiBase}/auth/google/start?returnUrl=${encodeURIComponent(safeReturnUrl)}`;
@@ -97,20 +121,45 @@ export class CustomAuthService {
 
   private async handleNativeAuthUrl(url: string): Promise<void> {
     if (!url.startsWith('tech.learnwithai.app://auth-callback')) return;
+    this.nativeLoginStartedAt = 0;
+    this._googleLoginState.next('exchanging');
     await Browser.close().catch(() => undefined);
-    const parsed = new URL(url);
+    let parsed: URL;
+    try { parsed = new URL(url); }
+    catch { this.failGoogleLogin('The Google sign-in response was invalid. Please try again.'); return; }
     const code = parsed.searchParams.get('code');
     const returnUrl = parsed.searchParams.get('returnUrl') || '/explore';
+    const providerError = parsed.searchParams.get('error');
+    if (providerError) {
+      this.failGoogleLogin(providerError);
+      return;
+    }
     if (!code) {
-      this.ngZone.run(() => this.router.navigate(['/'], { queryParams: { login: 'required' } }));
+      this.failGoogleLogin('Google did not return a sign-in code. Please try again.');
       return;
     }
     this.http.post<AuthResponse>(`${this.apiBase}/auth/native/exchange`, { code }).subscribe({
       next: response => {
         this.persist(response);
+        this._googleLoginState.next('success');
         this.ngZone.run(() => this.router.navigateByUrl(returnUrl.startsWith('/') ? returnUrl : '/explore'));
       },
-      error: () => this.ngZone.run(() => this.router.navigate(['/'], { queryParams: { login: 'required' } }))
+      error: error => this.failGoogleLogin(error?.error?.message || 'The Google session could not be completed. Please try again.')
+    });
+  }
+
+  resetGoogleLoginState(): void {
+    if (this._googleLoginState.value !== 'opening' && this._googleLoginState.value !== 'exchanging') {
+      this._googleLoginState.next('idle');
+      this._googleLoginError.next('');
+    }
+  }
+
+  private failGoogleLogin(message: string): void {
+    this.nativeLoginStartedAt = 0;
+    this.ngZone.run(() => {
+      this._googleLoginError.next(message);
+      this._googleLoginState.next('error');
     });
   }
 

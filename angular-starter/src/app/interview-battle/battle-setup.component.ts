@@ -1,4 +1,4 @@
-import { Component,EventEmitter,Output } from '@angular/core';
+import { Component,EventEmitter,Input,Output } from '@angular/core';
 import { FormBuilder,Validators } from '@angular/forms';
 import { BattleSetup } from './interview-battle.models';
 
@@ -42,11 +42,12 @@ import { BattleSetup } from './interview-battle.models';
 
     <footer class="start-panel">
       <div><span class="ready-icon"><i class="fas fa-microphone-alt"></i></span><p><strong>Ready for a {{form.value.durationMinutes}}-minute practice</strong><small>{{selected.join(' + ') || 'Choose a focus topic'}} · {{form.value.difficulty}}</small></p></div>
-      <button class="primary" [disabled]="form.invalid||!selected.length" type="submit">Start practice <i class="fas fa-arrow-right"></i></button>
+      <button class="primary" [disabled]="starting||form.invalid||!selected.length" type="submit"><span>{{starting?'Preparing interview…':'Start practice'}}</span> <i class="fas" [class.fa-spinner]="starting" [class.fa-spin]="starting" [class.fa-arrow-right]="!starting"></i></button>
     </footer>
   </form>
 </section>`})
 export class BattleSetupComponent {
+  @Input() starting=false;
   @Output() start=new EventEmitter<BattleSetup>();
   submitted=false; showAllTopics=false;
   roles=['Senior .NET Developer','Full Stack Developer','Technical Lead','Engineering Manager','Backend Developer','Custom Role'];
@@ -58,6 +59,6 @@ export class BattleSetupComponent {
   form=this.fb.group({role:['Senior .NET Developer',Validators.required],customRole:[''],experienceLevel:['6–9 years',Validators.required],interviewType:['Technical',Validators.required],difficulty:['Senior',Validators.required],interviewerStyle:['Normal',Validators.required],durationMinutes:[10,Validators.required],assistanceLevel:['Guided',Validators.required]});
   constructor(private fb:FormBuilder){}
   get visibleTech(){return this.showAllTopics?this.tech:this.tech.slice(0,8);}
-  toggle(x:string){this.selected=this.selected.includes(x)?this.selected.filter(t=>t!==x):(this.selected.length>=3?[...this.selected.slice(1),x]:[...this.selected,x]);}
-  submit(){this.submitted=true;if(this.form.invalid||!this.selected.length)return;const v=this.form.value;this.start.emit({...v,role:v.role==='Custom Role'?(v.customRole||'Custom Role'):v.role,technologies:this.selected} as BattleSetup);}
+  toggle(x:string){this.selected=this.selected.includes(x)?this.selected.filter(t=>t!==x):(this.selected.length>=2?[...this.selected.slice(1),x]:[...this.selected,x]);}
+  submit(){this.submitted=true;if(this.starting||this.form.invalid||!this.selected.length)return;const v=this.form.value;this.start.emit({...v,role:v.role==='Custom Role'?(v.customRole||'Custom Role'):v.role,technologies:this.selected} as BattleSetup);}
 }
