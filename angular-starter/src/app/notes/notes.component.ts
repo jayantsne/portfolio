@@ -13,6 +13,8 @@ import { AILearnService } from '../services/ai-learn.service';
 import { TiptapEditorComponent } from '../shared/tiptap-editor/tiptap-editor.component';
 import { NoteFormatterService } from '../shared/note-formatter.service';
 import { AdminUserDetail, UserManagementService } from '../shared/user-management.service';
+import { Capacitor } from '@capacitor/core';
+import { Share } from '@capacitor/share';
 
 interface NoteBreakdown {
   title:    string;
@@ -758,16 +760,71 @@ export class NotesComponent implements OnInit, OnDestroy {
     this.editContent = formatted;
   }
 
-  shareNote(): void {
+  async shareNote(): Promise<void> {
     if (!this.activeNote) return;
-    const text = `${this.activeNote.topic}\n\n${this.activeNote.content.slice(0, 300)}\u2026`;
-    if ((navigator as any).share) {
-      (navigator as any).share({ title: this.activeNote.topic, text }).catch(() => {});
-    } else {
-      navigator.clipboard.writeText(text)
-        .then(() => alert('Note copied to clipboard!'))
-        .catch(() => {});
+
+    const title = this.activeNote.topic.trim() || 'Shared note';
+    const content = this.notePlainText(this.activeNote.content);
+    const text = `${title}\n\n${content}`.trim();
+
+    try {
+      if (Capacitor.isNativePlatform()) {
+        await Share.share({
+          title,
+          text,
+          dialogTitle: 'Share note'
+        });
+        return;
+      }
+
+      if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+        await navigator.share({ title, text });
+        return;
+      }
+
+      await this.copyShareText(text);
+      this.showToast('Note copied. Paste it into any app to share.');
+    } catch (error: any) {
+      // Closing the native share sheet is a normal user action, not a failure.
+      const message = String(error?.message ?? error ?? '').toLowerCase();
+      if (message.includes('cancel') || message.includes('dismiss')) return;
+
+      try {
+        await this.copyShareText(text);
+        this.showToast('Sharing was unavailable, so the note was copied.');
+      } catch {
+        this.showToast('Could not share this note. Please try again.', 'error');
+      }
     }
+  }
+
+  private notePlainText(content: string): string {
+    if (typeof document === 'undefined') {
+      return content.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+    const container = document.createElement('div');
+    container.innerHTML = content;
+    return (container.innerText || container.textContent || '')
+      .replace(/\n{3,}/g, '\n\n')
+      .trim();
+  }
+
+  private async copyShareText(text: string): Promise<void> {
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', '');
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand('copy');
+    textarea.remove();
+    if (!copied) throw new Error('Clipboard is unavailable');
   }
 
   onAskKeydown(e: KeyboardEvent): void {

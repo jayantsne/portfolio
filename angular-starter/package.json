@@ -28,8 +28,8 @@
     "android:open": "cap open android",
     "android:run": "npm run android:sync && cap run android",
     "android:apk": "powershell -ExecutionPolicy Bypass -File ../publish-android-release.ps1",
-    "android:aab": "npm run android:sync && cd android && .\\gradlew.bat bundleRelease"
-    ,"android:publish": "powershell -ExecutionPolicy Bypass -File ../publish-android-release.ps1"
+    "android:aab": "npm run android:sync && cd android && .\\gradlew.bat bundleRelease",
+    "android:publish": "powershell -ExecutionPolicy Bypass -File ../publish-android-release.ps1"
   },
   "dependencies": {
     "@angular/animations": "^13.2.5",
@@ -51,6 +51,7 @@
     "@capacitor/device": "^8.0.3",
     "@capacitor/local-notifications": "^8.2.1",
     "@capacitor/preferences": "^8.0.1",
+    "@capacitor/share": "^8.0.1",
     "@ngneat/transloco": "^3.1.1",
     "@tiptap/core": "^2.27.2",
     "@tiptap/extension-placeholder": "^2.27.2",
