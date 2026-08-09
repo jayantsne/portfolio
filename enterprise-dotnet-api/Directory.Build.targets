@@ -1,6 +1,10 @@
 <Project>
   <PropertyGroup>
-    <BuildAndroidApk Condition="'$(BuildAndroidApk)' == ''">true</BuildAndroidApk>
+    <!-- Visual Studio/Windows solution builds also produce the APK. Linux CI
+         builds only the API because the Android helper is a PowerShell script
+         and the hosted runner does not provide powershell.exe. -->
+    <BuildAndroidApk Condition="'$(BuildAndroidApk)' == '' and '$(OS)' == 'Windows_NT'">true</BuildAndroidApk>
+    <BuildAndroidApk Condition="'$(BuildAndroidApk)' == ''">false</BuildAndroidApk>
     <AndroidApkConfiguration Condition="'$(AndroidApkConfiguration)' == ''">Debug</AndroidApkConfiguration>
     <AndroidBuildScript>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)..\build-android.ps1'))</AndroidBuildScript>
   </PropertyGroup>
@@ -8,7 +12,7 @@
   <!-- Run once, from the API project, after a successful solution build. -->
   <Target Name="BuildLearnWithAIAndroidApk"
           AfterTargets="Build"
-          Condition="'$(MSBuildProjectName)' == 'AILearnAPI.Api' and '$(BuildAndroidApk)' == 'true'">
+          Condition="'$(MSBuildProjectName)' == 'AILearnAPI.Api' and '$(BuildAndroidApk)' == 'true' and '$(OS)' == 'Windows_NT'">
     <Message Importance="high" Text="Building LearnWithAI Android APK ($(AndroidApkConfiguration))..." />
     <Exec Command="powershell.exe -NoProfile -ExecutionPolicy Bypass -File &quot;$(AndroidBuildScript)&quot; -Configuration $(AndroidApkConfiguration)" />
   </Target>
