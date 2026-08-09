@@ -1,406 +1,162 @@
-<div class="fv-shell"
-     *ngIf="diagram"
-     [class.fv-shell--lottie]="animationStyle === 'Lottie'"
-     [class.fv-shell--code-focused]="animationStyle === 'Code-focused'"
-     [class.fv-shell--horizontal]="orientation === 'horizontal'">
-
-  <!-- ── Header ──────────────────────────────────────────────────────────── -->
-  <div class="fv-header" *ngIf="diagram.title">
-    <div class="fv-header-left">
-      <span class="fv-header-icon">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"/>
-          <polyline points="12 6 12 12 16 14"/>
-        </svg>
-      </span>
-      <h3 class="fv-title">{{ diagram.title }}</h3>
-      <span class="fv-mode">{{ orientationLabel }}</span>
+<section class="fv-shell" *ngIf="diagram">
+  <header class="fv-header">
+    <div>
+      <span class="fv-eyebrow">Interactive concept map</span>
+      <div class="fv-title-row">
+        <h3>{{ diagram.title || 'Concept journey' }}</h3>
+        <span class="fv-mode"><i class="fas fa-route" aria-hidden="true"></i>{{ visualModeLabel }}</span>
+      </div>
+      <p>Follow the moving signal, select any station, then zoom in for the deeper story.</p>
     </div>
-    <span class="fv-badge" [class.fv-badge--done]="isAtEnd">{{ stepLabel }}</span>
+    <div class="fv-head-actions">
+      <button type="button" class="fv-icon-btn" (click)="zoomOut()" [disabled]="zoomLevel <= .7" aria-label="Zoom out"><i class="fas fa-minus"></i></button>
+      <button type="button" class="fv-zoom-value" (click)="resetZoom()">{{ zoomPercent }}%</button>
+      <button type="button" class="fv-icon-btn" (click)="zoomIn()" [disabled]="zoomLevel >= 1.65" aria-label="Zoom in"><i class="fas fa-plus"></i></button>
+      <label class="fv-speed-control">
+        <i class="fas fa-tachometer-alt" aria-hidden="true"></i>
+        <span>Speed</span>
+        <select aria-label="Playback speed" [value]="playbackSpeed" (change)="setPlaybackSpeed($any($event.target).value)">
+          <option *ngFor="let speed of playbackSpeeds" [value]="speed">{{ speed }}x</option>
+        </select>
+      </label>
+      <button type="button" class="fv-play-head" (click)="isPlaying ? pause() : play()" [disabled]="isAtEnd && !isPlaying">
+        <i class="fas" [class.fa-pause]="isPlaying" [class.fa-play]="!isPlaying"></i>
+        {{ isPlaying ? 'Pause story' : 'Play story' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="fv-phase-rail" aria-label="Concept phases" [style.grid-template-columns]="'repeat(' + displayPhases.length + ', 1fr)'">
+    <span *ngFor="let phase of displayPhases">{{ phase }}</span>
   </div>
 
-  <!-- ── Main body: code panel (left) + diagram panel (right) ───────────── -->
-  <div class="fv-body" [class.fv-body--no-code]="!hasCode">
-
-    <!-- Left: Code panel -->
-    <div class="fv-code-panel" *ngIf="diagram.code?.length">
-      <div class="fv-code-header">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-          <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
-        </svg>
-        <span>{{ diagram.codeLanguage || 'Code' }}</span>
-      </div>
-      <div class="fv-code-pre">
-        <div
-          class="fv-code-line"
-          *ngFor="let line of diagram.code; let i = index"
-          [class.fv-code-line--active]="isActiveCodeLine(i)"
-          [class.fv-code-line--completed]="isCompletedCodeLine(i)">
-          <span class="fv-code-ln">{{ i + 1 }}</span>
-          <code class="fv-code-text">{{ line }}</code>
-        </div>
-      </div>
-    </div>
-
-    <!-- Right: SVG Diagram -->
-    <div class="fv-diagram-panel" #diagramPanel>
-      <svg
-        class="fv-svg"
-        [attr.viewBox]="svgViewBox"
-        [style.width.px]="svgWidth"
-        [style.height.px]="svgHeight"
-        xmlns="http://www.w3.org/2000/svg"
-        role="img"
-        aria-label="Flow diagram">
-
+  <div class="fv-stage">
+    <div class="fv-map-viewport" #diagramPanel>
+      <svg class="fv-map" [attr.viewBox]="svgViewBox" [style.width.px]="svgWidth" [style.height.px]="svgHeight"
+           [style.transform]="'scale(' + zoomLevel + ')'" role="img" [attr.aria-label]="(diagram.title || 'Concept') + ' animated learning map'">
         <defs>
-          <!-- Arrowhead markers — one per edge state -->
-          <marker id="fv-ar-idle" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" class="fv-marker-idle"/>
+          <marker id="fv-map-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" class="fv-map-arrow"></path>
           </marker>
-          <marker id="fv-ar-traversed" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" class="fv-marker-traversed"/>
-          </marker>
-          <marker id="fv-ar-active" viewBox="0 0 10 10" refX="9" refY="5"
-                  markerWidth="6" markerHeight="6" orient="auto">
-            <path d="M 0 0 L 10 5 L 0 10 z" class="fv-marker-active"/>
-          </marker>
-          <!-- Glow filter for active node -->
-          <filter id="fv-glow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3.5" result="blur"/>
-            <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          <filter id="fv-map-glow" x="-80%" y="-80%" width="260%" height="260%">
+            <feGaussianBlur stdDeviation="6" result="blur"></feGaussianBlur>
+            <feMerge><feMergeNode in="blur"></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
           </filter>
         </defs>
 
-        <!-- ── Edges (rendered under nodes) ────────────────────────── -->
-        <g class="fv-edges">
-          <g
-            *ngFor="let ce of computedEdges"
-            [class.fv-edge--idle]="edgeState(ce.id) === 'idle'"
-            [class.fv-edge--traversed]="edgeState(ce.id) === 'traversed'"
-            [class.fv-edge--active]="edgeState(ce.id) === 'active'">
-            <path
-              [attr.d]="ce.path"
-              fill="none"
-              stroke-width="2"
-              stroke-linecap="round"
-              [attr.marker-end]="edgeMarker(ce.id)"/>
-            <circle
-              *ngIf="animationStyle === 'Lottie' && edgeState(ce.id) === 'active'"
-              r="5"
-              class="fv-flow-packet">
-              <animateMotion
-                [attr.path]="ce.path"
-                dur="1.15s"
-                repeatCount="indefinite"
-                rotate="auto"/>
+        <g class="fv-routes">
+          <g *ngFor="let ce of computedEdges" [class.fv-route-active]="edgeState(ce.id) === 'active'" [class.fv-route-done]="edgeState(ce.id) === 'traversed'">
+            <path class="fv-route-shadow" [attr.d]="ce.path"></path>
+            <path class="fv-route-line" [attr.d]="ce.path" marker-end="url(#fv-map-arrow)"></path>
+            <circle *ngIf="edgeState(ce.id) === 'active'" r="8" class="fv-signal" filter="url(#fv-map-glow)">
+              <animateMotion [attr.path]="ce.path" dur="1.25s" repeatCount="indefinite"></animateMotion>
             </circle>
           </g>
         </g>
 
-        <!-- ── Nodes ─────────────────────────────────────────────────── -->
-        <g class="fv-nodes">
-          <g
-            *ngFor="let cn of computedNodes; let nodeIndex = index"
-            class="fv-node"
-            tabindex="0"
-            role="button"
-            [attr.aria-label]="'Explain step ' + (nodeIndex + 1) + ': ' + cn.step.label"
-            [class.fv-node--active]="nodeState(cn.step.id) === 'active'"
-            [class.fv-node--completed]="nodeState(cn.step.id) === 'completed'"
-            [class.fv-node--idle]="nodeState(cn.step.id) === 'idle'"
-            (click)="openStepDetails(nodeIndex)"
-            (keydown.enter)="openStepDetails(nodeIndex)"
-            (keydown.space)="$event.preventDefault(); openStepDetails(nodeIndex)">
-
-            <!-- Lottie-style active motion ring -->
-            <g *ngIf="animationStyle === 'Lottie' && nodeState(cn.step.id) === 'active'"
-               class="fv-lottie-orbit"
-               aria-hidden="true">
-              <circle
-                [attr.cx]="cn.cx"
-                [attr.cy]="cn.cy"
-                [attr.r]="(cn.w > cn.h ? cn.w : cn.h) / 2 + 13"
-                class="fv-lottie-orbit-ring"/>
-            </g>
-
-            <!-- Node body rect -->
-            <rect
-              [attr.x]="cn.cx - cn.w / 2"
-              [attr.y]="cn.cy - cn.h / 2"
-              [attr.width]="cn.w"
-              [attr.height]="cn.h"
-              [attr.rx]="12"/>
-
-            <foreignObject
-              [attr.x]="cn.cx - cn.w / 2"
-              [attr.y]="cn.cy - cn.h / 2"
-              [attr.width]="cn.w"
-              [attr.height]="cn.h">
-              <div xmlns="http://www.w3.org/1999/xhtml" class="fv-node-card">
-                <div class="fv-node-card-top">
-                  <span class="fv-node-step">Step {{ nodeIndex + 1 }}</span>
-                  <span class="fv-node-state" *ngIf="nodeState(cn.step.id) === 'completed'">Done</span>
-                  <span class="fv-node-state fv-node-state-active" *ngIf="nodeState(cn.step.id) === 'active'">Now</span>
-                </div>
+        <g *ngFor="let cn of computedNodes; let i = index" class="fv-station"
+           [class.fv-station-active]="i === activeMapStepIndex" [class.fv-station-done]="i < activeMapStepIndex"
+           tabindex="0" role="button" (click)="openStepDetails(i)" (keydown.enter)="openStepDetails(i)">
+          <ng-container *ngIf="visualMode !== 'tree'; else treeNode">
+            <circle class="fv-station-halo" [attr.cx]="cn.cx" [attr.cy]="cn.cy" r="35"></circle>
+            <circle class="fv-station-dot" [attr.cx]="cn.cx" [attr.cy]="cn.cy" r="17"></circle>
+            <text class="fv-station-number" [attr.x]="cn.cx" [attr.y]="cn.cy" dominant-baseline="central" text-anchor="middle">{{ i + 1 }}</text>
+            <text class="fv-station-label" [attr.x]="cn.cx" [attr.y]="cn.cy + 47" text-anchor="middle">{{ cn.step.label }}</text>
+            <text class="fv-station-phase" [attr.x]="cn.cx" [attr.y]="cn.cy - 43" text-anchor="middle">{{ stepPhase(i) }}</text>
+          </ng-container>
+          <ng-template #treeNode>
+            <rect class="fv-tree-page" [attr.x]="cn.cx - cn.w / 2" [attr.y]="cn.cy - cn.h / 2" [attr.width]="cn.w" [attr.height]="cn.h" rx="12"></rect>
+            <foreignObject [attr.x]="cn.cx - cn.w / 2" [attr.y]="cn.cy - cn.h / 2" [attr.width]="cn.w" [attr.height]="cn.h">
+              <div xmlns="http://www.w3.org/1999/xhtml" class="fv-tree-content">
+                <small>{{ cn.step.nodeKind || stepPhase(i) }}</small>
                 <strong>{{ cn.step.label }}</strong>
-                <p>{{ stepSummary(cn.step.id) }}</p>
-                <small *ngIf="stepFlowCue(cn.step.id)">{{ stepFlowCue(cn.step.id) }}</small>
+                <div *ngIf="cn.step.visualItems?.length"><span *ngFor="let item of cn.step.visualItems">{{ item }}</span></div>
               </div>
             </foreignObject>
-
-            <!-- Completion checkmark badge -->
-            <g *ngIf="nodeState(cn.step.id) === 'completed'">
-              <circle
-                [attr.cx]="cn.cx + cn.w / 2 - 13"
-                [attr.cy]="cn.cy - cn.h / 2 + 13"
-                r="9"
-                class="fv-check-circle"/>
-              <text
-                [attr.x]="cn.cx + cn.w / 2 - 13"
-                [attr.y]="cn.cy - cn.h / 2 + 13"
-                text-anchor="middle"
-                dominant-baseline="central"
-                class="fv-check-text">✓</text>
-            </g>
-
-            <!-- Step number badge (idle + active only) -->
-            <g *ngIf="nodeState(cn.step.id) !== 'completed'">
-              <circle
-                [attr.cx]="cn.cx - cn.w / 2 + 16"
-                [attr.cy]="cn.cy"
-                r="10"
-                class="fv-step-num-circle"/>
-              <text
-                [attr.x]="cn.cx - cn.w / 2 + 16"
-                [attr.y]="cn.cy"
-                text-anchor="middle"
-                dominant-baseline="central"
-                class="fv-step-num-text">{{ nodeIndex + 1 }}</text>
-            </g>
-
-            <!-- Label -->
-            <text
-              [attr.x]="cn.cx + 8"
-              [attr.y]="cn.cy"
-              text-anchor="middle"
-              dominant-baseline="central"
-              class="fv-node-label">{{ cn.step.label }}</text>
-
-          </g>
+          </ng-template>
         </g>
       </svg>
     </div>
 
-    <aside class="fv-key-panel">
-      <div class="fv-key-heading">
-        <div>
-          <span>Flow guide</span>
-          <h4>All steps</h4>
-        </div>
-        <small>Click to explore</small>
+    <aside class="fv-story" *ngIf="activeMapStep">
+      <div class="fv-story-progress"><span [style.width.%]="progressPercent || (100 / diagram.steps.length)"></span></div>
+      <span class="fv-story-kicker">Station {{ activeMapStepIndex + 1 }} of {{ diagram.steps.length }}</span>
+      <h4>{{ activeMapStep.label }}</h4>
+      <p>{{ activeMapStep.description }}</p>
+      <div class="fv-metaphor" *ngIf="diagram.visualization?.primaryMetaphor">
+        <i class="fas fa-eye" aria-hidden="true"></i>
+        <span><small>Picture it as</small>{{ diagram.visualization?.primaryMetaphor }}</span>
       </div>
-      <ul>
-        <li *ngFor="let step of diagram.steps; let i = index"
-            [class.fv-key-active]="i === currentStepIndex">
-          <button type="button" (click)="openStepDetails(i)">
-            <span>{{ i + 1 }}</span>
-            <p><strong>{{ step.label }}</strong>{{ step.description }}</p>
-          </button>
-        </li>
-      </ul>
-    </aside>
+      <div class="fv-visual-items" *ngIf="activeMapStep.visualItems?.length">
+        <span *ngFor="let item of activeMapStep.visualItems">{{ item }}</span>
+      </div>
 
-    <div class="fv-focus-layer"
-         *ngIf="expandedStep"
-         role="dialog"
-         aria-modal="true"
-         [attr.aria-label]="'Inside step ' + ((expandedStepIndex || 0) + 1) + ': ' + expandedStep.label"
-         (click)="closeStepDetails()">
-      <section class="fv-focus-card" (click)="$event.stopPropagation()">
-        <header class="fv-focus-header">
-          <div class="fv-focus-title">
-            <span>Step {{ (expandedStepIndex || 0) + 1 }} of {{ diagram.steps.length }}</span>
-            <h3>{{ expandedStep.label }}</h3>
-            <p>{{ expandedStep.description }}</p>
-          </div>
-          <button type="button" class="fv-focus-close" (click)="closeStepDetails()" aria-label="Close step details">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2" stroke-linecap="round" aria-hidden="true">
-              <path d="M6 6l12 12M18 6L6 18"/>
-            </svg>
-          </button>
-        </header>
+      <div class="fv-state-change">
+        <span><small>Before</small>{{ activeMapStep.input || 'Previous state' }}</span>
+        <i class="fas fa-arrow-right" aria-hidden="true"></i>
+        <span><small>After</small>{{ activeMapStep.output || 'Updated state' }}</span>
+      </div>
 
-        <div class="fv-focus-process" aria-label="Internal step flow">
-          <article>
-            <span>Input</span>
-            <strong>What enters</strong>
-            <p>{{ expandedInput() }}</p>
-          </article>
-          <div class="fv-focus-connector" aria-hidden="true">
-            <span></span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 12h14M13 6l6 6-6 6"/>
-            </svg>
-          </div>
-          <article class="fv-focus-process-main">
-            <span>Inside this step</span>
-            <strong>What the system does</strong>
-            <p>{{ expandedInternalWork() }}</p>
-          </article>
-          <div class="fv-focus-connector" aria-hidden="true">
-            <span></span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M5 12h14M13 6l6 6-6 6"/>
-            </svg>
-          </div>
-          <article>
-            <span>Output</span>
-            <strong>What leaves</strong>
-            <p>{{ expandedOutput() }}</p>
-          </article>
-        </div>
-
-        <div class="fv-focus-grid">
-          <article>
-            <span>Trigger</span>
-            <strong>When does it start?</strong>
-            <p>{{ expandedTrigger() }}</p>
-          </article>
-          <article>
-            <span>Why it matters</span>
-            <strong>Why should I remember it?</strong>
-            <p>{{ expandedStep.whyItMatters || expandedStep.description }}</p>
-          </article>
-          <article *ngIf="expandedStep.example">
-            <span>Example</span>
-            <strong>What does it look like?</strong>
-            <p>{{ expandedStep.example }}</p>
-          </article>
-          <article *ngIf="expandedStep.antiPattern">
-            <span>Watch out</span>
-            <strong>Common mistake</strong>
-            <p>{{ expandedStep.antiPattern }}</p>
-          </article>
-        </div>
-
-        <div class="fv-focus-code" *ngIf="expandedCodeLine">
-          <div>
-            <span>{{ diagram.codeLanguage || 'Code' }}</span>
-            <small>Related code</small>
-          </div>
-          <code>{{ expandedCodeLine }}</code>
-        </div>
-
-        <footer class="fv-focus-footer">
-          <p>Use the arrows to inspect the flow one step at a time.</p>
-          <div>
-            <button type="button" (click)="moveExpandedStep(-1)" [disabled]="!canMoveExpandedBack">
-              Previous
-            </button>
-            <button type="button" class="fv-focus-next" (click)="moveExpandedStep(1)"
-                    [disabled]="!canMoveExpandedForward">
-              {{ canMoveExpandedForward ? 'Next step' : 'Flow complete' }}
-            </button>
-          </div>
-        </footer>
+      <section>
+        <i class="fas fa-lightbulb" aria-hidden="true"></i>
+        <div><strong>Memory cue</strong><p>{{ activeMapStep.whyItMatters || activeMapStep.description }}</p></div>
       </section>
-    </div>
-
+      <section *ngIf="diagram.visualization?.animationNarrative">
+        <i class="fas fa-film" aria-hidden="true"></i>
+        <div><strong>Watch the animation</strong><p>{{ diagram.visualization?.animationNarrative }}</p></div>
+      </section>
+      <section class="fv-interview-cue">
+        <i class="fas fa-comment-dots" aria-hidden="true"></i>
+        <div><strong>Say this in an interview</strong><p>{{ activeMapStep.interviewAnswer || activeMapStep.interviewTip || activeMapStep.description }}</p></div>
+      </section>
+      <button type="button" class="fv-deep-button" (click)="openStepDetails(activeMapStepIndex)">
+        Explore inside this step <i class="fas fa-expand-alt" aria-hidden="true"></i>
+      </button>
+    </aside>
   </div>
 
-  <div class="fv-iterations">
-    <button type="button" *ngFor="let step of diagram.steps; let i = index"
-            [class.fv-iteration-active]="i === currentStepIndex"
-            [class.fv-iteration-done]="i < currentStepIndex"
-            (click)="openStepDetails(i)">
-      <span>{{ i + 1 }}</span>
-      <strong>{{ step.label }}</strong>
-    </button>
-  </div>
-
-  <!-- ── Footer: controls + description ───────────────────────────────────── -->
-  <div class="fv-footer">
-
-    <!-- Controls bar -->
-    <div class="fv-controls">
-      <div class="fv-ctrl-btns">
-        <!-- Reset -->
-        <button class="fv-btn fv-btn--ghost" (click)="reset()" title="Reset to start">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="1 4 1 10 7 10"/>
-            <path d="M3.51 15a9 9 0 1 0 .49-5"/>
-          </svg>
-          Reset
-        </button>
-
-        <!-- Play / Pause -->
-        <button
-          class="fv-btn fv-btn--primary"
-          (click)="isPlaying ? pause() : play()"
-          [disabled]="isAtEnd && !isPlaying"
-          [title]="isPlaying ? 'Pause' : 'Play'">
-          <!-- Pause icon -->
-          <svg *ngIf="isPlaying" width="15" height="15" viewBox="0 0 24 24"
-               fill="currentColor">
-            <rect x="6" y="4" width="4" height="16" rx="1"/>
-            <rect x="14" y="4" width="4" height="16" rx="1"/>
-          </svg>
-          <!-- Play icon -->
-          <svg *ngIf="!isPlaying" width="15" height="15" viewBox="0 0 24 24"
-               fill="currentColor">
-            <polygon points="5 3 19 12 5 21 5 3"/>
-          </svg>
-          {{ isPlaying ? 'Pause' : 'Play' }}
-        </button>
-
-        <!-- Next -->
-        <button
-          class="fv-btn fv-btn--ghost"
-          (click)="next()"
-          [disabled]="isAtEnd"
-          title="Advance one step">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-               stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <line x1="5" y1="12" x2="19" y2="12"/>
-            <polyline points="12 5 19 12 12 19"/>
-          </svg>
-          Next
-        </button>
-      </div>
-
-      <!-- Progress track -->
-      <div class="fv-progress" title="{{ progressPercent | number:'1.0-0' }}%">
-        <div class="fv-progress-fill" [style.width.%]="progressPercent"></div>
-      </div>
+  <footer class="fv-transport">
+    <div class="fv-transport-buttons">
+      <button type="button" (click)="previous()" [disabled]="currentStepIndex <= 0"><i class="fas fa-chevron-left"></i>Previous</button>
+      <button type="button" class="fv-primary" (click)="isPlaying ? pause() : play()" [disabled]="isAtEnd && !isPlaying">
+        <i class="fas" [class.fa-pause]="isPlaying" [class.fa-play]="!isPlaying"></i>{{ isPlaying ? 'Pause' : 'Play' }}
+      </button>
+      <button type="button" (click)="next()" [disabled]="isAtEnd">Next<i class="fas fa-chevron-right"></i></button>
+      <button type="button" (click)="reset()"><i class="fas fa-redo"></i>Replay</button>
     </div>
-
-    <!-- Step description panel -->
-    <div class="fv-desc" *ngIf="currentStep; else noStep">
-      <span class="fv-desc-tag">{{ currentStep.label }}</span>
-      <p class="fv-desc-text">{{ currentStep.description }}</p>
+    <div class="fv-step-track">
+      <button type="button" *ngFor="let step of diagram.steps; let i = index" [class.active]="i === activeMapStepIndex" [class.done]="i < activeMapStepIndex" (click)="selectStep(i)" [attr.aria-label]="'Go to ' + step.label"><span></span></button>
     </div>
-    <ng-template #noStep>
-      <div class="fv-desc fv-desc--hint">
-        <p class="fv-desc-text">
-          Press <strong>Play</strong> for auto-advance, or use <strong>Next →</strong>
-          to step through the flow manually.
-        </p>
+    <strong>{{ stepLabel }}</strong>
+  </footer>
+
+  <div class="fv-focus-layer" *ngIf="expandedStep" role="dialog" aria-modal="true" (click)="closeStepDetails()">
+    <section class="fv-focus-card" (click)="$event.stopPropagation()">
+      <header class="fv-focus-header">
+        <div><span>Deep zoom · Step {{ (expandedStepIndex || 0) + 1 }}</span><h3>{{ expandedStep.label }}</h3><p>{{ expandedStep.description }}</p></div>
+        <button type="button" (click)="closeStepDetails()" aria-label="Close"><i class="fas fa-times"></i></button>
+      </header>
+      <div class="fv-focus-process">
+        <article><i class="fas fa-sign-in-alt"></i><span>Input</span><strong>What enters</strong><p>{{ expandedInput() }}</p></article>
+        <i class="fas fa-long-arrow-alt-right fv-process-arrow"></i>
+        <article class="main"><i class="fas fa-cogs"></i><span>Inside</span><strong>What transforms</strong><p>{{ expandedInternalWork() }}</p></article>
+        <i class="fas fa-long-arrow-alt-right fv-process-arrow"></i>
+        <article><i class="fas fa-sign-out-alt"></i><span>Output</span><strong>What leaves</strong><p>{{ expandedOutput() }}</p></article>
       </div>
-    </ng-template>
-
+      <div class="fv-focus-grid">
+        <article><span>Trigger</span><strong>When it starts</strong><p>{{ expandedTrigger() }}</p></article>
+        <article><span>Why it matters</span><strong>Why remember it</strong><p>{{ expandedStep.whyItMatters || expandedStep.description }}</p></article>
+        <article *ngIf="expandedStep.example"><span>Real example</span><strong>See it in practice</strong><p>{{ expandedStep.example }}</p></article>
+        <article *ngIf="expandedStep.antiPattern"><span>Watch out</span><strong>Common mistake</strong><p>{{ expandedStep.antiPattern }}</p></article>
+      </div>
+      <div class="fv-focus-answer" *ngIf="expandedStep.interviewAnswer || expandedStep.interviewTip"><i class="fas fa-microphone"></i><div><strong>Your interview answer</strong><p>{{ expandedStep.interviewAnswer || expandedStep.interviewTip }}</p></div></div>
+      <footer class="fv-focus-footer">
+        <button type="button" (click)="moveExpandedStep(-1)" [disabled]="!canMoveExpandedBack"><i class="fas fa-chevron-left"></i> Previous</button>
+        <span>{{ (expandedStepIndex || 0) + 1 }} / {{ diagram.steps.length }}</span>
+        <button type="button" class="next" (click)="moveExpandedStep(1)" [disabled]="!canMoveExpandedForward">{{ canMoveExpandedForward ? 'Next step' : 'Complete' }} <i class="fas fa-chevron-right"></i></button>
+      </footer>
+    </section>
   </div>
-</div>
+</section>
 
-<!-- Placeholder while diagram input isn't set -->
-<div class="fv-empty" *ngIf="!diagram">
-  <span>No diagram provided.</span>
-</div>
+<div class="fv-empty" *ngIf="!diagram">No visualization available.</div>

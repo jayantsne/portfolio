@@ -12,6 +12,11 @@ export interface FlowStep {
   antiPattern?: string;
   interviewAnswer?: string;
   interviewTip?: string;
+  nodeKind?: string;
+  parentId?: string;
+  group?: string;
+  depth?: number;
+  visualItems?: string[];
   /** Zero-based index into FlowDiagram.code[] to highlight when this step is active. */
   codeLine?: number;
 }
@@ -19,10 +24,22 @@ export interface FlowStep {
 export interface FlowEdge {
   source: string;
   target: string;
+  relationship?: string;
+  label?: string;
+}
+
+export interface FlowVisualization {
+  type: 'tree' | 'cycle' | 'pipeline' | 'network' | 'layers' | 'timeline' | 'comparison' | 'journey' | string;
+  rationale?: string;
+  primaryMetaphor?: string;
+  direction?: 'horizontal' | 'vertical' | 'radial' | string;
+  animationNarrative?: string;
+  phases?: string[];
 }
 
 export interface FlowDiagram {
   title?: string;
+  visualization?: FlowVisualization;
   steps: FlowStep[];
   edges: FlowEdge[];
   /** Lines of source code to display in the code panel. */

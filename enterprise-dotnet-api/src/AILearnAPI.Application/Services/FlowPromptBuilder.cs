@@ -20,7 +20,17 @@ namespace AILearnAPI.Application.Services
     Requested shape hint: {{request.FlowType}}
     Animation style: {{request.AnimationStyle}}
 
-    First classify the topic:
+    First reason privately about the topic, then classify its learning mode and best visual grammar. Do not expose chain-of-thought; return only the resulting visual plan.
+    - visualization.type must be one of: tree, cycle, pipeline, network, layers, timeline, comparison, journey.
+    - Choose tree for hierarchical structures such as B-tree/B+ tree indexes, DOM trees, inheritance trees, tries, file systems, and organization hierarchies.
+    - Choose cycle for genuinely recurring behavior such as lifecycle checks, event loops, retry loops, or feedback cycles.
+    - Choose pipeline for ordered transformation of data or requests.
+    - Choose network for architecture, services, dependencies, protocols, and many-to-many relationships.
+    - Choose layers for anatomy, stacks, memory, encapsulation, and concepts best understood by zooming inward.
+    - Choose comparison for versus/trade-off questions and timeline for chronological topics. Otherwise choose journey.
+    - The selected visual must explain the real structure, not decorate a list of steps.
+
+    Then classify the learning mode:
     - Use learningMode = "flow" only when the topic is a real sequence over time, such as lifecycle, login, request pipeline, event loop, build pipeline, state transition, or how a request travels.
     - Use learningMode = "concept" when the topic is a principle, pattern, architecture idea, OOP concept, SOLID, DI lifetime, design pattern, or comparison. Do not force these into a fake timeline.
 
@@ -32,8 +42,16 @@ namespace AILearnAPI.Application.Services
       "summary": "one sentence under 30 words",
       "learningMode": "flow or concept",
       "mentalModel": "simple analogy or mental model under 35 words",
-      "codeLanguage": "string",
-      "code": ["small practical code lines"],
+      "visualization": {
+        "type": "tree | cycle | pipeline | network | layers | timeline | comparison | journey",
+        "rationale": "why this visual grammar best explains this topic",
+        "primaryMetaphor": "short learner-friendly visual metaphor",
+        "direction": "horizontal | vertical | radial",
+        "animationNarrative": "what moves, expands, splits, merges, or changes during play",
+        "phases": ["2 to 5 topic-specific phase names"]
+      },
+      "codeLanguage": "",
+      "code": [],
       "steps": [
         {
           "id": "kebab-case-id",
@@ -47,13 +65,20 @@ namespace AILearnAPI.Application.Services
           "example": "concrete .NET/Angular/interview example",
           "antiPattern": "common mistake or wrong mental model",
           "interviewAnswer": "answer this point in interview language",
-          "codeLine": 0
+          "nodeKind": "root | branch | leaf | stage | actor | layer | option | event | step",
+          "parentId": "parent step id for trees/layers, otherwise empty",
+          "group": "meaningful visual group or phase",
+          "depth": 0,
+          "visualItems": ["short values or objects visibly contained in this node"],
+          "codeLine": null
         }
       ],
       "edges": [
         {
           "source": "step-id",
-          "target": "step-id"
+          "target": "step-id",
+          "relationship": "contains | flows-to | calls | depends-on | compares-with | transitions-to",
+          "label": "short relationship label when useful"
         }
       ],
       "revisionTips": [
@@ -65,6 +90,16 @@ namespace AILearnAPI.Application.Services
     }
 
     Content rules:
+    - This feature teaches visually. Do not return source code or turn the answer into a written code explanation. Keep codeLanguage empty, code empty, and every codeLine null.
+    - Do not represent a concept as a collection of explanation cards. The steps are visual objects in the chosen diagram: pages in a tree, actors in a network, layers in an anatomy, options in a comparison, or stages in a pipeline.
+    - For design patterns, nodes MUST be pattern participants or runtime objects, never definition cards. Strategy: Context -> Strategy interface -> concrete strategies. Observer: Subject -> multiple observers. Decorator: client -> nested decorators -> component. Factory: creator -> multiple concrete products. State: context -> states and transitions. Animate messages, object creation, delegation, state change, or wrapping—whichever is intrinsic to that pattern.
+    - For a B-tree/B+ tree or clustered-index topic, steps MUST be physical tree pages, never actions or explanations. Do not create nodes named Searching, Finding, Page Split Occurrence, Data Retrieval, or similar verbs.
+    - A tree MUST visibly branch. Return at least 7 page nodes: exactly one root page, at least two intermediate/branch pages, and at least four leaf pages. At least one parent must have two or more children.
+    - Use page labels such as Root page, Branch page < 50, Branch page >= 50, Leaf page 1-20. Put realistic ordered separator keys in root/branch visualItems and ordered clustered rows or key ranges in leaf visualItems.
+    - Set parentId and depth on every non-root page and add parent-to-child edges. The searched-key path is expressed through descriptions and animationNarrative, not by creating action nodes.
+    - For clustered indexes, leaf visualItems represent actual ordered data rows/pages. Show the result of a page split as two sibling leaf pages under the same parent, and explain why nonclustered indexes point to the clustering key.
+    - Make node labels and visualItems specific to the topic. Never return generic labels such as Step 1, Process, Box, or Item.
+    - animationNarrative must describe a concept-specific animation, not generic node highlighting.
     - For learningMode "flow": create 5 to 9 ordered steps, include edges, and explain exactly how the thing works internally.
     - For architecture, authentication, request/response, controller-service-provider, or system design workflows, prefer a directed graph shape with branches when the real system branches. Example: UI -> API controller -> service -> prompt builder / AI provider / validator -> response -> UI.
     - Do not force every flow into a single straight line if the real workflow has fan-out, fan-in, callbacks, or a return path.

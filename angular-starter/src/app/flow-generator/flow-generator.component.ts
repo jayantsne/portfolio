@@ -78,6 +78,20 @@ export class FlowGeneratorComponent {
       flowType: 'Timeline',
     },
     {
+      title: 'Clustered index B-tree',
+      category: 'Databases',
+      description: 'root, intermediate and leaf pages, seeks, scans and page splits',
+      prompt: 'Visualize how a SQL Server clustered index B+ tree stores rows and finds key 42, including a page split',
+      flowType: 'Architecture',
+    },
+    {
+      title: 'Observer design pattern',
+      category: 'Design Patterns',
+      description: 'subject, subscribers, notification fan-out and unsubscribe behavior',
+      prompt: 'Visualize the Observer design pattern at runtime with one subject and multiple observers receiving a state change',
+      flowType: 'Architecture',
+    },
+    {
       title: 'SOLID principles in .NET',
       category: '.NET',
       description: 'SRP, OCP, LSP, ISP, DIP with service examples',
@@ -329,6 +343,7 @@ export class FlowGeneratorComponent {
 
     return {
       title: this.generatedFlow.title,
+      visualization: this.generatedFlow.visualization,
       codeLanguage: this.generatedFlow.codeLanguage,
       code: this.generatedFlow.code,
       steps: this.generatedFlow.steps.map((step, index) => ({
@@ -343,6 +358,11 @@ export class FlowGeneratorComponent {
         example: step.example,
         antiPattern: step.antiPattern,
         interviewAnswer: step.interviewAnswer,
+        nodeKind: step.nodeKind,
+        parentId: step.parentId,
+        group: step.group,
+        depth: step.depth ?? undefined,
+        visualItems: step.visualItems || [],
         interviewTip: this.generatedFlow?.revisionTips[index]?.detail
           || step.interviewAnswer
           || this.generatedFlow?.revisionTips[0]?.detail,
@@ -351,6 +371,8 @@ export class FlowGeneratorComponent {
       edges: this.generatedFlow.edges.map(edge => ({
         source: edge.source,
         target: edge.target,
+        relationship: edge.relationship,
+        label: edge.label,
       })),
     };
   }

@@ -82,30 +82,7 @@
         </div>
 
         <div class="fg-ai-content">
-          <div class="fg-answer-head">
-            <div>
-              <span>{{ activeModeLabel }}</span>
-              <h2>{{ activeTitle }}</h2>
-              <p>{{ activeSummary }}</p>
-            </div>
-
-            <div class="fg-answer-actions">
-              <div class="fg-motion-switch" aria-label="Animation style">
-                <button type="button"
-                        *ngFor="let style of motionStyles"
-                        [class.fg-motion-active]="selectedMotionStyle === style"
-                        (click)="selectedMotionStyle = style">
-                  {{ style }}
-                </button>
-              </div>
-
-              <button type="button" class="fg-play" *ngIf="!isConceptMode" (click)="toggleStoryboard()">
-                {{ storyboardPlaying ? 'Pause' : 'Play' }}
-              </button>
-            </div>
-          </div>
-
-          <section class="fg-concept-board" *ngIf="isConceptMode; else flowVisualizer">
+          <section class="fg-concept-board" *ngIf="false; else flowVisualizer">
             <div class="fg-concept-mental">
               <span>Mental model</span>
               <strong>{{ activeMentalModel }}</strong>
@@ -171,7 +148,7 @@
             </app-flow-visualizer>
           </ng-template>
 
-          <section class="fg-deep-panel" *ngIf="selectedFlowStep">
+          <section class="fg-deep-panel" *ngIf="false && selectedFlowStep">
             <div class="fg-deep-head">
               <div>
                 <span>{{ isConceptMode ? 'Deep concept explanation' : 'Deep flow explanation' }}</span>

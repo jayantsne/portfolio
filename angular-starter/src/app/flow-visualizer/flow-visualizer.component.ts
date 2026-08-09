@@ -36,7 +36,7 @@ type FlowOrientation = 'vertical' | 'horizontal';
 @Component({
   selector: 'app-flow-visualizer',
   templateUrl: './flow-visualizer.component.html',
-  styleUrls: ['./flow-visualizer.component.css'],
+  styleUrls: ['./flow-visualizer.component.css', './flow-visualizer.dynamic.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
@@ -55,6 +55,9 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
   currentStepIndex = -1;
   isPlaying = false;
   expandedStepIndex: number | null = null;
+  zoomLevel = 1;
+  playbackSpeed = 1;
+  readonly playbackSpeeds = [0.75, 1, 1.5, 2];
 
   private completedStepIds = new Set<string>();
   private traversedEdgeIds = new Set<string>();
@@ -91,7 +94,7 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
     }
 
     this.isPlaying = true;
-    interval(PLAY_MS).pipe(
+    interval(Math.round(PLAY_MS / this.playbackSpeed)).pipe(
       takeUntil(this.pause$),
       takeUntil(this.destroy$),
     ).subscribe(() => {
@@ -118,6 +121,44 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
     this.advance();
   }
 
+  previous(): void {
+    if (!this.diagram?.steps?.length || this.currentStepIndex <= 0) {
+      return;
+    }
+    this.selectStep(this.currentStepIndex - 1);
+  }
+
+  zoomIn(): void {
+    this.zoomLevel = Math.min(1.65, +(this.zoomLevel + 0.15).toFixed(2));
+    this.cdr.markForCheck();
+  }
+
+  zoomOut(): void {
+    this.zoomLevel = Math.max(0.7, +(this.zoomLevel - 0.15).toFixed(2));
+    this.cdr.markForCheck();
+  }
+
+  resetZoom(): void {
+    this.zoomLevel = 1;
+    this.cdr.markForCheck();
+  }
+
+  setPlaybackSpeed(value: string): void {
+    const nextSpeed = Number(value);
+    if (!this.playbackSpeeds.includes(nextSpeed)) {
+      return;
+    }
+    const resume = this.isPlaying;
+    if (resume) {
+      this.pause();
+    }
+    this.playbackSpeed = nextSpeed;
+    if (resume && !this.isAtEnd) {
+      this.play();
+    }
+    this.cdr.markForCheck();
+  }
+
   reset(): void {
     this.stopPlay();
     this.closeStepDetails();
@@ -139,15 +180,16 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
 
     for (let i = 0; i < index; i++) {
       const current = this.diagram.steps[i];
-      const next = this.diagram.steps[i + 1];
       this.completedStepIds.add(current.id);
-      if (next) {
-        this.traversedEdgeIds.add(`${current.id}__${next.id}`);
-      }
+      this.diagram.edges
+        .filter(edge => edge.target === current.id || (this.diagram.steps.findIndex(step => step.id === edge.target) <= index && this.diagram.steps.findIndex(step => step.id === edge.source) <= index))
+        .forEach(edge => this.traversedEdgeIds.add(`${edge.source}__${edge.target}`));
     }
 
     if (index > 0) {
-      this.activeEdgeId = `${this.diagram.steps[index - 1].id}__${this.diagram.steps[index].id}`;
+      const activeStepId = this.diagram.steps[index].id;
+      const incoming = this.diagram.edges.find(edge => edge.target === activeStepId);
+      this.activeEdgeId = incoming ? `${incoming.source}__${incoming.target}` : null;
     }
 
     this.stepSelected.emit(index);
@@ -245,7 +287,78 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
   }
 
   get orientationLabel(): string {
-    return this.orientation === 'horizontal' ? 'Horizontal flow' : 'Vertical flow';
+    return this.visualModeLabel;
+  }
+
+  get visualMode(): 'tree' | 'cycle' | 'pipeline' | 'network' | 'layers' | 'timeline' | 'comparison' | 'journey' {
+    const requested = this.diagram?.visualization?.type?.toLowerCase();
+    if (requested && ['tree', 'cycle', 'pipeline', 'network', 'layers', 'timeline', 'comparison', 'journey'].includes(requested)) {
+      return requested as 'tree' | 'cycle' | 'pipeline' | 'network' | 'layers' | 'timeline' | 'comparison' | 'journey';
+    }
+    const labels = `${this.diagram?.title || ''} ${(this.diagram?.steps || []).map(step => step.label).join(' ')}`.toLowerCase();
+    const hasCycleEdge = (this.diagram?.edges || []).some(edge => {
+      const source = this.diagram.steps.findIndex(step => step.id === edge.source);
+      const target = this.diagram.steps.findIndex(step => step.id === edge.target);
+      return source >= 0 && target >= 0 && target <= source;
+    });
+    const outDegree = new Map<string, number>();
+    (this.diagram?.edges || []).forEach(edge => outDegree.set(edge.source, (outDegree.get(edge.source) || 0) + 1));
+
+    if (/b\+?[- ]?tree|clustered index|hierarch|tree structure|trie|file system/.test(labels)) {
+      return 'tree';
+    }
+    if (hasCycleEdge || /cycle|loop|repeat|lifecycle|iteration/.test(labels)) {
+      return 'cycle';
+    }
+    if ([...outDegree.values()].some(value => value > 1) || /architecture|system|network|service|dependency/.test(labels)) {
+      return 'network';
+    }
+    return 'journey';
+  }
+
+  get visualModeLabel(): string {
+    switch (this.visualMode) {
+      case 'tree': return 'Living hierarchy';
+      case 'cycle': return 'Living cycle';
+      case 'pipeline': return 'Transformation pipeline';
+      case 'network': return 'System map';
+      case 'layers': return 'Layered anatomy';
+      case 'timeline': return 'Animated timeline';
+      case 'comparison': return 'Visual comparison';
+      default: return 'Learning journey';
+    }
+  }
+
+  get activeMapStepIndex(): number {
+    return this.currentStepIndex < 0 ? 0 : this.currentStepIndex;
+  }
+
+  get activeMapStep() {
+    return this.diagram?.steps?.[this.activeMapStepIndex] || null;
+  }
+
+  get zoomPercent(): number {
+    return Math.round(this.zoomLevel * 100);
+  }
+
+  get displayPhases(): string[] {
+    const phases = (this.diagram?.visualization?.phases || []).filter(Boolean).slice(0, 5);
+    return phases.length >= 2 ? phases : ['Discover', 'Transform', 'Validate', 'Complete'];
+  }
+
+  stepPhase(index: number): string {
+    const step = this.diagram?.steps?.[index];
+    if (step?.group) { return step.group; }
+    const phases = this.diagram?.visualization?.phases || [];
+    const total = this.diagram?.steps?.length || 1;
+    const ratio = index / Math.max(1, total - 1);
+    if (phases.length) {
+      return phases[Math.min(phases.length - 1, Math.floor(ratio * phases.length))];
+    }
+    if (ratio < 0.25) { return 'Discover'; }
+    if (ratio < 0.55) { return 'Transform'; }
+    if (ratio < 0.82) { return 'Validate'; }
+    return 'Complete';
   }
 
   get hasCode(): boolean {
@@ -357,11 +470,16 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
   private advance(): void {
     if (this.currentStepIndex >= 0) {
       const fromId = this.diagram.steps[this.currentStepIndex].id;
-      const toId = this.diagram.steps[this.currentStepIndex + 1].id;
-      const edgeId = `${fromId}__${toId}`;
       this.completedStepIds.add(fromId);
-      this.traversedEdgeIds.add(edgeId);
-      this.activeEdgeId = edgeId;
+      const nextStep = this.diagram.steps[this.currentStepIndex + 1];
+      const incoming = nextStep ? this.diagram.edges.find(edge => edge.target === nextStep.id) : undefined;
+      if (incoming) {
+        const edgeId = `${incoming.source}__${incoming.target}`;
+        this.traversedEdgeIds.add(edgeId);
+        this.activeEdgeId = edgeId;
+      } else {
+        this.activeEdgeId = null;
+      }
     }
 
     this.currentStepIndex++;
@@ -413,6 +531,7 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
     this.completedStepIds.clear();
     this.traversedEdgeIds.clear();
     this.activeEdgeId = null;
+    this.zoomLevel = 1;
     this.cdr.markForCheck();
   }
 
@@ -462,15 +581,40 @@ export class FlowVisualizerComponent implements OnInit, OnChanges, OnDestroy {
     let svgW: number;
     let svgH: number;
 
-    if (this.orientation === 'horizontal' && steps.length > 4) {
-      // A responsive snake layout keeps long, linear AI-generated flows in a
-      // single viewport instead of forcing a horizontal scroll.
-      nodeW = 190;
-      nodeH = 108;
-      const columns = steps.length > 8 ? 4 : 3;
+    if (this.visualMode === 'tree') {
+      nodeW = 178;
+      nodeH = 92;
+      const levels = new Map<number, FlowDiagram['steps']>();
+      steps.forEach(step => {
+        const currentDepth = step.depth ?? layer.get(step.id) ?? 0;
+        const group = levels.get(currentDepth) || [];
+        group.push(step);
+        levels.set(currentDepth, group);
+      });
+      const levelNumbers = [...levels.keys()].sort((a, b) => a - b);
+      const widest = Math.max(...[...levels.values()].map(group => group.length), 1);
+      const colStep = 208;
+      const rowStep = 175;
+      svgW = Math.max(760, PAD_X * 2 + widest * colStep);
+      svgH = PAD_Y * 2 + levelNumbers.length * rowStep;
+      levelNumbers.forEach((depth, row) => {
+        const group = levels.get(depth) || [];
+        const width = (group.length - 1) * colStep;
+        const startX = svgW / 2 - width / 2;
+        group.forEach((step, column) => pos.set(step.id, {
+          cx: startX + column * colStep,
+          cy: PAD_Y + nodeH / 2 + row * rowStep,
+        }));
+      });
+    } else if (this.orientation === 'horizontal' && steps.length > 4) {
+      // A living-map path keeps arbitrary AI-generated concepts readable while
+      // preserving sequence, bends, and room for labels around each station.
+      nodeW = 72;
+      nodeH = 72;
+      const columns = steps.length > 9 ? 5 : 4;
       const rows = Math.ceil(steps.length / columns);
-      const colStep = 226;
-      const rowStep = 154;
+      const colStep = 220;
+      const rowStep = 230;
       svgW = PAD_X * 2 + nodeW + (columns - 1) * colStep;
       svgH = PAD_Y * 2 + nodeH + (rows - 1) * rowStep;
 

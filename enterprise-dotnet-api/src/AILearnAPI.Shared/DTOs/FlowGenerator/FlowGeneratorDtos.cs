@@ -34,11 +34,22 @@ public sealed class FlowDiagramResponse
     public string Summary { get; set; } = string.Empty;
     public string LearningMode { get; set; } = "flow";
     public string MentalModel { get; set; } = string.Empty;
+    public FlowVisualizationDto Visualization { get; set; } = new();
     public string CodeLanguage { get; set; } = string.Empty;
     public List<string> Code { get; set; } = new();
     public List<FlowStepDto> Steps { get; set; } = new();
     public List<FlowEdgeDto> Edges { get; set; } = new();
     public List<FlowRevisionTipDto> RevisionTips { get; set; } = new();
+}
+
+public sealed class FlowVisualizationDto
+{
+    public string Type { get; set; } = "journey";
+    public string Rationale { get; set; } = string.Empty;
+    public string PrimaryMetaphor { get; set; } = string.Empty;
+    public string Direction { get; set; } = "horizontal";
+    public string AnimationNarrative { get; set; } = string.Empty;
+    public List<string> Phases { get; set; } = new();
 }
 
 public sealed class FlowStepDto
@@ -54,6 +65,11 @@ public sealed class FlowStepDto
     public string Example { get; set; } = string.Empty;
     public string AntiPattern { get; set; } = string.Empty;
     public string InterviewAnswer { get; set; } = string.Empty;
+    public string NodeKind { get; set; } = "step";
+    public string ParentId { get; set; } = string.Empty;
+    public string Group { get; set; } = string.Empty;
+    public int? Depth { get; set; }
+    public List<string> VisualItems { get; set; } = new();
     public int? CodeLine { get; set; }
 }
 
@@ -61,6 +77,8 @@ public sealed class FlowEdgeDto
 {
     public string Source { get; set; } = string.Empty;
     public string Target { get; set; } = string.Empty;
+    public string Relationship { get; set; } = string.Empty;
+    public string Label { get; set; } = string.Empty;
 }
 
 public sealed class FlowRevisionTipDto

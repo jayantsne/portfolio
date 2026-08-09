@@ -64,8 +64,35 @@ public sealed class FlowGeneratorService : IFlowGeneratorService
         var errors = _validator.Validate(response);
         if (errors.Count > 0)
         {
-            _logger.LogWarning("Flow AI response failed validation: {Errors}", string.Join("; ", errors));
-            throw new InvalidOperationException("Flow AI response failed validation.");
+            _logger.LogInformation("Flow visual plan needs one correction pass: {Errors}", string.Join("; ", errors));
+            var correctionPrompt = $"""
+                {prompt}
+
+                Your previous visual plan was rejected for these structural reasons:
+                {string.Join("; ", errors)}
+
+                Regenerate the entire JSON response. Correct the visual structure itself; do not explain the errors.
+                """;
+            var correctedRaw = await _aiProvider.GenerateAsync(correctionPrompt, cancellationToken);
+            var correctedJson = ExtractJson(correctedRaw);
+            try
+            {
+                response = JsonSerializer.Deserialize<FlowDiagramResponse>(correctedJson, JsonOptions)
+                    ?? throw new InvalidOperationException("Corrected flow AI response was empty.");
+            }
+            catch (JsonException ex)
+            {
+                _logger.LogWarning(ex, "Corrected flow generator response was invalid JSON");
+                throw new InvalidOperationException("Corrected flow AI response was not valid JSON.", ex);
+            }
+
+            NormalizeResponse(response);
+            errors = _validator.Validate(response);
+            if (errors.Count > 0)
+            {
+                _logger.LogWarning("Corrected flow AI response failed validation: {Errors}", string.Join("; ", errors));
+                throw new InvalidOperationException("Flow AI could not produce a valid visual structure.");
+            }
         }
 
         return response;
@@ -124,13 +151,45 @@ public sealed class FlowGeneratorService : IFlowGeneratorService
 
     private static void NormalizeResponse(FlowDiagramResponse response)
     {
+        response.Visualization ??= new FlowVisualizationDto();
+        response.Visualization.Type = Normalize(response.Visualization.Type, "journey").ToLowerInvariant();
+        response.Visualization.Direction = Normalize(response.Visualization.Direction, "horizontal").ToLowerInvariant();
+        response.Visualization.Phases ??= new List<string>();
         foreach (var step in response.Steps)
         {
+            step.VisualItems ??= new List<string>();
             if (step.CodeLine is < 0)
                 step.CodeLine = null;
 
             if (step.CodeLine.HasValue && response.Code.Count > 0 && step.CodeLine.Value >= response.Code.Count)
                 step.CodeLine = null;
+        }
+
+        if (string.Equals(response.Visualization.Type, "tree", StringComparison.OrdinalIgnoreCase))
+        {
+            var byId = response.Steps.ToDictionary(step => step.Id, StringComparer.OrdinalIgnoreCase);
+            foreach (var edge in response.Edges)
+            {
+                if (byId.TryGetValue(edge.Target, out var child) && string.IsNullOrWhiteSpace(child.ParentId))
+                    child.ParentId = edge.Source;
+            }
+
+            var roots = response.Steps.Where(step => string.IsNullOrWhiteSpace(step.ParentId)).ToList();
+            if (roots.Count == 1)
+            {
+                roots[0].Depth = 0;
+                var queue = new Queue<FlowStepDto>();
+                queue.Enqueue(roots[0]);
+                while (queue.Count > 0)
+                {
+                    var parent = queue.Dequeue();
+                    foreach (var child in response.Steps.Where(step => string.Equals(step.ParentId, parent.Id, StringComparison.OrdinalIgnoreCase)))
+                    {
+                        child.Depth ??= (parent.Depth ?? 0) + 1;
+                        queue.Enqueue(child);
+                    }
+                }
+            }
         }
     }
 

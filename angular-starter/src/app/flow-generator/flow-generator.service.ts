@@ -15,11 +15,21 @@ export interface FlowDiagramResponse {
   summary: string;
   learningMode?: 'flow' | 'concept' | string;
   mentalModel?: string;
+  visualization?: FlowVisualizationResponse;
   codeLanguage: string;
   code: string[];
   steps: FlowStepResponse[];
   edges: FlowEdgeResponse[];
   revisionTips: FlowRevisionTipResponse[];
+}
+
+export interface FlowVisualizationResponse {
+  type: string;
+  rationale?: string;
+  primaryMetaphor?: string;
+  direction?: string;
+  animationNarrative?: string;
+  phases?: string[];
 }
 
 export interface FlowStepResponse {
@@ -34,12 +44,19 @@ export interface FlowStepResponse {
   example?: string;
   antiPattern?: string;
   interviewAnswer?: string;
+  nodeKind?: string;
+  parentId?: string;
+  group?: string;
+  depth?: number | null;
+  visualItems?: string[];
   codeLine?: number | null;
 }
 
 export interface FlowEdgeResponse {
   source: string;
   target: string;
+  relationship?: string;
+  label?: string;
 }
 
 export interface FlowRevisionTipResponse {

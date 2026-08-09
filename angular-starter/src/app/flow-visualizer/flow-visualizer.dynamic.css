@@ -1,0 +1,48 @@
+.fv-tree-page {
+  fill: #fff;
+  stroke: #9aabc0;
+  stroke-width: 2;
+  filter: drop-shadow(0 8px 12px rgba(38, 55, 82, .08));
+  transition: fill .25s, stroke .25s, filter .25s;
+}
+.fv-station:hover .fv-tree-page,
+.fv-station:focus .fv-tree-page {
+  stroke: var(--teal);
+  filter: drop-shadow(0 10px 18px rgba(15, 148, 131, .18));
+}
+.fv-station-active .fv-tree-page {
+  fill: var(--teal-soft);
+  stroke: var(--teal);
+  stroke-width: 3;
+  animation: tree-page-pulse 1.7s ease-in-out infinite;
+}
+.fv-station-done .fv-tree-page { fill: #f1faf8; stroke: #68bfae; }
+.fv-tree-content {
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  color: var(--navy);
+  font-family: Inter, system-ui, sans-serif;
+  text-align: center;
+}
+.fv-tree-content small { color: var(--teal); font-size: 8px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.fv-tree-content strong { max-width: 100%; margin-top: 3px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+.fv-tree-content div { display: flex; max-width: 100%; gap: 4px; margin-top: 8px; }
+.fv-tree-content div span { min-width: 19px; padding: 3px 5px; border: 1px solid #b7c5d7; border-radius: 4px; background: #fff; color: #34425a; font-size: 9px; font-weight: 800; }
+.fv-station-active .fv-tree-content div span { border-color: #65c8b8; }
+.fv-metaphor { display: flex; gap: 9px; align-items: center; margin-top: 14px; padding: 10px; border-left: 3px solid var(--violet); background: #f7f5ff; color: #4b5470; font-size: 11px; }
+.fv-metaphor i { color: var(--violet); }
+.fv-metaphor small { display: block; color: #8579ca; font-size: 8px; font-weight: 900; text-transform: uppercase; }
+.fv-visual-items { display: flex; flex-wrap: wrap; gap: 5px; margin: 12px 0; }
+.fv-visual-items span { padding: 5px 7px; border: 1px solid #b9c7d8; border-radius: 6px; background: #f8fafc; color: #34425a; font-size: 10px; font-weight: 800; }
+.fv-speed-control { display: inline-flex; height: 34px; align-items: center; gap: 6px; padding: 0 8px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: #64718a; white-space: nowrap; }
+.fv-speed-control i { font-size: 11px; }
+.fv-speed-control > span { font-size: 10px; font-weight: 750; }
+.fv-speed-control select { border: 0; outline: 0; background: transparent; color: var(--navy); font: inherit; font-size: 11px; font-weight: 850; cursor: pointer; }
+@keyframes tree-page-pulse { 50% { filter: drop-shadow(0 12px 22px rgba(15, 148, 131, .28)); } }
+@media (prefers-reduced-motion: reduce) { .fv-station-active .fv-tree-page { animation: none; } }
+@media (max-width: 560px) { .fv-speed-control > span { display: none; } }
